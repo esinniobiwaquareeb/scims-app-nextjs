@@ -1,0 +1,1583 @@
+import { BrandFormData } from '@/components/brand/BrandHelpers';
+import { CategoryFormData, SupplierFormData, CustomerFormData, StaffFormData } from '@/types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
+// Hook for fetching store products
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+/* eslint-disable @typescript-eslint/no-empty-interface */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+export const useStoreProducts = (storeId: string, options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['store-products', storeId],
+    queryFn: async () => {
+      // TODO: Replace with actual API endpoint when available
+      const response = await fetch(`/api/products?store_id=${storeId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch products');
+      }
+      const data = await response.json();
+      return data.products || [];
+    },
+    enabled: enabled && !!storeId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: true, // Important for POS
+    refetchOnMount: !forceRefresh, // Don't refetch if forcing refresh
+  });
+};
+
+// Hook for fetching store customers
+export const useStoreCustomers = (storeId: string, options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['store-customers', storeId],
+    queryFn: async () => {
+      // TODO: Replace with actual API endpoint when available
+      const response = await fetch(`/api/customers?store_id=${storeId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch customers');
+      }
+      const data = await response.json();
+      return data.customers || [];
+    },
+    enabled: enabled && !!storeId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Hook for fetching store sales
+export const useStoreSales = (storeId: string, options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['store-sales', storeId],
+    queryFn: async () => {
+      const response = await fetch(`/api/sales?store_id=${storeId}&status=completed`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch sales');
+      }
+      const data = await response.json();
+      return data.sales || [];
+    },
+    enabled: enabled && !!storeId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Hook for fetching cashier sales
+export const useCashierSales = (cashierId: string, storeId: string, options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['cashier-sales', cashierId, storeId],
+    queryFn: async () => {
+      const response = await fetch(`/api/sales?store_id=${storeId}&cashier_id=${cashierId}&status=completed`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch cashier sales');
+      }
+      const data = await response.json();
+      return data.sales || [];
+    },
+    enabled: enabled && !!cashierId && !!storeId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Hook for creating customers
+export const useCreateCustomer = (p0: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (customerData: {
+      store_id: string;
+      name: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+      [key: string]: unknown;
+    }) => {
+      // TODO: Replace with actual API endpoint when available
+      const response = await fetch('/api/customers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(customerData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create customer');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch customers for the store
+      queryClient.invalidateQueries({ queryKey: ['store-customers', variables.store_id] });
+      toast.success('Customer created successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to create customer');
+      console.error('Create customer error:', error);
+    },
+  });
+};
+
+// Hook for saved carts
+export const useSavedCarts = (storeId: string, p0: string, options?: {
+  enabled?: boolean;
+}) => {
+  const { enabled = true } = options || {};
+  
+  return useQuery({
+    queryKey: ['saved-carts', storeId],
+    queryFn: async () => {
+      // TODO: Replace with actual API endpoint when available
+      const response = await fetch(`/api/saved-carts?store_id=${storeId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch saved carts');
+      }
+      const data = await response.json();
+      return data.carts || [];
+    },
+    enabled: enabled && !!storeId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+// Hook for saving cart
+export const useSaveCart = (p0: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (cartData: {
+      store_id: string;
+      cart_data: unknown;
+      cashier_id: string;
+      [key: string]: unknown;
+    }) => {
+      // TODO: Replace with actual API endpoint when available
+      const response = await fetch('/api/saved-carts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cartData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save cart');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch saved carts for the store
+      queryClient.invalidateQueries({ queryKey: ['saved-carts', variables.store_id] });
+      toast.success('Cart saved successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to save cart');
+      console.error('Save cart error:', error);
+    },
+  });
+};
+
+// Hook for deleting saved cart
+export const useDeleteSavedCart = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (cartId: string) => {
+      // TODO: Replace with actual API endpoint when available
+      const response = await fetch(`/api/saved-carts/${cartId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete saved cart');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch saved carts
+      queryClient.invalidateQueries({ queryKey: ['saved-carts'] });
+      toast.success('Cart deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete cart');
+      console.error('Delete cart error:', error);
+    },
+  });
+};
+
+// Hook for business settings
+export const useBusinessSettings = (businessId: string, options?: {
+  enabled?: boolean;
+}) => {
+  const { enabled = true } = options || {};
+  
+  return useQuery({
+    queryKey: ['business-settings', businessId],
+    queryFn: async () => {
+      // TODO: Replace with actual API endpoint when available
+      const response = await fetch(`/api/businesses/${businessId}/settings`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch business settings');
+      }
+      const data = await response.json();
+      return data.settings || {};
+    },
+    enabled: enabled && !!businessId,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+  });
+};
+
+// Hook for categories
+export const useCategories = (businessId: string, options?: {
+  enabled?: boolean;
+}) => {
+  const { enabled = true } = options || {};
+  
+  return useQuery({
+    queryKey: ['categories', businessId],
+    queryFn: async () => {
+      // TODO: Replace with actual API endpoint when available
+      const response = await fetch(`/api/categories?business_id=${businessId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch categories');
+      }
+      const data = await response.json();
+      return data.categories || [];
+    },
+    enabled: enabled && !!businessId,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+  });
+};
+
+// Hook for business categories (alias for useCategories)
+export const useBusinessCategories = useCategories;
+
+// Hook for suppliers
+export const useBusinessSuppliers = (businessId: string, options?: {
+  enabled?: boolean;
+}) => {
+  const { enabled = true } = options || {};
+  
+  return useQuery({
+    queryKey: ['suppliers', businessId],
+    queryFn: async () => {
+      // TODO: Replace with actual API endpoint when available
+      const response = await fetch(`/api/suppliers?business_id=${businessId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch suppliers');
+      }
+      const data = await response.json();
+      return data.suppliers || [];
+    },
+    enabled: enabled && !!businessId,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+  });
+};
+
+// Hook for brands
+export const useBusinessBrands = (businessId: string, options?: {
+  enabled?: boolean;
+}) => {
+  const { enabled = true } = options || {};
+  
+  return useQuery({
+    queryKey: ['brands', businessId],
+    queryFn: async () => {
+      // TODO: Replace with actual API endpoint when available
+      const response = await fetch(`/api/brands?business_id=${businessId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch brands');
+      }
+      const data = await response.json();
+      return data.brands || [];
+    },
+    enabled: enabled && !!businessId,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+  });
+};
+
+// Hook for creating products
+export const useCreateProduct = (storeId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (productData: {
+      store_id: string;
+      name: string;
+      description?: string;
+      price: number;
+      cost_price?: number;
+      stock_quantity: number;
+      category_id?: string;
+      supplier_id?: string;
+      brand_id?: string;
+      sku?: string;
+      barcode?: string;
+      is_active: boolean;
+      [key: string]: unknown;
+    }) => {
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create product');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch products for the store
+      queryClient.invalidateQueries({ queryKey: ['store-products', variables.store_id] });
+      toast.success('Product created successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to create product');
+      console.error('Create product error:', error);
+    },
+  });
+};
+
+// Hook for updating products
+export const useUpdateProduct = (storeId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ productId, productData }: { 
+      productId: string; 
+      productData: {
+        store_id: string;
+        name?: string;
+        description?: string;
+        price?: number;
+        cost_price?: number;
+        stock_quantity?: number;
+        category_id?: string;
+        supplier_id?: string;
+        brand_id?: string;
+        sku?: string;
+        barcode?: string;
+        is_active?: boolean;
+        [key: string]: unknown;
+      }
+    }) => {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update product');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch products for the store
+      queryClient.invalidateQueries({ queryKey: ['store-products', variables.productData.store_id] });
+      toast.success('Product updated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to update product');
+      console.error('Update product error:', error);
+    },
+  });
+};
+
+// Hook for deleting products
+export const useDeleteProduct = (storeId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (productId: string) => {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete product');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch products for the store
+      queryClient.invalidateQueries({ queryKey: ['store-products', storeId] });
+      toast.success('Product deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete product');
+      console.error('Delete product error:', error);
+    },
+  });
+};
+
+// Hook for creating business categories
+export const useCreateBusinessCategory = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (categoryData: CategoryFormData) => {
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(categoryData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create category');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch categories for the business
+      queryClient.invalidateQueries({ queryKey: ['categories', businessId] });
+      toast.success('Category created successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to create category');
+      console.error('Create category error:', error);
+    },
+  });
+};
+
+// Hook for updating business categories
+export const useUpdateBusinessCategory = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ categoryId, categoryData }: { categoryId: string; categoryData: CategoryFormData }) => {
+      const response = await fetch(`/api/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(categoryData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update category');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch categories for the business
+      queryClient.invalidateQueries({ queryKey: ['categories', businessId] });
+      toast.success('Category updated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to update category');
+      console.error('Update category error:', error);
+    },
+  });
+};
+
+// Hook for deleting business categories
+export const useDeleteBusinessCategory = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (categoryId: string) => {
+      const response = await fetch(`/api/categories/${categoryId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete category');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch categories for the business
+      queryClient.invalidateQueries({ queryKey: ['categories', businessId] });
+      toast.success('Category deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete category');
+      console.error('Delete category error:', error);
+    },
+  });
+};
+
+// Hook for creating business brands
+export const useCreateBusinessBrand = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (brandData: BrandFormData) => {
+      const response = await fetch('/api/brands', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(brandData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create brand');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch brands for the business
+      queryClient.invalidateQueries({ queryKey: ['brands', businessId] });
+      toast.success('Brand created successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to create brand');
+      console.error('Create brand error:', error);
+    },
+  });
+};
+
+// Hook for updating business brands
+export const useUpdateBusinessBrand = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ brandId, brandData }: { brandId: string; brandData: BrandFormData }) => {
+      const response = await fetch(`/api/brands/${brandId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(brandData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update brand');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch brands for the business
+      queryClient.invalidateQueries({ queryKey: ['brands', businessId] });
+      toast.success('Brand updated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to update brand');
+      console.error('Update brand error:', error);
+    },
+  });
+};
+
+// Hook for deleting business brands
+export const useDeleteBusinessBrand = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (brandId: string) => {
+      const response = await fetch(`/api/brands/${brandId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete brand');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch brands for the business
+      queryClient.invalidateQueries({ queryKey: ['brands', businessId] });
+      toast.success('Brand deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete brand');
+      console.error('Delete brand error:', error);
+    },
+  });
+};
+
+// Hook for creating business suppliers
+export const useCreateBusinessSupplier = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (supplierData: SupplierFormData) => {
+      const response = await fetch('/api/suppliers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(supplierData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create supplier');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch suppliers for the business
+      queryClient.invalidateQueries({ queryKey: ['suppliers', businessId] });
+      toast.success('Supplier created successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to create supplier');
+      console.error('Create supplier error:', error);
+    },
+  });
+};
+
+// Hook for updating business suppliers
+export const useUpdateBusinessSupplier = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ supplierId, supplierData }: { supplierId: string; supplierData: SupplierFormData }) => {
+      const response = await fetch(`/api/suppliers/${supplierId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(supplierData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update supplier');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch suppliers for the business
+      queryClient.invalidateQueries({ queryKey: ['suppliers', businessId] });
+      toast.success('Supplier updated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to update supplier');
+      console.error('Update supplier error:', error);
+    },
+  });
+};
+
+// Hook for deleting business suppliers
+export const useDeleteBusinessSupplier = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (supplierId: string) => {
+      const response = await fetch(`/api/suppliers/${supplierId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete supplier');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch suppliers for the business
+      queryClient.invalidateQueries({ queryKey: ['suppliers', businessId] });
+      toast.success('Supplier deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete supplier');
+      console.error('Delete supplier error:', error);
+    },
+  });
+};
+
+
+
+// Hook for updating customers
+export const useUpdateCustomer = (storeId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ customerId, customerData }: { customerId: string; customerData: CustomerFormData }) => {
+      const response = await fetch(`/api/customers/${customerId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(customerData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update customer');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch customers for the store
+      queryClient.invalidateQueries({ queryKey: ['customers', storeId] });
+      toast.success('Customer updated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to update customer');
+      console.error('Update customer error:', error);
+    },
+  });
+};
+
+// Hook for deleting customers
+export const useDeleteCustomer = (storeId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (customerId: string) => {
+      const response = await fetch(`/api/customers/${customerId}?store_id=${storeId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete customer');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch customers for the store
+      queryClient.invalidateQueries({ queryKey: ['customers', storeId] });
+      toast.success('Customer deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete customer');
+      console.error('Delete customer error:', error);
+    },
+  });
+};
+
+// Hook for creating staff members
+export const useCreateStaff = (storeId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (staffData: StaffFormData) => {
+      const response = await fetch('/api/staff', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(staffData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create staff member');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch staff for the store
+      queryClient.invalidateQueries({ queryKey: ['staff', storeId] });
+      toast.success('Staff member created successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to create staff member');
+      console.error('Create staff error:', error);
+    },
+  });
+};
+
+// Hook for updating staff members
+export const useUpdateStaff = (storeId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ staffId, staffData }: { staffId: string; staffData: StaffFormData }) => {
+      const response = await fetch(`/api/staff/${staffId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(staffData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update staff member');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch staff for the store
+      queryClient.invalidateQueries({ queryKey: ['staff', storeId] });
+      toast.success('Staff member updated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to update staff member');
+      console.error('Update staff error:', error);
+    },
+  });
+};
+
+// Hook for deleting staff members
+export const useDeleteStaff = (storeId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (staffId: string) => {
+      const response = await fetch(`/api/staff/${staffId}?store_id=${storeId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete staff member');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch staff for the store
+      queryClient.invalidateQueries({ queryKey: ['staff', storeId] });
+      toast.success('Staff member deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete staff member');
+      console.error('Delete staff error:', error);
+    },
+  });
+};
+
+// Hook for fetching roles
+export const useRoles = (businessId: string) => {
+  return useQuery({
+    queryKey: ['roles', businessId],
+    queryFn: async () => {
+      const response = await fetch(`/api/roles?business_id=${businessId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch roles');
+      }
+      return response.json();
+    },
+    enabled: !!businessId,
+  });
+};
+
+// Hook for creating roles
+export const useCreateRole = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (roleData: any) => {
+      const response = await fetch('/api/roles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(roleData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create role');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch roles for the business
+      queryClient.invalidateQueries({ queryKey: ['roles', businessId] });
+      toast.success('Role created successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to create role');
+      console.error('Create role error:', error);
+    },
+  });
+};
+
+
+
+// Hook for generating reports
+export const useReport = (businessId: string, reportType: string, storeId?: string, startDate?: string, endDate?: string) => {
+  return useQuery({
+    queryKey: ['report', businessId, reportType, storeId, startDate, endDate],
+    queryFn: async () => {
+      const params = new URLSearchParams({ 
+        business_id: businessId, 
+        type: reportType 
+      });
+      if (storeId) params.append('store_id', storeId);
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+      
+      const response = await fetch(`/api/reports?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to generate report');
+      }
+      return response.json();
+    },
+    enabled: !!businessId && !!reportType,
+  });
+};
+
+// Hook for fetching business staff
+export const useBusinessStaff = (businessId: string, p0: { enabled: boolean; }) => {
+  return useQuery({
+    queryKey: ['businessStaff', businessId],
+    queryFn: async () => {
+      const response = await fetch(`/api/staff?business_id=${businessId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch business staff');
+      }
+      return response.json();
+    },
+    enabled: !!businessId,
+  });
+};
+
+// Hook for fetching store staff
+export const useStoreStaff = (storeId: string, p0: { enabled: boolean; }) => {
+  return useQuery({
+    queryKey: ['storeStaff', storeId],
+    queryFn: async () => {
+      const response = await fetch(`/api/staff?store_id=${storeId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch store staff');
+      }
+      return response.json();
+    },
+    enabled: !!storeId,
+  });
+};
+
+// Hook for fetching business stores
+export const useBusinessStores = (businessId: string, p0: { enabled: boolean; }) => {
+  return useQuery({
+    queryKey: ['businessStores', businessId],
+    queryFn: async () => {
+      const response = await fetch(`/api/businesses/${businessId}/stores`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch business stores');
+      }
+      return response.json();
+    },
+    enabled: !!businessId,
+  });
+};
+
+// Hook for customer sales
+export const useCustomerSales = (customerId: string, p0: string, p1: string, p2: { enabled: boolean; }) => {
+  return useQuery({
+    queryKey: ['customerSales', customerId],
+    queryFn: async () => {
+      const response = await fetch(`/api/sales?customer_id=${customerId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch customer sales');
+      }
+      return response.json();
+    },
+    enabled: !!customerId,
+  });
+};
+
+// Hook for store sales report
+export const useStoreSalesReport = (storeId: string, options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+  startDate?: string;
+  endDate?: string;
+}) => {
+  const { enabled = true, forceRefresh = false, startDate, endDate } = options || {};
+  
+  return useQuery({
+    queryKey: ['store-sales-report', storeId, startDate, endDate],
+    queryFn: async () => {
+      let url = `/api/sales?store_id=${storeId}`;
+      if (startDate) url += `&start_date=${startDate}`;
+      if (endDate) url += `&end_date=${endDate}`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch store sales report');
+      }
+      return response.json();
+    },
+    enabled: enabled && !!storeId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Hook for business stores report
+export const useBusinessStoresReport = (businessId: string, p0: { enabled: boolean; }) => {
+  return useQuery({
+    queryKey: ['businessStoresReport', businessId],
+    queryFn: async () => {
+      const response = await fetch(`/api/reports?business_id=${businessId}&type=stores`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch business stores report');
+      }
+      return response.json();
+    },
+    enabled: !!businessId,
+  });
+};
+
+// Hook for aggregated sales report across multiple stores
+export const useAggregatedSalesReport = (storeIds: string[], options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+  startDate?: string;
+  endDate?: string;
+}) => {
+  const { enabled = true, forceRefresh = false, startDate, endDate } = options || {};
+  
+  return useQuery({
+    queryKey: ['aggregated-sales-report', storeIds, startDate, endDate],
+    queryFn: async () => {
+      let url = `/api/sales/aggregated?store_ids=${storeIds.join(',')}`;
+      if (startDate) url += `&start_date=${startDate}`;
+      if (endDate) url += `&end_date=${endDate}`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch aggregated sales report');
+      }
+      return response.json();
+    },
+    enabled: enabled && storeIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Hook for fetching business cashiers
+export const useBusinessCashiers = (businessId: string, options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['business-cashiers', businessId],
+    queryFn: async () => {
+      const response = await fetch(`/api/cashiers?business_id=${businessId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch business cashiers');
+      }
+      const data = await response.json();
+      return data.cashiers || [];
+    },
+    enabled: enabled && !!businessId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Hook for creating a cashier
+export const useCreateCashier = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (cashierData: {
+      name: string;
+      username: string;
+      email: string;
+      phone?: string;
+      store_id?: string;
+    }) => {
+      const response = await fetch(`/api/cashiers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...cashierData,
+          business_id: businessId,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create cashier');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['business-cashiers', businessId] });
+      toast.success('Cashier created successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to create cashier: ${error.message}`);
+    },
+  });
+};
+
+// Hook for updating a cashier
+export const useUpdateCashier = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ cashierId, cashierData }: { 
+      cashierId: string; 
+      cashierData: Partial<{
+        name: string;
+        username: string;
+        email: string;
+        phone: string;
+        store_id: string;
+        is_active: boolean;
+      }>;
+    }) => {
+      const response = await fetch(`/api/cashiers/${cashierId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cashierData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update cashier');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['business-cashiers', businessId] });
+      toast.success('Cashier updated successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to update cashier: ${error.message}`);
+    },
+  });
+};
+
+// Hook for updating cashier store assignment
+export const useUpdateCashierStore = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ cashierId, storeId }: { 
+      cashierId: string; 
+      storeId: string | null;
+    }) => {
+      const response = await fetch(`/api/cashiers/${cashierId}/store`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ store_id: storeId }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update cashier store');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['business-cashiers', businessId] });
+      toast.success('Cashier store assignment updated successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to update cashier store: ${error.message}`);
+    },
+  });
+};
+
+// Hook for deleting a cashier
+export const useDeleteCashier = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (cashierId: string) => {
+      const response = await fetch(`/api/cashiers/${cashierId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete cashier');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['business-cashiers', businessId] });
+      toast.success('Cashier deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete cashier: ${error.message}`);
+    },
+  });
+};
+
+// Hook for resetting user password
+export const useResetUserPassword = () => {
+  return useMutation({
+    mutationFn: async ({ userId, newPassword }: { userId: string; newPassword: string }) => {
+      const response = await fetch(`/api/users/${userId}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ newPassword }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to reset password');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast.success('Password reset successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to reset password');
+      console.error('Reset password error:', error);
+    },
+  });
+};
+
+// Hook for reporting sales
+export const useReportingSales = (businessId: string, storeId?: string, startDate?: string, endDate?: string) => {
+  return useReport(businessId, 'sales', storeId, startDate, endDate);
+};
+
+// Hook for reporting product performance
+export const useReportingProductPerformance = (businessId: string, storeId?: string) => {
+  return useReport(businessId, 'inventory', storeId);
+};
+
+// Hook for reporting customer analytics
+export const useReportingCustomerAnalytics = (businessId: string, storeId?: string) => {
+  return useReport(businessId, 'customers', storeId);
+};
+
+// Hook for reporting inventory stats
+export const useReportingInventoryStats = (businessId: string, storeId?: string) => {
+  return useReport(businessId, 'inventory', storeId);
+};
+
+// Hook for reporting financial metrics
+export const useReportingFinancialMetrics = (businessId: string, storeId?: string, startDate?: string, endDate?: string) => {
+  return useReport(businessId, 'sales', storeId, startDate, endDate);
+};
+
+// Hook for reporting chart data
+export const useReportingChartData = (businessId: string, reportType: string, storeId?: string, startDate?: string, endDate?: string) => {
+  return useReport(businessId, reportType, storeId, startDate, endDate);
+};
+
+// ======================
+// RESTOCK MANAGEMENT HOOKS
+// ======================
+
+// Hook for fetching restock orders
+export const useRestockOrders = (storeId: string, options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['restock-orders', storeId],
+    queryFn: async () => {
+      const response = await fetch(`/api/restock-orders?store_id=${storeId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch restock orders');
+      }
+      const data = await response.json();
+      return data.orders || [];
+    },
+    enabled: enabled && !!storeId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Hook for creating restock orders
+export const useCreateRestockOrder = (storeId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (orderData: {
+      supplier_id: string;
+      status: string;
+      total_amount: number;
+      notes?: string;
+      expected_delivery?: string;
+      items: Array<{
+        product_id: string;
+        quantity: number;
+        unit_cost: number;
+      }>;
+    }) => {
+      const response = await fetch(`/api/restock-orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...orderData,
+          store_id: storeId,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create restock order');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['restock-orders', storeId] });
+      toast.success('Restock order created successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to create restock order: ${error.message}`);
+    },
+  });
+};
+
+// Hook for updating restock order status
+export const useUpdateRestockOrderStatus = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ orderId, status, quantityReceived }: { 
+      orderId: string; 
+      status: string; 
+      quantityReceived?: number; 
+    }) => {
+      const response = await fetch(`/api/restock-orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status, quantityReceived }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update restock order status');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate restock orders for the store
+      queryClient.invalidateQueries({ queryKey: ['restock-orders'] });
+      toast.success('Restock order status updated successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to update restock order status: ${error.message}`);
+    },
+  });
+};
+
+// Hook for receiving restock items
+export const useReceiveRestockItems = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ orderId, receivedItems }: { 
+      orderId: string; 
+      receivedItems: Array<{
+        product_id: string;
+        received_quantity: number;
+      }>; 
+    }) => {
+      const response = await fetch(`/api/restock-orders/${orderId}/receive`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ receivedItems }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to receive restock items');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate restock orders and product inventory
+      queryClient.invalidateQueries({ queryKey: ['restock-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['store-products'] });
+      toast.success('Restock items received successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to receive restock items: ${error.message}`);
+    },
+  });
+};
+
+// Hook for fetching business products with low stock
+export const useBusinessProductsWithLowStock = (businessId: string, options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['business-products-low-stock', businessId],
+    queryFn: async () => {
+      const response = await fetch(`/api/products/low-stock?business_id=${businessId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch low stock products');
+      }
+      const data = await response.json();
+      return data.products || [];
+    },
+    enabled: enabled && !!businessId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Hook for fetching activity logs
+export const useActivityLogs = (businessId: string, options?: {
+  storeId?: string;
+  userId?: string;
+  module?: string;
+  action?: string;
+  startDate?: Date;
+  endDate?: Date;
+  enabled?: boolean;
+}) => {
+  const { storeId, userId, module, action, startDate, endDate, enabled = true } = options || {};
+  
+  return useQuery({
+    queryKey: ['activity-logs', businessId, storeId, userId, module, action, startDate, endDate],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.append('business_id', businessId);
+      
+      if (storeId) params.append('store_id', storeId);
+      if (userId) params.append('user_id', userId);
+      if (module && module !== 'All') params.append('module', module);
+      if (action && action !== 'All') params.append('action', action);
+      if (startDate) params.append('start_date', startDate.toISOString());
+      if (endDate) params.append('end_date', endDate.toISOString());
+      
+      const response = await fetch(`/api/activity-logs?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch activity logs');
+      }
+      const data = await response.json();
+      return data.logs || [];
+    },
+    enabled: enabled && !!businessId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+// Hook for clearing activity logs
+export const useClearActivityLogs = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ businessId, storeId }: { businessId: string; storeId?: string }) => {
+      const params = new URLSearchParams();
+      params.append('business_id', businessId);
+      if (storeId) params.append('store_id', storeId);
+      
+      const response = await fetch(`/api/activity-logs?${params.toString()}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to clear activity logs');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate all activity logs queries
+      queryClient.invalidateQueries({ queryKey: ['activity-logs'] });
+      toast.success('Activity logs cleared successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+};
+
+// Hook for fetching business dashboard stats
+export const useBusinessDashboardStats = (businessId: string, options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['business-dashboard-stats', businessId],
+    queryFn: async () => {
+      const response = await fetch(`/api/dashboard/stats?business_id=${businessId}&type=business`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch business dashboard stats');
+      }
+      const data = await response.json();
+      return data.stats || data;
+    },
+    enabled: enabled && !!businessId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};

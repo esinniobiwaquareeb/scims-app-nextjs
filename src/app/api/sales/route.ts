@@ -1,0 +1,260 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase/config';
+
+// GET - Fetch sales with filters
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    
+    // Extract filter parameters
+    const store_id = searchParams.get('store_id');
+    const business_id = searchParams.get('business_id');
+    const cashier_id = searchParams.get('cashier_id');
+    const customer_id = searchParams.get('customer_id');
+    const status = searchParams.get('status');
+    const start_date = searchParams.get('start_date');
+    const end_date = searchParams.get('end_date');
+    const limit = parseInt(searchParams.get('limit') || '100');
+    const offset = parseInt(searchParams.get('offset') || '0');
+
+    let query = supabase
+      .from('sale')
+      .select(`
+        *,
+        sale_item(
+          *,
+          product(
+            id,
+            name,
+            sku,
+            barcode,
+            description,
+            price,
+            image_url
+          )
+        ),
+        customer:customer_id(
+          id,
+          name,
+          phone,
+          email
+        ),
+        cashier:user(
+          id,
+          name,
+          username
+        ),
+        store:store_id(
+          id,
+          name
+        )
+      `)
+      .order('transaction_date', { ascending: false });
+
+    // Apply filters
+    if (store_id) query = query.eq('store_id', store_id);
+    if (business_id) {
+      // If business_id is provided, we need to filter by stores in that business
+      const { data: stores, error: storesError } = await supabase
+        .from('store')
+        .select('id')
+        .eq('business_id', business_id)
+        .eq('is_active', true);
+      
+      if (storesError) throw storesError;
+      
+      if (stores && stores.length > 0) {
+        const storeIds = stores.map(store => store.id);
+        query = query.in('store_id', storeIds);
+      } else {
+        // No stores found for this business, return empty result
+        return NextResponse.json({
+          success: true,
+          sales: [],
+          pagination: { limit, offset, total: 0 }
+        });
+      }
+    }
+    if (cashier_id) query = query.eq('cashier_id', cashier_id);
+    if (customer_id) query = query.eq('customer_id', customer_id);
+    if (status) query = query.eq('status', status);
+    if (start_date) query = query.gte('transaction_date', start_date);
+    if (end_date) query = query.lte('transaction_date', end_date);
+    
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1);
+
+    const { data: sales, error } = await query;
+    
+    if (error) throw error;
+
+    // Transform the data to match the expected structure
+    const transformedSales = (sales || []).map(sale => ({
+      ...sale,
+      sale_items: sale.sale_item?.map((item: {
+        id: string;
+        product: {
+          id: string;
+          name: string;
+          price: number;
+          sku?: string;
+          [key: string]: unknown;
+        };
+        [key: string]: unknown;
+      }) => ({
+        ...item,
+        products: item.product, // Map product to products to match component expectations
+        product: item.product // Keep original for backward compatibility
+      })) || []
+    }));
+
+    return NextResponse.json({
+      success: true,
+      sales: transformedSales,
+      pagination: {
+        limit,
+        offset,
+        total: transformedSales.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching sales:', error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to fetch sales' 
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// POST - Process a new sale
+export async function POST(request: NextRequest) {
+  try {
+    const saleData = await request.json();
+
+    // Generate a unique receipt number if not provided
+    const receiptNumber = saleData.saleNumber || `RCP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Create transaction date in local timezone (not UTC)
+    const now = new Date();
+    const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+    
+    const { data: sale, error } = await supabase
+      .from('sale')
+      .insert({
+        store_id: saleData.store_id,
+        cashier_id: saleData.cashier_id,
+        customer_id: saleData.customer_id,
+        receipt_number: receiptNumber,
+        subtotal: saleData.subtotal,
+        tax_amount: saleData.tax_amount,
+        discount_amount: saleData.discount_amount || 0,
+        total_amount: saleData.total_amount,
+        payment_method: saleData.payment_method || 'mixed',
+        cash_received: saleData.cash_received || null,
+        change_given: saleData.change_given || null,
+        status: 'completed',
+        notes: saleData.notes,
+        transaction_date: localDate.toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error inserting sale:', error);
+      throw error;
+    }
+
+    // Insert sale items
+    if (saleData.items?.length) {
+      const saleItems = saleData.items.map((item: {
+        product_id: string;
+        quantity: number;
+        unit_price: number;
+        total_price: number;
+        discount_amount?: number;
+        [key: string]: unknown;
+      }) => ({
+        sale_id: sale.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: item.total_price,
+        discount_amount: item.discount_amount || 0
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('sale_item')
+        .insert(saleItems);
+
+      if (itemsError) {
+        console.error('Error inserting sale items:', itemsError);
+        throw itemsError;
+      }
+
+      // Update product stock for each item
+      for (const item of saleData.items) {
+        try {
+          // Get current stock
+          const { data: product, error: productError } = await supabase
+            .from('product')
+            .select('stock_quantity')
+            .eq('id', item.product_id)
+            .single();
+
+          if (productError) throw productError;
+
+          const newStock = (product.stock_quantity || 0) - item.quantity;
+          
+          // Update stock
+          const { error: stockUpdateError } = await supabase
+            .from('product')
+            .update({ stock_quantity: newStock })
+            .eq('id', item.product_id);
+
+          if (stockUpdateError) throw stockUpdateError;
+        } catch (stockError) {
+          console.error('Error updating stock for product:', item.product_id, stockError);
+          // Continue with other products even if one fails
+        }
+      }
+    }
+
+    // Handle multiple payment methods if provided
+    if (saleData.paymentMethods && Array.isArray(saleData.paymentMethods)) {
+      for (const payment of saleData.paymentMethods) {
+        try {
+          await supabase
+            .from('payment_method')
+            .insert({
+              sale_id: sale.id,
+              method: payment.method,
+              amount: payment.amount
+            });
+        } catch (paymentError) {
+          console.error('Error adding payment method:', paymentError);
+          // Continue with other payment methods even if one fails
+        }
+      }
+    }
+
+    // Return the format expected by POS component
+    return NextResponse.json({
+      success: true,
+      sale: sale
+    });
+
+  } catch (error) {
+    console.error('Error processing sale:', error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to process sale' 
+      },
+      { status: 500 }
+    );
+  }
+}

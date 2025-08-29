@@ -1,0 +1,563 @@
+/* Dark Mode Styles for SCIMS Application */
+
+/* Base dark mode overrides */
+.dark {
+  /* Background colors */
+  --background: #0f0f23;
+  --foreground: #ffffff;
+  
+  /* Card colors */
+  --card: #1a1a2e;
+  --card-foreground: #ffffff;
+  
+  /* Border colors */
+  --border: #2d2d44;
+  --input: #2d2d44;
+  
+  /* Text colors */
+  --muted-foreground: #a1a1aa;
+  
+  /* Primary colors */
+  --primary: #a969a7;
+  --primary-foreground: #ffffff;
+  
+  /* Secondary colors */
+  --secondary: #2d2d44;
+  --secondary-foreground: #ffffff;
+  
+  /* Accent colors */
+  --accent: #2d2d44;
+  --accent-foreground: #ffffff;
+  
+  /* Destructive colors */
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  
+  /* Popover colors */
+  --popover: #1a1a2e;
+  --popover-foreground: #ffffff;
+  
+  /* Ring colors */
+  --ring: #5d5d74;
+  
+  /* Additional variables for tabs */
+  --muted: #2d2d44;
+  --ring: #5d5d74;
+}
+
+/* Dark mode specific component styles */
+.dark .bg-background {
+  background-color: var(--background);
+}
+
+.dark .bg-card {
+  background-color: var(--card);
+}
+
+.dark .bg-muted {
+  background-color: var(--muted);
+}
+
+.dark .text-foreground {
+  color: var(--foreground);
+}
+
+.dark .text-muted-foreground {
+  color: var(--muted-foreground);
+}
+
+.dark .border-border {
+  border-color: var(--border);
+}
+
+/* Dark mode for specific components */
+.dark .bg-gray-50 {
+  background-color: #1a1a2e;
+}
+
+.dark .bg-gray-100 {
+  background-color: #2d2d44;
+}
+
+.dark .bg-gray-200 {
+  background-color: #3d3d54;
+}
+
+.dark .text-gray-600 {
+  color: #a1a1aa;
+}
+
+.dark .text-gray-700 {
+  color: #d1d1da;
+}
+
+.dark .text-gray-800 {
+  color: #e1e1ea;
+}
+
+.dark .text-gray-900 {
+  color: #f1f1fa;
+}
+
+/* Dark mode for cards and panels */
+.dark .bg-white {
+  background-color: var(--card);
+}
+
+/* Dark mode for tabs */
+.dark .bg-muted {
+  background-color: #2d2d44;
+}
+
+.dark [data-slot="tabs-list"] {
+  background-color: #2d2d44;
+  border: 1px solid #3d3d54;
+}
+
+.dark [data-slot="tabs-trigger"] {
+  color: #a1a1aa;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.dark [data-slot="tabs-trigger"]:hover {
+  color: #ffffff;
+  background-color: #3d3d54;
+}
+
+.dark [data-slot="tabs-trigger"][data-state="active"] {
+  background-color: #4d4d64;
+  color: #ffffff;
+  border-color: #5d5d74;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.dark [data-slot="tabs-trigger"][data-state="inactive"] {
+  background-color: transparent;
+  color: #a1a1aa;
+}
+
+.dark [data-slot="tabs-trigger"]:focus-visible {
+  outline: 2px solid #5d5d74;
+  outline-offset: 2px;
+}
+
+/* Alternative tab styling for better visibility */
+.dark .tabs-list {
+  background-color: #2d2d44;
+  border: 1px solid #3d3d54;
+  border-radius: 0.75rem;
+  padding: 3px;
+}
+
+.dark .tabs-trigger {
+  color: #a1a1aa;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.dark .tabs-trigger:hover {
+  color: #ffffff;
+  background-color: #3d3d54;
+}
+
+.dark .tabs-trigger[data-state="active"] {
+  background-color: #4d4d64;
+  color: #ffffff;
+  border-color: #5d5d74;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dark .tabs-trigger[data-state="inactive"] {
+  background-color: transparent;
+  color: #a1a1aa;
+}
+
+/* Additional tab utilities for better dark mode support */
+.dark .bg-muted\/50 {
+  background-color: rgba(45, 45, 68, 0.5);
+}
+
+.dark .border-muted {
+  border-color: #2d2d44;
+}
+
+.dark .text-muted {
+  color: #a1a1aa;
+}
+
+.dark .hover\:bg-muted:hover {
+  background-color: #3d3d54;
+}
+
+.dark .hover\:text-foreground:hover {
+  color: #ffffff;
+}
+
+/* Ensure tab content is properly styled in dark mode */
+.dark [data-slot="tabs-content"] {
+  color: var(--foreground);
+}
+
+.dark [data-slot="tabs-content"] h1,
+.dark [data-slot="tabs-content"] h2,
+.dark [data-slot="tabs-content"] h3,
+.dark [data-slot="tabs-content"] h4,
+.dark [data-slot="tabs-content"] h5,
+.dark [data-slot="tabs-content"] h6 {
+  color: var(--foreground);
+}
+
+.dark [data-slot="tabs-content"] p {
+  color: var(--muted-foreground);
+}
+
+.dark .bg-blue-50 {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.dark .bg-green-50 {
+  background-color: rgba(34, 197, 94, 0.1);
+}
+
+.dark .bg-purple-50 {
+  background-color: rgba(147, 51, 234, 0.1);
+}
+
+.dark .bg-yellow-50 {
+  background-color: rgba(234, 179, 8, 0.1);
+}
+
+.dark .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Dark mode for buttons */
+.dark .btn-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.dark .btn-secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+/* Dark mode for form elements */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: var(--input);
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px rgba(169, 105, 167, 0.2);
+}
+
+/* Dark mode for tables */
+.dark .table {
+  background-color: var(--card);
+}
+
+.dark .table th {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+.dark .table td {
+  border-color: var(--border);
+}
+
+.dark .table tr:hover {
+  background-color: var(--accent);
+}
+
+/* Dark mode for modals and dialogs */
+.dark .modal,
+.dark .dialog {
+  background-color: var(--card);
+  border-color: var(--border);
+}
+
+.dark .modal-header,
+.dark .dialog-header {
+  border-bottom-color: var(--border);
+}
+
+/* Dark mode for navigation */
+.dark .nav-item {
+  color: var(--foreground);
+}
+
+.dark .nav-item:hover {
+  background-color: var(--accent);
+}
+
+.dark .nav-item.active {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* Dark mode for badges */
+.dark .badge {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.dark .badge-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.dark .badge-secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.dark .badge-destructive {
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
+}
+
+/* Dark mode for shadows */
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+.dark .shadow {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.dark .shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+}
+
+.dark .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+}
+
+.dark .shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+}
+
+/* Dark mode for scrollbars */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* Dark mode for code blocks */
+.dark code {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+.dark pre {
+  background-color: var(--muted);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+/* Dark mode for tooltips */
+.dark .tooltip {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  border-color: var(--border);
+}
+
+/* Dark mode for dropdowns */
+.dark .dropdown-menu {
+  background-color: var(--popover);
+  border-color: var(--border);
+}
+
+.dark .dropdown-item {
+  color: var(--popover-foreground);
+}
+
+.dark .dropdown-item:hover {
+  background-color: var(--accent);
+}
+
+/* Dark mode for alerts */
+.dark .alert-info {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+}
+
+.dark .alert-success {
+  background-color: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+}
+
+.dark .alert-warning {
+  background-color: rgba(234, 179, 8, 0.1);
+  border-color: rgba(234, 179, 8, 0.3);
+  color: #fbbf24;
+}
+
+.dark .alert-error {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+/* Dark mode for charts and graphs */
+.dark .chart-container {
+  background-color: var(--card);
+  border-color: var(--border);
+}
+
+.dark .chart-axis {
+  color: var(--muted-foreground);
+}
+
+.dark .chart-grid {
+  color: var(--border);
+}
+
+/* Dark mode for data tables */
+.dark .data-table {
+  background-color: var(--card);
+}
+
+.dark .data-table-header {
+  background-color: var(--muted);
+  border-color: var(--border);
+}
+
+.dark .data-table-row:hover {
+  background-color: var(--accent);
+}
+
+.dark .data-table-cell {
+  border-color: var(--border);
+}
+
+/* Dark mode for pagination */
+.dark .pagination {
+  background-color: var(--card);
+}
+
+.dark .pagination-item {
+  color: var(--foreground);
+}
+
+.dark .pagination-item:hover {
+  background-color: var(--accent);
+}
+
+.dark .pagination-item.active {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* Dark mode for search inputs */
+.dark .search-input {
+  background-color: var(--input);
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+.dark .search-input:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px rgba(169, 105, 167, 0.2);
+}
+
+/* Dark mode for filters */
+.dark .filter-panel {
+  background-color: var(--card);
+  border-color: var(--border);
+}
+
+.dark .filter-item {
+  color: var(--foreground);
+}
+
+.dark .filter-item:hover {
+  background-color: var(--accent);
+}
+
+/* Dark mode for status indicators */
+.dark .status-online {
+  background-color: #10b981;
+  color: #ffffff;
+}
+
+.dark .status-offline {
+  background-color: #6b7280;
+  color: #ffffff;
+}
+
+.dark .status-error {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.dark .status-warning {
+  background-color: #f59e0b;
+  color: #ffffff;
+}
+
+/* Dark mode for progress bars */
+.dark .progress-bar {
+  background-color: var(--muted);
+}
+
+.dark .progress-fill {
+  background-color: var(--primary);
+}
+
+/* Dark mode for loading spinners */
+.dark .spinner {
+  border-color: var(--muted);
+  border-top-color: var(--primary);
+}
+
+/* Dark mode for empty states */
+.dark .empty-state {
+  color: var(--muted-foreground);
+}
+
+.dark .empty-state-icon {
+  color: var(--muted-foreground);
+}
+
+/* Dark mode for dividers */
+.dark .divider {
+  background-color: var(--border);
+}
+
+/* Dark mode for focus rings */
+.dark .focus-ring {
+  box-shadow: 0 0 0 2px rgba(169, 105, 167, 0.2);
+}
+
+/* Dark mode for transitions */
+.dark * {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}

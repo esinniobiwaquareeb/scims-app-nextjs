@@ -1,0 +1,1351 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useCallback, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSystem } from '@/contexts/SystemContext';
+import { Header } from '@/components/common/Header';
+import { DataTable } from '@/components/common/DataTable';
+import { Button } from '@/components/ui/button';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Textarea } from '@/components/ui/textarea';
+import { ImageUpload } from '@/components/common/ImageUpload';
+
+import { toast } from 'sonner';
+import { 
+  Plus, 
+  Edit, 
+  Trash2,
+  Package,
+  AlertTriangle,
+  Loader2,
+  Download,
+  RefreshCw,
+  X,
+  Copy,
+  ArrowLeft
+} from 'lucide-react';
+import { 
+
+  useBusinessCategories, 
+  useBusinessSuppliers, 
+  useBusinessBrands,
+  useCreateProduct,
+  useUpdateProduct,
+  useDeleteProduct,
+  useStoreProducts
+} from '@/utils/hooks/useStoreData';
+import { ProductType } from '@/types';
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  cost: number;
+  sku: string;
+  barcode?: string;
+  description?: string;
+  stock_quantity: number;
+  min_stock_level: number;
+  category_id?: string | null;
+  supplier_id?: string | null;
+  brand_id?: string | null;
+  image_url?: string;
+  category?: { id: string; name: string };
+  supplier?: { id: string; name: string };
+  brand?: { id: string; name: string };
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  reorder_level?: number;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  color?: string;
+  is_active: boolean;
+}
+
+interface Supplier {
+  id: string;
+  name: string;
+  contact_person?: string;
+  is_active: boolean;
+}
+
+interface Brand {
+  id: string;
+  name: string;
+  description?: string;
+  is_active: boolean;
+}
+
+interface ProductManagementProps {
+  onBack: () => void;
+  onNavigate: (view: string) => void;
+}
+
+export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, onNavigate }) => {
+  const { user, currentStore, currentBusiness } = useAuth();
+  const { translate, formatCurrency } = useSystem();
+  
+  // Simple permission check - replace with proper permission system later
+  const hasPermission = (permission: string) => {
+    if (user?.role === 'superadmin') return true;
+    if (user?.role === 'business_admin') return true;
+    if (user?.role === 'store_admin') return true;
+    return false;
+  };
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  
+  // Data states
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+
+
+  const [newProduct, setNewProduct] = useState<Partial<Product>>({
+    name: '',
+    price: 0,
+    cost: 0,
+    sku: '',
+    barcode: '',
+    description: '',
+    stock_quantity: 0,
+    min_stock_level: 0,
+    category_id: null,
+    supplier_id: null,
+    brand_id: null,
+    image_url: '',
+    reorder_level: 0
+  });
+
+  // Image upload state
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [editingImageFile, setEditingImageFile] = useState<File | null>(null);
+  const [editingImagePreview, setEditingImagePreview] = useState<string | null>(null);
+
+
+
+  const resetNewProductForm = useCallback(() => {
+    setNewProduct({
+      name: '',
+      price: 0,
+      cost: 0,
+      sku: '',
+      barcode: '',
+      description: '',
+      stock_quantity: 0,
+      min_stock_level: 0,
+      category_id: null,
+      supplier_id: null,
+      brand_id: null,
+      image_url: '',
+      reorder_level: 0
+    });
+    setSelectedImageFile(null);
+    setImagePreview(null);
+  }, []);
+
+  // Image upload function
+  const uploadImage = useCallback(async (file: File): Promise<string | null> => {
+    if (!file || !currentStore?.id) return null;
+
+    try {
+      // TODO: Implement image upload API endpoint
+      // For now, return a placeholder URL
+      toast.info('Image upload not yet implemented - using placeholder');
+      return `https://via.placeholder.com/300x300?text=${encodeURIComponent(file.name)}`;
+    } catch (error) {
+      console.error('Image upload error:', error);
+      toast.error('Failed to upload image. Please try again.');
+      return null;
+    }
+  }, [currentStore?.id]);
+
+  // Use React Query hooks for data fetching with smart caching
+  const {
+    data: products = [],
+    isLoading: productsLoading,
+    error: productsError,
+    refetch: refetchProducts
+  } = useStoreProducts(currentStore?.id || '', { enabled: !!currentStore?.id });
+
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading
+  } = useBusinessCategories(currentBusiness?.id || '', { enabled: !!currentBusiness?.id });
+
+  const {
+    data: suppliers = [],
+    isLoading: suppliersLoading
+  } = useBusinessSuppliers(currentBusiness?.id || '', { enabled: !!currentBusiness?.id });
+
+  const {
+    data: brands = [],
+    isLoading: brandsLoading
+  } = useBusinessBrands(currentBusiness?.id || '', { enabled: !!currentBusiness?.id });
+
+  // Use mutations for CRUD operations
+  const createProductMutation = useCreateProduct(currentStore?.id || '');
+  const updateProductMutation = useUpdateProduct(currentStore?.id || '');
+  const deleteProductMutation = useDeleteProduct(currentStore?.id || '');
+
+  // Combined loading state
+  const isLoading = productsLoading || categoriesLoading || suppliersLoading || brandsLoading;
+  
+  // Combined mutation loading state
+  const isMutating = createProductMutation.isPending || updateProductMutation.isPending || deleteProductMutation.isPending;
+
+  // Refetch loading state
+  const [isRefetching, setIsRefetching] = useState(false);
+
+  // Clear editing state when editingProduct changes
+  useEffect(() => {
+    if (editingProduct) {
+      // Clear any previous editing state when switching to a new product
+      setEditingImageFile(null);
+      setEditingImagePreview(null);
+      setError(null);
+    }
+  }, [editingProduct?.id]); // Only trigger when the product ID changes
+
+  // Clear editing state when edit dialog closes
+  useEffect(() => {
+    if (!editingProduct) {
+      // Clear all editing state when dialog closes
+      setEditingImageFile(null);
+      setEditingImagePreview(null);
+      setError(null);
+    }
+  }, [editingProduct]);
+
+  // Clear success states after a few seconds
+  useEffect(() => {
+    if (createProductMutation.isSuccess || updateProductMutation.isSuccess || deleteProductMutation.isSuccess) {
+      const timer = setTimeout(() => {
+        // Reset success states
+        createProductMutation.reset();
+        updateProductMutation.reset();
+        deleteProductMutation.reset();
+      }, 3000); // Clear after 3 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [createProductMutation.isSuccess, updateProductMutation.isSuccess, deleteProductMutation.isSuccess, createProductMutation, updateProductMutation, deleteProductMutation]);
+
+  const allCategories = ['All', ...categories.filter((c: Category) => c.is_active).map((c: Category) => c.name)];
+
+  const filteredProducts = products.filter((product: Product) => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (product.barcode && product.barcode.includes(searchTerm)) ||
+                         (product.supplier?.name && product.supplier.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (product.supplier_id && suppliers.find((s: Supplier) => s.id === product.supplier_id)?.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCategory = selectedCategory === 'All' || 
+                           product.category?.name === selectedCategory ||
+                           (product.category_id && categories.find((c: Category) => c.id === product.category_id)?.name === selectedCategory);
+    const isActive = product.is_active;
+    return matchesSearch && matchesCategory && isActive;
+  });
+
+  const lowStockProducts = products.filter((p: Product) => p.stock_quantity <= (p.reorder_level || p.min_stock_level || 10) && p.is_active);
+
+  const handleAddProduct = async () => {
+    if (!newProduct.name || !currentStore?.id) return;
+
+    try {
+      setIsSaving(true);
+      setError(null);
+
+      let imageUrl = newProduct.image_url || '';
+
+      // Upload image if a new file is selected
+      if (selectedImageFile) {
+        const uploadedUrl = await uploadImage(selectedImageFile);
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        } else {
+          // If image upload fails, don't proceed with product creation
+          setError('Failed to upload image. Please try again.');
+          return;
+        }
+      }
+
+      // Filter out join fields that don't exist in the database
+      const {
+        category,
+        supplier,
+        brand,
+        ...insertFields
+      } = newProduct;
+
+      // Convert empty strings to null for UUID fields to prevent database errors
+      const cleanedInsertFields = {
+        ...insertFields,
+        category_id: insertFields.category_id || null,
+        supplier_id: insertFields.supplier_id || null,
+        brand_id: insertFields.brand_id || null,
+      };
+
+      const productData = {
+        ...cleanedInsertFields,
+        image_url: imageUrl,
+        store_id: currentStore.id,
+        is_active: true
+
+      };
+
+      // Use the mutation hook - this will automatically invalidate cache on success
+      await createProductMutation.mutateAsync(productData as any);
+      
+      // Close dialog and reset form on success
+      setIsAddDialogOpen(false);
+      resetNewProductForm();
+      
+      // Force immediate refetch to ensure UI is updated
+      setIsRefetching(true);
+      try {
+        await refetchProducts();
+      } finally {
+        setIsRefetching(false);
+      }
+      
+      toast.success('Product created successfully!');
+    } catch (error: unknown) {
+      console.error('Error creating product:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create product';
+      setError(errorMessage);
+      // Don't close dialog on error - let user fix and retry
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditProduct = useCallback(async () => {
+    if (!editingProduct || !currentStore?.id) return;
+
+    try {
+      setIsSaving(true);
+      setError(null);
+
+      let imageUrl = editingProduct.image_url || '';
+
+      // Upload image if a new file is selected
+      if (editingImageFile) {
+        const uploadedUrl = await uploadImage(editingImageFile);
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        } else {
+          // If image upload fails, don't proceed with product update
+          setError('Failed to upload image. Please try again.');
+          return;
+        }
+      }
+
+      // Filter out join fields that don't exist in the database
+      const {
+        category,
+        supplier,
+        brand,
+        ...updateFields
+      } = editingProduct;
+
+      // Convert empty strings to null for UUID fields to prevent database errors
+      const cleanedUpdateFields = {
+        ...updateFields,
+        category_id: updateFields.category_id || null,
+        supplier_id: updateFields.supplier_id || null,
+        brand_id: updateFields.brand_id || null,
+      };
+
+      // Only include fields that exist in the database table
+      const productData = {
+        name: cleanedUpdateFields.name,
+        price: cleanedUpdateFields.price,
+        sku: cleanedUpdateFields.sku,
+        barcode: cleanedUpdateFields.barcode,
+        description: cleanedUpdateFields.description,
+        stock_quantity: cleanedUpdateFields.stock_quantity,
+        min_stock_level: cleanedUpdateFields.min_stock_level,
+        category_id: cleanedUpdateFields.category_id,
+        supplier_id: cleanedUpdateFields.supplier_id,
+        brand_id: cleanedUpdateFields.brand_id,
+        image_url: imageUrl,
+        is_active: cleanedUpdateFields.is_active
+      };
+
+      // Use the mutation hook - this will automatically invalidate cache on success
+      await updateProductMutation.mutateAsync({
+        productId: editingProduct.id,
+        productData: productData as any
+      });
+      
+      // Close dialog and reset state on success
+      setEditingProduct(null);
+      setEditingImageFile(null);
+      setEditingImagePreview(null);
+      
+      // Force immediate refetch to ensure UI is updated
+      setIsRefetching(true);
+      try {
+        await refetchProducts();
+      } finally {
+        setIsRefetching(false);
+      }
+      
+      toast.success('Product updated successfully!');
+    } catch (error: unknown) {
+      console.error('Error updating product:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update product';
+      setError(errorMessage);
+      // Don't close dialog on error - let user fix and retry
+    } finally {
+      setIsSaving(false);
+    }
+  }, [editingProduct, currentStore?.id, editingImageFile, uploadImage, updateProductMutation, refetchProducts]);
+
+  const handleDeleteProduct = useCallback(async (id: string) => {
+    if (!currentStore?.id) return;
+
+    try {
+      setIsSaving(true);
+      setError(null);
+      
+      // Use the mutation hook - this will automatically invalidate cache on success
+      await deleteProductMutation.mutateAsync(id);
+      
+      // Force immediate refetch to ensure UI is updated
+      setIsRefetching(true);
+      try {
+        await refetchProducts();
+      } finally {
+        setIsRefetching(false);
+      }
+      
+      toast.success('Product deleted successfully!');
+    } catch (error: unknown) {
+      console.error('Error deleting product:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete product';
+      setError(errorMessage);
+      toast.error('Failed to delete product');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [currentStore, deleteProductMutation, refetchProducts]);
+
+  const handleCloneProduct = useCallback(async (product: Product) => {
+    if (!currentStore?.id) return;
+
+    try {
+      setIsSaving(true);
+      setError(null);
+
+      const timestamp = Date.now();
+      const uniqueSuffix = `_COPY_${timestamp}`;
+
+      const clonedProduct = {
+        name: `${product.name} (Copy)`,
+        price: product.price,
+        cost: product.cost || 0,
+        sku: `${product.sku}${uniqueSuffix}`,
+        barcode: product.barcode ? `${product.barcode}${uniqueSuffix}` : '',
+        description: product.description,
+        stock_quantity: product.stock_quantity,
+        min_stock_level: product.min_stock_level,
+        category_id: product.category_id,
+        supplier_id: product.supplier_id,
+        brand_id: product.brand_id,
+        image_url: product.image_url,
+        is_active: product.is_active,
+        reorder_level: product.reorder_level,
+      };
+
+      setNewProduct(clonedProduct);
+      setSelectedImageFile(null);
+      setImagePreview(null);
+
+      if (isAddDialogOpen) {
+        setIsAddDialogOpen(false);
+        setTimeout(() => {
+          setIsAddDialogOpen(true);
+        }, 100);
+      } else {
+        setIsAddDialogOpen(true);
+      }
+
+      toast.success('Product cloned successfully! You can now modify and save the cloned product.');
+    } catch (error: unknown) {
+      console.error('Error cloning product:', error);
+      setError(error instanceof Error ? error.message : 'Failed to clone product');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [currentStore?.id, isAddDialogOpen]);
+
+  const closeAddDialog = useCallback(() => {
+    setIsAddDialogOpen(false);
+    setError(null);
+    resetNewProductForm();
+  }, [resetNewProductForm]);
+
+  const closeEditDialog = useCallback(() => {
+    setEditingProduct(null);
+    setEditingImageFile(null);
+    setEditingImagePreview(null);
+    setError(null);
+  }, []);
+
+  const getStockStatus = (product: Product) => {
+    if (product.stock_quantity === 0) return { label: 'Out of Stock', variant: 'destructive' as const };
+    if (product.stock_quantity <= (product.reorder_level || product.min_stock_level || 10)) return { label: 'Low Stock', variant: 'secondary' as const };
+    return { label: 'In Stock', variant: 'default' as const };
+  };
+
+  // Export products to CSV
+  const exportProducts = useCallback((e?: React.MouseEvent) => {
+    // Prevent any default behavior
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    if (filteredProducts.length === 0) {
+      toast.error('No products to export');
+      return;
+    }
+
+    import('../utils/export-utils').then(({ exportProducts: exportProductsUtil }) => {
+      try {
+        exportProductsUtil(filteredProducts, {
+          storeName: currentStore?.name
+        });
+      } catch (error) {
+        console.error('Export error:', error);
+        toast.error('Failed to export products');
+      }
+    }).catch(error => {
+      console.error('Failed to load export utilities:', error);
+      toast.error('Export functionality not available');
+    });
+  }, [filteredProducts, currentStore?.name]);
+
+  const columns = [
+    {
+      key: 'product',
+      label: 'Product',
+      render: (product: Product) => (
+        <div>
+          <p className="font-medium">{product.name}</p>
+          <p className="text-sm text-muted-foreground">{product.sku}</p>
+          {product.barcode && (
+            <p className="text-xs text-muted-foreground">Barcode: {product.barcode}</p>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'image',
+      label: 'Image',
+      render: (product: Product) => (
+        <div className="w-16 h-16 rounded-lg overflow-hidden border bg-gray-100">
+          {product.image_url ? (
+            <img 
+              src={product.image_url} 
+              alt={product.name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                target.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+          ) : null}
+          <div className={`w-full h-full flex items-center justify-center text-gray-400 text-xs ${product.image_url ? 'hidden' : ''}`}>
+            <div className="w-6 h-6 bg-gray-200 rounded flex items-center justify-center">
+              <span className="text-xs text-gray-500">IMG</span>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      render: (product: Product) => {
+        return product.category?.name || 
+               (product.category_id && categories.find((c: Category) => c.id === product.category_id)?.name) ||
+               'No Category';
+      }
+    },
+    {
+      key: 'price',
+      label: 'Selling Price',
+      render: (product: Product) => formatCurrency(product.price)
+    },
+    {
+      key: 'cost',
+      label: 'Cost Price',
+      render: (product: Product) => formatCurrency(product.cost || 0)
+    },
+    {
+      key: 'stock',
+      label: 'Stock',
+      render: (product: Product) => (
+        <div>
+          <span className={product.stock_quantity <= (product.reorder_level || product.min_stock_level || 10) ? 'text-orange-600 font-semibold' : ''}>
+            {product.stock_quantity}
+          </span>
+          <span className="text-sm text-muted-foreground ml-1">
+            (min: {product.min_stock_level})
+          </span>
+        </div>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (product: Product) => {
+        const status = getStockStatus(product);
+        return <Badge variant={status.variant}>{status.label}</Badge>;
+      }
+    },
+    {
+      key: 'supplier',
+      label: 'Supplier',
+      render: (product: Product) => {
+        return product.supplier?.name || 
+               (product.supplier_id && suppliers.find((s: Supplier) => s.id === product.supplier_id)?.name) ||
+               'No Supplier';
+      }
+    },
+    {
+      key: 'brand',
+      label: 'Brand',
+      render: (product: Product) => {
+        return product.brand?.name || 
+               (product.brand_id && brands.find((b: Brand) => b.id === product.brand_id)?.name) ||
+               'No Brand';
+      }
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (product: Product) => (
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => {
+            // Clear any previous editing state first
+            setEditingImageFile(null);
+            setEditingImagePreview(null);
+            setError(null);
+            // Then set the new product to edit
+            setEditingProduct(product);
+          }} disabled={isSaving || !hasPermission('products_edit') || updateProductMutation.isPending || isMutating}>
+            <Edit className="w-3 h-3" />
+          </Button>
+          
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => handleCloneProduct(product)}
+            disabled={isSaving || !hasPermission('products_create') || isMutating}
+            className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 hover:bg-blue-50"
+            title={`Clone "${product.name}" to create a similar product`}
+          >
+            <Copy className="w-3 h-3 mr-1" />
+            Clone
+          </Button>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                size="sm" 
+                variant="destructive"
+                disabled={isSaving || !hasPermission('products_delete') || deleteProductMutation.isPending || isMutating}
+              >
+                <Trash2 className="w-3 h-3" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete &quot;{product.name}&quot;? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={() => handleDeleteProduct(product.id)}
+                  disabled={!hasPermission('products_delete') || deleteProductMutation.isPending || isMutating}
+                >
+                  Delete Product
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )
+    }
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header 
+        title="Product Management"
+        subtitle={currentStore ? `Managing inventory for ${currentStore.name}` : 'Manage inventory and product catalog'}
+        showBackButton
+        onBack={onBack}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <Button onClick={() => setIsAddDialogOpen(true)} disabled={hasPermission('products_create')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Product
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => refetchProducts()} 
+              disabled={productsLoading || isRefetching}
+              className="text-blue-600 border-blue-200 hover:bg-blue-50"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isRefetching ? 'animate-spin' : ''}`} />
+              {isRefetching ? 'Refreshing...' : 'Refresh'}
+            </Button>
+          </div>
+
+        </div>
+      </Header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Success Message */}
+        {!isMutating && !isRefetching && !error && (createProductMutation.isSuccess || updateProductMutation.isSuccess || deleteProductMutation.isSuccess) && (
+          <Card className="mb-6 border-green-200 bg-green-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <p className="text-green-800 text-sm">
+                  {createProductMutation.isSuccess && 'Product created successfully!'}
+                  {updateProductMutation.isSuccess && 'Product updated successfully!'}
+                  {deleteProductMutation.isSuccess && 'Product deleted successfully!'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Error Display */}
+        {(error || productsError) && (
+          <Card className="mb-6 border-red-200 bg-red-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-red-800 text-sm">{error || productsError?.message || 'An error occurred'}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    setError(null);
+                    refetchProducts();
+                  }}
+                  disabled={productsLoading}
+                >
+                  <RefreshCw className={`w-3 h-3 mr-2 ${productsLoading ? 'animate-spin' : ''}`} />
+                  Retry
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Mutation Status */}
+        {(isMutating || isRefetching) && (
+          <Card className="mb-6 border-blue-200 bg-blue-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                <p className="text-blue-800 text-sm">
+                  {createProductMutation.isPending && 'Creating product...'}
+                  {updateProductMutation.isPending && 'Updating product...'}
+                  {deleteProductMutation.isPending && 'Deleting product...'}
+                  {isRefetching && 'Refreshing data...'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Products</p>
+                  <p className="text-2xl font-semibold">{filteredProducts.length}</p>
+                </div>
+                <Package className="w-8 h-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Low Stock Items</p>
+                  <p className="text-2xl font-semibold text-orange-600">{lowStockProducts.length}</p>
+                </div>
+                <AlertTriangle className="w-8 h-8 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Stock Value</p>
+                  <p className="text-2xl font-semibold">
+                    {formatCurrency(filteredProducts.reduce((sum: number, p: Product) => sum + p.price * p.stock_quantity, 0))}
+                  </p>
+                </div>
+                <Package className="w-8 h-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Low Stock Alert */}
+        {lowStockProducts.length > 0 && (
+          <Card className="mb-6 border-orange-200 bg-orange-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-orange-700">
+                <AlertTriangle className="w-5 h-5" />
+                Low Stock Alert
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-orange-600 mb-3">
+                The following products are running low on stock:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {lowStockProducts.map((product: Product) => (
+                  <Badge key={product.id} variant="outline" className="text-orange-700 border-orange-300">
+                    {product.name} ({product.stock_quantity} left)
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="flex gap-4 items-center">
+              <div className="flex-1">
+                <Input
+                  placeholder="Search products, SKU, barcode, or supplier..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allCategories.map((category: string) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Products Table */}
+        <DataTable
+          title="Products"
+          data={filteredProducts}
+          columns={columns}
+          onExport={exportProducts}
+          emptyMessage="No products found"
+          tableName="products"
+          userRole={user?.role}
+        />
+
+        {/* Edit Product Dialog */}
+        <Dialog open={!!editingProduct} onOpenChange={() => setEditingProduct(null)}>
+          <DialogContent key={editingProduct?.id || 'no-product'} className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit Product</DialogTitle>
+              <DialogDescription>
+                Update the product details.
+              </DialogDescription>
+            </DialogHeader>
+            {editingProduct && (
+              <ScrollArea key={`edit-${editingProduct.id}`} className="max-h-[70vh] pr-4">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="edit-name">Product Name</Label>
+                      <Input
+                        id="edit-name"
+                        value={editingProduct.name}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                        placeholder="Enter product name"
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-price">Selling Price</Label>
+                      <Input
+                        id="edit-price"
+                        type="number"
+                        step="0.01"
+                        value={editingProduct.price}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="edit-sku">SKU</Label>
+                      <Input
+                        id="edit-sku"
+                        value={editingProduct.sku}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, sku: e.target.value })}
+                        placeholder="Enter SKU"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-cost">Cost Price</Label>
+                      <Input
+                        id="edit-cost"
+                        type="number"
+                        step="0.01"
+                        value={editingProduct.cost || 0}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, cost: parseFloat(e.target.value) || 0 })}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="edit-barcode">Barcode</Label>
+                      <Input
+                        id="edit-barcode"
+                        value={editingProduct.barcode || ''}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, barcode: e.target.value })}
+                        placeholder="Enter barcode"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-reorder">Reorder Level</Label>
+                      <Input
+                        id="edit-reorder"
+                        type="number"
+                        value={editingProduct.reorder_level || 0}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, reorder_level: parseInt(e.target.value) || 0 })}
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="edit-stock">Current Stock</Label>
+                      <Input
+                        id="edit-stock"
+                        type="number"
+                        value={editingProduct.stock_quantity}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, stock_quantity: parseInt(e.target.value) || 0 })}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-minStock">Min Stock</Label>
+                      <Input
+                        id="edit-minStock"
+                        type="number"
+                        value={editingProduct.min_stock_level}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, min_stock_level: parseInt(e.target.value) || 0 })}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-category">Category</Label>
+                      <Select 
+                        value={editingProduct.category_id || ''} 
+                        onValueChange={(value) => setEditingProduct({ ...editingProduct, category_id: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.filter((c: Category) => c.is_active).map((category: Category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="edit-supplier">Supplier</Label>
+                      <Select 
+                        value={editingProduct.supplier_id || ''} 
+                        onValueChange={(value) => setEditingProduct({ ...editingProduct, supplier_id: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select supplier" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {suppliers.filter((s: Supplier) => s.is_active).map((supplier: Supplier) => (
+                            <SelectItem key={supplier.id} value={supplier.id}>
+                              <div>
+                                <p className="font-medium">{supplier.name}</p>
+                                {supplier.contact_person && (
+                                  <p className="text-sm text-muted-foreground">{supplier.contact_person}</p>
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-brand">Brand</Label>
+                      <Select 
+                        value={editingProduct.brand_id || ''} 
+                        onValueChange={(value) => setEditingProduct({ ...editingProduct, brand_id: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select brand" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {brands.filter((b: Brand) => b.is_active).map((brand: Brand) => (
+                            <SelectItem key={brand.id} value={brand.id}>
+                              {brand.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="edit-description">Description</Label>
+                    <Textarea
+                      id="edit-description"
+                      value={editingProduct.description || ''}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                      placeholder="Enter product description"
+                      rows={3}
+                    />
+                  </div>
+
+                                  {/* Image Upload Section for Edit */}
+                <ImageUpload
+                  currentImageUrl={editingProduct.image_url}
+                  onImageChange={(file, imageUrl) => {
+                    setEditingImageFile(file);
+                    setEditingProduct({ ...editingProduct, image_url: imageUrl || undefined });
+                  }}
+                  disabled={isSaving || isMutating}
+                  placeholder="Upload product image"
+                />
+
+                  <div className="flex gap-2 justify-end pt-4 border-t">
+                    <Button variant="outline" onClick={closeEditDialog} disabled={isSaving || isMutating}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleEditProduct} disabled={isSaving || updateProductMutation.isPending || isMutating}>
+                      {isSaving || updateProductMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        'Save Product'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </ScrollArea>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Product Dialog */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                {newProduct.name && newProduct.name.includes('(Copy)') ? 'Clone Product' : 'Add New Product'}
+              </DialogTitle>
+              <DialogDescription>
+                {newProduct.name && newProduct.name.includes('(Copy)') 
+                  ? `Review and modify the cloned product details. Original: ${newProduct.name.replace(' (Copy)', '')}`
+                  : 'Enter the details for the new product.'
+                }
+              </DialogDescription>
+              {newProduct.name && newProduct.name.includes('(Copy)') && (
+                <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded border border-blue-200">
+                  <p className="font-medium text-blue-800 mb-1">Cloned Fields:</p>
+                  <div className="grid grid-cols-2 gap-1 text-xs">
+                    <span>• Selling Price: {formatCurrency(newProduct.price || 0)}</span>
+                    <span>• Cost Price: {formatCurrency(newProduct.cost || 0)}</span>
+                    <span>• Category: {categories.find((c: Category) => c.id === newProduct.category_id)?.name || 'None'}</span>
+                    <span>• Supplier: {suppliers.find((s: Supplier) => s.id === newProduct.supplier_id)?.name || 'None'}</span>
+                    <span>• Brand: {brands.find((b: Brand) => b.id === newProduct.brand_id)?.name || 'None'}</span>
+                  </div>
+                </div>
+              )}
+            </DialogHeader>
+            <ScrollArea className="max-h-[70vh] pr-4">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="add-name">Product Name</Label>
+                    <Input
+                      id="add-name"
+                      value={newProduct.name || ''}
+                      onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                      placeholder="Enter product name"
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="add-price">Selling Price</Label>
+                    <Input
+                      id="add-price"
+                      type="number"
+                      step="0.01"
+                      value={newProduct.price || 0}
+                      onChange={(e) => setNewProduct({ ...newProduct, price: parseFloat(e.target.value) || 0 })}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="add-sku">SKU</Label>
+                    <Input
+                      id="add-sku"
+                      value={newProduct.sku || ''}
+                      onChange={(e) => setNewProduct({ ...newProduct, sku: e.target.value })}
+                      placeholder="Enter SKU"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="add-cost">Cost Price</Label>
+                    <Input
+                      id="add-cost"
+                      type="number"
+                      step="0.01"
+                      value={newProduct.cost || 0}
+                      onChange={(e) => setNewProduct({ ...newProduct, cost: parseFloat(e.target.value) || 0 })}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="add-barcode">Barcode</Label>
+                    <Input
+                      id="add-barcode"
+                      value={newProduct.barcode || ''}
+                      onChange={(e) => setNewProduct({ ...newProduct, barcode: e.target.value })}
+                      placeholder="Enter barcode"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="add-reorder">Reorder Level</Label>
+                    <Input
+                      id="add-reorder"
+                      type="number"
+                      value={newProduct.reorder_level || 0}
+                      onChange={(e) => setNewProduct({ ...newProduct, reorder_level: parseInt(e.target.value) || 0 })}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="add-stock">Current Stock</Label>
+                    <Input
+                      id="add-stock"
+                      type="number"
+                      value={newProduct.stock_quantity || 0}
+                      onChange={(e) => setNewProduct({ ...newProduct, stock_quantity: parseInt(e.target.value) || 0 })}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="add-minStock">Min Stock</Label>
+                    <Input
+                      id="add-minStock"
+                      type="number"
+                      value={newProduct.min_stock_level || 0}
+                      onChange={(e) => setNewProduct({ ...newProduct, min_stock_level: parseInt(e.target.value) || 0 })}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="add-category">Category</Label>
+                    <Select 
+                      value={newProduct.category_id || ''} 
+                      onValueChange={(value) => setNewProduct({ ...newProduct, category_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.filter((c: Category) => c.is_active).map((category: Category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="add-supplier">Supplier</Label>
+                    <Select 
+                      value={newProduct.supplier_id || ''} 
+                      onValueChange={(value) => setNewProduct({ ...newProduct, supplier_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select supplier" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {suppliers.filter((s: Supplier) => s.is_active).map((supplier: Supplier) => (
+                          <SelectItem key={supplier.id} value={supplier.id}>
+                            <div>
+                              <p className="font-medium">{supplier.name}</p>
+                              {supplier.contact_person && (
+                                <p className="text-sm text-muted-foreground">{supplier.contact_person}</p>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="add-brand">Brand</Label>
+                    <Select 
+                      value={newProduct.brand_id || ''} 
+                      onValueChange={(value) => setNewProduct({ ...newProduct, brand_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select brand" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {brands.filter((b: Brand) => b.is_active).map((brand: Brand) => (
+                          <SelectItem key={brand.id} value={brand.id}>
+                            {brand.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="add-description">Description</Label>
+                  <Textarea
+                    id="add-description"
+                    value={newProduct.description || ''}
+                    onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                    placeholder="Enter product description"
+                    rows={3}
+                  />
+                </div>
+
+                {/* Image Upload Section for Add */}
+                <ImageUpload
+                  currentImageUrl={newProduct.image_url}
+                  onImageChange={(file, imageUrl) => {
+                    setSelectedImageFile(file);
+                    setNewProduct({ ...newProduct, image_url: imageUrl || undefined });
+                  }}
+                  disabled={isSaving || isMutating}
+                  placeholder="Upload product image"
+                />
+
+                <div className="flex gap-2 justify-end pt-4 border-t">
+                  {newProduct.name && newProduct.name.includes('(Copy)') && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        resetNewProductForm();
+                        toast.info('Form cleared. You can now enter new product details.');
+                      }} 
+                      disabled={isSaving || isMutating}
+                      className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                    >
+                      Clear Cloned Data
+                    </Button>
+                  )}
+                  <Button variant="outline" onClick={closeAddDialog} disabled={isSaving || isMutating}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddProduct} disabled={isSaving || !newProduct.name || createProductMutation.isPending || isMutating}>
+                    {isSaving || createProductMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                      ) : (
+                        'Save Product'
+                      )}
+                  </Button>
+                </div>
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+      </main>
+    </div>
+  );
+};
