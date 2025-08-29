@@ -972,7 +972,8 @@ export const useBusinessStaff = (businessId: string, p0: { enabled: boolean; }) 
       if (!response.ok) {
         throw new Error('Failed to fetch business staff');
       }
-      return response.json();
+      const result = await response.json();
+      return result.success ? result.staff : [];
     },
     enabled: !!businessId,
   });
@@ -987,7 +988,8 @@ export const useStoreStaff = (storeId: string, p0: { enabled: boolean; }) => {
       if (!response.ok) {
         throw new Error('Failed to fetch store staff');
       }
-      return response.json();
+      const result = await response.json();
+      return result.success ? result.staff : [];
     },
     enabled: !!storeId,
   });

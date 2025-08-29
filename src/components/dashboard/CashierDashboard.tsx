@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useSystem } from '@/contexts/SystemContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +16,7 @@ import { Header } from '@/components/common/Header';
 import { DataTable } from '@/components/common/DataTable';
 import { ImageWithFallback } from '@/components/common/ImageWithFallback';
 import { Sale, SalesStats, ActivityLog } from '@/types/dashboard';
-import { calculateSalesStats, formatCurrency, formatDateTime, formatTableDateTime } from '@/utils/dashboardUtils';
+import { calculateSalesStats, formatDateTime, formatTableDateTime } from '@/utils/dashboardUtils';
 import { 
   ShoppingCart, 
   BarChart3, 
@@ -161,6 +162,7 @@ const useActivityLogs = (userId: string) => {
 export const CashierDashboard: React.FC = () => {
   const { user, logout, currentStore } = useAuth();
   const router = useRouter();
+  const { formatCurrency } = useSystem();
 
   // State management
   const [currentTime, setCurrentTime] = useState(new Date());
