@@ -524,7 +524,7 @@ export const translate = (key: string, params?: Record<string, unknown>, locale:
   // Replace parameters
   if (params) {
     Object.keys(params).forEach(paramKey => {
-      translation = translation.replace(`{${paramKey}}`, params[paramKey]);
+      translation = translation.replace(`{${paramKey}}`, String(params[paramKey]));
     });
   }
 

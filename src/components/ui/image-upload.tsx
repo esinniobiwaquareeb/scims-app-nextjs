@@ -3,7 +3,7 @@ import { Button } from './button';
 import { Input } from './input';
 import { Label } from './label';
 import { Loader2, Upload, X, Image } from 'lucide-react';
-import { supabase } from '../../utils/supabase/direct-client';
+import { supabase } from '../../lib/supabase/config';
 import { toast } from 'sonner';
 
 interface ImageUploadProps {

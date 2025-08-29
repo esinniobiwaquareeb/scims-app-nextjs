@@ -31,6 +31,7 @@ export interface StoreSettings {
 export interface BusinessSettings {
   receipt_footer?: string;
   return_policy?: string;
+  [key: string]: unknown; // Allow additional properties
 }
 
 // Generate receipt HTML for 80mm thermal paper

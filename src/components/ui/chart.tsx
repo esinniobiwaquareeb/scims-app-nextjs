@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as RechartsPrimitive from "recharts@2.15.2";
+import * as RechartsPrimitive from "recharts";
 
 import { cn } from "./utils";
 
@@ -125,6 +125,19 @@ function ChartTooltipContent({
     indicator?: "line" | "dot" | "dashed";
     nameKey?: string;
     labelKey?: string;
+  } & {
+    active?: boolean;
+    payload?: Array<{
+      dataKey?: string;
+      name?: string;
+      value?: unknown;
+      payload?: Record<string, unknown>;
+      color?: string;
+      fill?: string;
+    }>;
+    label?: string;
+    labelFormatter?: (value: unknown, payload: unknown[]) => React.ReactNode;
+    formatter?: (value: unknown, name: string, entry: unknown, index: number, payload: unknown) => React.ReactNode;
   }) {
   const { config } = useChart();
 
@@ -182,11 +195,11 @@ function ChartTooltipContent({
         {payload.map((item, index) => {
           const key = `${nameKey || item.name || item.dataKey || "value"}`;
           const itemConfig = getPayloadConfigFromPayload(config, item, key);
-          const indicatorColor = color || item.payload.fill || item.color;
+          const indicatorColor = color || item.payload?.fill || item.color;
 
           return (
             <div
-              key={item.dataKey}
+              key={String(item.value || item.dataKey || item.name || 'item')}
               className={cn(
                 "[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5",
                 indicator === "dot" && "items-center",
@@ -232,11 +245,14 @@ function ChartTooltipContent({
                         {itemConfig?.label || item.name}
                       </span>
                     </div>
-                    {item.value && (
-                      <span className="text-foreground font-mono font-medium tabular-nums">
-                        {item.value.toLocaleString()}
-                      </span>
-                    )}
+                    {(() => {
+                      const value = item.value;
+                      return value && typeof value === 'number' ? (
+                        <span className="text-foreground font-mono font-medium tabular-nums">
+                          {value.toLocaleString()}
+                        </span>
+                      ) : null;
+                    })()}
                   </div>
                 </>
               )}
@@ -257,9 +273,15 @@ function ChartLegendContent({
   verticalAlign = "bottom",
   nameKey,
 }: React.ComponentProps<"div"> &
-  Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
+  Pick<RechartsPrimitive.LegendProps, "verticalAlign"> & {
     hideIcon?: boolean;
     nameKey?: string;
+    payload?: Array<{
+      dataKey?: string;
+      name?: string;
+      value?: unknown;
+      color?: string;
+    }>;
   }) {
   const { config } = useChart();
 
@@ -281,7 +303,7 @@ function ChartLegendContent({
 
         return (
           <div
-            key={item.value}
+            key={String(item.value || item.dataKey || item.name || 'item')}
             className={cn(
               "[&>svg]:text-muted-foreground flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3",
             )}
