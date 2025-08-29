@@ -194,12 +194,21 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const { data: currencies = [] } = useCurrencies();
 
   useEffect(() => {
-    // Update system settings with real data from database
-    setSystemSettings(prev => ({
-      ...prev,
-      supportedCurrencies: currencies,
-      supportedLanguages: languages
-    }));
+    // Only update if we have data and it's different from current state
+    if (languages.length > 0 || currencies.length > 0) {
+      setSystemSettings(prev => {
+        // Check if the data is actually different to prevent unnecessary updates
+        if (JSON.stringify(prev.supportedLanguages) !== JSON.stringify(languages) ||
+            JSON.stringify(prev.supportedCurrencies) !== JSON.stringify(currencies)) {
+          return {
+            ...prev,
+            supportedCurrencies: currencies,
+            supportedLanguages: languages
+          };
+        }
+        return prev;
+      });
+    }
   }, [languages, currencies]);
 
   // Load store settings with real data from database
@@ -209,10 +218,19 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   useEffect(() => {
     if (storeSettingsData) {
-      setCurrentStoreSettings(storeSettingsData);
+      setCurrentStoreSettings(prev => {
+        // Only update if data is actually different
+        if (JSON.stringify(prev) !== JSON.stringify(storeSettingsData)) {
+          return storeSettingsData;
+        }
+        return prev;
+      });
     }
-    setIsLoading(false);
-  }, [storeSettingsData]);
+    // Only set loading to false once we have data or if there's no store
+    if (storeSettingsData || !currentStore?.id) {
+      setIsLoading(false);
+    }
+  }, [storeSettingsData, currentStore?.id]);
 
   // Load business settings with real data from database
   const { data: businessSettingsData } = useBusinessSettings(currentBusiness?.id || '', {
@@ -221,7 +239,13 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   useEffect(() => {
     if (businessSettingsData) {
-      setCurrentBusinessSettings(businessSettingsData);
+      setCurrentBusinessSettings(prev => {
+        // Only update if data is actually different
+        if (JSON.stringify(prev) !== JSON.stringify(businessSettingsData)) {
+          return businessSettingsData;
+        }
+        return prev;
+      });
     }
   }, [businessSettingsData]);
 

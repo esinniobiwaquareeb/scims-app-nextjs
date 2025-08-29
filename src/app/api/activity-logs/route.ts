@@ -80,20 +80,36 @@ export async function GET(request: NextRequest) {
       business: { name: string } | null;
       store: { name: string } | null;
       ip_address?: string;
-    }) => ({
-      id: log.id,
-      timestamp: new Date(log.created_at),
-      userName: log.user?.name || log.user?.username || 'Unknown User',
-      userRole: log.user?.role || 'Unknown',
-      action: log.activity_type,
-      module: log.category,
-      description: log.description,
-      severity: log.metadata?.severity || 'medium',
-      businessName: log.business?.name,
-      storeName: log.store?.name,
-      ipAddress: log.ip_address,
-      metadata: log.metadata
-    })) || [];
+    }) => {
+      // Ensure created_at is properly converted to Date
+      let timestamp: Date;
+      try {
+        timestamp = new Date(log.created_at);
+        // Check if the date is valid
+        if (isNaN(timestamp.getTime())) {
+          console.warn('Invalid date from database:', log.created_at);
+          timestamp = new Date(); // Fallback to current date
+        }
+      } catch (error) {
+        console.error('Error parsing date:', log.created_at, error);
+        timestamp = new Date(); // Fallback to current date
+      }
+
+      return {
+        id: log.id,
+        timestamp,
+        userName: log.user?.name || log.user?.username || 'Unknown User',
+        userRole: log.user?.role || 'Unknown',
+        action: log.activity_type || 'unknown',
+        module: log.category || 'Unknown',
+        description: log.description || 'No description',
+        severity: log.metadata?.severity || 'medium',
+        businessName: log.business?.name,
+        storeName: log.store?.name,
+        ipAddress: log.ip_address,
+        metadata: log.metadata
+      };
+    }) || [];
 
     return NextResponse.json({
       success: true,

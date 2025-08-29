@@ -471,7 +471,7 @@ export const CashierDashboard: React.FC = () => {
       label: 'Time',
       render: (log: ActivityLog) => (
         <div className="text-sm w-32 flex-shrink-0">
-          <div className="font-medium">{formatTableDateTime(log.created_at)}</div>
+          <div className="font-medium">{formatTableDateTime(log.timestamp || log.created_at || new Date())}</div>
         </div>
       )
     },
@@ -481,10 +481,10 @@ export const CashierDashboard: React.FC = () => {
       render: (log: ActivityLog) => (
         <div className="w-24 flex-shrink-0">
           <Badge 
-            variant={log.activity_type === 'sale_create' ? 'default' : 'secondary'}
+            variant={(log.action || log.activity_type) === 'sale_create' ? 'default' : 'secondary'}
             className="capitalize text-xs"
           >
-            {log.activity_type?.replace(/_/g, ' ') || 'Unknown'}
+            {(log.action || log.activity_type)?.replace(/_/g, ' ') || 'Unknown'}
           </Badge>
         </div>
       )
@@ -495,8 +495,8 @@ export const CashierDashboard: React.FC = () => {
       render: (log: ActivityLog) => (
         <div className="min-w-0 flex-1 pr-6 max-w-48">
           <p className="text-sm font-medium break-words leading-relaxed">{log.description}</p>
-          {log.category && (
-            <p className="text-xs text-muted-foreground mt-1">{log.category}</p>
+          {(log.module || log.category) && (
+            <p className="text-xs text-muted-foreground mt-1">{log.module || log.category}</p>
           )}
         </div>
       )

@@ -88,16 +88,26 @@ export interface FeatureConfig {
 
 export interface ActivityLog {
   id: string;
-  user_id: string;
-  business_id: string;
-  store_id: string;
-  activity_type: string;
-  category: string;
+  user_id?: string;
+  business_id?: string;
+  store_id?: string;
+  activity_type?: string;
+  category?: string;
   description: string;
-  metadata: Record<string, string | number | boolean>;
+  metadata?: Record<string, string | number | boolean>;
   ip_address?: string;
   user_agent?: string;
-  created_at: string;
+  created_at?: string;
+  // New API response fields
+  timestamp?: Date;
+  userName?: string;
+  userRole?: string;
+  action?: string;
+  module?: string;
+  severity?: string;
+  businessName?: string;
+  storeName?: string;
+  ipAddress?: string;
 }
 
 export interface SaleItem {
