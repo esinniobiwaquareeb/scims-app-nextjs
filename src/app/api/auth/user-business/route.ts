@@ -25,12 +25,17 @@ export async function GET(request: NextRequest) {
           id,
           name,
           subscription_plan_id,
-          subscription_status
+          subscription_status,
+          language_id,
+          currency_id,
+          timezone
         ),
         store(
           id,
           name,
-          address
+          address,
+          language_id,
+          currency_id
         )
       `)
       .eq('user_id', userId)
@@ -59,12 +64,17 @@ export async function GET(request: NextRequest) {
         id: (userBusinessRole.business as any)?.id || userBusinessRole.business_id,
         name: (userBusinessRole.business as any)?.name,
         subscription_status: (userBusinessRole.business as any)?.subscription_status,
-        subscription_plan_id: (userBusinessRole.business as any)?.subscription_plan_id
+        subscription_plan_id: (userBusinessRole.business as any)?.subscription_plan_id,
+        language_id: (userBusinessRole.business as any)?.language_id,
+        currency_id: (userBusinessRole.business as any)?.currency_id,
+        timezone: (userBusinessRole.business as any)?.timezone
       },
       store: (userBusinessRole.store as any) ? {
         id: (userBusinessRole.store as any).id,
         name: (userBusinessRole.store as any).name,
-        address: (userBusinessRole.store as any).address
+        address: (userBusinessRole.store as any).address,
+        language_id: (userBusinessRole.store as any)?.language_id,
+        currency_id: (userBusinessRole.store as any)?.currency_id
       } : null
     };
 
