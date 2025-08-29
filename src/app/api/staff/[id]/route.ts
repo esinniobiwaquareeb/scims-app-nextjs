@@ -141,7 +141,10 @@ export async function DELETE(
     // Delete the staff member
     const { error } = await supabase
       .from('staff')
-      .delete()
+      .update({
+        is_active: false,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', staffId)
       .eq('store_id', storeId);
 

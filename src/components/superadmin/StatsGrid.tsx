@@ -3,7 +3,26 @@ import { Card, CardContent } from '../ui/card';
 import { Progress } from '../ui/progress';
 import { Building2, Store, Users, DollarSign, TrendingUp } from 'lucide-react';
 
-export const StatsGrid = ({ stats, platformUsers = { total: 0, newToday: 0 }, formatCurrency, translate }) => {
+interface Stats {
+  totalRevenue: number;
+  monthlyGrowth: number;
+  totalBusinesses: number;
+  activeStores: number;
+}
+
+interface PlatformUsers {
+  total: number;
+  newToday: number;
+}
+
+interface StatsGridProps {
+  stats: Stats;
+  platformUsers?: PlatformUsers;
+  formatCurrency: (amount: number, currency?: string, showSymbol?: boolean) => string;
+  translate: (key: string) => string;
+}
+
+export const StatsGrid = ({ stats, platformUsers = { total: 0, newToday: 0 }, formatCurrency, translate }: StatsGridProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <Card>

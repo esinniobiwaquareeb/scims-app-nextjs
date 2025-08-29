@@ -864,28 +864,28 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                         key: 'totalPurchases',
                         header: 'Total Purchases',
                         render: (customer: CustomerType) => (
-                          <div>{customer.totalPurchases}</div>
+                          <div>{customer.total_purchases}</div>
                         )
                       },
                       {
                         key: 'totalSpent',
                         header: 'Total Spent',
                         render: (customer: CustomerType) => (
-                          <div className="font-medium">${(customer?.totalSpent || 0).toFixed(2)}</div>
+                          <div className="font-medium">${(customer?.total_purchases || 0).toFixed(2)}</div>
                         )
                       },
                       {
                         key: 'avgOrderValue',
                         header: 'Avg Order Value',
                         render: (customer: CustomerType) => (
-                          <div>${(customer?.totalPurchases || 0) > 0 ? ((customer?.totalSpent || 0) / (customer?.totalPurchases || 1)).toFixed(2) : '0.00'}</div>
+                          <div>${(customer?.total_purchases || 0) > 0 ? ((customer?.total_purchases || 0) / (customer?.total_purchases || 1)).toFixed(2) : '0.00'}</div>
                         )
                       },
                       {
                         key: 'lastVisit',
                         header: 'Last Visit',
                         render: (customer: CustomerType) => (
-                          <div>{customer?.lastVisit ? new Date(customer.lastVisit).toLocaleDateString() : 'Never'}</div>
+                          <div>{customer?.last_purchase_at ? new Date(customer.last_purchase_at).toLocaleDateString() : 'Never'}</div>
                         )
                       }
                     ]}

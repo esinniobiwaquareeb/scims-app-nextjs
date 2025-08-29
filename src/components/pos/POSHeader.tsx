@@ -161,7 +161,7 @@ export const POSHeader: React.FC<POSHeaderProps> = ({
             {/* Logout Button - Less Prominent */}
             <Button 
               variant="ghost" 
-              onClick={logout} 
+              onClick={() => logout()} 
               size="sm"
               className="text-muted-foreground hover:text-foreground hover:bg-muted"
             >

@@ -51,17 +51,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform the data to match the expected structure
+    // Handle the case where joined tables return arrays
     const businessData = {
       business: {
-        id: userBusinessRole.business?.id,
-        name: userBusinessRole.business?.name,
-        subscription_status: userBusinessRole.business?.subscription_status,
-        subscription_plan_id: userBusinessRole.business?.subscription_plan_id
+        id: userBusinessRole.business?.[0]?.id || userBusinessRole.business_id,
+        name: userBusinessRole.business?.[0]?.name,
+        subscription_status: userBusinessRole.business?.[0]?.subscription_status,
+        subscription_plan_id: userBusinessRole.business?.[0]?.subscription_plan_id
       },
-      store: userBusinessRole.store ? {
-        id: userBusinessRole.store.id,
-        name: userBusinessRole.store.name,
-        address: userBusinessRole.store.address
+      store: userBusinessRole.store?.[0] ? {
+        id: userBusinessRole.store[0].id,
+        name: userBusinessRole.store[0].name,
+        address: userBusinessRole.store[0].address
       } : null
     };
 

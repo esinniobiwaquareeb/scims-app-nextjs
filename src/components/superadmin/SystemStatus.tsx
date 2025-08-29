@@ -4,7 +4,22 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Building2, Settings, Activity, CreditCard } from 'lucide-react';
 
-export const SystemStatus = ({ systemSettings, translate, onNavigate }) => {
+interface SystemSettings {
+  demoMode: boolean;
+  maintenanceMode: boolean;
+  platformVersion: string;
+  defaultCurrency: string;
+  defaultLanguage: string;
+  supportedLanguages: Array<{ code: string; name: string }>;
+}
+
+interface SystemStatusProps {
+  systemSettings: SystemSettings;
+  translate: (key: string) => string;
+  onNavigate: (route: string) => void;
+}
+
+export const SystemStatus = ({ systemSettings, translate, onNavigate }: SystemStatusProps) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card>

@@ -1,3 +1,5 @@
+import { Brand } from '@/types';
+
 export const BRAND_FORM_FIELDS = {
   name: { label: 'Brand Name', required: true, placeholder: 'Enter brand name' },
   description: { label: 'Description', required: false, placeholder: 'Enter brand description' },

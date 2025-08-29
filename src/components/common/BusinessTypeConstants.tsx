@@ -109,8 +109,16 @@ export const getBusinessTypeConfig = (type: BusinessType): BusinessTypeConfig =>
 
 export const isBusinessTypeEnabled = (
   businessType: BusinessType,
-  feature: keyof typeof BUSINESS_TYPE_FEATURES[BusinessType]['features']
+  feature: keyof typeof BUSINESS_TYPE_FEATURES[BusinessType]
 ): boolean => {
   const config = getBusinessTypeConfig(businessType);
-  return config.features[feature] || false;
+  const featureValue = config.features[feature];
+  
+  // Handle array features (like posFeatures, dashboardFeatures)
+  if (Array.isArray(featureValue)) {
+    return featureValue.length > 0;
+  }
+  
+  // Handle boolean features
+  return Boolean(featureValue);
 };
