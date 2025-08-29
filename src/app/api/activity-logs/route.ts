@@ -96,6 +96,7 @@ export async function GET(request: NextRequest) {
     })) || [];
 
     return NextResponse.json({
+      success: true,
       logs: transformedLogs,
       total: transformedLogs.length
     });

@@ -244,13 +244,13 @@ export const useDeleteSavedCart = () => {
 // Hook for business settings
 export const useBusinessSettings = (businessId: string, options?: {
   enabled?: boolean;
+  forceRefresh?: boolean;
 }) => {
-  const { enabled = true } = options || {};
+  const { enabled = true, forceRefresh = false } = options || {};
   
   return useQuery({
     queryKey: ['business-settings', businessId],
     queryFn: async () => {
-      // TODO: Replace with actual API endpoint when available
       const response = await fetch(`/api/businesses/${businessId}/settings`);
       if (!response.ok) {
         throw new Error('Failed to fetch business settings');
@@ -259,8 +259,10 @@ export const useBusinessSettings = (businessId: string, options?: {
       return data.settings || {};
     },
     enabled: enabled && !!businessId,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
   });
 };
 
@@ -1578,6 +1580,81 @@ export const useBusinessDashboardStats = (businessId: string, options?: {
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Hook for fetching store settings
+export const useStoreSettings = (storeId: string, options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['store-settings', storeId],
+    queryFn: async () => {
+      const response = await fetch(`/api/stores/${storeId}/settings`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch store settings');
+      }
+      const data = await response.json();
+      return data.settings || {};
+    },
+    enabled: enabled && !!storeId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Hook for fetching supported languages
+export const useLanguages = (options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['languages'],
+    queryFn: async () => {
+      const response = await fetch('/api/languages');
+      if (!response.ok) {
+        throw new Error('Failed to fetch languages');
+      }
+      const data = await response.json();
+      return data.languages || [];
+    },
+    enabled,
+    staleTime: 10 * 60 * 1000, // 10 minutes (languages don't change often)
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Hook for fetching supported currencies
+export const useCurrencies = (options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['currencies'],
+    queryFn: async () => {
+      const response = await fetch('/api/currencies');
+      if (!response.ok) {
+        throw new Error('Failed to fetch currencies');
+      }
+      const data = await response.json();
+      return data.currencies || [];
+    },
+    enabled,
+    staleTime: 10 * 60 * 1000, // 10 minutes (currencies don't change often)
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnWindowFocus: false,
     refetchOnMount: !forceRefresh,
   });
 };

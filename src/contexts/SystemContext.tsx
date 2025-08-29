@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 // TODO: Replace with actual direct client when available
 // import { directDB } from '../utils/supabase/direct-client';
 import { useAuth } from './AuthContext';
+import { useStoreSettings, useBusinessSettings, useLanguages, useCurrencies } from '@/utils/hooks/useStoreData';
+import { Business, Store } from '@/types';
 import { translate as translateUtil } from '../utils/translations';
 import { printReceipt as printReceiptUtil, ReceiptData } from '../utils/receipt';
 import {
@@ -187,179 +189,41 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [currentBusinessSettings, setCurrentBusinessSettings] = useState<BusinessSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load system settings
+  // Load system settings with real data from database
+  const { data: languages = [] } = useLanguages();
+  const { data: currencies = [] } = useCurrencies();
+
   useEffect(() => {
-    const loadSystemSettings = async () => {
-      try {
-        // TODO: Implement when directDB is available
-        console.log('System settings loading not yet implemented');
-        
-        // For now, use default settings
-        setSystemSettings(prev => ({
-          ...prev,
-          supportedCurrencies: [
-            { id: '1', code: 'USD', name: 'US Dollar', symbol: '$', decimals: 2 },
-            { id: '2', code: 'EUR', name: 'Euro', symbol: '€', decimals: 2 },
-            { id: '3', code: 'GBP', name: 'British Pound', symbol: '£', decimals: 2 }
-          ],
-          supportedLanguages: [
-            { id: '1', code: 'en', name: 'English', nativeName: 'English', rtl: false },
-            { id: '2', code: 'es', name: 'Spanish', nativeName: 'Español', rtl: false },
-            { id: '3', code: 'fr', name: 'French', nativeName: 'Français', rtl: false }
-          ]
-        }));
+    // Update system settings with real data from database
+    setSystemSettings(prev => ({
+      ...prev,
+      supportedCurrencies: currencies,
+      supportedLanguages: languages
+    }));
+  }, [languages, currencies]);
 
-        // TODO: Load supported currencies and languages from database when directDB is available
-        console.log('Currency and language loading not yet implemented');
-      } catch (error) {
-        console.error('Failed to load system settings:', error);
-        // Use default settings on error
-      }
-    };
+  // Load store settings with real data from database
+  const { data: storeSettingsData } = useStoreSettings(currentStore?.id || '', {
+    enabled: !!currentStore?.id
+  });
 
-    loadSystemSettings();
-  }, [user]);
-
-  // Load store settings when current store changes
   useEffect(() => {
-    const loadStoreSettings = async () => {
-      if (currentStore?.id) {
-        try {
-          // TODO: Replace with actual API call when available
-          // const response = await directDB.getStoreSettings(currentStore.id);
-          console.log('Store settings loading not yet implemented');
-          
-          // Use default store settings for now
-          setCurrentStoreSettings({
-            id: 'default', // Placeholder ID
-            store_id: currentStore.id,
-            currency_id: null,
-            language_id: null,
-            timezone: 'UTC',
-            date_format: 'MM/dd/yyyy',
-            time_format: '12h',
-            tax_rate: 0,
-            discount_enabled: false,
-            receipt_header: 'Thank you for shopping with us!',
-            receipt_footer: 'Returns accepted within 30 days with receipt.',
-            return_policy: 'Returns accepted within 30 days with original receipt.',
-            contact_person: '',
-            store_hours: '',
-            store_promotion_info: '',
-            custom_receipt_message: ''
-          });
-        } catch (error) {
-          console.error('Failed to load store settings:', error);
-          // Use default store settings from business
-          setCurrentStoreSettings({
-            id: 'default', // Placeholder ID
-            store_id: currentStore.id,
-            currency_id: null,
-            language_id: null,
-            timezone: 'UTC',
-            date_format: 'MM/dd/yyyy',
-            time_format: '12h',
-            tax_rate: 0,
-            discount_enabled: false,
-            receipt_header: 'Thank you for shopping with us!',
-            receipt_footer: 'Returns accepted within 30 days with receipt.',
-            return_policy: 'Returns accepted within 30 days with original receipt.',
-            contact_person: '',
-            store_hours: '',
-            store_promotion_info: '',
-            custom_receipt_message: ''
-          });
-        }
-      }
-      setIsLoading(false);
-    };
+    if (storeSettingsData) {
+      setCurrentStoreSettings(storeSettingsData);
+    }
+    setIsLoading(false);
+  }, [storeSettingsData]);
 
-    loadStoreSettings();
-  }, [currentStore]);
+  // Load business settings with real data from database
+  const { data: businessSettingsData } = useBusinessSettings(currentBusiness?.id || '', {
+    enabled: !!currentBusiness?.id
+  });
 
-  // Load business settings when current business changes
   useEffect(() => {
-    const loadBusinessSettings = async () => {
-      if (currentBusiness?.id) {
-        try {
-          // TODO: Replace with actual API call when available
-          // const response = await directDB.getBusinessSettings(currentBusiness.id);
-          console.log('Business settings loading not yet implemented');
-          
-          // Use default business settings for now
-          setCurrentBusinessSettings({
-            id: 'default', // Placeholder ID
-            business_id: currentBusiness.id,
-            default_currency_id: null,
-            default_language_id: null,
-            timezone: 'UTC',
-            date_format: 'MM/dd/yyyy',
-            time_format: '12h',
-            tax_rate: 0.00,
-            enable_tax: false,
-            allow_returns: true,
-            return_period_days: 30,
-            enable_sounds: true,
-            logo_url: '',
-            primary_color: '#3B82F6',
-            secondary_color: '#10B981',
-            accent_color: '#F59E0B',
-            receipt_header: 'Thank you for shopping with us!',
-            receipt_footer: 'Returns accepted within 30 days with receipt.',
-            return_policy: 'Returns accepted within 30 days with original receipt.',
-            warranty_info: 'Standard manufacturer warranty applies.',
-            terms_of_service: '',
-            privacy_policy: '',
-            business_type: 'retail',
-            enable_stock_tracking: true,
-            enable_inventory_alerts: true,
-            enable_restock_management: true,
-            enable_recipe_management: false,
-            enable_service_booking: false,
-            enable_menu_management: false,
-            enable_ingredient_tracking: false
-          });
-        } catch (error) {
-          console.error('Failed to load business settings:', error);
-          // Use default business settings
-          setCurrentBusinessSettings({
-            id: 'default', // Placeholder ID
-            business_id: currentBusiness.id,
-            default_currency_id: null,
-            default_language_id: null,
-            timezone: 'UTC',
-            date_format: 'MM/dd/yyyy',
-            time_format: '12h',
-            tax_rate: 0.00,
-            enable_tax: false,
-            allow_returns: true,
-            return_period_days: 30,
-            enable_sounds: true,
-            logo_url: '',
-            primary_color: '#3B82F6',
-            secondary_color: '#10B981',
-            accent_color: '#F59E0B',
-            receipt_header: 'Thank you for shopping with us!',
-            receipt_footer: 'Returns accepted within 30 days with receipt.',
-            return_policy: 'Returns accepted within 30 days with original receipt.',
-            warranty_info: 'Standard manufacturer warranty applies.',
-            terms_of_service: '',
-            privacy_policy: '',
-            business_type: 'retail',
-            enable_stock_tracking: true,
-            enable_inventory_alerts: true,
-            enable_restock_management: true,
-            enable_recipe_management: false,
-            enable_service_booking: false,
-            enable_menu_management: false,
-            enable_ingredient_tracking: false
-          });
-        }
-      }
-    };
-
-    loadBusinessSettings();
-  }, [currentBusiness]);
+    if (businessSettingsData) {
+      setCurrentBusinessSettings(businessSettingsData);
+    }
+  }, [businessSettingsData]);
 
   const updateSystemSettings = async (newSettings: SystemSettings) => {
     try {
@@ -416,24 +280,32 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const getCurrentLocale = () => {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     console.log('getCurrentLocale called with:', {
-      storeLanguageId: currentStoreSettings?.language_id,
-      businessLanguageId: currentBusinessSettings?.default_language_id,
+      storeLanguageId: (currentStore as any)?.language_id,
+      businessLanguageId: (currentBusiness as any)?.language_id,
+      storeSettingsLanguageId: currentStoreSettings?.language_id,
       platformDefault: systemSettings.defaultLanguage,
       supportedLanguages: systemSettings.supportedLanguages
     });
 
-    // First check store-specific language (highest priority)
+    // First check store settings language (highest priority)
     if (currentStoreSettings?.language_id) {
-      // Find the language object from supported languages
       const language = systemSettings.supportedLanguages.find((l: Language) => l.id === currentStoreSettings.language_id);
+      console.log('Store settings language found:', language);
+      return language?.code || 'en';
+    }
+    
+    // Then check store language (second priority)
+    if ((currentStore as any)?.language_id) {
+      const language = systemSettings.supportedLanguages.find((l: Language) => l.id === (currentStore as any).language_id);
       console.log('Store language found:', language);
       return language?.code || 'en';
     }
     
-    // Then check business language (second priority)
-    if (currentBusinessSettings?.default_language_id) {
-      const language = systemSettings.supportedLanguages.find((l: Language) => l.id === currentBusinessSettings.default_language_id);
+    // Then check business language (third priority)
+    if ((currentBusiness as any)?.language_id) {
+      const language = systemSettings.supportedLanguages.find((l: Language) => l.id === (currentBusiness as any).language_id);
       console.log('Business language found:', language);
       return language?.code || 'en';
     }
@@ -444,24 +316,32 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const getCurrentCurrency = () => {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     console.log('getCurrentCurrency called with:', {
-      storeCurrencyId: currentStoreSettings?.currency_id,
-      businessCurrencyId: currentBusinessSettings?.default_currency_id,
+      storeCurrencyId: (currentStore as any)?.currency_id,
+      businessCurrencyId: (currentBusiness as any)?.currency_id,
+      storeSettingsCurrencyId: currentStoreSettings?.currency_id,
       platformDefault: systemSettings.defaultCurrency,
       supportedCurrencies: systemSettings.supportedCurrencies
     });
 
-    // First check store-specific currency (highest priority)
+    // First check store settings currency (highest priority)
     if (currentStoreSettings?.currency_id) {
-      // Find the currency object from supported currencies
       const currency = systemSettings.supportedCurrencies.find((c: Currency) => c.id === currentStoreSettings.currency_id);
+      console.log('Store settings currency found:', currency);
+      return currency?.symbol || '$';
+    }
+    
+    // Then check store currency (second priority)
+    if ((currentStore as any)?.currency_id) {
+      const currency = systemSettings.supportedCurrencies.find((c: Currency) => c.id === (currentStore as any).currency_id);
       console.log('Store currency found:', currency);
       return currency?.symbol || '$';
     }
     
-    // Then check business currency (second priority)
-    if (currentBusinessSettings?.default_currency_id) {
-      const currency = systemSettings.supportedCurrencies.find((c: Currency) => c.id === currentBusinessSettings.default_currency_id);
+    // Then check business currency (third priority)
+    if ((currentBusiness as any)?.currency_id) {
+      const currency = systemSettings.supportedCurrencies.find((c: Currency) => c.id === (currentBusiness as any).currency_id);
       console.log('Business currency found:', currency);
       return currency?.symbol || '$';
     }
@@ -475,8 +355,9 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Get business-specific currency (ignoring store overrides)
   const getBusinessCurrency = () => {
-    if (currentBusinessSettings?.default_currency_id) {
-      const currency = systemSettings.supportedCurrencies.find((c: Currency) => c.id === currentBusinessSettings.default_currency_id);
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    if ((currentBusiness as any)?.currency_id) {
+      const currency = systemSettings.supportedCurrencies.find((c: Currency) => c.id === (currentBusiness as any).currency_id);
       return currency?.symbol || '$';
     }
     // Find the default currency object to get its symbol
@@ -486,8 +367,9 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Get business-specific language (ignoring store overrides)
   const getBusinessLocale = () => {
-    if (currentBusinessSettings?.default_language_id) {
-      const language = systemSettings.supportedLanguages.find((l: Language) => l.id === currentBusinessSettings.default_language_id);
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    if ((currentBusiness as any)?.language_id) {
+      const language = systemSettings.supportedLanguages.find((l: Language) => l.id === (currentBusiness as any).language_id);
       return language?.code || 'en';
     }
     return systemSettings.defaultLanguage;
@@ -495,15 +377,22 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Get current currency code (needed for formatCurrency function)
   const getCurrentCurrencyCode = () => {
-    // First check store-specific currency (highest priority)
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    // First check store settings currency (highest priority)
     if (currentStoreSettings?.currency_id) {
       const currency = systemSettings.supportedCurrencies.find((c: Currency) => c.id === currentStoreSettings.currency_id);
       return currency?.code || 'USD';
     }
     
-    // Then check business currency (second priority)
-    if (currentBusinessSettings?.default_currency_id) {
-      const currency = systemSettings.supportedCurrencies.find((c: Currency) => c.id === currentBusinessSettings.default_currency_id);
+    // Then check store currency (second priority)
+    if ((currentStore as any)?.currency_id) {
+      const currency = systemSettings.supportedCurrencies.find((c: Currency) => c.id === (currentStore as any).currency_id);
+      return currency?.code || 'USD';
+    }
+    
+    // Then check business currency (third priority)
+    if ((currentBusiness as any)?.currency_id) {
+      const currency = systemSettings.supportedCurrencies.find((c: Currency) => c.id === (currentBusiness as any).currency_id);
       return currency?.code || 'USD';
     }
     
@@ -513,8 +402,9 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Get business-specific currency code (ignoring store overrides)
   const getBusinessCurrencyCode = () => {
-    if (currentBusinessSettings?.default_currency_id) {
-      const currency = systemSettings.supportedCurrencies.find((c: Currency) => c.id === currentBusinessSettings.default_currency_id);
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    if ((currentBusiness as any)?.currency_id) {
+      const currency = systemSettings.supportedCurrencies.find((c: Currency) => c.id === (currentBusiness as any).currency_id);
       return currency?.code || 'USD';
     }
     return systemSettings.defaultCurrency;
