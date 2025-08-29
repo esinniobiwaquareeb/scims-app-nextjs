@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 
@@ -50,19 +51,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.log('userBusinessRole ==> ', userBusinessRole);
     // Transform the data to match the expected structure
-    // Handle the case where joined tables return arrays
+    // Handle the case where joined tables return objects
     const businessData = {
       business: {
-        id: userBusinessRole.business?.[0]?.id || userBusinessRole.business_id,
-        name: userBusinessRole.business?.[0]?.name,
-        subscription_status: userBusinessRole.business?.[0]?.subscription_status,
-        subscription_plan_id: userBusinessRole.business?.[0]?.subscription_plan_id
+        id: (userBusinessRole.business as any)?.id || userBusinessRole.business_id,
+        name: (userBusinessRole.business as any)?.name,
+        subscription_status: (userBusinessRole.business as any)?.subscription_status,
+        subscription_plan_id: (userBusinessRole.business as any)?.subscription_plan_id
       },
-      store: userBusinessRole.store?.[0] ? {
-        id: userBusinessRole.store[0].id,
-        name: userBusinessRole.store[0].name,
-        address: userBusinessRole.store[0].address
+      store: (userBusinessRole.store as any) ? {
+        id: (userBusinessRole.store as any).id,
+        name: (userBusinessRole.store as any).name,
+        address: (userBusinessRole.store as any).address
       } : null
     };
 

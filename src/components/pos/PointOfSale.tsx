@@ -277,11 +277,11 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
       return ['All'];
     }
     return ['All', ...businessCategories.map((cat: { name: any; }) => cat.name)];
-  }, [businessCategories]);
+  }, [businessCategories, currentStore?.id]);
 
   const customers = useMemo(() => {
     return [WALK_IN_CUSTOMER, ...(storeCustomers || [])];
-  }, [storeCustomers]);
+  }, [storeCustomers, currentStore?.id]);
 
   // Process today's sales for the cashier
   const todaySales = useMemo(() => {
