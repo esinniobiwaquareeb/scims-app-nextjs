@@ -254,6 +254,14 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
 
   // Determine which sales data to use based on user role
   const sales = useMemo(() => {
+    console.log('SalesReport Debug:', {
+      userRole: user?.role,
+      aggregatedSalesLength: aggregatedSales.length,
+      storeSalesLength: storeSales.length,
+      aggregatedSales: aggregatedSales,
+      storeSales: storeSales
+    });
+    
     if (user?.role === 'business_admin' && aggregatedSales.length > 0) {
       return aggregatedSales;
     } else if (storeSales.length > 0) {
@@ -337,6 +345,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
             .filter(Boolean) // Remove undefined/null values
         ));
 
+        console.log('Extracted filter options:', { cashiers, categories, paymentMethods });
         return { cashiers, categories, paymentMethods };
       };
 

@@ -72,7 +72,7 @@ export const StoreAdminDashboard: React.FC = () => {
       description: 'Configure store preferences',
       icon: Settings,
       color: 'text-gray-600',
-      action: '/store-settings'
+      action: '/stores'
     },
     {
       title: 'Business Settings',

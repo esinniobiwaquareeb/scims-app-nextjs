@@ -1066,7 +1066,7 @@ export const useBusinessStoresReport = (businessId: string, options: { enabled: 
         throw new Error('Failed to fetch business stores report');
       }
       const data = await response.json();
-      return data.success ? data : data;
+      return data.success ? data.stores : [];
     },
     enabled: !!businessId,
   });

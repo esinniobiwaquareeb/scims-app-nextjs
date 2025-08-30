@@ -54,7 +54,7 @@ export const translations = {
     'translate-page': 'Translate Page',
     'dashboard.refresh': 'Refresh',
     'pos.noProductsFound': 'No products found',
-    
+    'sales.cashManagement': 'Cash Management',
     // POS
     'pos.title': 'SCIMS POS',
     'pos.cart': 'Shopping Cart',
@@ -513,6 +513,7 @@ export const translations = {
     'sales.minAmount': 'Monto Mínimo',
     'sales.maxAmount': 'Monto Máximo',
     'sales.export': 'Exportar',
+
   }
 };
 
