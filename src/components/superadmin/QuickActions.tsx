@@ -10,7 +10,7 @@ interface QuickActionsProps {
 export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate, translate }) => {
   const actions = [
     {
-      key: 'business',
+      key: 'businesses',
       title: translate('management.businesses'),
       description: 'Manage registered businesses',
       icon: Building2,
