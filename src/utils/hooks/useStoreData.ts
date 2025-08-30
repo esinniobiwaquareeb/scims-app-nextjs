@@ -1798,3 +1798,105 @@ export const useCountries = () => {
     refetchOnWindowFocus: false,
   });
 };
+
+// Store Management Hooks (for business admins)
+export const useCreateStore = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (storeData: any) => {
+      const response = await fetch('/api/stores', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(storeData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create store');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (response) => {
+      if (response && response.success) {
+        // Invalidate and refetch business stores immediately
+        queryClient.invalidateQueries({ queryKey: ['business-stores', businessId] });
+        queryClient.refetchQueries({ queryKey: ['business-stores', businessId] });
+        
+        toast.success('Store created successfully');
+      }
+    },
+    onError: (error: any) => {
+      console.error('Error creating store:', error);
+      toast.error('Failed to create store');
+    },
+  });
+};
+
+export const useUpdateStore = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, storeData }: { id: string; storeData: any }) => {
+      const response = await fetch(`/api/stores/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(storeData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update store');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (response) => {
+      if (response && response.success) {
+        // Invalidate and refetch business stores immediately
+        queryClient.invalidateQueries({ queryKey: ['business-stores', businessId] });
+        queryClient.refetchQueries({ queryKey: ['business-stores', businessId] });
+        
+        toast.success('Store updated successfully');
+      }
+    },
+    onError: (error: any) => {
+      console.error('Error updating store:', error);
+      toast.error('Failed to update store');
+    },
+  });
+};
+
+export const useDeleteStore = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (storeId: string) => {
+      const response = await fetch(`/api/stores/${storeId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete store');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (response) => {
+      if (response && response.success) {
+        // Invalidate and refetch business stores immediately
+        queryClient.invalidateQueries({ queryKey: ['business-stores', businessId] });
+        queryClient.refetchQueries({ queryKey: ['business-stores', businessId] });
+        
+        toast.success('Store deleted successfully');
+      }
+    },
+    onError: (error: any) => {
+      console.error('Error deleting store:', error);
+      toast.error('Failed to delete store');
+    },
+  });
+};

@@ -77,7 +77,7 @@ interface DataTableProps<T> {
   onExport?: (event?: React.MouseEvent) => void;
   height?: number;
   emptyMessage?: string | React.ReactNode;
-  tableName?: 'activityLogs' | 'products' | 'customers' | 'suppliers' | 'brands' | 'businesses' | 'subscriptionPlans' | 'staff' | 'categories' | 'cashiers' | 'reports' | 'superadmin' | 'sales';
+  tableName?: 'activityLogs' | 'products' | 'customers' | 'suppliers' | 'brands' | 'businesses' | 'subscriptionPlans' | 'staff' | 'categories' | 'cashiers' | 'reports' | 'superadmin' | 'sales' | 'stores';
   userRole?: string;
   pagination?: {
     enabled?: boolean;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { usePermissions } from '@/contexts/PermissionsContext';
@@ -232,6 +233,7 @@ const CashierForm = ({
 );
 
 export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack, onNavigate }) => {
+  const router = useRouter();
   const { user, currentBusiness, currentStore } = useAuth();
   const { translate, formatCurrency } = useSystem();
   const { hasPermission } = usePermissions();
@@ -694,7 +696,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack, on
           <Button 
             size="sm" 
             variant="outline" 
-            onClick={() => onNavigate && onNavigate('cashier-detail', { cashier })}
+            onClick={() => router.push(`/cashiers/${cashier.id}`)}
             disabled={!cashier.store_id}
             title={!cashier.store_id ? "Cashier not assigned to store" : "View details"}
           >

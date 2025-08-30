@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSystem } from "@/contexts/SystemContext";
 import { useActivityLogger } from "@/contexts/ActivityLogger";
@@ -289,6 +290,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   onBack,
   onNavigate,
 }) => {
+  const router = useRouter();
   const { user, currentBusiness, currentStore } = useAuth();
   const { translate, formatCurrency } = useSystem();
   // TODO: Implement proper permissions when PermissionsContext is ready
@@ -536,13 +538,9 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   const handleViewStaffDetail = useCallback(
     (staffMember: Staff) => {
       console.log("Navigating to staff detail:", staffMember);
-      if (onNavigate) {
-        onNavigate("staff-detail", { staffMember });
-      } else {
-        console.warn("onNavigate function not available");
-      }
+      router.push(`/staff/${staffMember.id}`);
     },
-    [onNavigate]
+    [router]
   );
 
   const openEditDialog = useCallback((staffMember: Staff) => {

@@ -101,6 +101,10 @@ export const TABLE_CONFIG = {
       pageSize: 15,
       pageSizeOptions: [10, 15, 25, 50]
     },
+    stores: {
+      pageSize: 25,
+      pageSizeOptions: [10, 25, 50, 100]
+    },
     superadmin: {
       pageSize: 10,
       pageSizeOptions: [5, 10, 20, 50]
