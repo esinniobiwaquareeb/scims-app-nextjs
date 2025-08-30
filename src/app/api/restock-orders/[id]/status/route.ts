@@ -22,7 +22,6 @@ export async function PUT(
     
     if (status === 'received' && quantityReceived !== undefined) {
       updateData.quantity_received = quantityReceived;
-      updateData.received_at = new Date().toISOString();
     }
 
     const { data: order, error } = await supabase

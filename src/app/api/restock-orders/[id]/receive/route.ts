@@ -21,8 +21,7 @@ export async function POST(
     const { error: orderUpdateError } = await supabase
       .from('restock_order')
       .update({ 
-        status: 'received',
-        received_at: new Date().toISOString()
+        status: 'received'
       })
       .eq('id', orderId);
 

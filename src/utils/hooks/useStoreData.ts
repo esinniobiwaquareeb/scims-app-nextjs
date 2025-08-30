@@ -1045,7 +1045,8 @@ export const useStoreSalesReport = (storeId: string, options?: {
       if (!response.ok) {
         throw new Error('Failed to fetch store sales report');
       }
-      return response.json();
+      const data = await response.json();
+      return data.success ? data.sales : [];
     },
     enabled: enabled && !!storeId,
     staleTime: 5 * 60 * 1000,
@@ -1056,7 +1057,7 @@ export const useStoreSalesReport = (storeId: string, options?: {
 };
 
 // Hook for business stores report
-export const useBusinessStoresReport = (businessId: string, p0: { enabled: boolean; }) => {
+export const useBusinessStoresReport = (businessId: string, options: { enabled: boolean; }) => {
   return useQuery({
     queryKey: ['businessStoresReport', businessId],
     queryFn: async () => {
@@ -1064,7 +1065,8 @@ export const useBusinessStoresReport = (businessId: string, p0: { enabled: boole
       if (!response.ok) {
         throw new Error('Failed to fetch business stores report');
       }
-      return response.json();
+      const data = await response.json();
+      return data.success ? data : data;
     },
     enabled: !!businessId,
   });
@@ -1090,7 +1092,8 @@ export const useAggregatedSalesReport = (storeIds: string[], options?: {
       if (!response.ok) {
         throw new Error('Failed to fetch aggregated sales report');
       }
-      return response.json();
+      const data = await response.json();
+      return data.success ? data.sales : [];
     },
     enabled: enabled && storeIds.length > 0,
     staleTime: 5 * 60 * 1000,
