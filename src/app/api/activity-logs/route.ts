@@ -155,6 +155,11 @@ export async function DELETE(request: NextRequest) {
     // For super admin, can clear all logs; for others, filter by business
     if (businessId) {
       query = query.eq('business_id', businessId);
+    } else if (userRole === 'superadmin') {
+      // For super admin without business_id, we need to add a WHERE clause
+      // Use a condition that's always true to satisfy Supabase's requirement
+      // We'll use a simple text comparison that's always true
+      query = query.neq('id', '00000000-0000-0000-0000-000000000000'); // This will match all records
     }
 
     if (storeId) {
