@@ -11,10 +11,12 @@ export async function GET(request: NextRequest) {
     const action = searchParams.get('action');
     const startDate = searchParams.get('start_date');
     const endDate = searchParams.get('end_date');
+    const userRole = searchParams.get('user_role');
 
-    if (!businessId) {
+    // For super admin, business_id is optional - they can see all logs
+    if (!businessId && userRole !== 'superadmin') {
       return NextResponse.json(
-        { error: 'Business ID is required' },
+        { error: 'Business ID is required for non-super admin users' },
         { status: 400 }
       );
     }
@@ -27,8 +29,12 @@ export async function GET(request: NextRequest) {
         user:user_id(id, username, name, role),
         business:business_id(id, name),
         store:store_id(id, name)
-      `)
-      .eq('business_id', businessId);
+      `);
+
+    // For super admin, show all logs; for others, filter by business
+    if (businessId) {
+      query = query.eq('business_id', businessId);
+    }
 
     // Apply filters
     if (storeId) {
@@ -131,10 +137,12 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const businessId = searchParams.get('business_id');
     const storeId = searchParams.get('store_id');
+    const userRole = searchParams.get('user_role');
 
-    if (!businessId) {
+    // For super admin, business_id is optional - they can clear all logs
+    if (!businessId && userRole !== 'superadmin') {
       return NextResponse.json(
-        { error: 'Business ID is required' },
+        { error: 'Business ID is required for non-super admin users' },
         { status: 400 }
       );
     }
@@ -142,8 +150,12 @@ export async function DELETE(request: NextRequest) {
     // Build the delete query
     let query = supabase
       .from('activity_log')
-      .delete()
-      .eq('business_id', businessId);
+      .delete();
+
+    // For super admin, can clear all logs; for others, filter by business
+    if (businessId) {
+      query = query.eq('business_id', businessId);
+    }
 
     if (storeId) {
       query = query.eq('store_id', storeId);

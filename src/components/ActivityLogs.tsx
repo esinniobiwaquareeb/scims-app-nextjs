@@ -87,7 +87,8 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
       action: selectedAction === 'All' ? undefined : selectedAction,
       startDate: dateRange.from,
       endDate: dateRange.to,
-      enabled: !!currentBusiness?.id
+      enabled: !!currentBusiness?.id || user?.role === 'superadmin',
+      userRole: user?.role
     }
   );
 
@@ -168,8 +169,9 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
   const handleClearLogs = async () => {
     try {
       await clearLogsMutation.mutateAsync({
-        businessId: currentBusiness?.id || '',
-        storeId: currentStore?.id
+        businessId: currentBusiness?.id,
+        storeId: currentStore?.id,
+        userRole: user?.role
       });
       setShowClearDialog(false);
     } catch (error) {

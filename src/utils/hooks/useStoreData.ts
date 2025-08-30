@@ -1501,15 +1501,21 @@ export const useActivityLogs = (businessId: string, options?: {
   startDate?: Date;
   endDate?: Date;
   enabled?: boolean;
+  userRole?: string;
 }) => {
-  const { storeId, userId, module, action, startDate, endDate, enabled = true } = options || {};
+  const { storeId, userId, module, action, startDate, endDate, enabled = true, userRole } = options || {};
   
   return useQuery({
-    queryKey: ['activity-logs', businessId, storeId, userId, module, action, startDate, endDate],
+    queryKey: ['activity-logs', businessId, storeId, userId, module, action, startDate, endDate, userRole],
     queryFn: async () => {
       const params = new URLSearchParams();
-      params.append('business_id', businessId);
       
+      // For super admin, business_id is optional
+      if (businessId) {
+        params.append('business_id', businessId);
+      }
+      
+      if (userRole) params.append('user_role', userRole);
       if (storeId) params.append('store_id', storeId);
       if (userId) params.append('user_id', userId);
       if (module && module !== 'All') params.append('module', module);
@@ -1524,7 +1530,7 @@ export const useActivityLogs = (businessId: string, options?: {
       const data = await response.json();
       return data.logs || [];
     },
-    enabled: enabled && !!businessId,
+    enabled: enabled && (!!businessId || userRole === 'superadmin'),
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -1535,9 +1541,15 @@ export const useClearActivityLogs = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ businessId, storeId }: { businessId: string; storeId?: string }) => {
+    mutationFn: async ({ businessId, storeId, userRole }: { businessId?: string; storeId?: string; userRole?: string }) => {
       const params = new URLSearchParams();
-      params.append('business_id', businessId);
+      
+      // For super admin, business_id is optional
+      if (businessId) {
+        params.append('business_id', businessId);
+      }
+      
+      if (userRole) params.append('user_role', userRole);
       if (storeId) params.append('store_id', storeId);
       
       const response = await fetch(`/api/activity-logs?${params.toString()}`, {
