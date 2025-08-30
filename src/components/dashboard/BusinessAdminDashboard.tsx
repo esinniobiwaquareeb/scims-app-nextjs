@@ -2,59 +2,75 @@
 
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSystem } from '@/contexts/SystemContext';
 import { useRouter } from 'next/navigation';
-import { useBusinessDashboardStats } from '@/utils/hooks/useStoreData';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Header } from '@/components/common/Header';
+import { StatsGrid } from '@/components/dashboard/StatsGrid';
+import { FeatureCard } from '@/components/dashboard/FeatureCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
-  Building2, 
-  Store, 
   Package, 
   Users, 
-  TrendingUp,
   Settings,
   BarChart3,
   FileText,
   Truck,
-  Shield,
-  Activity,
-  RefreshCw,
+  Building2,
   FolderOpen,
   Tag,
-  UserCheck
+  UserCheck,
+  Shield,
+  Activity,
+  Loader2,
+  AlertTriangle,
+  DollarSign,
+  Store,
+  ShoppingCart
 } from 'lucide-react';
+import { useBusinessDashboardStats, useStoreDashboardStats } from '@/utils/hooks/useStoreData';
 
 export const BusinessAdminDashboard: React.FC = () => {
-  const { user, logout, currentBusiness } = useAuth();
+  const { user, logout, currentBusiness, currentStore } = useAuth();
+  const { formatCurrency } = useSystem();
   const router = useRouter();
 
   // Fetch business dashboard stats
-  const { data: dashboardStats, isLoading, refetch } = useBusinessDashboardStats(
+  const { data: businessDashboardStats, isLoading: isLoadingBusinessStats } = useBusinessDashboardStats(
     currentBusiness?.id || '',
-    { enabled: !!currentBusiness?.id }
+    { enabled: !!currentBusiness?.id && !currentStore } // Only fetch business stats when no store is selected
   );
+
+  // Fetch store-specific dashboard stats when a store is selected
+  const { data: storeDashboardStats, isLoading: isLoadingStoreStats } = useStoreDashboardStats(
+    currentStore?.id || '',
+    { enabled: !!currentStore?.id } // Only fetch store stats when a store is selected
+  );
+
+  // Combined loading state
+  const isLoading = isLoadingBusinessStats || isLoadingStoreStats;
+
+  // Use store-specific stats if available, otherwise use business-wide stats
+  const dashboardStats = currentStore ? storeDashboardStats : businessDashboardStats;
 
   const handleLogout = async () => {
     await logout(() => router.push('/auth/login'));
   };
 
-  const handleNavigation = (path: string) => {
+  const handleNavigate = (path: string) => {
     router.push(path);
   };
 
-  const handleRefresh = () => {
-    refetch();
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
-
   const overviewFeatures = [
+    {
+      title: 'Point of Sale',
+      description: 'Process sales and manage transactions',
+      icon: ShoppingCart,
+      color: 'text-orange-600',
+      action: '/pos'
+    },
     {
       title: 'Store Management',
       description: 'Manage multiple store locations',
@@ -63,25 +79,18 @@ export const BusinessAdminDashboard: React.FC = () => {
       action: '/stores'
     },
     {
-      title: 'Business Analytics',
-      description: 'View business-wide performance metrics',
-      icon: BarChart3,
+      title: 'Business Settings',
+      description: 'Configure business preferences',
+      icon: Settings,
       color: 'text-green-600',
-      action: '/reports'
+      action: '/business-settings'
     },
     {
-      title: 'Inventory Overview',
-      description: 'Monitor stock across all stores',
-      icon: Package,
+      title: 'Sales Report',
+      description: 'View sales reports and analytics',
+      icon: BarChart3,
       color: 'text-purple-600',
-      action: '/inventory'
-    },
-    {
-      title: 'Staff Management',
-      description: 'Manage employees and permissions',
-      icon: Users,
-      color: 'text-orange-600',
-      action: '/staff'
+      action: '/sales-report'
     }
   ];
 
@@ -92,6 +101,13 @@ export const BusinessAdminDashboard: React.FC = () => {
       icon: Package,
       color: 'text-green-600',
       action: '/products'
+    },
+    {
+      title: 'Product Sync',
+      description: 'Sync products across all stores in your business',
+      icon: Truck,
+      color: 'text-indigo-600',
+      action: '/product-sync'
     },
     {
       title: 'Categories',
@@ -165,198 +181,187 @@ export const BusinessAdminDashboard: React.FC = () => {
     }
   ];
 
+  // Business type display similar to React app
+  const getBusinessTypeDisplay = () => {
+    if (!currentBusiness) return { label: 'Business', icon: '🏢' };
+    
+    const businessType = currentBusiness.business_type || 'retail';
+    const typeMap: Record<string, { label: string; icon: string }> = {
+      retail: { label: 'Retail Business', icon: '🛍️' },
+      restaurant: { label: 'Restaurant', icon: '🍽️' },
+      service: { label: 'Service Business', icon: '🔧' },
+      hybrid: { label: 'Hybrid Business', icon: '🏢' },
+      pharmacy: { label: 'Pharmacy', icon: '💊' }
+    };
+    
+    return typeMap[businessType] || { label: 'Business', icon: '🏢' };
+  };
+
+  const businessTypeDisplay = getBusinessTypeDisplay();
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Business Admin Dashboard</h1>
-              <p className="text-gray-600">Welcome back, {user?.name || user?.username}</p>
-              {currentBusiness && (
-                <p className="text-sm text-gray-500">Managing: {currentBusiness.name}</p>
-              )}
-            </div>
-            <div className="flex items-center gap-4">
-              <Button onClick={handleRefresh} variant="outline" disabled={isLoading}>
-                <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-              <Button onClick={handleLogout} variant="outline">
-                Logout
-              </Button>
-            </div>
+      <Header 
+        title="Business Admin Dashboard"
+        subtitle={`Welcome back, ${user?.name || user?.username} • ${businessTypeDisplay.label}`}
+      >
+        {/* Business Type Indicator */}
+        {user?.role === 'business_admin' && currentBusiness && (
+          <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-2 border border-blue-200 dark:border-blue-800">
+            <span className="text-lg">{businessTypeDisplay.icon}</span>
+            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+              {businessTypeDisplay.label}
+            </span>
           </div>
-        </div>
-      </div>
+        )}
+        
+        <Button onClick={handleLogout} variant="outline">
+          Logout
+        </Button>
+      </Header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-20" />
-                ) : (
-                  <div className="text-2xl font-bold">
-                    {formatCurrency(dashboardStats?.sales || 0)}
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground">Across all stores</p>
-              </CardContent>
-            </Card>
+          {/* Stats Grid */}
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : dashboardStats ? (
+            <StatsGrid 
+              stats={{
+                todaysSales: dashboardStats.sales || 0,
+                totalProducts: dashboardStats.productsCount || 0,
+                lowStockItems: dashboardStats.lowStockCount || 0,
+                ordersToday: dashboardStats.orders || 0
+              }}
+              storeCount={dashboardStats.storeCount || 0}
+              isAllStores={!currentStore}
+              formatCurrency={formatCurrency}
+            />
+          ) : null}
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-                <Package className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-16" />
-                ) : (
-                  <div className="text-2xl font-bold">
-                    {dashboardStats?.productsCount || 0}
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground">Across all stores</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Stores</CardTitle>
-                <Store className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-16" />
-                ) : (
-                  <div className="text-2xl font-bold">
-                    {dashboardStats?.storeCount || 0}
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground">Active locations</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-8 w-16" />
-                ) : (
-                  <div className="text-2xl font-bold">
-                    {dashboardStats?.orders || 0}
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground">Today&apos;s orders</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Low Stock Alert */}
-          {dashboardStats?.lowStockCount > 0 && (
-            <Card className="border-orange-200 bg-orange-50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-orange-800">
-                  <Package className="w-5 h-5" />
-                  Low Stock Alert
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-orange-700">
-                  You have <strong>{dashboardStats.lowStockCount}</strong> products with low stock across all stores.
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="ml-4"
-                    onClick={() => handleNavigation('/inventory')}
-                  >
-                    View Inventory
-                  </Button>
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Quick Actions Section */}
+          {/* Overview Section */}
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Overview</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {overviewFeatures.map((feature, index) => (
-                <Card 
-                  key={index} 
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => handleNavigation(feature.action)}
-                >
-                  <CardContent className="p-6">
-                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
-                      <feature.icon className={`w-6 h-6 ${feature.color}`} />
-                    </div>
-                    <h3 className="font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                    <p className="text-sm text-gray-600">{feature.description}</p>
-                  </CardContent>
-                </Card>
+                <FeatureCard
+                  key={index}
+                  title={feature.title}
+                  description={feature.description}
+                  icon={feature.icon}
+                  color={feature.color}
+                  onClick={() => handleNavigate(feature.action)}
+                />
               ))}
             </div>
           </div>
 
-          {/* Management Tools Section */}
+          {/* Menu Section */}
           <div>
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Management Tools</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {menuFeatures.map((feature, index) => (
-                <Card 
-                  key={index} 
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => handleNavigation(feature.action)}
-                >
-                  <CardContent className="p-6">
-                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
-                      <feature.icon className={`w-6 h-6 ${feature.color}`} />
-                    </div>
-                    <h3 className="font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                    <p className="text-sm text-gray-600">{feature.description}</p>
-                  </CardContent>
-                </Card>
+                <FeatureCard
+                  key={index}
+                  title={feature.title}
+                  description={feature.description}
+                  icon={feature.icon}
+                  color={feature.color}
+                  onClick={() => handleNavigate(feature.action)}
+                />
               ))}
             </div>
           </div>
+
+          {/* Low Stock Alerts */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                <span>Low Stock Alerts</span>
+                {(dashboardStats?.lowStockCount || 0) > 0 && (
+                  <Badge variant="destructive" className="ml-2">
+                    {dashboardStats?.lowStockCount}
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="text-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                  <p className="text-muted-foreground">Loading low stock alerts...</p>
+                </div>
+              ) : (dashboardStats?.lowStockCount || 0) > 0 ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                        <Package className="w-4 h-4 text-orange-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">Low Stock Products</p>
+                        <p className="text-xs text-orange-600">
+                          {dashboardStats.lowStockCount} products need attention{currentStore ? ` at ${currentStore.name}` : ' across all stores'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleNavigate('/products')}
+                    >
+                      View Inventory
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Package className="w-12 h-12 text-green-400 mx-auto mb-4" />
+                  <p className="text-muted-foreground">All products well stocked</p>
+                  <p className="text-sm text-muted-foreground">No low stock alerts at this time</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Recent Activity */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Activity className="w-5 h-5" />
                 Recent Activity
+                {currentBusiness?.id && (
+                  <span className="text-sm font-normal text-muted-foreground">
+                    • {currentBusiness.name}
+                  </span>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-muted-foreground">No recent activities</p>
-                <p className="text-sm text-muted-foreground">
-                  Activities will appear here as you manage your business
-                </p>
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  onClick={() => handleNavigation('/activity-logs')}
-                >
-                  View Activity Logs
-                </Button>
-              </div>
+              {isLoading ? (
+                <div className="text-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                  <p className="text-muted-foreground">Loading recent activities...</p>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-muted-foreground">No recent activities</p>
+                  <p className="text-sm text-muted-foreground">
+                    Activities will appear here as you manage your business
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => handleNavigate('/activity-logs')}
+                  >
+                    View Activity Logs
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

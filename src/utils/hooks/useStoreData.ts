@@ -1561,6 +1561,31 @@ export const useClearActivityLogs = () => {
   });
 };
 
+// Hook for fetching store dashboard stats
+export const useStoreDashboardStats = (storeId: string, options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['store-dashboard-stats', storeId],
+    queryFn: async () => {
+      const response = await fetch(`/api/dashboard/stats?store_id=${storeId}&type=store`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch store dashboard stats');
+      }
+      const data = await response.json();
+      return data.stats || data;
+    },
+    enabled: enabled && !!storeId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
 // Hook for fetching business dashboard stats
 export const useBusinessDashboardStats = (businessId: string, options?: {
   enabled?: boolean;

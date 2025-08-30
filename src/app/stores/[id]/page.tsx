@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { StoreDetails } from '@/components/StoreDetails';
-import { supabase } from '@/lib/supabase/config';
 import { toast } from 'sonner';
 
 interface Store {
@@ -49,22 +48,23 @@ export default function StoreDetailPage() {
       if (!params.id) return;
 
       try {
-        const { data, error } = await supabase
-          .from('store')
-          .select(`
-            *,
-            business:business_id(id, name),
-            language:language_id(id, name, code),
-            currency:currency_id(id, name, symbol)
-          `)
-          .eq('id', params.id)
-          .single();
-
-        if (error) throw error;
-        setStore(data);
+        const response = await fetch(`/api/stores/${params.id}`);
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('Store not found');
+          }
+          throw new Error('Failed to fetch store details');
+        }
+        
+        const data = await response.json();
+        if (data.success && data.store) {
+          setStore(data.store);
+        } else {
+          throw new Error('Invalid store data received');
+        }
       } catch (error) {
         console.error('Error fetching store:', error);
-        toast.error('Failed to fetch store details');
+        toast.error(error instanceof Error ? error.message : 'Failed to fetch store details');
       } finally {
         setIsLoading(false);
       }

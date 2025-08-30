@@ -59,16 +59,16 @@ interface StoreDetailsProps {
   } | null;
 }
 
-export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack }) => {
+export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => {
   const { translate, formatCurrency, getCurrentCurrency } = useSystem();
   const { logActivity } = useActivityLogger();
   
   const [activeTab, setActiveTab] = useState('overview');
   const [error, setError] = useState<string | null>(null);
 
-  // Get store ID from sessionStorage
-  const storeId = sessionStorage.getItem('selectedStoreId');
-  const storeName = sessionStorage.getItem('selectedStoreName');
+  // Use the store ID from the store prop
+  const storeId = store?.id;
+  const storeName = store?.name;
 
   // Fetch store data
   const {
@@ -152,16 +152,22 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack }) => {
   // Store not found
   if (!storeSettings) {
     return (
+      <div className="min-h-screen bg-gray-50">
+        <Header title="Store Not Found" onBack={onBack} />
+        <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <p className="text-gray-600 mb-4">Store not found</p>
             <Button onClick={onBack}>
               Go Back
             </Button>
           </div>
+        </div>
+      </div>
     );
   }
 
-  const store = storeSettings;
+  // Use store data from settings as primary, then from props as fallback
+  const storeData = storeSettings || store;
   const stats = dashboardStats || {};
   const storeProducts = products || [];
   const storeSales = sales || [];
@@ -189,8 +195,10 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header 
-        title={`Store: ${store?.name || 'Loading...'}`}
-        subtitle={store?.address ? `${store.address}, ${store.city || ''}, ${store.state || ''}` : 'Address not available'}
+        title={`Store: ${storeData?.name || store?.name || 'Loading...'}`}
+        subtitle={storeData?.address || store?.address ? 
+          `${storeData?.address || store?.address}, ${storeData?.city || store?.city || ''}, ${storeData?.state || store?.state || ''}` : 
+          'Address not available'}
         showBackButton
         onBack={onBack}
       />
@@ -203,34 +211,33 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack }) => {
               <StoreIcon className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{store.name}</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{storeData?.name || store?.name}</h1>
               <p className="text-gray-600">
-                {store.address && `${store.address}, `}
-                {store.city && `${store.city}, `}
-                {store.state && `${store.state}`}
-                {store.postalCode && ` ${store.postalCode}`}
+                {storeData?.address && `${storeData.address}, `}
+                {storeData?.city && `${storeData.city}, `}
+                {storeData?.state && `${storeData.state}`}
+                {storeData?.postal_code && ` ${storeData.postal_code}`}
               </p>
-              
             </div>
           </div>
           
           <div className="flex items-center gap-4 text-sm text-gray-600">
-            {store.phone && (
+            {storeData?.phone && (
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
-                <span>{store.phone}</span>
+                <span>{storeData.phone}</span>
               </div>
             )}
-            {store.email && (
+            {storeData?.email && (
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />
-                <span>{store.email}</span>
+                <span>{storeData.email}</span>
               </div>
             )}
-            {store.website && (
+            {storeData?.website && (
               <div className="flex items-center gap-2">
                 <Globe className="w-4 h-4" />
-                <span>{store.website}</span>
+                <span>{storeData.website}</span>
               </div>
             )}
           </div>
@@ -319,48 +326,48 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack }) => {
                 <CardContent className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Name:</span>
-                    <span className="font-medium">{store.name}</span>
+                    <span className="font-medium">{storeData?.name || store?.name}</span>
                   </div>
-                  {store.address && (
+                  {storeData?.address && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Address:</span>
-                      <span className="font-medium">{store.address}</span>
+                      <span className="font-medium">{storeData.address}</span>
                     </div>
                   )}
-                  {store.city && (
+                  {storeData?.city && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">City:</span>
-                      <span className="font-medium">{store.city}</span>
+                      <span className="font-medium">{storeData.city}</span>
                     </div>
                   )}
-                  {store.state && (
+                  {storeData?.state && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">State:</span>
-                      <span className="font-medium">{store.state}</span>
+                      <span className="font-medium">{storeData.state}</span>
                     </div>
                   )}
-                  {store.postalCode && (
+                  {storeData?.postal_code && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Postal Code:</span>
-                      <span className="font-medium">{store.postalCode}</span>
+                      <span className="font-medium">{storeData.postal_code}</span>
                     </div>
                   )}
-                  {store.phone && (
+                  {storeData?.phone && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Phone:</span>
-                      <span className="font-medium">{store.phone}</span>
+                      <span className="font-medium">{storeData.phone}</span>
                     </div>
                   )}
-                  {store.email && (
+                  {storeData?.email && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Email:</span>
-                      <span className="font-medium">{store.email}</span>
+                      <span className="font-medium">{storeData.email}</span>
                     </div>
                   )}
-                  {store.website && (
+                  {storeData?.website && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Website:</span>
-                      <span className="font-medium">{store.website}</span>
+                      <span className="font-medium">{storeData.website}</span>
                     </div>
                   )}
                 </CardContent>
@@ -381,28 +388,28 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack }) => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Language:</span>
-                    <span className="font-medium">{store.language || 'English'}</span>
+                    <span className="font-medium">{storeData?.language || 'English'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tax Rate:</span>
-                    <span className="font-medium">{store.taxRate || 0}%</span>
+                    <span className="font-medium">{storeData?.taxRate || 0}%</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tax Enabled:</span>
-                    <Badge variant={store.enableTax ? "default" : "secondary"}>
-                      {store.enableTax ? "Yes" : "No"}
+                    <Badge variant={storeData?.enableTax ? "default" : "secondary"}>
+                      {storeData?.enableTax ? "Yes" : "No"}
                     </Badge>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Returns Allowed:</span>
-                    <Badge variant={store.allowReturns ? "default" : "secondary"}>
-                      {store.allowReturns ? "Yes" : "No"}
+                    <Badge variant={storeData?.allowReturns ? "default" : "secondary"}>
+                      {storeData?.allowReturns ? "Yes" : "No"}
                     </Badge>
                   </div>
-                  {store.allowReturns && (
+                  {storeData?.allowReturns && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Return Period:</span>
-                      <span className="font-medium">{store.returnPeriodDays || 30} days</span>
+                      <span className="font-medium">{storeData?.returnPeriodDays || 30} days</span>
                     </div>
                   )}
                 </CardContent>
@@ -617,15 +624,15 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack }) => {
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span>Header:</span>
-                          <span className="text-gray-600">{store.receiptHeader || 'Not set'}</span>
+                          <span className="text-gray-600">{storeData.receiptHeader || 'Not set'}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Footer:</span>
-                          <span className="text-gray-600">{store.receiptFooter || 'Not set'}</span>
+                          <span className="text-gray-600">{storeData.receiptFooter || 'Not set'}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Custom Message:</span>
-                          <span className="text-gray-600">{store.customReceiptMessage || 'Not set'}</span>
+                          <span className="text-gray-600">{storeData.customReceiptMessage || 'Not set'}</span>
                         </div>
                       </div>
                     </div>
@@ -638,9 +645,9 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack }) => {
                           <div className="flex items-center gap-2">
                             <div 
                               className="w-4 h-4 rounded border"
-                              style={{ backgroundColor: store.theme?.primaryColor || '#3B82F6' }}
+                              style={{ backgroundColor: storeData.theme?.primaryColor || '#3B82F6' }}
                             ></div>
-                            <span className="text-gray-600">{store.theme?.primaryColor || '#3B82F6'}</span>
+                            <span className="text-gray-600">{storeData.theme?.primaryColor || '#3B82F6'}</span>
                           </div>
                         </div>
                         <div className="flex justify-between">
@@ -648,9 +655,9 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack }) => {
                           <div className="flex items-center gap-2">
                             <div 
                               className="w-4 h-4 rounded border"
-                              style={{ backgroundColor: store.theme?.secondaryColor || '#10B981' }}
+                              style={{ backgroundColor: storeData.theme?.secondaryColor || '#10B981' }}
                             ></div>
-                            <span className="text-gray-600">{store.theme?.secondaryColor || '#10B981'}</span>
+                            <span className="text-gray-600">{storeData.theme?.secondaryColor || '#10B981'}</span>
                           </div>
                         </div>
                         <div className="flex justify-between">
@@ -658,9 +665,9 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack }) => {
                           <div className="flex items-center gap-2">
                             <div 
                               className="w-4 h-4 rounded border"
-                              style={{ backgroundColor: store.theme?.accentColor || '#F59E0B' }}
+                              style={{ backgroundColor: storeData.theme?.accentColor || '#F59E0B' }}
                             ></div>
-                            <span className="text-gray-600">{store.theme?.accentColor || '#F59E0B'}</span>
+                            <span className="text-gray-600">{storeData.theme?.accentColor || '#F59E0B'}</span>
                           </div>
                         </div>
                       </div>

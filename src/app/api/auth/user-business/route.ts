@@ -56,9 +56,32 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('userBusinessRole ==> ', userBusinessRole);
-    // Transform the data to match the expected structure
-    // Handle the case where joined tables return objects
+    // For business_admin users, fetch all stores for the business
+    let allStores: Array<{
+      id: string;
+      name: string;
+      address: string;
+      language_id: string | null;
+      currency_id: string | null;
+    }> = [];
+    if (userBusinessRole.business_id) {
+      const { data: stores, error: storesError } = await supabase
+        .from('store')
+        .select(`
+          id,
+          name,
+          address,
+          language_id,
+          currency_id
+        `)
+        .eq('business_id', userBusinessRole.business_id)
+        .eq('is_active', true);
+
+      if (!storesError && stores) {
+        allStores = stores;
+      }
+    }
+
     const businessData = {
       business: {
         id: (userBusinessRole.business as any)?.id || userBusinessRole.business_id,
@@ -75,7 +98,8 @@ export async function GET(request: NextRequest) {
         address: (userBusinessRole.store as any).address,
         language_id: (userBusinessRole.store as any)?.language_id,
         currency_id: (userBusinessRole.store as any)?.currency_id
-      } : null
+      } : null,
+      allStores: allStores
     };
 
     return NextResponse.json({

@@ -117,14 +117,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (businessResponse.ok) {
               const businessData = await businessResponse.json();
               if (businessData.success && businessData.data) {
-                const { business, store } = businessData.data;
+                const { business, store, allStores } = businessData.data;
                 
-                // Create business object with store
+                // Create business object with all stores for business_admin users
                 const businessObj = {
                   id: business.id,
                   name: business.name,
                   subscription_status: business.subscription_status,
-                  stores: store ? [store] : [],
+                  stores: allStores && allStores.length > 0 ? allStores : (store ? [store] : []),
                   createdAt: new Date().toISOString(),
                   timezone: 'UTC'
                 };
@@ -182,14 +182,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (businessResponse.ok) {
               const businessData = await businessResponse.json();
               if (businessData.success && businessData.data) {
-                const { business, store } = businessData.data;
+                const { business, store, allStores } = businessData.data;
                 
-                // Create business object with store
+                // Create business object with all stores for business_admin users
                 const businessObj = {
                   id: business.id,
                   name: business.name,
                   subscription_status: business.subscription_status,
-                  stores: store ? [store] : [],
+                  stores: allStores && allStores.length > 0 ? allStores : (store ? [store] : []),
                   createdAt: new Date().toISOString(),
                   timezone: 'UTC'
                 };

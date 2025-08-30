@@ -38,10 +38,8 @@ export const Header: React.FC<HeaderProps> = ({
 
 
   const showStoreSelector = currentBusiness && 
-    user?.role !== 'superadmin' && 
-    user?.role !== 'store_admin' && // Store admins can't switch stores
     currentBusiness.stores.length > 0 &&
-    user?.role !== 'cashier'; // Cashiers can't switch stores
+    (user?.role === 'business_admin' || user?.role === 'admin'); // Only business_admin and admin can switch stores
 
   return (
     <header className="bg-background shadow-sm border-b border-border sticky top-0 z-40">

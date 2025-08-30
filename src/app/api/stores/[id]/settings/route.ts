@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -15,24 +16,62 @@ export async function GET(
       );
     }
 
-    // Fetch store settings
-    const { data: settings, error } = await supabase
+    // First check if the store exists
+    const { data: store, error: storeError } = await supabase
+      .from('store')
+      .select('id, name')
+      .eq('id', storeId)
+      .single();
+
+    if (storeError) {
+      console.error('Store not found:', storeError);
+      return NextResponse.json(
+        { success: false, error: 'Store not found' },
+        { status: 404 }
+      );
+    }
+
+    // Try to fetch store settings, but don't fail if they don't exist
+    const { data: settings, error: settingsError } = await supabase
       .from('store_setting')
       .select('*')
       .eq('store_id', storeId)
-      .single();
+      .maybeSingle();
 
-    if (error) {
-      console.error('Supabase error:', error);
+    if (settingsError && settingsError.code !== 'PGRST116') {
+      console.error('Supabase error:', settingsError);
       return NextResponse.json(
         { success: false, error: 'Failed to fetch store settings' },
         { status: 500 }
       );
     }
 
+    // Return default settings if none exist
+    const defaultSettings = {
+      store_id: storeId,
+      currency_id: null,
+      language_id: null,
+      tax_rate: 0.00,
+      enable_tax: false,
+      allow_returns: true,
+      return_period_days: 30,
+      enable_sounds: true,
+      logo_url: null,
+      primary_color: '#3B82F6',
+      secondary_color: '#10B981',
+      accent_color: '#F59E0B',
+      receipt_header: store.name,
+      receipt_footer: 'Thank you for your business!',
+      return_policy: null,
+      contact_person: null,
+      store_hours: null,
+      store_promotion_info: null,
+      custom_receipt_message: null
+    };
+
     return NextResponse.json({
       success: true,
-      settings: settings || {}
+      settings: settings || defaultSettings
     });
 
   } catch (error) {
