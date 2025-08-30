@@ -264,15 +264,6 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
     console.log('Raw salesData:', salesData);
     
     return salesData.map((sale: RawSalesData) => {
-      // Debug: Log the sale structure
-      console.log('Processing sale:', {
-        id: sale.id,
-        sale_items: sale.sale_items,
-        sale_item: (sale as RawSalesData & { sale_item?: unknown }).sale_item,
-        hasSaleItems: !!sale.sale_items,
-        saleItemsLength: sale.sale_items?.length || 0
-      });
-      
       // Ensure products array is always defined
       let products: string[] = [];
       if (sale.sale_items && Array.isArray(sale.sale_items)) {
