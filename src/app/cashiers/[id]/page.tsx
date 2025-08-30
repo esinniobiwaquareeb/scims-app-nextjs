@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { CashierDetail } from '@/components/CashierDetail';
-import { supabase } from '@/lib/supabase/config';
 import { toast } from 'sonner';
 
 interface Cashier {
@@ -26,6 +25,12 @@ interface Cashier {
   transactionCount?: number;
 }
 
+interface Sale {
+  id: string;
+  total_amount: number;
+  created_at: string;
+}
+
 export default function CashierDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -38,32 +43,25 @@ export default function CashierDetailPage() {
 
       try {
         // Get cashier data with store information
-        const { data: userData, error: userError } = await supabase
-          .from('user')
-          .select(`
-            *,
-            store:store_id(id, name, address)
-          `)
-          .eq('id', params.id)
-          .single();
-
-        if (userError) throw userError;
+        const userResponse = await fetch(`/api/cashiers/${params.id}`);
+        if (!userResponse.ok) {
+          throw new Error('Failed to fetch cashier data');
+        }
+        const userData = await userResponse.json();
 
         // Get sales data for the cashier
-        const { data: salesData, error: salesError } = await supabase
-          .from('sale')
-          .select('total_amount')
-          .eq('cashier_id', params.id);
-
-        if (salesError) {
-          console.error('Error fetching sales:', salesError);
+        const salesResponse = await fetch(`/api/sales?cashier_id=${params.id}`);
+        let salesData = [];
+        if (salesResponse.ok) {
+          const salesResult = await salesResponse.json();
+          salesData = salesResult.sales || [];
         }
 
-        const totalSales = salesData?.reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0) || 0;
-        const transactionCount = salesData?.length || 0;
+        const totalSales = salesData.reduce((sum: number, sale: Sale) => sum + Number(sale.total_amount || 0), 0);
+        const transactionCount = salesData.length;
 
         setCashier({
-          ...userData,
+          ...userData.cashier,
           totalSales,
           transactionCount
         });

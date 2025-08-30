@@ -28,9 +28,11 @@ interface CashierSale {
 interface ActivityLog {
   id: string;
   description: string;
-  activity_type: string;
-  category: string;
-  created_at: string;
+  action: string;
+  module: string;
+  timestamp: Date | string;
+  userName: string;
+  userRole: string;
   metadata?: Record<string, any>;
 }
 
@@ -72,13 +74,27 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
       try {
         setIsLoading(true);
 
+        // Check if we have the required parameters
+        if (!currentBusiness?.id) {
+          console.error('No business ID available for activity logs');
+          toast.error('Business context not available');
+          return;
+        }
+
         const [salesResponse, activityResponse] = await Promise.all([
           fetch(`/api/sales?cashier_id=${cashier.id}&store_id=${cashier.store_id}`),
-          fetch(`/api/activity-logs?user_id=${cashier.id}&business_id=${currentBusiness?.id}&store_id=${cashier.store_id}`)
+          fetch(`/api/activity-logs?user_id=${cashier.id}&business_id=${currentBusiness.id}&store_id=${cashier.store_id}`)
         ]);
 
         const salesData = salesResponse.ok ? (await salesResponse.json()).sales || [] : [];
         const activityData = activityResponse.ok ? (await activityResponse.json()).logs || [] : [];
+        
+        console.log('Sales response:', salesResponse.status, salesData);
+        console.log('Activity response:', activityResponse.status, activityData);
+        
+        if (!activityResponse.ok) {
+          console.error('Activity logs API error:', activityResponse.status, await activityResponse.text());
+        }
 
         const mappedSales = salesData.map((s: any) => ({
           id: s.id,
@@ -93,6 +109,10 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
 
         setSales(mappedSales);
         setActivity(activityData);
+        
+        if (activityData.length === 0) {
+          console.log('No activity logs found for cashier');
+        }
       } catch (e: unknown) {
         console.error(e);
         toast.error('Failed to load cashier details');
@@ -122,13 +142,13 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
 
   const filteredActivity = useMemo(() => {
     const q = activitySearch.toLowerCase();
-    return (activity || []).filter((log: any) => {
+    return (activity || []).filter((log: ActivityLog) => {
       const matchesText = (
         (log.description || '').toLowerCase().includes(q) ||
-        (log.category || '').toLowerCase().includes(q) ||
-        (log.activity_type || '').toLowerCase().includes(q)
+        (log.module || '').toLowerCase().includes(q) ||
+        (log.action || '').toLowerCase().includes(q)
       );
-      const matchesType = activityType === 'all' || log.activity_type === activityType;
+      const matchesType = activityType === 'all' || log.action === activityType;
       return matchesText && matchesType;
     });
   }, [activity, activitySearch, activityType]);
@@ -359,19 +379,34 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredActivity.map((log: ActivityLog) => (
-                    <TableRow key={log.id}>
-                      <TableCell>
-                        <div>
-                          <p className="text-sm">{new Date(log.created_at).toLocaleDateString()}</p>
-                          <p className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleTimeString()}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell><Badge variant="secondary" className="text-xs">{log.activity_type}</Badge></TableCell>
-                      <TableCell>{log.category}</TableCell>
-                      <TableCell className="max-w-[480px]"><span className="truncate block">{log.description}</span></TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredActivity.map((log: ActivityLog) => {
+                    // Ensure timestamp is a Date object with error handling
+                    let timestamp: Date;
+                    try {
+                      timestamp = log.timestamp instanceof Date ? log.timestamp : new Date(log.timestamp);
+                      if (isNaN(timestamp.getTime())) {
+                        console.warn('Invalid timestamp:', log.timestamp);
+                        timestamp = new Date(); // Fallback to current date
+                      }
+                    } catch (error) {
+                      console.error('Error parsing timestamp:', log.timestamp, error);
+                      timestamp = new Date(); // Fallback to current date
+                    }
+                    
+                    return (
+                      <TableRow key={log.id}>
+                        <TableCell>
+                          <div>
+                            <p className="text-sm">{timestamp.toLocaleDateString()}</p>
+                            <p className="text-xs text-muted-foreground">{timestamp.toLocaleTimeString()}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell><Badge variant="secondary" className="text-xs">{log.action}</Badge></TableCell>
+                        <TableCell>{log.module}</TableCell>
+                        <TableCell className="max-w-[480px]"><span className="truncate block">{log.description}</span></TableCell>
+                      </TableRow>
+                    );
+                  })}
                   {!filteredActivity.length && (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center py-8">

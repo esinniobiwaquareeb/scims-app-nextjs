@@ -1,6 +1,90 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: cashierId } = await params;
+
+    if (!cashierId) {
+      return NextResponse.json(
+        { error: 'Cashier ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Get the cashier data first
+    const { data: cashier, error: cashierError } = await supabase
+      .from('user')
+      .select('*')
+      .eq('id', cashierId)
+      .eq('role', 'cashier')
+      .single();
+
+    if (cashierError) {
+      console.error('Error fetching cashier:', cashierError);
+      return NextResponse.json(
+        { error: 'Cashier not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get the user's business role to find store_id
+    const { data: userRole, error: roleError } = await supabase
+      .from('user_business_role')
+      .select('store_id')
+      .eq('user_id', cashierId)
+      .single();
+
+    if (roleError) {
+      console.error('Error fetching user role:', roleError);
+      // Continue without store_id if role not found
+    }
+
+    if (cashierError) {
+      console.error('Error fetching cashier:', cashierError);
+      return NextResponse.json(
+        { error: 'Cashier not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get store information separately if store_id exists
+    let storeInfo = null;
+    if (cashier.store_id) {
+      const { data: store, error: storeError } = await supabase
+        .from('store')
+        .select('id, name, address')
+        .eq('id', cashier.store_id)
+        .single();
+      
+      if (!storeError && store) {
+        storeInfo = store;
+      }
+    }
+
+    // Combine cashier and store data
+    const cashierWithStore = {
+      ...cashier,
+      store_id: userRole?.store_id || null,
+      store: storeInfo
+    };
+
+    return NextResponse.json({
+      success: true,
+      cashier: cashierWithStore
+    });
+  } catch (error) {
+    console.error('Error fetching cashier:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

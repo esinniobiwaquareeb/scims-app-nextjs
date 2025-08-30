@@ -20,11 +20,7 @@ export async function GET(request: NextRequest) {
       .from('user_business_role')
       .select(`
         user_id,
-        store_id,
-        store!store_id(
-          id,
-          name
-        )
+        store_id
       `)
       .eq('business_id', businessId)
       .not('user_id', 'is', null);
@@ -93,6 +89,25 @@ export async function GET(request: NextRequest) {
       cashierIdToStats[cid].transactionCount += 1;
     });
 
+    // Get store information for all store IDs
+    const storeIds = userRoles
+      .map((role: { store_id?: string }) => role.store_id)
+      .filter((id: string | undefined) => id) as string[];
+    
+    const storeInfo: Record<string, { id: string; name: string }> = {};
+    if (storeIds.length > 0) {
+      const { data: stores, error: storesError } = await supabase
+        .from('store')
+        .select('id, name')
+        .in('id', storeIds);
+      
+      if (!storesError && stores) {
+        stores.forEach((store: { id: string; name: string }) => {
+          storeInfo[store.id] = store;
+        });
+      }
+    }
+
     // Combine the data
     const transformedCashiers = (users || []).map((user: { 
       id: string; 
@@ -105,8 +120,10 @@ export async function GET(request: NextRequest) {
       created_at: string; 
       last_login?: string; 
     }) => {
-      const userRole = userRoles.find((role: { user_id: string; store_id?: string; store?: Array<{ name: string }> }) => role.user_id === user.id);
+      const userRole = userRoles.find((role: { user_id: string; store_id?: string }) => role.user_id === user.id);
       const stats = cashierIdToStats[user.id] || { totalSales: 0, transactionCount: 0 };
+      const storeName = userRole?.store_id ? storeInfo[userRole.store_id]?.name : undefined;
+      
       return {
         id: user.id,
         name: user.name,
@@ -114,7 +131,7 @@ export async function GET(request: NextRequest) {
         email: user.email,
         phone: user.phone,
         store_id: userRole?.store_id,
-        storeName: userRole?.store?.[0]?.name,
+        storeName: storeName,
         is_active: user.is_active,
         role: user.role,
         created_at: user.created_at,
