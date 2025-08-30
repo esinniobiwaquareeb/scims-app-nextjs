@@ -34,6 +34,32 @@ import {
   RefreshCw
 } from 'lucide-react';
 
+// Receipt data interface - matches the ReceiptData interface from receipt.ts
+interface ReceiptData {
+  id?: string;
+  receiptNumber?: string;
+  customerName?: string;
+  customerPhone?: string;
+  paymentMethod?: string;
+  payment_method?: string;
+  items?: Array<{
+    name: string;
+    quantity: number;
+    price: number;
+  }>;
+  subtotal?: number;
+  tax?: number;
+  tax_amount?: number;
+  total?: number;
+  total_amount?: number;
+  cashAmount?: number;
+  cash_received?: number;
+  change?: number;
+  change_given?: number;
+  transactionDate?: Date;
+  transaction_date?: Date;
+}
+
 // Custom hooks moved outside component to prevent recreation on every render
 const useCashierSales = (cashierId: string, storeId: string) => {
   const [data, setData] = useState<Sale[]>([]);
@@ -150,7 +176,7 @@ const useActivityLogs = (userId: string) => {
 export const CashierDashboard: React.FC = () => {
   const { user, logout, currentStore } = useAuth();
   const router = useRouter();
-  const { formatCurrency } = useSystem();
+  const { formatCurrency, printReceipt, getCurrentCurrency } = useSystem();
 
   // State management
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -325,17 +351,35 @@ export const CashierDashboard: React.FC = () => {
   };
 
   // Handle reprint receipt
-  const handleReprintReceipt = async () => {
-    if (selectedSale) {
-      try {
-        // For now, just log the action since printReceipt is not implemented
-        
-        // Close the modal
-        setShowSaleDetail(false);
-        setSelectedSale(null);
-      } catch (error) {
-        console.error('Error reprinting receipt:', error);
-      }
+  const handleReprintReceipt = async (receiptData: ReceiptData) => {
+    try {
+      // Create receipt data structure matching the ReceiptData interface from receipt.ts
+      const receipt = {
+        storeName: currentStore?.name || 'Store',
+        receiptNumber: receiptData.receiptNumber || receiptData.id?.slice(-6) || 'Unknown',
+        cashierName: user?.name || user?.username || 'Cashier',
+        customerName: receiptData.customerName || 'Walk-in Customer',
+        paymentMethod: receiptData.paymentMethod || receiptData.payment_method || 'Unknown',
+        items: receiptData.items || [],
+        subtotal: receiptData.subtotal || 0,
+        tax: receiptData.tax || receiptData.tax_amount || 0,
+        total: receiptData.total || receiptData.total_amount || 0,
+        cashAmount: receiptData.cashAmount || receiptData.cash_received || 0,
+        change: receiptData.change || receiptData.change_given || 0,
+        transactionDate: receiptData.transactionDate || receiptData.transaction_date || new Date(),
+        currencySymbol: getCurrentCurrency()
+      };
+
+      // Actually print the receipt using the SystemContext printReceipt function
+      printReceipt(receipt);
+      
+      // Close the modal
+      setShowSaleDetail(false);
+      setSelectedSale(null);
+      
+    } catch (error) {
+      console.error('Error reprinting receipt:', error);
+      alert('Failed to reprint receipt. Please try again.');
     }
   };
 
@@ -911,7 +955,7 @@ export const CashierDashboard: React.FC = () => {
               <div className="flex gap-3">
                 <Button 
                   className="flex-1" 
-                  onClick={handleReprintReceipt}
+                  onClick={() => handleReprintReceipt(selectedSale as ReceiptData)}
                 >
                   <Receipt className="w-4 h-4 mr-2" />
                   Reprint Receipt
