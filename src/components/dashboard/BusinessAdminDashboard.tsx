@@ -214,10 +214,6 @@ export const BusinessAdminDashboard: React.FC = () => {
             </span>
           </div>
         )}
-        
-        <Button onClick={handleLogout} variant="outline">
-          Logout
-        </Button>
       </Header>
 
       {/* Main Content */}

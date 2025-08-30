@@ -305,13 +305,6 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const getCurrentLocale = () => {
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    console.log('getCurrentLocale called with:', {
-      storeLanguageId: (currentStore as any)?.language_id,
-      businessLanguageId: (currentBusiness as any)?.language_id,
-      storeSettingsLanguageId: currentStoreSettings?.language_id,
-      platformDefault: systemSettings.defaultLanguage,
-      supportedLanguages: systemSettings.supportedLanguages
-    });
 
     // First check store settings language (highest priority)
     if (currentStoreSettings?.language_id) {
@@ -357,7 +350,7 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return currency?.symbol || '$';
     }
     
-    // Then check business currency (third priority)
+    // Then check business currency (third priority) - from business object directly
     if ((currentBusiness as any)?.currency_id) {
       const currency = systemSettings.supportedCurrencies.find((c: Currency) => c.id === (currentBusiness as any).currency_id);
       return currency?.symbol || '$';

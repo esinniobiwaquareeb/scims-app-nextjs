@@ -51,22 +51,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!userId || userId === '') return null;
     
     try {
-      console.log('Loading business data for user:', userId);
       const businessResponse = await fetch(`/api/auth/user-business?user_id=${userId}`);
       if (businessResponse.ok) {
         const businessData = await businessResponse.json();
         if (businessData.success && businessData.data) {
-          const { business, store } = businessData.data;
+          const { business, store, allStores } = businessData.data;
           
-          // Create business object with store
+          // Create business object with all stores for business_admin users
           const businessObj = {
             id: business.id,
             name: business.name,
             subscription_status: business.subscription_status,
-            stores: store ? [store] : [],
-            createdAt: new Date().toISOString(),
-            timezone: 'UTC'
-            };
+            language_id: business.language_id,
+            currency_id: business.currency_id,
+            timezone: business.timezone || 'UTC',
+            stores: allStores && allStores.length > 0 ? allStores : (store ? [store] : []),
+            createdAt: new Date().toISOString()
+          };
           
           setCurrentBusiness(businessObj);
           setBusinesses([businessObj]);
@@ -124,9 +125,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   id: business.id,
                   name: business.name,
                   subscription_status: business.subscription_status,
+                  language_id: business.language_id,
+                  currency_id: business.currency_id,
+                  timezone: business.timezone || 'UTC',
                   stores: allStores && allStores.length > 0 ? allStores : (store ? [store] : []),
-                  createdAt: new Date().toISOString(),
-                  timezone: 'UTC'
+                  createdAt: new Date().toISOString()
                 };
                 
                 setCurrentBusiness(businessObj);
@@ -136,8 +139,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 if (store) {
                   setCurrentStore(store);
                 }
-                
-      
               }
             }
           } catch (businessError) {
@@ -189,9 +190,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   id: business.id,
                   name: business.name,
                   subscription_status: business.subscription_status,
+                  language_id: business.language_id,
+                  currency_id: business.currency_id,
+                  timezone: business.timezone || 'UTC',
                   stores: allStores && allStores.length > 0 ? allStores : (store ? [store] : []),
-                  createdAt: new Date().toISOString(),
-                  timezone: 'UTC'
+                  createdAt: new Date().toISOString()
                 };
                 
                 setCurrentBusiness(businessObj);
@@ -201,8 +204,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 if (store) {
                   setCurrentStore(store);
                 }
-                
-                console.log('Loaded business and store data:', { business: businessObj, store });
               }
             }
           } catch (businessError) {

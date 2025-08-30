@@ -48,20 +48,16 @@ const useCashierSales = (cashierId: string, storeId: string) => {
 
     try {
       setIsLoading(true);
-      console.log('Fetching cashier sales for:', { cashierId, storeId });
       const response = await fetch(`/api/sales?store_id=${storeId}&cashier_id=${cashierId}&status=completed`);
       if (!response.ok) throw new Error('Failed to fetch cashier sales');
       const result = await response.json();
       
       if (result.success && Array.isArray(result.sales)) {
-        console.log('Cashier sales data:', result.sales);
         setData(result.sales);
       } else {
-        console.warn('Invalid cashier sales response:', result);
         setData([]);
       }
     } catch (err) {
-      console.error('Error fetching cashier sales:', err);
       setError(err instanceof Error ? err : new Error('Unknown error'));
       setData([]);
     } finally {
@@ -89,20 +85,16 @@ const useStoreSales = (storeId: string) => {
 
     try {
       setIsLoading(true);
-      console.log('Fetching store sales for:', { storeId });
       const response = await fetch(`/api/sales?store_id=${storeId}&status=completed`);
       if (!response.ok) throw new Error('Failed to fetch store sales');
       const result = await response.json();
       
       if (result.success && Array.isArray(result.sales)) {
-        console.log('Store sales data:', result.sales);
         setData(result.sales);
       } else {
-        console.warn('Invalid store sales response:', result);
         setData([]);
       }
     } catch (err) {
-      console.error('Error fetching store sales:', err);
       setError(err instanceof Error ? err : new Error('Unknown error'));
       setData([]);
     } finally {
@@ -131,20 +123,16 @@ const useActivityLogs = (userId: string) => {
 
     try {
       setIsLoading(true);
-      console.log('Fetching activity logs for:', { userId, businessId: currentBusiness.id });
       const response = await fetch(`/api/activity-logs?business_id=${currentBusiness.id}&user_id=${userId}&limit=100`);
       if (!response.ok) throw new Error('Failed to fetch activity logs');
       const result = await response.json();
       
       if (result.success && Array.isArray(result.logs)) {
-        console.log('Activity logs data:', result.logs);
         setData(result.logs);
       } else {
-        console.warn('Invalid activity logs response:', result);
         setData([]);
       }
     } catch (err) {
-      console.error('Error fetching activity logs:', err);
       setError(err instanceof Error ? err : new Error('Unknown error'));
       setData([]);
     } finally {
@@ -172,9 +160,6 @@ export const CashierDashboard: React.FC = () => {
   const [showSaleDetail, setShowSaleDetail] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
-
-  // Debug logging
-
 
   // Data fetching hooks
   const {
@@ -214,7 +199,6 @@ export const CashierDashboard: React.FC = () => {
       data = Array.isArray(cashierSales) ? cashierSales : [];
     } else if (user?.role === 'store_admin') {
       // Store admins can only see their store's sales
-      console.log('Store sales data:', storeSales);
       data = Array.isArray(storeSales) ? storeSales.filter((sale: Sale) => sale.storeId === currentStore?.id) : [];
     } else if (user?.role === 'business_admin') {
       // Business admins can see all store sales
@@ -223,14 +207,7 @@ export const CashierDashboard: React.FC = () => {
       data = Array.isArray(storeSales) ? storeSales : []; // Default fallback
     }
     
-    console.log('Sales data for dashboard:', { 
-      userRole: user?.role, 
-      cashierSalesCount: cashierSales.length, 
-      storeSalesCount: storeSales.length, 
-      finalDataCount: data.length,
-      cashierSales: cashierSales.slice(0, 2), // Show first 2 items for debugging
-      storeSales: storeSales.slice(0, 2) // Show first 2 items for debugging
-    });
+
     
     return data;
   }, [user?.role, cashierSales, storeSales, currentStore?.id]);
@@ -244,7 +221,6 @@ export const CashierDashboard: React.FC = () => {
   // Refresh function
   const handleRefresh = useCallback(async () => {
     try {
-      console.log('Refreshing dashboard data...');
       await Promise.all([
         refetchCashierSales(),
         refetchStoreSales(),
@@ -271,7 +247,6 @@ export const CashierDashboard: React.FC = () => {
   const filteredSalesData = useMemo(() => {
     // Ensure salesData is an array
     if (!Array.isArray(salesData)) {
-      console.warn('salesData is not an array:', salesData);
       return [];
     }
     
@@ -354,7 +329,6 @@ export const CashierDashboard: React.FC = () => {
     if (selectedSale) {
       try {
         // For now, just log the action since printReceipt is not implemented
-        console.log('Reprinting receipt for sale:', selectedSale.id);
         
         // Close the modal
         setShowSaleDetail(false);
