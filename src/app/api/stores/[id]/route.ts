@@ -64,9 +64,30 @@ export async function PUT(
     const { id: storeId } = await params;
     const body = await request.json();
 
+    // Define valid store columns based on the database schema
+    const validStoreColumns = [
+      'name', 'address', 'city', 'state', 'postal_code', 'phone', 'email',
+      'manager_name', 'is_active', 'currency_id', 'language_id', 'country_id'
+    ];
+
+    // Filter the body to only include valid store columns
+    const filteredBody = Object.keys(body).reduce((acc: Record<string, unknown>, key) => {
+      if (validStoreColumns.includes(key)) {
+        // Convert empty strings to null for UUID fields
+        if (key === 'country_id' || key === 'currency_id' || key === 'language_id') {
+          acc[key] = body[key] === '' ? null : body[key];
+        } else {
+          acc[key] = body[key];
+        }
+      }
+      return acc;
+    }, {} as Record<string, unknown>);
+
+    console.log('Filtered store update body:', filteredBody);
+
     const { data: store, error } = await supabase
       .from('store')
-      .update(body)
+      .update(filteredBody)
       .eq('id', storeId)
       .select()
       .single();

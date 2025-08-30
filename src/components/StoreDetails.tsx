@@ -14,26 +14,13 @@ import {
   Phone, 
   Mail, 
   Globe, 
-  MapPin, 
   Building, 
   Users, 
   Package, 
   ShoppingCart, 
   BarChart3, 
   Settings, 
-  Edit, 
-  ArrowLeft,
-  Calendar,
-  Clock,
-  DollarSign,
-  TrendingUp,
-  Activity,
-  FileText,
-  Shield,
-  UserCheck,
-  Truck,
-  Tag,
-  FolderOpen
+  Edit,
 } from 'lucide-react';
 import { 
   useStoreSettings, 
@@ -41,6 +28,8 @@ import {
   useStoreSales,
   useStoreCustomers
 } from '../utils/hooks/useStoreData';
+import { StoreSettings } from './StoreSettings';
+
 
 interface StoreDetailsProps {
   onBack: () => void;
@@ -690,6 +679,15 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
             </Card>
           </TabsContent>
         </Tabs>
+
+
+        <StoreSettings 
+          storeId={storeId || ''} 
+          onSave={(settings: Record<string, unknown>) => {
+            console.log('Store settings saved:', settings);
+            // TODO: Implement save functionality
+          }}
+        />
       </main>
     </div>
   );
