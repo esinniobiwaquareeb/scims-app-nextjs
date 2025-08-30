@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CashierDashboard } from '@/components/dashboard/CashierDashboard';
 import { BusinessAdminDashboard } from '@/components/dashboard/BusinessAdminDashboard';
 import { StoreAdminDashboard } from '@/components/dashboard/StoreAdminDashboard';
-import { SuperAdminDashboard } from '@/components/dashboard/SuperAdmin';
+import { SuperAdminDashboard } from '@/components/dashboard/SuperAdminDashboard';
 
 export const Dashboard: React.FC = () => {
   const { user, isLoading } = useAuth();

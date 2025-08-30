@@ -18,7 +18,7 @@ import {
   Activity
 } from 'lucide-react';
 
-export const SuperAdminDashboard: React.FC = () => {
+export const SuperAdmin: React.FC = () => {
   const { user, logout, businesses } = useAuth();
   const router = useRouter();
 
