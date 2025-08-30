@@ -1660,3 +1660,141 @@ export const useCurrencies = (options?: {
     refetchOnMount: !forceRefresh,
   });
 };
+
+// Hook for deleting a business
+export const useDeleteBusiness = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (businessId: string) => {
+      const response = await fetch(`/api/businesses/${businessId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete business');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate and refetch businesses list
+      queryClient.invalidateQueries({ queryKey: ['platformBusinesses'] });
+    },
+  });
+};
+
+// Hook for fetching platform businesses
+export const usePlatformBusinesses = (options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['platformBusinesses'],
+    queryFn: async () => {
+      const response = await fetch('/api/businesses');
+      if (!response.ok) {
+        throw new Error('Failed to fetch platform businesses');
+      }
+      const data = await response.json();
+      return data.businesses || [];
+    },
+    enabled: enabled,
+    staleTime: 60 * 60 * 1000, // 1 hour
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    refetchOnWindowFocus: false,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Hook for creating a business
+export const useCreateBusiness = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (businessData: any) => {
+      const response = await fetch('/api/businesses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(businessData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create business');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate and refetch businesses list
+      queryClient.invalidateQueries({ queryKey: ['platformBusinesses'] });
+    },
+  });
+};
+
+// Hook for updating a business
+export const useUpdateBusiness = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, businessData }: { id: string; businessData: any }) => {
+      const response = await fetch(`/api/businesses/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(businessData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update business');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate and refetch businesses list
+      queryClient.invalidateQueries({ queryKey: ['platformBusinesses'] });
+    },
+  });
+};
+
+// Hook for fetching subscription plans
+export const useSubscriptionPlans = () => {
+  return useQuery({
+    queryKey: ['subscriptionPlans'],
+    queryFn: async () => {
+      const response = await fetch('/api/subscription-plans');
+      if (!response.ok) {
+        throw new Error('Failed to fetch subscription plans');
+      }
+      const data = await response.json();
+      return data.plans || [];
+    },
+    staleTime: 60 * 60 * 1000, // 1 hour
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    refetchOnWindowFocus: false,
+  });
+};
+
+// Hook for fetching countries
+export const useCountries = () => {
+  return useQuery({
+    queryKey: ['countries'],
+    queryFn: async () => {
+      const response = await fetch('/api/countries');
+      if (!response.ok) {
+        throw new Error('Failed to fetch countries');
+      }
+      const data = await response.json();
+      return data.countries || [];
+    },
+    staleTime: 60 * 60 * 1000, // 1 hour
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    refetchOnWindowFocus: false,
+  });
+};
