@@ -1925,3 +1925,85 @@ export const useDeleteStore = (businessId: string) => {
     },
   });
 };
+
+// Hook for fetching platform settings
+export const usePlatformSettings = (options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['platform-settings'],
+    queryFn: async () => {
+      const response = await fetch('/api/platform/settings');
+      if (!response.ok) {
+        throw new Error('Failed to fetch platform settings');
+      }
+      const data = await response.json();
+      return data.settings || {};
+    },
+    enabled,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Hook for fetching system health
+export const useSystemHealth = (options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['system-health'],
+    queryFn: async () => {
+      const response = await fetch('/api/platform/health');
+      if (!response.ok) {
+        throw new Error('Failed to fetch system health');
+      }
+      const data = await response.json();
+      return data.health || {};
+    },
+    enabled,
+    staleTime: 1 * 60 * 1000, // 1 minute (health data should be fresh)
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Hook for updating platform settings
+export const useUpdatePlatformSettings = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (settings: any) => {
+      const response = await fetch('/api/platform/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update platform settings');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate and refetch platform settings
+      queryClient.invalidateQueries({ queryKey: ['platform-settings'] });
+      toast.success('Platform settings updated successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update platform settings');
+    },
+  });
+};
