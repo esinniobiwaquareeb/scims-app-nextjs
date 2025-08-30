@@ -89,6 +89,17 @@ interface CustomerData {
   lastVisit: Date;
 }
 
+interface TopSaleData {
+  id: string;
+  date: Date;
+  customerName: string;
+  amount: number;
+  itemsCount: number;
+  paymentMethod: string;
+  cashier: string;
+  storeId: string;
+}
+
 export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
   const { user, currentStore, currentBusiness } = useAuth();
   const { formatCurrency } = useSystem();
@@ -248,18 +259,41 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
     alert(`${reportType} report export functionality coming soon!`);
   };
 
-  // Transform sales data for display
+    // Transform sales data for display
   const transformedSalesData = useMemo(() => {
-    return salesData.map((sale: RawSalesData) => ({
-      id: sale.id,
-      date: new Date(sale.created_at || sale.transaction_date || ''),
-      customerName: sale.customers?.name || 'Walk-in Customer',
-      products: sale.sale_items?.map((item: { products?: { name: string } }) => item.products?.name || 'Unknown Product') || [],
-      total: parseFloat(String(sale.total_amount || 0)),
-      payment: sale.payment_method || 'cash',
-      cashier: sale.users?.username || 'Unknown',
-      storeId: sale.store_id || ''
-    }));
+    console.log('Raw salesData:', salesData);
+    
+    return salesData.map((sale: RawSalesData) => {
+      // Debug: Log the sale structure
+      console.log('Processing sale:', {
+        id: sale.id,
+        sale_items: sale.sale_items,
+        sale_item: (sale as RawSalesData & { sale_item?: unknown }).sale_item,
+        hasSaleItems: !!sale.sale_items,
+        saleItemsLength: sale.sale_items?.length || 0
+      });
+      
+      // Ensure products array is always defined
+      let products: string[] = [];
+      if (sale.sale_items && Array.isArray(sale.sale_items)) {
+        products = sale.sale_items.map((item: { products?: { name: string } }) => 
+          item.products?.name || 'Unknown Product'
+        );
+      }
+      
+      console.log('Extracted products:', products);
+      
+      return {
+        id: sale.id,
+        date: new Date(sale.created_at || sale.transaction_date || ''),
+        customerName: sale.customers?.name || 'Walk-in Customer',
+        products: products,
+        total: parseFloat(String(sale.total_amount || 0)),
+        payment: sale.payment_method || 'cash',
+        cashier: sale.users?.username || 'Unknown',
+        storeId: sale.store_id || ''
+      };
+    });
   }, [salesData]);
 
   const filteredSales = transformedSalesData.filter((sale: TransformedSalesData) => {
@@ -283,18 +317,23 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
   const averageOrderValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
 
   const topSales = useMemo(() => {
-    const sales = filteredSales.map((sale: TransformedSalesData) => ({
-      id: sale.id,
-      date: sale.date,
-      customerName: sale.customerName,
-      amount: sale.total,
-      itemsCount: sale.products.length,
-      paymentMethod: sale.payment.charAt(0).toUpperCase() + sale.payment.slice(1),
-      cashier: sale.cashier,
-      storeId: sale.storeId
-    }));
+    const sales = filteredSales.map((sale: TransformedSalesData) => {
+      // Ensure products array is safe to access
+      const itemsCount = sale.products && Array.isArray(sale.products) ? sale.products.length : 0;
+      
+      return {
+        id: sale.id,
+        date: sale.date,
+        customerName: sale.customerName,
+        amount: sale.total,
+        itemsCount: itemsCount,
+        paymentMethod: sale.payment.charAt(0).toUpperCase() + sale.payment.slice(1),
+        cashier: sale.cashier,
+        storeId: sale.storeId
+      };
+    });
 
-    return sales.sort((a: TransformedSalesData, b: TransformedSalesData) => b.total - a.total).slice(0, 10);
+    return sales.sort((a: TopSaleData, b: TopSaleData) => b.amount - a.amount).slice(0, 10);
   }, [filteredSales]);
 
   // Show loading state for initial data fetch
@@ -456,7 +495,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Revenue</p>
                   <p className="text-2xl font-semibold">
-                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : `$${totalRevenue.toFixed(2)}`}
+                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : formatCurrency(totalRevenue)}
                   </p>
                   <div className="flex items-center mt-2">
                     <TrendingUp className="w-4 h-4 text-green-600 mr-1" />
@@ -491,7 +530,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                 <div>
                   <p className="text-sm text-muted-foreground">Avg Order Value</p>
                   <p className="text-2xl font-semibold">
-                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : `$${averageOrderValue.toFixed(2)}`}
+                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : formatCurrency(averageOrderValue)}
                   </p>
                   <p className="text-sm text-blue-600">Per transaction</p>
                 </div>
@@ -683,42 +722,42 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                     {
                       key: 'date',
                       header: 'Date',
-                      render: (sale: TransformedSalesData) => (
+                      render: (sale: TopSaleData) => (
                         <div>{sale.date.toLocaleDateString()}</div>
                       )
                     },
                     {
                       key: 'customer',
                       header: 'Customer',
-                      render: (sale: TransformedSalesData) => (
+                      render: (sale: TopSaleData) => (
                         <div>{sale.customerName}</div>
                       )
                     },
                     {
                       key: 'amount',
                       header: 'Amount',
-                      render: (sale: TransformedSalesData) => (
-                        <div className="font-medium">{formatCurrency(sale.total)}</div>
+                      render: (sale: TopSaleData) => (
+                        <div className="font-medium">{formatCurrency(sale.amount)}</div>
                       )
                     },
                     {
                       key: 'items',
                       header: 'Items',
-                      render: (sale: TransformedSalesData) => (
-                        <div>{sale.products.length}</div>
+                      render: (sale: TopSaleData) => (
+                        <div>{sale.itemsCount}</div>
                       )
                     },
                     {
                       key: 'payment',
                       header: 'Payment',
-                      render: (sale: TransformedSalesData) => (
-                        <Badge variant="outline">{sale.payment}</Badge>
+                      render: (sale: TopSaleData) => (
+                        <Badge variant="outline">{sale.paymentMethod}</Badge>
                       )
                     },
                     {
                       key: 'cashier',
                       header: 'Cashier',
-                      render: (sale: TransformedSalesData) => (
+                      render: (sale: TopSaleData) => (
                         <div>{sale.cashier}</div>
                       )
                     }
@@ -785,14 +824,14 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                         key: 'revenue',
                         header: 'Revenue',
                         render: (product: Product) => (
-                          <div>${product.revenue.toFixed(2)}</div>
+                          <div>{formatCurrency(product.revenue)}</div>
                         )
                       },
                       {
                         key: 'profit',
                         header: 'Profit',
                         render: (product: Product) => (
-                          <div className="text-green-600">${product.profit.toFixed(2)}</div>
+                          <div className="text-green-600">{formatCurrency(product.profit)}</div>
                         )
                       },
                       {
@@ -871,14 +910,14 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                         key: 'totalSpent',
                         header: 'Total Spent',
                         render: (customer: CustomerType) => (
-                          <div className="font-medium">${(customer?.total_purchases || 0).toFixed(2)}</div>
+                          <div className="font-medium">{formatCurrency(customer?.total_purchases || 0)}</div>
                         )
                       },
                       {
                         key: 'avgOrderValue',
                         header: 'Avg Order Value',
                         render: (customer: CustomerType) => (
-                          <div>${(customer?.total_purchases || 0) > 0 ? ((customer?.total_purchases || 0) / (customer?.total_purchases || 1)).toFixed(2) : '0.00'}</div>
+                          <div>{formatCurrency((customer?.total_purchases || 0) > 0 ? ((customer?.total_purchases || 0) / (customer?.total_purchases || 1)) : 0)}</div>
                         )
                       },
                       {
@@ -997,25 +1036,25 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                       <div className="flex justify-between items-center">
                         <span>Gross Revenue</span>
                         <span className="font-semibold">
-                          {isLoadingFinancial ? <Loader2 className="w-4 h-4 animate-spin" /> : `$${totalRevenue.toFixed(2)}`}
+                          {isLoadingFinancial ? <Loader2 className="w-4 h-4 animate-spin" /> : formatCurrency(totalRevenue)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>Total Profit</span>
                         <span className="font-semibold text-green-600">
-                          {isLoadingFinancial ? <Loader2 className="w-4 h-4 animate-spin" /> : `$${safeFinancialStats.totalProfit.toFixed(2)}`}
+                          {isLoadingFinancial ? <Loader2 className="w-4 h-4 animate-spin" /> : formatCurrency(safeFinancialStats.totalProfit)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>Operating Expenses</span>
                         <span className="font-semibold text-red-600">
-                          {isLoadingFinancial ? <Loader2 className="w-4 h-4 animate-spin" /> : `$${safeFinancialStats.operatingExpenses.toFixed(2)}`}
+                          {isLoadingFinancial ? <Loader2 className="w-4 h-4 animate-spin" /> : formatCurrency(safeFinancialStats.operatingExpenses)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center border-t pt-2">
                         <span className="font-medium">Net Profit</span>
                         <span className="font-semibold text-green-600">
-                          {isLoadingFinancial ? <Loader2 className="w-4 h-4 animate-spin" /> : `$${safeFinancialStats.netProfit.toFixed(2)}`}
+                          {isLoadingFinancial ? <Loader2 className="w-4 h-4 animate-spin" /> : formatCurrency(safeFinancialStats.netProfit)}
                         </span>
                       </div>
                     </>

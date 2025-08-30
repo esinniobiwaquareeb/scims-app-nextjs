@@ -1165,11 +1165,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                     size="sm"
                     variant="outline"
                     onClick={() => { 
-                      if (onNavigate) {
-                        onNavigate("staff-detail", { staffMember: staff });
-                      } else {
-                        console.warn("onNavigate function not available");
-                      }
+                      router.push(`/staff/${staff.id}`);
                     }}
                     disabled={!staff.store_id}
                     title={

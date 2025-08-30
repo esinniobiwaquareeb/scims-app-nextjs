@@ -78,7 +78,7 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
     refetch,
     error
   } = useStoreSales(staffMember?.store_id || '', {
-    enabled: !!staffMember?.store_id
+    enabled: !!staffMember?.store_id && !!staffMember.store_id
   });
 
   const handleRefresh = useCallback(() => {
@@ -166,20 +166,7 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
     );
   }
 
-  if (!staffMember.store_id) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-lg font-medium text-gray-700 mb-2">Staff Member Not Assigned</p>
-          <p className="text-muted-foreground mb-4">This staff member is not assigned to a store</p>
-          <Button onClick={onBack} variant="outline">
-            Go Back
-          </Button>
-        </div>
-      </div>
-    );
-  }
+
 
   // DataTable columns configuration for sales
   const salesColumns = [
@@ -255,6 +242,14 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
       </Header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {!staffMember.store_id && (
+          <Card className="border-amber-200 bg-amber-50">
+            <CardContent className="p-4">
+              <p className="text-amber-800 text-sm">This staff member is not currently assigned to a store. Sales data will not be available.</p>
+            </CardContent>
+          </Card>
+        )}
+
         {isError && (
           <Card className="border-destructive bg-destructive/10">
             <CardContent className="p-4">

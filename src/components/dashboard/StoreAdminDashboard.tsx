@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSystem } from '@/contexts/SystemContext';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,16 +29,11 @@ import {
 } from 'lucide-react';
 import { useStoreAdminDashboard } from '@/utils/hooks/useStoreAdminDashboard';
 
-// Simple currency formatter
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(amount);
-};
+
 
 export const StoreAdminDashboard: React.FC = () => {
   const { user, logout, currentStore } = useAuth();
+  const { formatCurrency } = useSystem();
   const router = useRouter();
 
   // Fetch dashboard data

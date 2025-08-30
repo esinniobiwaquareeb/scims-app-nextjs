@@ -316,26 +316,22 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     // First check store settings language (highest priority)
     if (currentStoreSettings?.language_id) {
       const language = systemSettings.supportedLanguages.find((l: Language) => l.id === currentStoreSettings.language_id);
-      console.log('Store settings language found:', language);
       return language?.code || 'en';
     }
     
     // Then check store language (second priority)
     if ((currentStore as any)?.language_id) {
       const language = systemSettings.supportedLanguages.find((l: Language) => l.id === (currentStore as any).language_id);
-      console.log('Store language found:', language);
       return language?.code || 'en';
     }
     
     // Then check business language (third priority)
     if ((currentBusiness as any)?.language_id) {
       const language = systemSettings.supportedLanguages.find((l: Language) => l.id === (currentBusiness as any).language_id);
-      console.log('Business language found:', language);
       return language?.code || 'en';
     }
     
     // Finally fall back to platform default (lowest priority)
-    console.log('Using platform default language:', systemSettings.defaultLanguage);
     return systemSettings.defaultLanguage;
   };
 
@@ -352,26 +348,22 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     // First check store settings currency (highest priority)
     if (currentStoreSettings?.currency_id) {
       const currency = systemSettings.supportedCurrencies.find((c: Currency) => c.id === currentStoreSettings.currency_id);
-      console.log('Store settings currency found:', currency);
       return currency?.symbol || '$';
     }
     
     // Then check store currency (second priority)
     if ((currentStore as any)?.currency_id) {
       const currency = systemSettings.supportedCurrencies.find((c: Currency) => c.id === (currentStore as any).currency_id);
-      console.log('Store currency found:', currency);
       return currency?.symbol || '$';
     }
     
     // Then check business currency (third priority)
     if ((currentBusiness as any)?.currency_id) {
       const currency = systemSettings.supportedCurrencies.find((c: Currency) => c.id === (currentBusiness as any).currency_id);
-      console.log('Business currency found:', currency);
       return currency?.symbol || '$';
     }
     
     // Finally fall back to platform default (lowest priority)
-    console.log('Using platform default currency:', systemSettings.defaultCurrency);
     // Find the default currency object to get its symbol
     const defaultCurrency = systemSettings.supportedCurrencies.find((c: Currency) => c.code === systemSettings.defaultCurrency);
     return defaultCurrency?.symbol || '$';
