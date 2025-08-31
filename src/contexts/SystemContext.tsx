@@ -253,8 +253,6 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       if (user?.role === 'superadmin') {
         const updatedSettings = { ...systemSettings, ...newSettings };
-        // TODO: Replace with actual API call when available
-        // await directDB.updateSystemSettings(updatedSettings);
         console.log('System settings update not yet implemented');
         setSystemSettings(updatedSettings);
       }
@@ -275,11 +273,7 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const updateStoreSettings = async (storeId: string, newSettings: StoreSettings) => {
-    try {
-      // TODO: Replace with actual API call when available
-      // await directDB.updateStoreSettings(storeId, newSettings);
-      console.log('Store settings update not yet implemented');
-      
+    try {      
       // For now, just update local state
       if (currentStore?.id === storeId) {
         setCurrentStoreSettings((prev: StoreSettings | null) => ({ ...prev, ...newSettings }));
@@ -293,9 +287,6 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const refreshStoreSettings = async () => {
     if (currentStore?.id) {
       try {
-        // TODO: Replace with actual API call when available
-        // const response = await directDB.getStoreSettings(currentStore.id);
-        console.log('Store settings refresh not yet implemented');
         // For now, do nothing - settings are already loaded
       } catch (error) {
         console.error('Failed to refresh store settings:', error);
@@ -330,14 +321,6 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const getCurrentCurrency = () => {
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    console.log('getCurrentCurrency called with:', {
-      storeCurrencyId: (currentStore as any)?.currency_id,
-      businessCurrencyId: (currentBusiness as any)?.currency_id,
-      storeSettingsCurrencyId: currentStoreSettings?.currency_id,
-      platformDefault: systemSettings.defaultCurrency,
-      supportedCurrencies: systemSettings.supportedCurrencies
-    });
-
     // First check store settings currency (highest priority)
     if (currentStoreSettings?.currency_id) {
       const currency = systemSettings.supportedCurrencies.find((c: Currency) => c.id === currentStoreSettings.currency_id);
