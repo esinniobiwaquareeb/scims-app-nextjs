@@ -104,7 +104,7 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
     enabled: !!currentBusiness?.id
   });
 
-  const stores = storesResponse?.stores || [];
+  const stores = storesResponse ?? [];
 
   // Filter stores based on user role
   const accessibleStores = useMemo(() => {
