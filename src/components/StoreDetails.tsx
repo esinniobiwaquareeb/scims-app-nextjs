@@ -22,6 +22,7 @@ import {
   BarChart3, 
   Settings, 
   Edit,
+  AlertTriangle
 } from 'lucide-react';
 import { 
   useStoreSettings, 
@@ -52,6 +53,7 @@ interface StoreDetailsProps {
 export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => {
   const { translate, formatCurrency, getCurrentCurrency } = useSystem();
   const { logActivity } = useActivityLogger();
+  const { user, currentStore: authCurrentStore } = useAuth();
   
   const [activeTab, setActiveTab] = useState('overview');
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +62,12 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
   const storeId = store?.id;
   const storeName = store?.name;
 
-  // Fetch store data
+  // Check if user is store admin and if they have access to this store
+  const isStoreAdmin = user?.role === 'store_admin';
+  const currentStore = authCurrentStore;
+  const hasAccessToStore = isStoreAdmin ? currentStore?.id === storeId : true;
+
+  // Fetch store data - hooks must be called before any conditional returns
   const {
     data: storeSettings,
     isLoading: isLoadingSettings,
@@ -111,6 +118,27 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
       setError(null);
     }
   }, [settingsError, statsError, productsError, salesError, customersError]);
+
+  // If store admin doesn't have access to this store, show access denied
+  if (isStoreAdmin && !hasAccessToStore) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header title="Access Denied" onBack={onBack} />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
+            <p className="text-gray-600 mb-4">
+              You don&apos;t have permission to view this store. You can only access your assigned store.
+            </p>
+            <Button onClick={onBack}>
+              Go Back
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Loading state
   if (isLoadingSettings || isLoadingStats) {
@@ -595,84 +623,87 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
             </Card>
           </TabsContent>
 
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="w-5 h-5" />
-                  Store Settings
-                </CardTitle>
-                <CardDescription>
-                  Configure store preferences and settings
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-medium mb-2">Receipt Settings</h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span>Header:</span>
-                          <span className="text-gray-600">{storeData.receiptHeader || 'Not set'}</span>
+          {/* Settings Tab - Only show if user has access */}
+          {hasAccessToStore && (
+            <TabsContent value="settings" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="w-5 h-5" />
+                    Store Settings
+                  </CardTitle>
+                  <CardDescription>
+                    Configure store preferences and settings
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-medium mb-2">Receipt Settings</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span>Header:</span>
+                            <span className="text-gray-600">{storeData.receiptHeader || 'Not set'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Footer:</span>
+                            <span className="text-gray-600">{storeData.receiptFooter || 'Not set'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Custom Message:</span>
+                            <span className="text-gray-600">{storeData.customReceiptMessage || 'Not set'}</span>
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span>Footer:</span>
-                          <span className="text-gray-600">{storeData.receiptFooter || 'Not set'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Custom Message:</span>
-                          <span className="text-gray-600">{storeData.customReceiptMessage || 'Not set'}</span>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-medium mb-2">Theme Settings</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span>Primary Color:</span>
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-4 h-4 rounded border"
+                                style={{ backgroundColor: storeData.theme?.primaryColor || '#3B82F6' }}
+                              ></div>
+                              <span className="text-gray-600">{storeData.theme?.primaryColor || '#3B82F6'}</span>
+                            </div>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Secondary Color:</span>
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-4 h-4 rounded border"
+                                style={{ backgroundColor: storeData.theme?.secondaryColor || '#10B981' }}
+                              ></div>
+                              <span className="text-gray-600">{storeData.theme?.secondaryColor || '#10B981'}</span>
+                            </div>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Accent Color:</span>
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-4 h-4 rounded border"
+                                style={{ backgroundColor: storeData.theme?.accentColor || '#F59E0B' }}
+                              ></div>
+                              <span className="text-gray-600">{storeData.theme?.accentColor || '#F59E0B'}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
                     
-                    <div>
-                      <h4 className="font-medium mb-2">Theme Settings</h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span>Primary Color:</span>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-4 h-4 rounded border"
-                              style={{ backgroundColor: storeData.theme?.primaryColor || '#3B82F6' }}
-                            ></div>
-                            <span className="text-gray-600">{storeData.theme?.primaryColor || '#3B82F6'}</span>
-                          </div>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Secondary Color:</span>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-4 h-4 rounded border"
-                              style={{ backgroundColor: storeData.theme?.secondaryColor || '#10B981' }}
-                            ></div>
-                            <span className="text-gray-600">{storeData.theme?.secondaryColor || '#10B981'}</span>
-                          </div>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Accent Color:</span>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-4 h-4 rounded border"
-                              style={{ backgroundColor: storeData.theme?.accentColor || '#F59E0B' }}
-                            ></div>
-                            <span className="text-gray-600">{storeData.theme?.accentColor || '#F59E0B'}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                   </div>
-                  
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
 
 
-        {store && (
+        {/* Store Settings Component - Only show if user has access */}
+        {store && hasAccessToStore && (
           <StoreSettings 
             storeId={storeId || ''} 
             store={store}

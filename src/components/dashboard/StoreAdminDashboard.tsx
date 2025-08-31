@@ -73,13 +73,6 @@ export const StoreAdminDashboard: React.FC = () => {
       icon: Settings,
       color: 'text-gray-600',
       action: '/stores'
-    },
-    {
-      title: 'Business Settings',
-      description: 'Configure business preferences',
-      icon: Building2,
-      color: 'text-gray-600',
-      action: '/business-settings'
     }
   ];
 
@@ -199,7 +192,7 @@ export const StoreAdminDashboard: React.FC = () => {
           {/* Overview Section */}
           <div>
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Overview</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {overviewFeatures.map((feature, index) => (
                 <FeatureCard
                   key={index}

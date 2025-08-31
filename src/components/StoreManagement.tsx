@@ -63,9 +63,13 @@ interface Store {
 
 export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
   const router = useRouter();
-  const { user, currentBusiness } = useAuth();
+  const { user, currentBusiness, currentStore } = useAuth();
   const { translate } = useSystem();
   const { logActivity } = useActivityLogger();
+
+  // Check if user is store admin and if they have access to stores
+  const isStoreAdmin = user?.role === 'store_admin';
+  const hasStoreAccess = isStoreAdmin ? !!currentStore : true;
 
   // State
   const [searchTerm, setSearchTerm] = useState('');
@@ -102,6 +106,16 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
 
   const stores = storesResponse?.stores || [];
 
+  // Filter stores based on user role
+  const accessibleStores = useMemo(() => {
+    if (isStoreAdmin && currentStore) {
+      // Store admin can only see their assigned store
+      return stores.filter((store: Store) => store.id === currentStore.id);
+    }
+    // Business admin can see all stores
+    return stores;
+  }, [stores, isStoreAdmin, currentStore]);
+
   const {
     data: countries = [],
     isLoading: isLoadingCountries
@@ -126,7 +140,7 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
   const isLoading = isLoadingStores || isLoadingCountries || isLoadingCurrencies || isLoadingLanguages;
   const hasError = storesError;
 
-  const filteredStores = stores.filter((store: Store) =>
+  const filteredStores = accessibleStores.filter((store: Store) =>
     (store.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (store.address || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (store.city || '').toLowerCase().includes(searchTerm.toLowerCase())
@@ -337,31 +351,51 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
     {
       key: 'actions',
       label: 'Actions',
-      render: (store: Store) => (
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleViewStoreDetails(store)}
-          >
-            <Eye className="w-3 h-3" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleEditStore(store)}
-          >
-            <Edit className="w-3 h-3" />
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => handleDeleteStore(store)}
-          >
-            <Trash2 className="w-3 h-3" />
-          </Button>
-        </div>
-      )
+      render: (store: Store) => {
+        const isStoreAdmin = user?.role === 'store_admin';
+        const currentStore = selectedStore; // Assuming selectedStore is the one being edited
+
+        return (
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleViewStoreDetails(store)}
+            >
+              <Eye className="w-3 h-3" />
+            </Button>
+            {/* Only show edit/delete for business admins or if store admin is editing their own store */}
+            {!isStoreAdmin && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleEditStore(store)}
+                >
+                  <Edit className="w-3 h-3" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleDeleteStore(store)}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </>
+            )}
+            {/* Store admin can only edit their assigned store */}
+            {isStoreAdmin && currentStore?.id === store.id && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleEditStore(store)}
+              >
+                <Edit className="w-3 h-3" />
+              </Button>
+            )}
+          </div>
+        );
+      }
     }
   ];
 
@@ -399,115 +433,118 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
             <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingStores ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Store
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Add New Store</DialogTitle>
-                <DialogDescription>
-                  Create a new store for your business. Fill in the required information below.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Only show Add Store button for business admins */}
+          {!isStoreAdmin && (
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Store
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Add New Store</DialogTitle>
+                  <DialogDescription>
+                    Create a new store for your business. Fill in the required information below.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="store-name">Store Name *</Label>
+                      <Input
+                        id="store-name"
+                        value={newStore.name}
+                        onChange={(e) => setNewStore({ ...newStore, name: e.target.value })}
+                        placeholder="Enter store name"
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="store-phone">Phone</Label>
+                      <Input
+                        id="store-phone"
+                        value={newStore.phone}
+                        onChange={(e) => setNewStore({ ...newStore, phone: e.target.value })}
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <Label htmlFor="store-name">Store Name *</Label>
+                    <Label htmlFor="store-address">Address</Label>
                     <Input
-                      id="store-name"
-                      value={newStore.name}
-                      onChange={(e) => setNewStore({ ...newStore, name: e.target.value })}
-                      placeholder="Enter store name"
-                      autoFocus
+                      id="store-address"
+                      value={newStore.address}
+                      onChange={(e) => setNewStore({ ...newStore, address: e.target.value })}
+                      placeholder="Enter street address"
                     />
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="store-city">City</Label>
+                      <Input
+                        id="store-city"
+                        value={newStore.city}
+                        onChange={(e) => setNewStore({ ...newStore, city: e.target.value })}
+                        placeholder="Enter city"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="store-state">State/Province</Label>
+                      <Input
+                        id="store-state"
+                        value={newStore.state}
+                        onChange={(e) => setNewStore({ ...newStore, state: e.target.value })}
+                        placeholder="Enter state"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="store-postal">Postal Code</Label>
+                      <Input
+                        id="store-postal"
+                        value={newStore.postal_code}
+                        onChange={(e) => setNewStore({ ...newStore, postal_code: e.target.value })}
+                        placeholder="Enter postal code"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <Label htmlFor="store-phone">Phone</Label>
+                    <Label htmlFor="store-email">Email</Label>
                     <Input
-                      id="store-phone"
-                      value={newStore.phone}
-                      onChange={(e) => setNewStore({ ...newStore, phone: e.target.value })}
-                      placeholder="Enter phone number"
+                      id="store-email"
+                      type="email"
+                      value={newStore.email}
+                      onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
+                      placeholder="Enter email address"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <Label htmlFor="store-address">Address</Label>
-                  <Input
-                    id="store-address"
-                    value={newStore.address}
-                    onChange={(e) => setNewStore({ ...newStore, address: e.target.value })}
-                    placeholder="Enter street address"
-                  />
-                </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="store-active"
+                      checked={newStore.is_active}
+                      onCheckedChange={(checked) => setNewStore({ ...newStore, is_active: checked })}
+                    />
+                    <Label htmlFor="store-active">Store is active</Label>
+                  </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="store-city">City</Label>
-                    <Input
-                      id="store-city"
-                      value={newStore.city}
-                      onChange={(e) => setNewStore({ ...newStore, city: e.target.value })}
-                      placeholder="Enter city"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="store-state">State/Province</Label>
-                    <Input
-                      id="store-state"
-                      value={newStore.state}
-                      onChange={(e) => setNewStore({ ...newStore, state: e.target.value })}
-                      placeholder="Enter state"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="store-postal">Postal Code</Label>
-                    <Input
-                      id="store-postal"
-                      value={newStore.postal_code}
-                      onChange={(e) => setNewStore({ ...newStore, postal_code: e.target.value })}
-                      placeholder="Enter postal code"
-                    />
+                  <div className="flex gap-2 justify-end pt-4 border-t">
+                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={submitting}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleAddStore} disabled={submitting}>
+                      {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      Create Store
+                    </Button>
                   </div>
                 </div>
-
-                <div>
-                  <Label htmlFor="store-email">Email</Label>
-                  <Input
-                    id="store-email"
-                    type="email"
-                    value={newStore.email}
-                    onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
-                    placeholder="Enter email address"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="store-active"
-                    checked={newStore.is_active}
-                    onCheckedChange={(checked) => setNewStore({ ...newStore, is_active: checked })}
-                  />
-                  <Label htmlFor="store-active">Store is active</Label>
-                </div>
-
-                <div className="flex gap-2 justify-end pt-4 border-t">
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={submitting}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleAddStore} disabled={submitting}>
-                    {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    Create Store
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </Header>
 
