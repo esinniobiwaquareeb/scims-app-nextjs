@@ -22,7 +22,7 @@ export async function GET(
         *,
         business:business_id(id, name),
         language:language_id(id, name, code),
-        currency:currency_id(id, name, symbol),
+        currency:currency_id(id, name, symbol, code),
         country:country_id(id, name, code)
       `)
       .eq('id', storeId)

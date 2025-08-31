@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     // Fetch all active languages
     const { data: languages, error } = await supabase
       .from('language')
-      .select('*')
+      .select('id, name, code, native_name')
       .eq('is_active', true)
       .order('name');
 

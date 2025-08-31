@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystem } from '../contexts/SystemContext';
 import { useActivityLogger } from '../contexts/ActivityLogger';
+import { toast } from 'sonner';
 import { Header } from './common/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -462,7 +463,8 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
                 ) : (
                   <div className="text-center py-8">
                     <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No products found in this store</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Products Found</h3>
+                    <p className="text-gray-600 mb-4">This store doesn&apos;t have any products yet.</p>
                   </div>
                 )}
               </CardContent>
@@ -681,13 +683,86 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
         </Tabs>
 
 
-        <StoreSettings 
-          storeId={storeId || ''} 
-          onSave={(settings: Record<string, unknown>) => {
-            console.log('Store settings saved:', settings);
-            // TODO: Implement save functionality
-          }}
-        />
+        {store && (
+          <StoreSettings 
+            storeId={storeId || ''} 
+            store={store}
+            storeSettings={storeSettings}
+            onSave={async (settings: Record<string, unknown>) => {
+              try {
+                // Separate store data from store settings data
+                const storeData = {
+                  name: settings.name as string,
+                  address: settings.address as string,
+                  city: settings.city as string,
+                  state: settings.state as string,
+                  postal_code: settings.postal_code as string,
+                  phone: settings.phone as string,
+                  email: settings.email as string,
+                  manager_name: settings.manager_name as string,
+                  country_id: settings.country_id as string || null,
+                  currency_id: settings.currency_id as string || null,
+                  language_id: settings.language_id as string || null,
+                  is_active: settings.is_active as boolean
+                };
+
+                const storeSettingsData = {
+                  primary_color: settings.primary_color as string,
+                  secondary_color: settings.secondary_color as string,
+                  accent_color: settings.accent_color as string,
+                  logo_url: settings.logo_url as string,
+                  receipt_header: settings.receipt_header as string,
+                  receipt_footer: settings.receipt_footer as string,
+                  return_policy: settings.return_policy as string,
+                  contact_person: settings.contact_person as string,
+                  store_hours: settings.store_hours as string,
+                  store_promotion_info: settings.store_promotion_info as string,
+                  custom_receipt_message: settings.custom_receipt_message as string,
+                  allow_returns: settings.allow_returns as boolean,
+                  return_period_days: settings.return_period_days as number,
+                  enable_tax: settings.enable_tax as boolean,
+                  tax_rate: settings.tax_rate as number,
+                  enable_sounds: settings.enable_sounds as boolean
+                };
+
+                // Update store
+                const storeResponse = await fetch(`/api/stores/${storeId}`, {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(storeData),
+                });
+
+                if (!storeResponse.ok) {
+                  throw new Error('Failed to update store');
+                }
+
+                // Update store settings
+                const settingsResponse = await fetch(`/api/stores/${storeId}/settings`, {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(storeSettingsData),
+                });
+
+                if (!settingsResponse.ok) {
+                  throw new Error('Failed to update store settings');
+                }
+
+                // Show success message
+                toast.success('Store settings saved successfully!');
+                
+                // Refresh the page to show updated data
+                window.location.reload();
+              } catch (error) {
+                console.error('Error saving store settings:', error);
+                toast.error('Failed to save store settings. Please try again.');
+              }
+            }}
+          />
+        )}
       </main>
     </div>
   );

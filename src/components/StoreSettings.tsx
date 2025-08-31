@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -19,72 +20,139 @@ import {
   Volume2,
   Clock
 } from 'lucide-react';
+import { useLanguages, useCurrencies, useCountries } from '../utils/hooks/useStoreData';
+
+interface StoreWithRelations {
+  id: string;
+  name: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  phone?: string;
+  email?: string;
+  manager_name?: string;
+  is_active?: boolean;
+  currency_id?: string;
+  language_id?: string;
+  country_id?: string;
+  currency?: {
+    id: string;
+    name: string;
+    symbol: string;
+    code: string;
+  };
+  language?: {
+    id: string;
+    name: string;
+    code: string;
+    native_name: string;
+  };
+  country?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+}
 
 interface StoreSettingsProps {
   storeId: string;
+  store: StoreWithRelations | null;
+  storeSettings: any; // TODO: Define proper StoreSettings type
   onSave?: (settings: Record<string, unknown>) => void;
 }
 
-export const StoreSettings: React.FC<StoreSettingsProps> = ({ storeId, onSave }) => {
+export const StoreSettings: React.FC<StoreSettingsProps> = ({ storeId, store, storeSettings, onSave }) => {
   const [showReceiptPreview, setShowReceiptPreview] = useState(false);
+  // Initialize local settings with store data
   const [localSettings, setLocalSettings] = useState({
-    name: '',
-    address: '',
-    city: '',
-    state: '',
-    postal_code: '',
-    phone: '',
-    email: '',
-    country_id: '',
-    country: 'United States',
-    country_code: 'US',
-    currency_id: '',
-    currency: 'USD',
-    currency_name: 'US Dollar',
-    currency_symbol: '$',
-    language_id: '',
-    language: 'en',
-    language_name: 'English',
-    language_native_name: 'English',
-    primary_color: '#3B82F6',
-    secondary_color: '#10B981',
-    accent_color: '#F59E0B',
-    logo_url: '',
-    receipt_header: 'Thank you for your purchase!',
-    receipt_footer: 'Please come again!',
-    return_policy: 'Returns accepted within 30 days with receipt.',
-    contact_person: '',
-    store_hours: '',
-    store_promotion_info: '',
-    custom_receipt_message: '',
-    allow_returns: true,
-    return_period_days: 30,
-    enable_tax: false,
-    tax_rate: 0,
-    enable_sounds: true
+    name: store?.name || '',
+    address: store?.address || '',
+    city: store?.city || '',
+    state: store?.state || '',
+    postal_code: store?.postal_code || '',
+    phone: store?.phone || '',
+    email: store?.email || '',
+    manager_name: store?.manager_name || '',
+    country_id: store?.country_id || '',
+    country: store?.country?.name || '',
+    country_code: store?.country?.code || '',
+    currency_id: store?.currency_id || storeSettings?.currency_id || '',
+    currency: store?.currency?.code || '',
+    currency_name: store?.currency?.name || '',
+    currency_symbol: store?.currency?.symbol || '',
+    language_id: store?.language_id || storeSettings?.language_id || '',
+    language: store?.language?.code || '',
+    language_name: store?.language?.name || '',
+    language_native_name: store?.language?.name || '',
+    primary_color: storeSettings?.primary_color || '#3B82F6',
+    secondary_color: storeSettings?.secondary_color || '#10B981',
+    accent_color: storeSettings?.accent_color || '#F59E0B',
+    logo_url: storeSettings?.logo_url || '',
+    receipt_header: storeSettings?.receipt_header || store?.name || 'Thank you for your purchase!',
+    receipt_footer: storeSettings?.receipt_footer || 'Please come again!',
+    return_policy: storeSettings?.return_policy || 'Returns accepted within 30 days with receipt.',
+    contact_person: storeSettings?.contact_person || '',
+    store_hours: storeSettings?.store_hours || '',
+    store_promotion_info: storeSettings?.store_promotion_info || '',
+    custom_receipt_message: storeSettings?.custom_receipt_message || '',
+    allow_returns: storeSettings?.allow_returns ?? true,
+    return_period_days: storeSettings?.return_period_days || 30,
+    enable_tax: storeSettings?.enable_tax ?? false,
+    tax_rate: storeSettings?.tax_rate || 0,
+    enable_sounds: storeSettings?.enable_sounds ?? true
   });
 
-  // Mock data - in a real app, these would come from API calls
-  const countries = [
-    { id: '1', name: 'United States', code: 'US' },
-    { id: '2', name: 'Canada', code: 'CA' },
-    { id: '3', name: 'United Kingdom', code: 'GB' }
-  ];
-  
-  const currencies = [
-    { id: '1', code: 'USD', name: 'US Dollar', symbol: '$' },
-    { id: '2', code: 'EUR', name: 'Euro', symbol: '€' },
-    { id: '3', code: 'GBP', name: 'British Pound', symbol: '£' }
-  ];
-  
-  const languages = [
-    { id: '1', code: 'en', name: 'English', native_name: 'English' },
-    { id: '2', code: 'es', name: 'Spanish', native_name: 'Español' },
-    { id: '3', code: 'fr', name: 'French', native_name: 'Français' }
-  ];
+  // Fetch countries, currencies, and languages from API
+  const { data: countries = [], isLoading: isLoadingCountries } = useCountries();
+  const { data: currencies = [], isLoading: isLoadingCurrencies } = useCurrencies({ enabled: true });
+  const { data: languages = [], isLoading: isLoadingLanguages } = useLanguages();
 
-  const isLoadingCountries = false;
-  const isLoadingRefs = false;
+  const isLoadingRefs = isLoadingCountries || isLoadingCurrencies || isLoadingLanguages;
+
+  // Update local settings when store or storeSettings change
+  useEffect(() => {
+    if (store || storeSettings) {
+      setLocalSettings(prev => ({
+        ...prev,
+        name: store?.name || prev.name,
+        address: store?.address || prev.address,
+        city: store?.city || prev.city,
+        state: store?.state || prev.state,
+        postal_code: store?.postal_code || prev.postal_code,
+        phone: store?.phone || prev.phone,
+        email: store?.email || prev.email,
+        manager_name: store?.manager_name || prev.manager_name,
+        country_id: store?.country_id || prev.country_id,
+        country: store?.country?.name || prev.country,
+        country_code: store?.country?.code || prev.country_code,
+        currency_id: store?.currency_id || storeSettings?.currency_id || prev.currency_id,
+        currency: store?.currency?.code || prev.currency,
+        currency_name: store?.currency?.name || prev.currency_name,
+        currency_symbol: store?.currency?.symbol || prev.currency_symbol,
+        language_id: store?.language_id || storeSettings?.language_id || prev.language_id,
+        language: store?.language?.code || prev.language,
+        language_name: store?.language?.name || prev.language_name,
+        language_native_name: store?.language?.name || prev.language_native_name,
+        primary_color: storeSettings?.primary_color || prev.primary_color,
+        secondary_color: storeSettings?.secondary_color || prev.secondary_color,
+        accent_color: storeSettings?.accent_color || prev.accent_color,
+        logo_url: storeSettings?.logo_url || prev.logo_url,
+        receipt_header: storeSettings?.receipt_header || store?.name || prev.receipt_header,
+        receipt_footer: storeSettings?.receipt_footer || prev.receipt_footer,
+        return_policy: storeSettings?.return_policy || prev.return_policy,
+        contact_person: storeSettings?.contact_person || prev.contact_person,
+        store_hours: storeSettings?.store_hours || prev.store_hours,
+        store_promotion_info: storeSettings?.store_promotion_info || prev.store_promotion_info,
+        custom_receipt_message: storeSettings?.custom_receipt_message || prev.custom_receipt_message,
+        allow_returns: storeSettings?.allow_returns ?? prev.allow_returns,
+        return_period_days: storeSettings?.return_period_days || prev.return_period_days,
+        enable_tax: storeSettings?.enable_tax ?? prev.enable_tax,
+        tax_rate: storeSettings?.tax_rate || prev.tax_rate,
+        enable_sounds: storeSettings?.enable_sounds ?? prev.enable_sounds
+      }));
+    }
+  }, [store, storeSettings]);
 
   const translate = (key: string) => {
     const translations: Record<string, string> = {
@@ -103,7 +171,7 @@ export const StoreSettings: React.FC<StoreSettingsProps> = ({ storeId, onSave })
 
   const getCurrentCurrencyInfo = () => {
     if (localSettings.currency_id) {
-      const currency = currencies.find((c) => c.id === localSettings.currency_id);
+      const currency = currencies.find((c: { id: string; name: string; symbol: string; code: string }) => c.id === localSettings.currency_id);
       return currency ? { code: currency.code, name: currency.name, symbol: currency.symbol } : null;
     }
     return null;
@@ -111,7 +179,7 @@ export const StoreSettings: React.FC<StoreSettingsProps> = ({ storeId, onSave })
 
   const getCurrentLanguageInfo = () => {
     if (localSettings.language_id) {
-      const language = languages.find((l) => l.id === localSettings.language_id);
+      const language = languages.find((l: { id: string; name: string; code: string; native_name: string }) => l.id === localSettings.language_id);
       return language ? { code: language.code, name: language.name, nativeName: language.native_name } : null;
     }
     return null;
@@ -277,25 +345,34 @@ export const StoreSettings: React.FC<StoreSettingsProps> = ({ storeId, onSave })
                         <select
                           value={localSettings.country_id || ""}
                           onChange={(e) => {
-                            const country = countries.find((c) => c.id === e.target.value);
+                            const country = countries.find((c: { id: string; name: string; code: string }) => c.id === e.target.value);
                             setLocalSettings({
                               ...localSettings,
                               country_id: e.target.value,
-                              country: country?.name || 'United States',
-                              country_code: country?.code || 'US'
+                              country: country?.name || '',
+                              country_code: country?.code || ''
                             });
                           }}
                           className="w-full p-2 border rounded-md"
                           disabled={isLoadingCountries || countries.length === 0}
                         >
                           <option value="">Select country</option>
-                          {countries.map((country) => (
+                          {countries.map((country: { id: string; name: string; code: string }) => (
                             <option key={country.id} value={country.id}>
                               {country.name} ({country.code})
                             </option>
                           ))}
                         </select>
                       </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="managerName">Manager Name</Label>
+                      <Input
+                        id="managerName"
+                        value={localSettings.manager_name || ""}
+                        onChange={(e) => setLocalSettings({...localSettings, manager_name: e.target.value})}
+                        placeholder="Store manager name"
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -308,48 +385,48 @@ export const StoreSettings: React.FC<StoreSettingsProps> = ({ storeId, onSave })
                   <CardContent className="space-y-4">
                     <div>
                       <Label>{translate('settings.currency')}</Label>
-                      <select
-                        value={localSettings.currency_id || ""}
-                        onChange={(e) => {
-                          const currency = currencies.find((c) => c.id === e.target.value);
-                          setLocalSettings({
-                            ...localSettings,
-                            currency_id: e.target.value,
-                            currency: currency?.code || 'USD',
-                            currency_name: currency?.name || 'US Dollar',
-                            currency_symbol: currency?.symbol || '$'
-                          });
-                        }}
-                        className="w-full p-2 border rounded-md"
-                        disabled={isLoadingRefs || currencies.length === 0}
-                      >
-                        <option value="">Select currency</option>
-                        {currencies.map((currency) => (
-                          <option key={currency.id} value={currency.id}>
-                            {currency.symbol} {currency.name} ({currency.code})
-                          </option>
-                        ))}
-                      </select>
+                                              <select
+                          value={localSettings.currency_id || ""}
+                          onChange={(e) => {
+                            const currency = currencies.find((c: { id: string; name: string; symbol: string; code: string }) => c.id === e.target.value);
+                            setLocalSettings({
+                              ...localSettings,
+                              currency_id: e.target.value,
+                              currency: currency?.code || '',
+                              currency_name: currency?.name || '',
+                              currency_symbol: currency?.symbol || ''
+                            });
+                          }}
+                          className="w-full p-2 border rounded-md"
+                          disabled={isLoadingCurrencies || currencies.length === 0}
+                        >
+                          <option value="">Select currency</option>
+                          {currencies.map((currency: { id: string; name: string; symbol: string; code: string }) => (
+                            <option key={currency.id} value={currency.id}>
+                              {currency.symbol} {currency.name} ({currency.code})
+                            </option>
+                          ))}
+                        </select>
                     </div>
                     <div>
                       <Label>{translate('settings.language')}</Label>
                       <select
                         value={localSettings.language_id || ""}
                         onChange={(e) => {
-                          const language = languages.find((l) => l.id === e.target.value);
+                          const language = languages.find((l: { id: string; name: string; code: string; native_name: string }) => l.id === e.target.value);
                           setLocalSettings({
                             ...localSettings,
                             language_id: e.target.value,
-                            language: language?.code || 'en',
-                            language_name: language?.name || 'English',
-                            language_native_name: language?.native_name || 'English'
+                            language: language?.code || '',
+                            language_name: language?.name || '',
+                            language_native_name: language?.native_name || ''
                           });
                         }}
                         className="w-full p-2 border rounded-md"
-                        disabled={isLoadingRefs || languages.length === 0}
+                        disabled={isLoadingLanguages || languages.length === 0}
                       >
                         <option value="">Select language</option>
-                        {languages.map((language) => (
+                        {languages.map((language: { id: string; name: string; code: string; native_name: string }) => (
                           <option key={language.id} value={language.id}>
                             {language.native_name} ({language.name})
                           </option>

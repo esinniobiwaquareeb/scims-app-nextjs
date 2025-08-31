@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     // Fetch all active currencies
     const { data: currencies, error } = await supabase
       .from('currency')
-      .select('*')
+      .select('id, name, symbol, code')
       .eq('is_active', true)
       .order('name');
 

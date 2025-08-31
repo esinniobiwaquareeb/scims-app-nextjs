@@ -98,28 +98,70 @@ export async function PUT(
       );
     }
 
-    // Update store settings
-    const { data: settings, error } = await supabase
+    // First check if store settings exist
+    const { data: existingSettings, error: checkError } = await supabase
       .from('store_setting')
-      .upsert({
-        store_id: storeId,
-        ...body,
-        updated_at: new Date().toISOString()
-      })
-      .select()
-      .single();
+      .select('id')
+      .eq('store_id', storeId)
+      .maybeSingle();
 
-    if (error) {
-      console.error('Supabase error:', error);
+    if (checkError) {
+      console.error('Error checking existing settings:', checkError);
       return NextResponse.json(
-        { success: false, error: 'Failed to update store settings' },
+        { success: false, error: 'Failed to check existing settings' },
         { status: 500 }
       );
     }
 
+    let result;
+    
+    if (existingSettings) {
+      // Update existing settings
+      const { data: settings, error } = await supabase
+        .from('store_setting')
+        .update({
+          ...body,
+          updated_at: new Date().toISOString()
+        })
+        .eq('store_id', storeId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase update error:', error);
+        return NextResponse.json(
+          { success: false, error: 'Failed to update store settings' },
+          { status: 500 }
+        );
+      }
+      
+      result = settings;
+    } else {
+      // Insert new settings
+      const { data: settings, error } = await supabase
+        .from('store_setting')
+        .insert({
+          store_id: storeId,
+          ...body,
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase insert error:', error);
+        return NextResponse.json(
+          { success: false, error: 'Failed to create store settings' },
+          { status: 500 }
+        );
+      }
+      
+      result = settings;
+    }
+
     return NextResponse.json({
       success: true,
-      settings
+      settings: result
     });
 
   } catch (error) {
