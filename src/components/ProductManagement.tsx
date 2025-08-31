@@ -39,7 +39,9 @@ import {
   useCreateProduct,
   useUpdateProduct,
   useDeleteProduct,
-  useStoreProducts
+  useStoreProducts,
+  useBusinessStores,
+  useBusinessProducts
 } from '@/utils/hooks/useStoreData';
 import { ProductType } from '@/types';
 
@@ -106,6 +108,9 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedStoreFilter, setSelectedStoreFilter] = useState(
+    user?.role === 'store_admin' ? currentStore?.id || '' : 'All'
+  );
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
@@ -181,7 +186,35 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
     isLoading: productsLoading,
     error: productsError,
     refetch: refetchProducts
-  } = useStoreProducts(currentStore?.id || '', { enabled: !!currentStore?.id });
+  } = useStoreProducts(selectedStoreFilter, { 
+    enabled: selectedStoreFilter !== 'All' && !!selectedStoreFilter
+  });
+
+  // Fetch all business products when "All stores" is selected
+  const {
+    data: allBusinessProducts = [],
+    isLoading: allBusinessProductsLoading,
+    error: allBusinessProductsError,
+    refetch: refetchAllBusinessProducts
+  } = useBusinessProducts(currentBusiness?.id || '', { 
+    enabled: selectedStoreFilter === 'All' && !!currentBusiness?.id 
+  });
+
+  // Combine products based on store filter
+  const allProducts = selectedStoreFilter === 'All' ? allBusinessProducts : products;
+  const isLoadingProducts = selectedStoreFilter === 'All' ? allBusinessProductsLoading : productsLoading;
+  const productsErrorCombined = selectedStoreFilter === 'All' ? allBusinessProductsError : productsError;
+
+  // Debug logging
+  console.log('ProductManagement Debug:', {
+    selectedStoreFilter,
+    productsLength: products.length,
+    allBusinessProductsLength: allBusinessProducts.length,
+    allProductsLength: allProducts.length,
+    isLoadingProducts,
+    productsError,
+    allBusinessProductsError
+  });
 
   const {
     data: categories = [],
@@ -198,13 +231,27 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
     isLoading: brandsLoading
   } = useBusinessBrands(currentBusiness?.id || '', { enabled: !!currentBusiness?.id });
 
+  const {
+    data: stores = [],
+    isLoading: storesLoading
+  } = useBusinessStores(currentBusiness?.id || '', { enabled: !!currentBusiness?.id });
+
+  // Update store filter when user role or current store changes
+  useEffect(() => {
+    if (user?.role === 'store_admin' && currentStore?.id) {
+      setSelectedStoreFilter(currentStore.id);
+    } else if (user?.role === 'business_admin') {
+      setSelectedStoreFilter('All');
+    }
+  }, [user?.role, currentStore?.id]);
+
   // Use mutations for CRUD operations
   const createProductMutation = useCreateProduct(currentStore?.id || '');
   const updateProductMutation = useUpdateProduct(currentStore?.id || '');
   const deleteProductMutation = useDeleteProduct(currentStore?.id || '');
 
   // Combined loading state
-  const isLoading = productsLoading || categoriesLoading || suppliersLoading || brandsLoading;
+  const isLoading = productsLoading || categoriesLoading || suppliersLoading || brandsLoading || storesLoading;
   
   // Combined mutation loading state
   const isMutating = createProductMutation.isPending || updateProductMutation.isPending || deleteProductMutation.isPending;
@@ -248,7 +295,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
 
   const allCategories = ['All', ...categories.filter((c: Category) => c.is_active).map((c: Category) => c.name)];
 
-  const filteredProducts = products.filter((product: Product) => {
+  const filteredProducts = allProducts.filter((product: Product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (product.barcode && product.barcode.includes(searchTerm)) ||
@@ -261,7 +308,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
     return matchesSearch && matchesCategory && isActive;
   });
 
-  const lowStockProducts = products.filter((p: Product) => p.stock_quantity <= (p.reorder_level || p.min_stock_level || 10) && p.is_active);
+  const lowStockProducts = allProducts.filter((p: Product) => p.stock_quantity <= (p.reorder_level || p.min_stock_level || 10) && p.is_active);
 
   const handleAddProduct = async () => {
     if (!newProduct.name || !currentStore?.id) return;
@@ -716,7 +763,8 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
     <div className="min-h-screen bg-gray-50">
       <Header 
         title="Product Management"
-        subtitle={currentStore ? `Managing inventory for ${currentStore.name}` : 'Manage inventory and product catalog'}
+        subtitle={selectedStoreFilter === 'All' ? 'Managing inventory across all stores' : 
+                 currentStore ? `Managing inventory for ${currentStore.name}` : 'Manage inventory and product catalog'}
         showBackButton
         onBack={onBack}
       >
@@ -728,15 +776,20 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
             </Button>
             <Button 
               variant="outline" 
-              onClick={() => refetchProducts()} 
-              disabled={productsLoading || isRefetching}
+              onClick={() => {
+                if (selectedStoreFilter === 'All') {
+                  refetchAllBusinessProducts();
+                } else {
+                  refetchProducts();
+                }
+              }} 
+              disabled={isLoadingProducts || isRefetching}
               className="text-blue-600 border-blue-200 hover:bg-blue-50"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${isRefetching ? 'animate-spin' : ''}`} />
               {isRefetching ? 'Refreshing...' : 'Refresh'}
             </Button>
           </div>
-
         </div>
       </Header>
 
@@ -758,11 +811,11 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
         )}
 
         {/* Error Display */}
-        {(error || productsError) && (
+        {(error || productsErrorCombined) && (
           <Card className="mb-6 border-red-200 bg-red-50">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <p className="text-red-800 text-sm">{error || productsError?.message || 'An error occurred'}</p>
+                <p className="text-red-800 text-sm">{error || productsErrorCombined?.message || 'An error occurred'}</p>
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -770,9 +823,9 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
                     setError(null);
                     refetchProducts();
                   }}
-                  disabled={productsLoading}
+                  disabled={isLoadingProducts}
                 >
-                  <RefreshCw className={`w-3 h-3 mr-2 ${productsLoading ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3 h-3 mr-2 ${isLoadingProducts ? 'animate-spin' : ''}`} />
                   Retry
                 </Button>
               </div>

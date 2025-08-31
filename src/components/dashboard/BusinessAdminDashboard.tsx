@@ -163,7 +163,7 @@ export const BusinessAdminDashboard: React.FC = () => {
       description: 'Manage staff roles and access permissions',
       icon: Shield,
       color: 'text-purple-600',
-      action: '/roles-permissions'
+      action: '/roles'
     },
     {
       title: 'Reports',

@@ -20,12 +20,15 @@ export async function GET(request: NextRequest) {
         id,
         user_id,
         business_id,
-        role,
-        created_at,
-        updated_at,
-        user:user(id, email, first_name, last_name)
+        role_id,
+        store_id,
+        assigned_at,
+        is_active,
+        user:user(id, email, name, username, role),
+        role:role(id, name, description)
       `)
-      .eq('business_id', businessId);
+      .eq('business_id', businessId)
+      .eq('is_active', true);
 
     if (error) {
       console.error('Supabase error:', error);

@@ -1004,7 +1004,8 @@ export const useBusinessStores = (businessId: string, p0: { enabled: boolean; })
       if (!response.ok) {
         throw new Error('Failed to fetch business stores');
       }
-      return response.json();
+      const data = await response.json();
+      return data.stores || [];
     },
     enabled: !!businessId,
   });
@@ -1467,6 +1468,31 @@ export const useReceiveRestockItems = () => {
     onError: (error) => {
       toast.error(`Failed to receive restock items: ${error.message}`);
     },
+  });
+};
+
+// Hook for fetching all products across all stores in a business
+export const useBusinessProducts = (businessId: string, options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['business-products', businessId],
+    queryFn: async () => {
+      const response = await fetch(`/api/products?business_id=${businessId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch business products');
+      }
+      const data = await response.json();
+      return data.products || [];
+    },
+    enabled: enabled && !!businessId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
   });
 };
 
