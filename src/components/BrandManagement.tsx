@@ -574,7 +574,7 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
             <div className="mb-4 flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-muted-foreground">Logo Status:</span>
-                <Select value={logoFilter} onValueChange={(value: 'all' | 'with-logo' | 'without-logo') => setLogoFilter(value)}>
+                <Select value={logoFilter} onValueChange={(value) => setLogoFilter(value as 'all' | 'with-logo' | 'without-logo')}>
                   <SelectTrigger className="w-40">
                     <SelectValue />
                   </SelectTrigger>

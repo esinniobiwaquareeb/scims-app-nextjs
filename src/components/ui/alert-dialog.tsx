@@ -3,28 +3,50 @@
 import * as React from "react"
 import { cn } from "./utils"
 
+interface AlertDialogProps extends React.HTMLAttributes<HTMLDivElement> {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
 const AlertDialog = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
+  AlertDialogProps
+>(({ className, open, onOpenChange, ...props }, ref) => (
   <div
     ref={ref}
     className={cn("", className)}
+    data-state={open ? "open" : "closed"}
     {...props}
   />
 ))
 AlertDialog.displayName = "AlertDialog"
 
+interface AlertDialogTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  asChild?: boolean;
+}
+
 const AlertDialogTrigger = React.forwardRef<
   HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement>
->(({ className, ...props }, ref) => (
-  <button
-    ref={ref}
-    className={cn("", className)}
-    {...props}
-  />
-))
+  AlertDialogTriggerProps
+>(({ className, asChild = false, children, ...props }, ref) => {
+  if (asChild && React.isValidElement(children)) {
+    const child = children as React.ReactElement<React.HTMLAttributes<HTMLElement>>;
+    return React.cloneElement(child, {
+      ...props,
+      className: cn(child.props?.className, className),
+    });
+  }
+
+  return (
+    <button
+      ref={ref}
+      className={cn("", className)}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+})
 AlertDialogTrigger.displayName = "AlertDialogTrigger"
 
 const AlertDialogContent = React.forwardRef<
@@ -75,7 +97,7 @@ const AlertDialogFooter = React.forwardRef<
 AlertDialogFooter.displayName = "AlertDialogFooter"
 
 const AlertDialogTitle = React.forwardRef<
-  HTMLParagraphElement,
+  HTMLHeadingElement,
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
   <h2

@@ -76,12 +76,12 @@ const Dialog = React.forwardRef<HTMLDivElement, DialogProps>(
             onClick={handleOutsideClick}
             {...props}
           >
-            <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
               <div
                 ref={contentRef}
                 tabIndex={-1}
                 className={cn(
-                  "relative",
+                  "relative w-full max-h-[90vh] overflow-y-auto",
                   "animate-in fade-in-0 zoom-in-95 slide-in-from-top-2",
                   "duration-200"
                 )}
@@ -98,10 +98,14 @@ const Dialog = React.forwardRef<HTMLDivElement, DialogProps>(
 )
 Dialog.displayName = "Dialog"
 
+interface DialogTriggerProps extends React.HTMLAttributes<HTMLElement> {
+  asChild?: boolean;
+}
+
 const DialogTrigger = React.forwardRef<
   HTMLElement,
-  React.HTMLAttributes<HTMLElement>
->(({ className, children, ...props }, ref) => {
+  DialogTriggerProps
+>(({ className, children, asChild = false, ...props }, ref) => {
   const { onOpenChange } = React.useContext(DialogContext)
 
   const handleClick = (e: React.MouseEvent<HTMLElement>) => {
@@ -109,6 +113,15 @@ const DialogTrigger = React.forwardRef<
     if (props.onClick) {
       props.onClick(e)
     }
+  }
+
+  if (asChild && React.isValidElement(children)) {
+    const child = children as React.ReactElement<React.HTMLAttributes<HTMLElement>>;
+    return React.cloneElement(child, {
+      ...props,
+      onClick: handleClick,
+      className: cn(child.props?.className, className),
+    });
   }
 
   return (
@@ -127,25 +140,44 @@ const DialogContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & {
     showCloseButton?: boolean
+    size?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
   }
->(({ className, children, showCloseButton = true, ...props }, ref) => {
+>(({ className, children, showCloseButton = true, size = 'md', ...props }, ref) => {
   const dialogContext = React.useContext(DialogContext)
   const { open } = dialogContext
   
   // Only render content when dialog is open
   if (!open) return null
 
+  const getSizeClasses = () => {
+    switch (size) {
+      case 'sm':
+        return 'max-w-sm';
+      case 'md':
+        return 'max-w-md';
+      case 'lg':
+        return 'max-w-lg';
+      case 'xl':
+        return 'max-w-xl';
+      case 'full':
+        return 'max-w-[95vw]';
+      default:
+        return 'max-w-md';
+    }
+  };
+
   return (
     <div
       ref={ref}
       className={cn(
-        "relative max-h-[85vh] w-full max-w-lg overflow-y-auto overscroll-contain",
+        "relative w-full mx-auto",
         "bg-white dark:bg-gray-800",
         "border border-gray-200 dark:border-gray-700",
-        "p-6 shadow-xl",
-        "rounded-lg",
+        "shadow-2xl",
+        "rounded-xl",
         "animate-in fade-in-0 zoom-in-95 slide-in-from-top-2",
         "duration-200",
+        getSizeClasses(),
         className
       )}
       role="dialog"
@@ -156,9 +188,11 @@ const DialogContent = React.forwardRef<
         <button
           onClick={() => dialogContext.onOpenChange?.(false)}
           className={cn(
-            "absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background",
-            "transition-opacity hover:opacity-100",
-            "focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2",
+            "absolute right-4 top-4 z-10 rounded-full p-1.5",
+            "bg-gray-100 dark:bg-gray-700",
+            "opacity-70 ring-offset-background",
+            "transition-all duration-200 hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-600",
+            "focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2",
             "disabled:pointer-events-none",
             "text-gray-500 dark:text-gray-400"
           )}
@@ -181,7 +215,7 @@ const DialogContent = React.forwardRef<
           <span className="sr-only">Close</span>
         </button>
       )}
-      <div className="grid gap-4">
+      <div className="p-6">
         {children}
       </div>
     </div>
@@ -196,7 +230,7 @@ const DialogHeader = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "flex flex-col space-y-1.5 text-center sm:text-left",
+      "flex flex-col space-y-1.5 text-center sm:text-left mb-4",
       className
     )}
     {...props}
@@ -211,7 +245,7 @@ const DialogFooter = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:space-x-2",
+      "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:space-x-2 mt-6",
       className
     )}
     {...props}
@@ -243,6 +277,7 @@ const DialogDescription = React.forwardRef<
     ref={ref}
     className={cn(
       "text-sm text-gray-500 dark:text-gray-400",
+      "leading-relaxed",
       className
     )}
     {...props}

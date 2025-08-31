@@ -257,8 +257,10 @@ export interface SelectOptionProps extends React.HTMLAttributes<HTMLDivElement> 
 
 const SelectValue = React.forwardRef<
   HTMLSpanElement,
-  React.HTMLAttributes<HTMLSpanElement>
->(({ className, children, ...props }, ref) => {
+  React.HTMLAttributes<HTMLSpanElement> & {
+    placeholder?: string;
+  }
+>(({ className, children, placeholder, ...props }, ref) => {
   const { value } = React.useContext(SelectContext)
   return (
     <span
@@ -266,7 +268,7 @@ const SelectValue = React.forwardRef<
       className={cn("block truncate", className)}
       {...props}
     >
-      {value ? children : null}
+      {value ? children : placeholder}
     </span>
   )
 })

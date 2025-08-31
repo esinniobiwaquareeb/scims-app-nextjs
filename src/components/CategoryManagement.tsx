@@ -335,15 +335,21 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
           {/* Only show delete button for non-store-admin users */}
           {!isStoreAdmin && (
             <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  size="sm" 
-                  variant="destructive"
-                  disabled={(category.product_count || 0) > 0 || isSaving || !hasPermission('categories_delete')}
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              </AlertDialogTrigger>
+              <Button 
+                size="sm" 
+                variant="destructive"
+                disabled={(category.product_count || 0) > 0 || isSaving || !hasPermission('categories_delete')}
+                onClick={() => {
+                  // Handle delete action directly
+                  if (category.product_count && category.product_count > 0) {
+                    alert(`Cannot delete category with ${category.product_count} products`);
+                    return;
+                  }
+                  handleDeleteCategory(category);
+                }}
+              >
+                <Trash2 className="w-3 h-3" />
+              </Button>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete Category</AlertDialogTitle>
@@ -598,7 +604,7 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
 
       {/* Add Category Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
+        <DialogContent size="md">
           <DialogHeader>
             <DialogTitle>Add New Category</DialogTitle>
             <DialogDescription>
@@ -674,7 +680,7 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
 
       {/* Edit Category Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent size="md">
           <DialogHeader>
             <DialogTitle>Edit Category</DialogTitle>
             <DialogDescription>

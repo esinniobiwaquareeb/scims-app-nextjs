@@ -702,7 +702,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
                     className="pl-10"
                   />
                 </div>
-                <Select value={filterStatus} onValueChange={(value: 'all' | 'active' | 'inactive') => setFilterStatus(value)}>
+                <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as 'all' | 'active' | 'inactive')}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>

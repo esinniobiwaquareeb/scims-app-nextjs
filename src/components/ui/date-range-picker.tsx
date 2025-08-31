@@ -1,10 +1,11 @@
 import * as React from "react"
 import { cn } from "./utils"
+import { DateRange } from "react-day-picker"
 
 export interface DatePickerWithRangeProps
   extends React.HTMLAttributes<HTMLDivElement> {
-  date?: { from: Date; to: Date }
-  onDateChange?: (date: { from: Date; to: Date }) => void
+  date?: DateRange
+  onDateChange?: (date: DateRange) => void
   placeholder?: string
 }
 
