@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, LogOut, Store, ShoppingCart, Building2 } from 'lucide-react';
+import { ArrowLeft, LogOut, Store, Building2 } from 'lucide-react';
 
 interface HeaderProps {
   title: string;
@@ -19,7 +19,6 @@ export const Header: React.FC<HeaderProps> = ({
   subtitle, 
   showBackButton, 
   onBack, 
-  onNavigate, 
   children 
 }) => {
   const { user, logout, currentBusiness, currentStore, switchStore } = useAuth();
@@ -39,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const showStoreSelector = currentBusiness && 
     currentBusiness.stores.length > 0 &&
-    (user?.role === 'business_admin' || user?.role === 'admin'); // Only business_admin and admin can switch stores
+    (user?.role === 'business_admin' || user?.role === 'admin');
 
   return (
     <header className="bg-background shadow-sm border-b border-border sticky top-0 z-40">
