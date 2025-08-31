@@ -242,7 +242,7 @@ export const SuperAdminDashboard: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <Header 
         title={`${systemSettings.platformName} ${translate('dashboard.title').replace('SCIMS', '')}`}
-        subtitle={translate('dashboard.title').replace('SCIMS ', '') + ' - Smart Commerce Inventory Management System'}
+        subtitle={translate('dashboard.title').replace('SCIMS ', '') + ' - Stock Control & Inventory Management System'}
       >
         <div className="flex items-center gap-2">
           <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
