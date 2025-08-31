@@ -87,10 +87,23 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
     if (!file || !currentBusiness?.id) return null;
 
     try {
-      // TODO: Implement logo upload API endpoint
-      // For now, return a placeholder URL
-      toast.info('Logo upload not yet implemented - using placeholder');
-      return `https://via.placeholder.com/300x300?text=${encodeURIComponent(file.name)}`;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('storeId', currentBusiness.id); // Use business ID for brand logos
+      formData.append('type', 'brand');
+
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload logo');
+      }
+
+      const data = await response.json();
+      return data.url;
     } catch (error) {
       console.error('Logo upload error:', error);
       toast.error('Failed to upload logo. Please try again.');

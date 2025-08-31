@@ -173,7 +173,7 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
         return;
       }
 
-      console.log('Updating supplier:', { supplierId: editingSupplier.id, supplierData: updatedSupplier });
+  
 
       updateSupplierMutation.mutate({
         supplierId: editingSupplier.id,

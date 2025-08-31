@@ -23,9 +23,9 @@ export const useNetworkStatus = () => {
 
   return {
     isOnline,
-    syncInProgress: false, // TODO: Implement sync status
-    pendingItems: 0, // TODO: Implement pending items count
-    lastSync: 0 // TODO: Implement last sync timestamp
+    syncInProgress: false, // Offline sync not yet implemented
+    pendingItems: 0, // Offline queue not yet implemented
+    lastSync: 0 // Offline sync not yet implemented
   };
 };
 
@@ -74,7 +74,7 @@ export const useOfflineMutation = <TData, TVariables>(
         if (isOnline) {
           return await mutationFn(variables);
         } else {
-          // TODO: Implement offline storage and sync
+          // Offline storage and sync not yet implemented
           throw new Error('Offline mode not yet implemented');
         }
       } catch (error) {
@@ -96,7 +96,6 @@ export const useOfflineCreateSale = () => {
   return useMutation({
     mutationFn: async (saleData: Sale) => {
       if (isOnline) {
-        // TODO: Replace with actual API endpoint when available
         const response = await fetch('/api/sales', {
           method: 'POST',
           headers: {
@@ -111,7 +110,7 @@ export const useOfflineCreateSale = () => {
         
         return response.json();
       } else {
-        // TODO: Implement offline sale storage
+        // Offline sale storage not yet implemented
         throw new Error('Offline mode not yet implemented');
       }
     },

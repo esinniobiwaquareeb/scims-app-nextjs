@@ -248,20 +248,52 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
   }, [refetchSales, refetchProducts, refetchCustomers, refetchInventory, refetchFinancial, refetchCharts]);
 
   const exportToPDF = (reportType: string) => {
-    // TODO: Implement PDF export functionality
-    
-    alert(`${reportType} report export functionality coming soon!`);
+    // PDF export functionality not yet implemented
+    toast.info(`${reportType} PDF export coming soon!`);
   };
 
   const exportToCSV = (reportType: string, data: unknown[]) => {
-    // TODO: Implement CSV export functionality
-    
-    alert(`${reportType} report export functionality coming soon!`);
+    if (!data || data.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    try {
+      // Convert data to CSV format
+      const headers = Object.keys(data[0] as Record<string, unknown>);
+      const csvContent = [
+        headers.join(','),
+        ...data.map((row: unknown) => 
+          headers.map(header => {
+            const value = (row as Record<string, unknown>)[header];
+            // Escape commas and quotes in CSV
+            const stringValue = String(value || '').replace(/"/g, '""');
+            return `"${stringValue}"`;
+          }).join(',')
+        )
+      ].join('\n');
+
+      // Create and download CSV file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${reportType}_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success(`${reportType} exported to CSV successfully`);
+    } catch (error) {
+      console.error('CSV export error:', error);
+      toast.error('Failed to export CSV');
+    }
   };
 
     // Transform sales data for display
   const transformedSalesData = useMemo(() => {
-    console.log('Raw salesData:', salesData);
+
     
     return salesData.map((sale: RawSalesData) => {
       // Ensure products array is always defined
@@ -272,7 +304,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
         );
       }
       
-      console.log('Extracted products:', products);
+
       
       return {
         id: sale.id,

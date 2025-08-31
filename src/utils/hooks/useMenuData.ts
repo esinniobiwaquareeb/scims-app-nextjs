@@ -47,9 +47,12 @@ export const useMenuItems = (businessType: string, userRole: string, enabledFeat
   return useQuery({
     queryKey: ['menu-items', businessType, userRole, enabledFeatures],
     queryFn: async (): Promise<DashboardFeatures> => {
-      // TODO: Replace with API call when menu endpoints are implemented
-      // For now, return empty arrays
-      return { overview: [], menu: [] };
+      const response = await fetch(`/api/menu/business-type/${businessType}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch menu items');
+      }
+      const data = await response.json();
+      return data.menu || { overview: [], menu: [] };
     },
     enabled: !!businessType && !!userRole,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -62,9 +65,12 @@ export const useBusinessTypeMenu = (businessType: string) => {
   return useQuery({
     queryKey: ['business-type-menu', businessType],
     queryFn: async (): Promise<BusinessTypeMenu | null> => {
-      // TODO: Replace with API call when business type menu endpoints are implemented
-      // For now, return null
-      return null;
+      const response = await fetch(`/api/menu/business-type/${businessType}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch business type menu');
+      }
+      const data = await response.json();
+      return data.menu || null;
     },
     enabled: !!businessType,
     staleTime: 10 * 60 * 1000, // 10 minutes
@@ -77,9 +83,12 @@ export const useMenuCategories = () => {
   return useQuery({
     queryKey: ['menu-categories'],
     queryFn: async (): Promise<MenuCategory[]> => {
-      // TODO: Replace with API call when menu categories endpoints are implemented
-      // For now, return empty array
-      return [];
+      const response = await fetch('/api/menu/categories');
+      if (!response.ok) {
+        throw new Error('Failed to fetch menu categories');
+      }
+      const data = await response.json();
+      return data.categories || [];
     },
     staleTime: 30 * 60 * 1000, // 30 minutes
     gcTime: 60 * 60 * 1000, // 1 hour
@@ -91,9 +100,12 @@ export const useAllMenuItems = () => {
   return useQuery({
     queryKey: ['all-menu-items'],
     queryFn: async (): Promise<MenuItem[]> => {
-      // TODO: Replace with API call when all menu items endpoints are implemented
-      // For now, return empty array
-      return [];
+      const response = await fetch('/api/menu/items');
+      if (!response.ok) {
+        throw new Error('Failed to fetch all menu items');
+      }
+      const data = await response.json();
+      return data.items || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes

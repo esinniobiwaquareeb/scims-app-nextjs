@@ -87,11 +87,11 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) =
       const { outcome } = await deferredPrompt.userChoice;
       
       if (outcome === 'accepted') {
-        console.log('User accepted the install prompt');
+  
         setIsInstalled(true);
         setShowPrompt(false);
       } else {
-        console.log('User dismissed the install prompt');
+  
       }
     } catch (error) {
       console.error('Error showing install prompt:', error);

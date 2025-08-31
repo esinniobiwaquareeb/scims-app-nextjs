@@ -1,5 +1,4 @@
-// TODO: Replace with API calls when endpoints are implemented
-// import { directDB } from '../../utils/supabase/direct-client';
+// Brand API helper functions
 
 export interface Brand {
   id: string;

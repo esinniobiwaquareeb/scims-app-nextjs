@@ -166,19 +166,36 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
 
   // Image upload function
   const uploadImage = useCallback(async (file: File): Promise<string | null> => {
-    if (!file || !currentStore?.id) return null;
+    if (!file) return null;
+    
+    // Determine which store to use for image upload
+    const targetStoreId = selectedStoreFilter === 'All' ? currentStore?.id : selectedStoreFilter;
+    if (!targetStoreId) return null;
 
     try {
-      // TODO: Implement image upload API endpoint
-      // For now, return a placeholder URL
-      toast.info('Image upload not yet implemented - using placeholder');
-      return `https://via.placeholder.com/300x300?text=${encodeURIComponent(file.name)}`;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('storeId', targetStoreId);
+      formData.append('type', 'product');
+
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload image');
+      }
+
+      const data = await response.json();
+      return data.url;
     } catch (error) {
       console.error('Image upload error:', error);
       toast.error('Failed to upload image. Please try again.');
       return null;
     }
-  }, [currentStore?.id]);
+  }, [selectedStoreFilter, currentStore?.id]);
 
   // Use React Query hooks for data fetching with smart caching
   const {
@@ -204,17 +221,6 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
   const allProducts = selectedStoreFilter === 'All' ? allBusinessProducts : products;
   const isLoadingProducts = selectedStoreFilter === 'All' ? allBusinessProductsLoading : productsLoading;
   const productsErrorCombined = selectedStoreFilter === 'All' ? allBusinessProductsError : productsError;
-
-  // Debug logging
-  console.log('ProductManagement Debug:', {
-    selectedStoreFilter,
-    productsLength: products.length,
-    allBusinessProductsLength: allBusinessProducts.length,
-    allProductsLength: allProducts.length,
-    isLoadingProducts,
-    productsError,
-    allBusinessProductsError
-  });
 
   const {
     data: categories = [],

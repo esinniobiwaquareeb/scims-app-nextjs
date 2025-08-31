@@ -261,7 +261,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const refreshStores = useCallback(async () => {
     // This will be implemented when we add store management API routes
-    console.log('Store refresh not implemented yet');
+
   }, []);
 
   // Memoize the context value to prevent unnecessary re-renders

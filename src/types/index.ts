@@ -276,19 +276,28 @@ export interface BusinessSettings {
 }
 
 export interface StoreSettings {
-  id: string;
+  id?: string;
   store_id: string;
   currency_id?: string;
   language_id?: string;
-  timezone?: string;
-  date_format?: string;
-  time_format?: string;
-  tax_rate?: number;
-  discount_enabled?: boolean;
+  primary_color?: string;
+  secondary_color?: string;
+  accent_color?: string;
+  logo_url?: string;
   receipt_header?: string;
   receipt_footer?: string;
-  created_at: string;
-  updated_at: string;
+  return_policy?: string;
+  contact_person?: string;
+  store_hours?: string;
+  store_promotion_info?: string;
+  custom_receipt_message?: string;
+  allow_returns?: boolean;
+  return_period_days?: number;
+  enable_tax?: boolean;
+  tax_rate?: number;
+  enable_sounds?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface SystemSettings {

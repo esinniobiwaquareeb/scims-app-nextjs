@@ -181,7 +181,7 @@ export const StoreAdminDashboard: React.FC = () => {
                 todaysSales: dashboardData.stats.todaySales,
                 totalProducts: dashboardData.stats.totalProducts,
                 lowStockItems: dashboardData.stats.lowStockItems,
-                ordersToday: 0 // TODO: Add orders count to API
+                ordersToday: 0 // Orders count not yet implemented in API
               }}
               storeCount={1}
               isAllStores={false}

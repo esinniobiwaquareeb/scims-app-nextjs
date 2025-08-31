@@ -19,7 +19,6 @@ export const useStoreProducts = (storeId: string, options?: {
   return useQuery({
     queryKey: ['store-products', storeId],
     queryFn: async () => {
-      // TODO: Replace with actual API endpoint when available
       const response = await fetch(`/api/products?store_id=${storeId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch products');
@@ -45,7 +44,6 @@ export const useStoreCustomers = (storeId: string, options?: {
   return useQuery({
     queryKey: ['store-customers', storeId],
     queryFn: async () => {
-      // TODO: Replace with actual API endpoint when available
       const response = await fetch(`/api/customers?store_id=${storeId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch customers');
@@ -124,7 +122,6 @@ export const useCreateCustomer = (p0: string) => {
       address?: string;
       [key: string]: unknown;
     }) => {
-      // TODO: Replace with actual API endpoint when available
       const response = await fetch('/api/customers', {
         method: 'POST',
         headers: {
@@ -160,7 +157,6 @@ export const useSavedCarts = (storeId: string, p0: string, options?: {
   return useQuery({
     queryKey: ['saved-carts', storeId],
     queryFn: async () => {
-      // TODO: Replace with actual API endpoint when available
       const response = await fetch(`/api/saved-carts?store_id=${storeId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch saved carts');
@@ -185,7 +181,6 @@ export const useSaveCart = (p0: string) => {
       cashier_id: string;
       [key: string]: unknown;
     }) => {
-      // TODO: Replace with actual API endpoint when available
       const response = await fetch('/api/saved-carts', {
         method: 'POST',
         headers: {
@@ -218,7 +213,6 @@ export const useDeleteSavedCart = () => {
   
   return useMutation({
     mutationFn: async (cartId: string) => {
-      // TODO: Replace with actual API endpoint when available
       const response = await fetch(`/api/saved-carts/${cartId}`, {
         method: 'DELETE',
       });
@@ -275,7 +269,6 @@ export const useCategories = (businessId: string, options?: {
   return useQuery({
     queryKey: ['categories', businessId],
     queryFn: async () => {
-      // TODO: Replace with actual API endpoint when available
       const response = await fetch(`/api/categories?business_id=${businessId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
@@ -301,7 +294,6 @@ export const useBusinessSuppliers = (businessId: string, options?: {
   return useQuery({
     queryKey: ['suppliers', businessId],
     queryFn: async () => {
-      // TODO: Replace with actual API endpoint when available
       const response = await fetch(`/api/suppliers?business_id=${businessId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch suppliers');
@@ -324,7 +316,6 @@ export const useBusinessBrands = (businessId: string, options?: {
   return useQuery({
     queryKey: ['brands', businessId],
     queryFn: async () => {
-      // TODO: Replace with actual API endpoint when available
       const response = await fetch(`/api/brands?business_id=${businessId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch brands');

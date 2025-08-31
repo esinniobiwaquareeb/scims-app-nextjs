@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-// TODO: Replace with actual direct client when available
+// Direct database client not yet implemented
 // import { directDB } from '../utils/supabase/direct-client';
 import { useAuth } from './AuthContext';
 import { useStoreSettings, useBusinessSettings, useLanguages, useCurrencies } from '@/utils/hooks/useStoreData';
@@ -253,7 +253,7 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       if (user?.role === 'superadmin') {
         const updatedSettings = { ...systemSettings, ...newSettings };
-        console.log('System settings update not yet implemented');
+    
         setSystemSettings(updatedSettings);
       }
     } catch (error) {

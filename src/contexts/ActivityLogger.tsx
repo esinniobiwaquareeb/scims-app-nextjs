@@ -97,13 +97,7 @@ export const ActivityLoggerProvider: React.FC<{ children: React.ReactNode }> = (
     try {
       // Log to console for development
       if (process.env.NODE_ENV === 'development') {
-        console.log('Activity Log:', {
-          activityType,
-          category,
-          description,
-          metadata,
-          timestamp: new Date().toISOString()
-        });
+
       }
 
       // Send to API

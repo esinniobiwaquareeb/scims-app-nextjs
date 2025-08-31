@@ -21,6 +21,7 @@ import {
   Clock
 } from 'lucide-react';
 import { useLanguages, useCurrencies, useCountries } from '../utils/hooks/useStoreData';
+import { StoreSettings as StoreSettingsType } from '@/types';
 
 interface StoreWithRelations {
   id: string;
@@ -58,7 +59,7 @@ interface StoreWithRelations {
 interface StoreSettingsProps {
   storeId: string;
   store: StoreWithRelations | null;
-  storeSettings: any; // TODO: Define proper StoreSettings type
+  storeSettings: StoreSettingsType | null;
   onSave?: (settings: Record<string, unknown>) => void;
 }
 
@@ -194,7 +195,7 @@ export const StoreSettings: React.FC<StoreSettingsProps> = ({ storeId, store, st
   };
 
   const testSound = () => {
-    console.log('Sound test');
+
   };
 
   const ReceiptPreview = () => {

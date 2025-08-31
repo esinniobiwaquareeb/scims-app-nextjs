@@ -83,7 +83,7 @@ export async function PUT(
       return acc;
     }, {} as Record<string, unknown>);
 
-    console.log('Filtered store update body:', filteredBody);
+
 
     const { data: store, error } = await supabase
       .from('store')

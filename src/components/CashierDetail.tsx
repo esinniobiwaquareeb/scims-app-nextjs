@@ -89,8 +89,7 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
         const salesData = salesResponse.ok ? (await salesResponse.json()).sales || [] : [];
         const activityData = activityResponse.ok ? (await activityResponse.json()).logs || [] : [];
         
-        console.log('Sales response:', salesResponse.status, salesData);
-        console.log('Activity response:', activityResponse.status, activityData);
+        
         
         if (!activityResponse.ok) {
           console.error('Activity logs API error:', activityResponse.status, await activityResponse.text());
@@ -111,7 +110,7 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
         setActivity(activityData);
         
         if (activityData.length === 0) {
-          console.log('No activity logs found for cashier');
+  
         }
       } catch (e: unknown) {
         console.error(e);

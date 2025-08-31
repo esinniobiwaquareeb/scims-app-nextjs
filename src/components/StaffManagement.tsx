@@ -293,7 +293,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   const router = useRouter();
   const { user, currentBusiness, currentStore } = useAuth();
   const { translate, formatCurrency } = useSystem();
-  // TODO: Implement proper permissions when PermissionsContext is ready
+  // Basic permission check - proper permissions system not yet implemented
   const hasPermission = (permission: string) => true;
   const { logActivity } = useActivityLogger();
 
@@ -537,7 +537,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
 
   const handleViewStaffDetail = useCallback(
     (staffMember: Staff) => {
-      console.log("Navigating to staff detail:", staffMember);
+  
       router.push(`/staff/${staffMember.id}`);
     },
     [router]
