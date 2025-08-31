@@ -55,6 +55,8 @@ interface Store {
   phone?: string;
   email?: string;
   manager_name?: string;
+  currency_id?: string;
+  language_id?: string;
   is_active: boolean;
   created_at: string;
 }
@@ -83,6 +85,8 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
     phone: '',
     email: '',
     manager_name: '',
+    currency_id: '',
+    language_id: '',
     is_active: true
   });
 
@@ -140,6 +144,8 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
       phone: '',
       email: '',
       manager_name: '',
+      currency_id: '',
+      language_id: '',
       is_active: true
     });
   }, []);
@@ -153,10 +159,25 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
     try {
       setSubmitting(true);
       
-      await createStoreMutation.mutateAsync({
+      // Clean up the data - convert empty strings to undefined for optional UUID fields
+      const cleanStoreData = {
         ...newStore,
-        business_id: currentBusiness?.id || ''
-      });
+        business_id: currentBusiness?.id || '',
+        // Convert empty strings to undefined for optional UUID fields
+        country_id: newStore.country_id || undefined,
+        currency_id: newStore.currency_id || undefined,
+        language_id: newStore.language_id || undefined,
+        // Clean up other optional fields
+        address: newStore.address || undefined,
+        city: newStore.city || undefined,
+        state: newStore.state || undefined,
+        postal_code: newStore.postal_code || undefined,
+        phone: newStore.phone || undefined,
+        email: newStore.email || undefined,
+        manager_name: newStore.manager_name || undefined
+      };
+      
+      await createStoreMutation.mutateAsync(cleanStoreData);
       
       resetNewStoreForm();
       setIsAddDialogOpen(false);
@@ -183,6 +204,8 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
       phone: store.phone || '',
       email: store.email || '',
       manager_name: store.manager_name || '',
+      currency_id: store.currency_id || '',
+      language_id: store.language_id || '',
       is_active: store.is_active
     });
     setIsEditDialogOpen(true);
@@ -194,9 +217,26 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
     try {
       setSubmitting(true);
       
+      // Clean up the data - convert empty strings to undefined for optional UUID fields
+      const cleanStoreData = {
+        ...newStore,
+        // Convert empty strings to undefined for optional UUID fields
+        country_id: newStore.country_id || undefined,
+        currency_id: newStore.currency_id || undefined,
+        language_id: newStore.language_id || undefined,
+        // Clean up other optional fields
+        address: newStore.address || undefined,
+        city: newStore.city || undefined,
+        state: newStore.state || undefined,
+        postal_code: newStore.postal_code || undefined,
+        phone: newStore.phone || undefined,
+        email: newStore.email || undefined,
+        manager_name: newStore.manager_name || undefined
+      };
+      
       await updateStoreMutation.mutateAsync({
         id: selectedStore.id,
-        storeData: newStore
+        storeData: cleanStoreData
       });
       
       setIsEditDialogOpen(false);

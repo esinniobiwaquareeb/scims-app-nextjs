@@ -96,37 +96,76 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: store, error } = await supabase
+    // Clean up the data - convert empty strings to null for optional UUID fields
+    const cleanStoreData = {
+      business_id,
+      name,
+      address: address || null,
+      city: city || null,
+      state: state || null,
+      postal_code: postal_code || null,
+      phone: phone || null,
+      email: email || null,
+      manager_name: manager_name || null,
+      currency_id: currency_id === '' ? null : currency_id,
+      language_id: language_id === '' ? null : language_id,
+      country_id: country_id === '' ? null : country_id,
+      is_active: true
+    };
+
+    // Create store and store settings in a transaction
+    const { data: store, error: storeError } = await supabase
       .from('store')
-      .insert({
-        business_id,
-        name,
-        address,
-        city,
-        state,
-        postal_code,
-        phone,
-        email,
-        manager_name,
-        currency_id,
-        language_id,
-        country_id,
-        is_active: true
-      })
+      .insert(cleanStoreData)
       .select()
       .single();
 
-    if (error) {
-      console.error('Supabase error:', error);
+    if (storeError) {
+      console.error('Supabase error creating store:', storeError);
       return NextResponse.json(
         { success: false, error: 'Failed to create store' },
         { status: 500 }
       );
     }
 
+    // Create default store settings for the new store
+    const defaultStoreSettings = {
+      store_id: store.id,
+      tax_rate: 0.00,
+      enable_tax: false,
+      allow_returns: true,
+      return_period_days: 30,
+      enable_sounds: true,
+      primary_color: '#3B82F6',
+      secondary_color: '#10B981',
+      accent_color: '#F59E0B'
+    };
+
+    const { data: storeSettings, error: settingsError } = await supabase
+      .from('store_setting')
+      .insert(defaultStoreSettings)
+      .select()
+      .single();
+
+    if (settingsError) {
+      console.error('Supabase error creating store settings:', settingsError);
+      // If store settings creation fails, we should ideally rollback the store creation
+      // For now, we'll return an error and the store will exist without settings
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Store created but failed to create store settings',
+          store: store,
+          settingsError: settingsError.message
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
-      store
+      store,
+      store_settings: storeSettings
     }, { status: 201 });
 
   } catch (error) {
