@@ -904,7 +904,7 @@ export const CashierDashboard: React.FC = () => {
                         </div>
                         <div className="text-right">
                           <p className="font-semibold">{formatCurrency(item.total_price)}</p>
-                          {item.discount_amount && item.discount_amount > 0 && (
+                          Discount: {item.discount_amount && item.discount_amount > 0 && (
                             <p className="text-xs text-green-600">-{formatCurrency(item.discount_amount)}</p>
                           )}
                         </div>

@@ -12,6 +12,18 @@
   "categories": ["business", "productivity", "finance"],
   "icons": [
     {
+      "src": "/icons/icon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "/icons/icon-72x72.png",
       "sizes": "72x72",
       "type": "image/png",
@@ -64,11 +76,11 @@
     {
       "name": "Point of Sale",
       "short_name": "POS",
-      "description": "Quick access to point of sale",
+      "description": "Quick access to Point of Sale",
       "url": "/pos",
       "icons": [
         {
-          "src": "/icons/pos-shortcut.png",
+          "src": "/icons/icon-96x96.png",
           "sizes": "96x96"
         }
       ]
@@ -76,23 +88,23 @@
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
-      "description": "View business overview",
+      "description": "Quick access to Dashboard",
       "url": "/dashboard",
       "icons": [
         {
-          "src": "/icons/dashboard-shortcut.png",
+          "src": "/icons/icon-96x96.png",
           "sizes": "96x96"
         }
       ]
     },
     {
-      "name": "Products",
-      "short_name": "Products",
-      "description": "Manage inventory",
-      "url": "/products",
+      "name": "Inventory",
+      "short_name": "Inventory",
+      "description": "Quick access to Inventory Management",
+      "url": "/inventory",
       "icons": [
         {
-          "src": "/icons/products-shortcut.png",
+          "src": "/icons/icon-96x96.png",
           "sizes": "96x96"
         }
       ]
@@ -100,16 +112,18 @@
   ],
   "screenshots": [
     {
-      "src": "/screenshots/desktop-dashboard.png",
+      "src": "/screenshots/desktop.png",
       "sizes": "1280x720",
       "type": "image/png",
-      "form_factor": "wide"
+      "form_factor": "wide",
+      "label": "SCIMS Desktop Dashboard"
     },
     {
-      "src": "/screenshots/mobile-pos.png",
+      "src": "/screenshots/mobile.png",
       "sizes": "390x844",
       "type": "image/png",
-      "form_factor": "narrow"
+      "form_factor": "narrow",
+      "label": "SCIMS Mobile Interface"
     }
   ]
 }

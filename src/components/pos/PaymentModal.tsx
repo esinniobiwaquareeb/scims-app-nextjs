@@ -85,6 +85,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   formatCurrency,
   translate
 }) => {
+  // Auto-set card amount to total when modal opens with card payment selected
+  React.useEffect(() => {
+    if (open && paymentMethod === 'card' && (!cardAmount || Math.abs(parseFloat(cardAmount) - calculateTotal()) > 0.01)) {
+      onCardAmountChange(calculateTotal().toFixed(2));
+    }
+  }, [open, paymentMethod, cardAmount, calculateTotal, onCardAmountChange]);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-md mx-auto bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
@@ -175,7 +181,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               </Button>
               <Button 
                 variant={paymentMethod === 'card' ? 'default' : 'outline'}
-                onClick={() => onPaymentMethodChange('card')}
+                onClick={() => {
+                  onPaymentMethodChange('card');
+                  // Auto-set card amount to total when card is selected
+                  onCardAmountChange(calculateTotal().toFixed(2));
+                }}
                 size="sm"
                 className="h-10 text-sm"
               >
@@ -203,11 +213,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 placeholder="0.00"
                 value={cardAmount}
                 onChange={(e) => onCardAmountChange(e.target.value)}
+                onBlur={(e) => {
+                  // Format to 2 decimal places on blur
+                  const value = parseFloat(e.target.value);
+                  if (!isNaN(value)) {
+                    onCardAmountChange(value.toFixed(2));
+                  }
+                }}
                 className="text-center font-mono h-12 text-lg font-semibold border-2 border-blue-300 focus:border-blue-500 focus:ring-blue-200 bg-blue-50"
               />
               {cardAmount && (
                 <div className={`text-sm p-3 rounded-lg text-center ${
-                  parseFloat(cardAmount) === calculateTotal()
+                  Math.abs(parseFloat(cardAmount) - calculateTotal()) <= 0.01
                     ? 'text-green-700 bg-green-50 border border-green-200'
                     : 'text-red-700 bg-red-50 border border-red-200'
                 }`}>
@@ -228,6 +245,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 placeholder="0.00"
                 value={cashAmount}
                 onChange={(e) => onCashAmountChange(e.target.value)}
+                onBlur={(e) => {
+                  // Format to 2 decimal places on blur
+                  const value = parseFloat(e.target.value);
+                  if (!isNaN(value)) {
+                    onCashAmountChange(value.toFixed(2));
+                  }
+                }}
                 className="text-center font-mono h-12 text-lg font-bold border-2 border-green-300 focus:border-green-500 focus:ring-green-200 bg-green-50"
               />
               {cashAmount && (
@@ -265,6 +289,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         onCardAmountChange('0.00');
                       }
                     }}
+                    onBlur={(e) => {
+                      // Ensure the combined amount equals total on blur
+                      const cashValue = parseFloat(e.target.value) || 0;
+                      if (cashValue > 0 && cashValue < calculateTotal()) {
+                        const remaining = calculateTotal() - cashValue;
+                        onCardAmountChange(remaining.toFixed(2));
+                      }
+                      // Format to 2 decimal places
+                      if (!isNaN(cashValue)) {
+                        onCashAmountChange(cashValue.toFixed(2));
+                      }
+                    }}
                     className="text-center font-mono h-10 text-base font-semibold border-2 border-green-300 focus:border-green-500 focus:ring-green-200 bg-green-50"
                   />
                 </div>
@@ -285,12 +321,33 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         onCashAmountChange('0.00');
                       }
                     }}
+                    onBlur={(e) => {
+                      // Ensure the combined amount equals total on blur
+                      const cardValue = parseFloat(e.target.value) || 0;
+                      if (cardValue > 0 && cardValue < calculateTotal()) {
+                        const remaining = calculateTotal() - cardValue;
+                        onCashAmountChange(remaining.toFixed(2));
+                      }
+                      // Format to 2 decimal places
+                      if (!isNaN(cardValue)) {
+                        onCardAmountChange(cardValue.toFixed(2));
+                      }
+                    }}
                     className="text-center font-mono h-10 text-base font-semibold border-2 border-blue-300 focus:border-blue-500 focus:ring-blue-200 bg-blue-50"
                   />
                 </div>
               </div>
-              <div className="text-sm font-medium text-center p-3 bg-gray-100 rounded-lg">
+              <div className={`text-sm font-medium text-center p-3 rounded-lg ${
+                Math.abs((parseFloat(cashAmount) || 0) + (parseFloat(cardAmount) || 0) - calculateTotal()) <= 0.01
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-red-100 text-red-800'
+              }`}>
                 Combined Total: {formatCurrency((parseFloat(cashAmount) || 0) + (parseFloat(cardAmount) || 0))}
+                {Math.abs((parseFloat(cashAmount) || 0) + (parseFloat(cardAmount) || 0) - calculateTotal()) > 0.01 && (
+                  <div className="text-xs mt-1">
+                    {formatCurrency((parseFloat(cashAmount) || 0) + (parseFloat(cardAmount) || 0))} / {formatCurrency(calculateTotal())}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -302,9 +359,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 Cash amount must be ≥ total
               </div>
             )}
-            {paymentMethod === 'card' && cardAmount && parseFloat(cardAmount) !== calculateTotal() && (
+            {paymentMethod === 'card' && cardAmount && Math.abs(parseFloat(cardAmount) - calculateTotal()) > 0.01 && (
               <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
                 Card amount must equal total
+              </div>
+            )}
+            {paymentMethod === 'mixed' && cashAmount && cardAmount && Math.abs((parseFloat(cashAmount) + parseFloat(cardAmount)) - calculateTotal()) > 0.01 && (
+              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
+                Combined amount must equal total
               </div>
             )}
           </div>
@@ -318,8 +380,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               disabled={
                 isProcessing ||
                 (paymentMethod === 'cash' && !isValidCashAmount(cashAmount, calculateTotal())) ||
-                (paymentMethod === 'card' && (!cardAmount || parseFloat(cardAmount) !== calculateTotal())) ||
-                (paymentMethod === 'mixed' && (!cashAmount || !cardAmount))
+                (paymentMethod === 'card' && (!cardAmount || Math.abs(parseFloat(cardAmount) - calculateTotal()) > 0.01)) ||
+                (paymentMethod === 'mixed' && (!cashAmount || !cardAmount || Math.abs((parseFloat(cashAmount) + parseFloat(cardAmount)) - calculateTotal()) > 0.01))
               }
             >
               {isProcessing ? (

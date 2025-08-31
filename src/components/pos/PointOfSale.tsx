@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
-import { useActivityLogger } from '@/contexts/ActivityLogger';
+import { useActivityLogging } from '@/hooks/useActivityLogging';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
   useStoreProducts, 
@@ -174,7 +174,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
     return features;
   }, [businessSettings]);
   
-  const { logActivity } = useActivityLogger();
+  const { logSaleCreated, logCustomActivity } = useActivityLogging();
   
   // Network status for offline awareness
   const { isOnline } = useNetworkStatus();
@@ -365,12 +365,12 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
       }
     });
 
-    logActivity('sale_create', 'POS', `Added ${product.name} to cart`, {
+    logCustomActivity('sale', 'cart_item_added', `Added ${product.name} to cart`, {
       productId: product.id,
       productName: product.name,
       price: product.price
     });
-  }, [playSound, logActivity]);
+  }, [playSound, logCustomActivity]);
 
   const updateQuantity = useCallback((productId: string, change: number) => {
     playSound('click');
@@ -495,7 +495,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
       
       // Log activity with appropriate sale ID
       const saleId = newSale.id || newSale.offline_id;
-      logActivity('sale_create', 'POS', `Sale completed - Total: ${formatCurrency(total)}`, {
+      logSaleCreated(saleData.receipt_number, total, {
         saleId: saleId,
         items: cart.length,
         subtotal,
@@ -574,7 +574,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
     } finally {
       setIsProcessing(false);
     }
-  }, [currentStore?.id, cart, calculateSubtotal, calculateTax, calculateTotal, paymentMethod, cashAmount, cardAmount, selectedCustomer, storeConfig, user?.name, translateWrapper, formatCurrency, playSound, logActivity, printReceipt, onSaleCompleted, processSaleMutation, refetchProducts]);
+  }, [currentStore?.id, cart, calculateSubtotal, calculateTax, calculateTotal, paymentMethod, cashAmount, cardAmount, selectedCustomer, storeConfig, user?.name, translateWrapper, formatCurrency, playSound, logSaleCreated, printReceipt, onSaleCompleted, processSaleMutation, refetchProducts]);
 
   // Customer operations
   const handleAddCustomer = useCallback(async () => {
@@ -598,7 +598,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
       setCustomerPhone('');
       setShowCustomerDialog(false);
 
-      logActivity('customer_create', 'POS', `Added new customer: ${customerData.name}`, {
+      logCustomActivity('customer', 'customer_created', `Added new customer: ${customerData.name}`, {
         customerName: customerData.name,
         customerPhone: customerData.phone
       });
@@ -608,7 +608,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
       console.error('Error creating customer:', error);
       toast.error('Failed to create customer: ' + (error as Error).message);
     }
-  }, [customerName, customerPhone, currentStore?.id, createCustomerMutation, logActivity]);
+  }, [customerName, customerPhone, currentStore?.id, createCustomerMutation, logCustomActivity]);
 
   const handleSelectCustomer = useCallback((customer: Customer) => {
     setSelectedCustomer(customer);

@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase/config';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,6 +17,10 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('start_date');
     const endDate = searchParams.get('end_date');
     const userRole = searchParams.get('user_role');
+    const search = searchParams.get('search');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = (page - 1) * limit;
 
     // For super admin, business_id is optional - they can see all logs
     if (!businessId && userRole !== 'superadmin') {
@@ -61,10 +70,32 @@ export async function GET(request: NextRequest) {
       query = query.lte('created_at', endDate);
     }
 
-    // Get logs with ordering
+    // Apply search filter
+    if (search) {
+      query = query.or(`description.ilike.%${search}%,activity_type.ilike.%${search}%,category.ilike.%${search}%`);
+    }
+
+    // Get total count for pagination
+    const countQuery = supabase
+      .from('activity_log')
+      .select('*', { count: 'exact', head: true });
+
+    // Apply the same filters to count query
+    if (businessId) countQuery.eq('business_id', businessId);
+    if (storeId) countQuery.eq('store_id', storeId);
+    if (userId) countQuery.eq('user_id', userId);
+    if (moduleFilter && moduleFilter !== 'All') countQuery.eq('category', moduleFilter);
+    if (action && action !== 'All') countQuery.eq('activity_type', action);
+    if (startDate) countQuery.gte('created_at', startDate);
+    if (endDate) countQuery.lte('created_at', endDate);
+    if (search) countQuery.or(`description.ilike.%${search}%,activity_type.ilike.%${search}%,category.ilike.%${search}%`);
+
+    const { count } = await countQuery;
+
+    // Get logs with ordering and pagination
     const { data: logs, error } = await query
       .order('created_at', { ascending: false })
-      .limit(100); // Limit to 100 most recent logs
+      .range(offset, offset + limit - 1);
 
     if (error) {
       console.error('Error fetching activity logs:', error);
@@ -120,7 +151,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       logs: transformedLogs,
-      total: transformedLogs.length
+      total: transformedLogs.length,
+      pagination: {
+        page,
+        limit,
+        total: count || transformedLogs.length,
+        totalPages: Math.ceil((count || transformedLogs.length) / limit)
+      }
     });
 
   } catch (error) {
