@@ -264,9 +264,12 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
       
       // Show success message with admin credentials
       if (result?.admin_user) {
-        toast.success(`Business created successfully! Admin username: ${result.admin_user.username}, Default password: ${result.admin_user.default_password}`);
+        toast.success(
+          `Business created successfully! Welcome email sent to ${result.admin_user.email}. Admin username: ${result.admin_user.username}, Default password: ${result.admin_user.default_password}`,
+          { duration: 8000 }
+        );
       } else {
-        toast.success('Business created successfully!');
+        toast.success('Business created successfully! Welcome email sent.');
       }
       
       // Refresh the businesses list immediately
@@ -488,7 +491,7 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
             showBackButton
             onBack={onBack}
           >
-        <div className="flex gap-2">
+            <div className="flex gap-2">
           <Button variant="outline" onClick={() => refetchBusinesses()} disabled={businessesLoading}>
             <Loader2 className={`w-4 h-4 mr-2 ${businessesLoading ? 'animate-spin' : ''}`} />
             Refresh
@@ -731,6 +734,22 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
         </Dialog>
         </div>
       </Header>
+
+      {/* Success Message Display */}
+      {createBusinessMutation.isSuccess && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <p className="text-green-800 text-sm font-medium">
+                  Business created successfully! Welcome email sent with login credentials.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}

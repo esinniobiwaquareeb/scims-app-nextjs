@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 import bcrypt from 'bcryptjs';
+import { EmailService } from '@/lib/email/emailService';
+import { generateSecurePassword } from '@/utils/passwordGenerator';
 
 // GET - Fetch all businesses (for superadmin)
 export async function GET(request: NextRequest) {
@@ -109,8 +111,8 @@ export async function POST(request: NextRequest) {
 
     if (businessError) throw businessError;
 
-    // Generate a default password for the business admin
-    const defaultPassword = '123456'; // This should be changed on first login
+    // Generate a secure password for the business admin
+    const defaultPassword = generateSecurePassword(16);
     const passwordHash = await bcrypt.hash(defaultPassword, 12);
 
     // Create business admin user account
@@ -243,6 +245,34 @@ export async function POST(request: NextRequest) {
     if (settingsError) {
       console.warn('Failed to create business settings:', settingsError);
       // Don't fail the entire operation if settings creation fails
+    }
+
+    // Send welcome email to the business admin
+    try {
+      const platformUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://scims.com';
+      const loginUrl = `${platformUrl}/auth/login`;
+      const supportEmail = process.env.SUPPORT_EMAIL || 'support@scims.com';
+
+      const emailResult = await EmailService.sendWelcomeEmail({
+        businessName: business.name,
+        businessEmail: businessData.email,
+        adminName: businessAdminData.name,
+        adminUsername: businessAdminData.username,
+        adminPassword: defaultPassword,
+        platformUrl,
+        loginUrl,
+        supportEmail
+      });
+
+      if (!emailResult.success) {
+        console.warn('Failed to send welcome email:', emailResult.error);
+        // Don't fail the entire operation if email fails
+      } else {
+        console.log('Welcome email sent successfully to:', businessData.email);
+      }
+    } catch (emailError) {
+      console.warn('Error sending welcome email:', emailError);
+      // Don't fail the entire operation if email fails
     }
 
     // Return the created business with user and store info
