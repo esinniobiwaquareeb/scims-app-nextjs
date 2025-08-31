@@ -665,17 +665,6 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
                     </div>
                   </div>
                   
-                  <Separator />
-                  
-                  <div className="flex justify-end">
-                    <Button 
-                      onClick={() => {}}
-                      className="flex items-center gap-2"
-                    >
-                      <Edit className="w-4 h-4" />
-                      Edit Settings
-                    </Button>
-                  </div>
                 </div>
               </CardContent>
             </Card>

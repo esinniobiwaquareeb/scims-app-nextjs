@@ -252,7 +252,7 @@ export const StoreSettings: React.FC<StoreSettingsProps> = ({ storeId, store, st
   };
 
   return (
-    <div>
+    <div className="mt-4">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Store Settings</h2>
         <div className="flex gap-2">
