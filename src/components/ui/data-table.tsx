@@ -1,217 +1,227 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-'use client';
+"use client"
 
-import React from 'react';
-import { Button } from './button';
-import { Input } from './input';
-import { 
-  ChevronLeft,
-  ChevronRight, 
-  ChevronsLeft, 
-  ChevronsRight,
-  Search
-} from 'lucide-react';
+import * as React from "react"
+import { cn } from "./utils"
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "./table"
+import { JSX } from "react";
 
-interface Column<T> {
-  key: string;
-  label: string;
-  render?: (item: T) => React.ReactNode;
+export interface SortConfig<T> {
+  key: keyof T;
+  direction: 'asc' | 'desc';
 }
 
-interface DataTableProps<T> {
+export interface Column<T> {
+  key: keyof T;
+  title: string;
+  sortable?: boolean;
+  render?: (value: T[keyof T], row: T) => React.ReactNode;
+}
+
+export interface DataTableProps<T extends Record<string, unknown>> extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> {
   data: T[];
   columns: Column<T>[];
+  pageSize?: number;
+  sortable?: boolean;
   searchable?: boolean;
-  searchPlaceholder?: string;
-  emptyMessage?: string;
-  pagination?: {
-    enabled: boolean;
-    pageSize: number;
-    showPageSizeSelector?: boolean;
-    showPageInfo?: boolean;
-  };
-  height?: number;
+  onRowClick?: (row: T) => void;
 }
 
-export function DataTable<T extends { id?: string | number }>({
-  data,
-  columns,
-  searchable = false,
-  searchPlaceholder = "Search...",
-  emptyMessage = "No data found",
-  pagination,
-  height = 400
-}: DataTableProps<T>) {
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const [pageSize, setPageSize] = React.useState(pagination?.pageSize || 20);
+// Hook for sorting
+function useSortableData<T extends Record<string, unknown>>(
+  items: T[],
+  config: SortConfig<T> | null
+) {
+  return React.useMemo(() => {
+    if (!config) return items;
 
-  // Filter data based on search term
-  const filteredData = React.useMemo(() => {
-    if (!searchable || !searchTerm.trim()) {
-      return data;
-    }
+    return [...items].sort((a, b) => {
+      const aVal = a[config.key];
+      const bVal = b[config.key];
 
-    return data.filter((item: T) => {
-      const searchLower = searchTerm.toLowerCase();
-      
-      // Search through all string properties
-      return Object.values(item as Record<string, unknown>).some(value => {
-        if (typeof value === 'string') {
-          return value.toLowerCase().includes(searchLower);
-        }
-        return false;
-      });
+      if (aVal === bVal) return 0;
+      if (aVal === null || aVal === undefined) return 1;
+      if (bVal === null || bVal === undefined) return -1;
+
+      return (
+        (aVal < bVal ? -1 : 1) * (config.direction === 'asc' ? 1 : -1)
+      );
     });
-  }, [data, searchTerm, searchable]);
+  }, [items, config]);
+}
 
-  // Paginate data
-  const paginatedData = React.useMemo(() => {
-    if (!pagination?.enabled) {
-      return filteredData;
-    }
+// Hook for pagination
+function usePagination<T>(items: T[], pageSize: number = 10) {
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const totalPages = Math.ceil(items.length / pageSize);
 
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    return filteredData.slice(startIndex, endIndex);
-  }, [filteredData, currentPage, pageSize, pagination?.enabled]);
-
-  // Calculate pagination info
-  const totalPages = Math.ceil(filteredData.length / pageSize);
-  const startItem = (currentPage - 1) * pageSize + 1;
-  const endItem = Math.min(currentPage * pageSize, filteredData.length);
-
-  // Handle page changes
-  const goToPage = (page: number) => {
-    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
-  };
-
-  // Reset to first page when search changes
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [items.length]);
 
-  if (data.length === 0) {
-    return (
-      <div className="text-center py-12 text-muted-foreground">
-        <p className="text-lg font-medium">{emptyMessage}</p>
-      </div>
-    );
-  }
+  const currentData = React.useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    return items.slice(start, end);
+  }, [items, currentPage, pageSize]);
+
+  return {
+    currentData,
+    currentPage,
+    totalPages,
+    setCurrentPage,
+  };
+}
+
+// Hook for searching
+function useSearch<T extends Record<string, unknown>>(items: T[], searchTerm: string) {
+  return React.useMemo(() => {
+    if (!searchTerm) return items;
+
+    return items.filter((item) => {
+      return Object.values(item).some((value) =>
+        String(value || '').toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    });
+  }, [items, searchTerm]);
+}
+
+export function DataTable<T extends Record<string, unknown>>({
+  data,
+  columns,
+  pageSize = 10,
+  sortable = true,
+  searchable = true,
+  className,
+  onRowClick,
+  ...props
+}: DataTableProps<T>): JSX.Element {
+  const [sortConfig, setSortConfig] = React.useState<SortConfig<T> | null>(null);
+  const [searchTerm, setSearchTerm] = React.useState("");
+
+  const searchedData = useSearch(data, searchTerm);
+  const sortedData = useSortableData(searchedData, sortConfig) || searchedData;
+  const { currentData, currentPage, totalPages, setCurrentPage } = usePagination(sortedData, pageSize);
+
+  const handleSort = React.useCallback((key: keyof T) => {
+    if (!sortable) return;
+
+    setSortConfig((currentConfig) => {
+      if (currentConfig?.key === key) {
+        if (currentConfig.direction === 'asc') {
+          return { key, direction: 'desc' };
+        }
+        return null;
+      }
+      return { key, direction: 'asc' };
+    });
+  }, [sortable]);
 
   return (
-    <div className="space-y-4">
-      {/* Search */}
+    <div className={cn("w-full space-y-4", className)} {...props}>
       {searchable && (
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder={searchPlaceholder}
+        <div className="flex w-full items-center space-x-2">
+          <input
+            type="text"
+            placeholder="Search..."
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
           />
         </div>
       )}
-
-      {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
-        <div className="overflow-x-auto" style={{ height }}>
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                {columns.map((column) => (
-                  <th
-                    key={column.key}
-                    className="px-4 py-3 text-left text-sm font-medium text-gray-700"
-                  >
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {paginatedData.map((item: T, index: number) => (
-                <tr key={item.id || index} className="hover:bg-gray-50">
-                  {columns.map((column) => (
-                    <td key={column.key} className="px-4 py-3 text-sm">
-                      {column.render ? column.render(item) : String((item as Record<string, unknown>)[column.key] || '')}
-                    </td>
-                  ))}
-                </tr>
+      
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {columns.map((column) => (
+                <TableHead
+                  key={String(column.key)}
+                  onClick={() => column.sortable !== false && handleSort(column.key)}
+                  className={cn(
+                    sortable && column.sortable !== false && "cursor-pointer hover:bg-muted"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    {column.title}
+                    {sortable && column.sortable !== false && sortConfig?.key === column.key && (
+                      <span className="ml-2">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </TableHead>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {currentData.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center text-muted-foreground"
+                >
+                  No results found
+                </TableCell>
+              </TableRow>
+            ) : (
+              currentData.map((row, rowIndex) => (
+                <TableRow
+                  key={rowIndex}
+                  onClick={() => onRowClick?.(row)}
+                  className={cn(
+                    onRowClick && "cursor-pointer"
+                  )}
+                >
+                  {columns.map((column) => (
+                    <TableCell key={String(column.key)}>
+                      {column.render
+                        ? column.render(row[column.key], row)
+                        : row[column.key] != null
+                          ? String(row[column.key])
+                          : ''}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
 
-      {/* Pagination */}
-      {pagination?.enabled && totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {pagination.showPageSizeSelector && (
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-                className="border rounded px-2 py-1 text-sm"
-              >
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-            )}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-2">
+          <div className="text-sm text-muted-foreground">
+            Page {currentPage} of {totalPages}
           </div>
-
-          <div className="flex items-center gap-2">
-            {pagination.showPageInfo && (
-              <span className="text-sm text-gray-700">
-                {startItem}-{endItem} of {filteredData.length}
-              </span>
-            )}
-
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => goToPage(1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronsLeft className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => goToPage(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              
-              <span className="px-3 py-1 text-sm">
-                {currentPage} of {totalPages}
-              </span>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => goToPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => goToPage(totalPages)}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronsRight className="w-4 h-4" />
-              </Button>
-            </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className={cn(
+                "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+                "border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+              )}
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className={cn(
+                "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+                "border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+              )}
+            >
+              Next
+            </button>
           </div>
         </div>
       )}
