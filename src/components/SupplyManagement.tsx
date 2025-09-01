@@ -20,7 +20,8 @@ import {
   Calendar,
   User,
   Phone,
-  Trash2
+  Trash2,
+  CheckCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SupplyOrderSummary, PendingReturn } from '@/types/supply';
@@ -28,6 +29,7 @@ import { SupplyOrderModal } from './supply/SupplyOrderModal';
 import { SupplyReturnModal } from './supply/SupplyReturnModal';
 import { SupplyPaymentModal } from './supply/SupplyPaymentModal';
 import { SupplyOrderDetailModal } from './supply/SupplyOrderDetailModal';
+import { AcceptReturnModal } from './supply/AcceptReturnModal';
 import { usePermissions } from '@/contexts/PermissionsContext';
 import { useActivityLogger } from '@/contexts/ActivityLogger';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -54,6 +56,7 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showAcceptReturnModal, setShowAcceptReturnModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedSupplyOrder, setSelectedSupplyOrder] = useState<SupplyOrderSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -137,6 +140,11 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
     setShowPaymentModal(true);
   };
 
+  const handleAcceptReturn = (supplyOrder: SupplyOrderSummary) => {
+    setSelectedSupplyOrder(supplyOrder);
+    setShowAcceptReturnModal(true);
+  };
+
   const handleReturnCreated = () => {
     setShowReturnModal(false);
     fetchSupplyOrders();
@@ -148,6 +156,13 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
     setShowPaymentModal(false);
     fetchSupplyOrders();
     toast.success('Payment processed successfully');
+  };
+
+  const handleAcceptReturnCreated = () => {
+    setShowAcceptReturnModal(false);
+    fetchSupplyOrders();
+    fetchPendingReturns();
+    toast.success('Returned items accepted successfully');
   };
 
   const handleDeleteSupplyOrder = (supplyOrder: SupplyOrderSummary) => {
@@ -477,6 +492,17 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
                             >
                               <RotateCcw className="h-4 w-4" />
                             </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const order = supplyOrders.find(o => o.id === returnItem.supply_order_id);
+                                if (order) handleAcceptReturn(order);
+                              }}
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
                       </CardContent>
@@ -566,6 +592,15 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
             open={showDetailModal}
             onOpenChange={setShowDetailModal}
             supplyOrderId={selectedSupplyOrder.id}
+          />
+        )}
+
+        {showAcceptReturnModal && selectedSupplyOrder && (
+          <AcceptReturnModal
+            open={showAcceptReturnModal}
+            onOpenChange={setShowAcceptReturnModal}
+            supplyOrder={selectedSupplyOrder}
+            onSuccess={handleAcceptReturnCreated}
           />
         )}
 
