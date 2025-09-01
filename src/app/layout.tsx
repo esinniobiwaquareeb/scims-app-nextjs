@@ -5,6 +5,7 @@ import "./styles/globals.css";
 import { Toaster } from 'sonner';
 import { Providers } from '@/components/Providers';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -82,6 +83,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <PWAInstallPrompt />
+          <ThemeToggle />
           <Toaster />
         </Providers>
       </body>
