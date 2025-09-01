@@ -168,6 +168,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </div>
           </div>
 
+          {/* Supply Mode Indicator */}
+          {isSupplyMode && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+              <div className="flex items-center gap-2 text-orange-800">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span className="font-medium text-sm">Supply Mode Active</span>
+              </div>
+              <div className="text-xs text-orange-700 mt-1">
+                Items will be supplied without payment
+              </div>
+            </div>
+          )}
+
           {/* Payment Method Selection - Only show in payment mode */}
           {!isSupplyMode && (
             <div className="space-y-3">
@@ -356,26 +369,28 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </div>
           )}
 
-          {/* Payment Validation Errors */}
-          <div className="space-y-2">
-            {paymentMethod === 'cash' && cashAmount && !isValidCashAmount(cashAmount, calculateTotal()) && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
-                Cash amount must be ≥ total
-              </div>
-            )}
-            {paymentMethod === 'card' && cardAmount && Math.abs(parseFloat(cardAmount) - calculateTotal()) > 0.01 && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
-                Card amount must equal total
-              </div>
-            )}
-            {paymentMethod === 'mixed' && cashAmount && cardAmount && Math.abs((parseFloat(cashAmount) + parseFloat(cardAmount)) - calculateTotal()) > 0.01 && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
-                Combined amount must equal total
-              </div>
-            )}
-          </div>
+          {/* Payment Validation Errors - Only show in payment mode */}
+          {!isSupplyMode && (
+            <div className="space-y-2">
+              {paymentMethod === 'cash' && cashAmount && !isValidCashAmount(cashAmount, calculateTotal()) && (
+                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
+                  Cash amount must be ≥ total
+                </div>
+              )}
+              {paymentMethod === 'card' && cardAmount && Math.abs(parseFloat(cardAmount) - calculateTotal()) > 0.01 && (
+                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
+                  Card amount must equal total
+                </div>
+              )}
+              {paymentMethod === 'mixed' && cashAmount && cardAmount && Math.abs((parseFloat(cashAmount) + parseFloat(cardAmount)) - calculateTotal()) > 0.01 && (
+                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
+                  Combined amount must equal total
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* Process Payment Button */}
+          {/* Process Payment/Supply Button */}
           <div className="pt-2">
             <Button 
               onClick={onProcessPayment}
@@ -383,26 +398,37 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               size="lg"
               disabled={
                 isProcessing ||
-                (paymentMethod === 'cash' && !isValidCashAmount(cashAmount, calculateTotal())) ||
-                (paymentMethod === 'card' && (!cardAmount || Math.abs(parseFloat(cardAmount) - calculateTotal()) > 0.01)) ||
-                (paymentMethod === 'mixed' && (!cashAmount || !cardAmount || Math.abs((parseFloat(cashAmount) + parseFloat(cardAmount)) - calculateTotal()) > 0.01))
+                (!isSupplyMode && (
+                  (paymentMethod === 'cash' && !isValidCashAmount(cashAmount, calculateTotal())) ||
+                  (paymentMethod === 'card' && (!cardAmount || Math.abs(parseFloat(cardAmount) - calculateTotal()) > 0.01)) ||
+                  (paymentMethod === 'mixed' && (!cashAmount || !cardAmount || Math.abs((parseFloat(cashAmount) + parseFloat(cardAmount)) - calculateTotal()) > 0.01))
+                ))
               }
             >
               {isProcessing ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {translate('pos.processing') || 'Processing...'}
+                  {isSupplyMode ? 'Processing Supply Order...' : (translate('pos.processing') || 'Processing...')}
                 </>
               ) : (
                 <>
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  {translate('pos.processPayment') || 'Process Payment'}
+                  {isSupplyMode ? (
+                    <>
+                      <Receipt className="w-4 h-4 mr-2" />
+                      Process Supply Order
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      {translate('pos.processPayment') || 'Process Payment'}
+                    </>
+                  )}
                 </>
               )}
             </Button>
             {isProcessing && (
               <p className="text-xs text-muted-foreground text-center mt-2">
-                Processing payment and printing receipt...
+                {isSupplyMode ? 'Processing supply order...' : 'Processing payment and printing receipt...'}
               </p>
             )}
           </div>

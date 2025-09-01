@@ -64,6 +64,7 @@ interface ShoppingCartProps {
   showSaleSuccess: boolean;
   lastSaleInfo: any;
   cartSearchTerm: string;
+  isSupplyMode?: boolean;
   onCartSearchChange: (term: string) => void;
   onUpdateQuantity: (productId: string, change: number) => void;
   onRemoveFromCart: (productId: string) => void;
@@ -101,6 +102,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   showSaleSuccess,
   lastSaleInfo,
   cartSearchTerm,
+  isSupplyMode = false,
   onCartSearchChange,
   onUpdateQuantity,
   onRemoveFromCart,
@@ -360,7 +362,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
                   disabled={(cart || []).length === 0}
                 >
                   <CreditCard className="w-3 h-3 mr-1" />
-                  {translate('pos.processPayment') || 'Process Payment'}
+                  {isSupplyMode ? 'Process Supply Order' : (translate('pos.processPayment') || 'Process Payment')}
                 </Button>
               </div>
             </div>
@@ -397,6 +399,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
         isProcessing={isProcessing}
         showSaleSuccess={showSaleSuccess}
         lastSaleInfo={lastSaleInfo}
+        isSupplyMode={isSupplyMode}
         onSelectCustomer={onSelectCustomer}
         onClearCustomer={onClearCustomer}
         onPaymentMethodChange={onPaymentMethodChange}

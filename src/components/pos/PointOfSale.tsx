@@ -907,6 +907,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
             showSaleSuccess={showSaleSuccess}
             lastSaleInfo={lastSaleInfo}
             cartSearchTerm={cartSearchTerm}
+            isSupplyMode={isSupplyMode}
             onCartSearchChange={setCartSearchTerm}
             onUpdateQuantity={updateQuantity}
             onRemoveFromCart={removeFromCart}
