@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -33,25 +33,18 @@ export const SupplyPaymentModal: React.FC<SupplyPaymentModalProps> = ({
   supplyOrder,
   onSuccess
 }) => {
-  const { user } = useAuth();
+  const { } = useAuth();
   const { formatCurrency } = useSystem();
   
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'mobile' | 'other'>('cash');
   const [amountPaid, setAmountPaid] = useState('');
   const [notes, setNotes] = useState('');
   const [existingPayments, setExistingPayments] = useState<SupplyPayment[]>([]);
+  const [supplyOrderDetails, setSupplyOrderDetails] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Fetch existing payments
-  useEffect(() => {
-    if (open && supplyOrder.id) {
-      fetchExistingPayments();
-    }
-  }, [open, supplyOrder.id]);
-
-  const fetchExistingPayments = async () => {
-    setLoading(true);
+  const fetchExistingPayments = useCallback(async () => {
     try {
       const response = await fetch(`/api/supply-payments?supply_order_id=${supplyOrder.id}`);
       const data = await response.json();
@@ -64,17 +57,55 @@ export const SupplyPaymentModal: React.FC<SupplyPaymentModalProps> = ({
     } catch (error) {
       console.error('Error fetching existing payments:', error);
       toast.error('Failed to fetch existing payments');
+    }
+  }, [supplyOrder.id]);
+
+  const fetchSupplyOrderDetails = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/supply-orders/${supplyOrder.id}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setSupplyOrderDetails(data.supply_order);
+      } else {
+        toast.error('Failed to fetch supply order details');
+      }
+    } catch (error) {
+      console.error('Error fetching supply order details:', error);
+      toast.error('Failed to fetch supply order details');
     } finally {
       setLoading(false);
     }
-  };
+  }, [supplyOrder.id]);
+
+  // Fetch existing payments and supply order details
+  useEffect(() => {
+    if (open && supplyOrder.id) {
+      fetchExistingPayments();
+      fetchSupplyOrderDetails();
+    }
+  }, [open, supplyOrder.id, fetchExistingPayments, fetchSupplyOrderDetails]);
 
   const calculateTotalPaid = () => {
     return existingPayments.reduce((sum, payment) => sum + payment.amount_paid, 0);
   };
 
-  const calculateRemainingAmount = () => {
-    return supplyOrder.total_amount - calculateTotalPaid();
+  const calculateTotalReturned = () => {
+    if (!supplyOrderDetails?.returns) return 0;
+    return supplyOrderDetails.returns.reduce((sum: number, returnItem: any) => 
+      sum + (returnItem.total_returned_amount || 0), 0
+    );
+  };
+
+  const calculateOutstandingAmount = () => {
+    if (!supplyOrderDetails) return supplyOrder.total_amount - calculateTotalPaid();
+    
+    const originalAmount = supplyOrderDetails.total_amount || supplyOrder.total_amount;
+    const totalReturned = calculateTotalReturned();
+    const totalPaid = calculateTotalPaid();
+    
+    return originalAmount - totalReturned - totalPaid;
   };
 
   const handleSubmit = async () => {
@@ -85,8 +116,8 @@ export const SupplyPaymentModal: React.FC<SupplyPaymentModalProps> = ({
       return;
     }
 
-    if (amount > calculateRemainingAmount()) {
-      toast.error('Payment amount exceeds remaining balance');
+    if (amount > calculateOutstandingAmount()) {
+      toast.error('Payment amount exceeds outstanding balance');
       return;
     }
 
@@ -130,6 +161,7 @@ export const SupplyPaymentModal: React.FC<SupplyPaymentModalProps> = ({
     setNotes('');
     setPaymentMethod('cash');
     setExistingPayments([]);
+    setSupplyOrderDetails(null);
     onOpenChange(false);
   };
 
@@ -144,7 +176,8 @@ export const SupplyPaymentModal: React.FC<SupplyPaymentModalProps> = ({
   };
 
   const totalPaid = calculateTotalPaid();
-  const remainingAmount = calculateRemainingAmount();
+  const totalReturned = calculateTotalReturned();
+  const outstandingAmount = calculateOutstandingAmount();
 
   if (loading) {
     return (
@@ -194,14 +227,20 @@ export const SupplyPaymentModal: React.FC<SupplyPaymentModalProps> = ({
                   <span>Total Amount:</span>
                   <span className="font-bold">{formatCurrency(supplyOrder.total_amount)}</span>
                 </div>
+                {totalReturned > 0 && (
+                  <div className="flex justify-between">
+                    <span>Amount Returned:</span>
+                    <span className="text-orange-600">-{formatCurrency(totalReturned)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>Amount Paid:</span>
                   <span className="text-green-600">{formatCurrency(totalPaid)}</span>
                 </div>
                 <div className="flex justify-between border-t pt-2">
-                  <span>Remaining Balance:</span>
-                  <span className={`font-bold ${remainingAmount > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    {formatCurrency(remainingAmount)}
+                  <span>Outstanding Balance:</span>
+                  <span className={`font-bold ${outstandingAmount > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {formatCurrency(outstandingAmount)}
                   </span>
                 </div>
               </div>
@@ -241,7 +280,7 @@ export const SupplyPaymentModal: React.FC<SupplyPaymentModalProps> = ({
           )}
 
           {/* New Payment */}
-          {remainingAmount > 0 && (
+          {outstandingAmount > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>New Payment</CardTitle>
@@ -271,7 +310,7 @@ export const SupplyPaymentModal: React.FC<SupplyPaymentModalProps> = ({
                       type="number"
                       step="0.01"
                       min="0.01"
-                      max={remainingAmount}
+                      max={outstandingAmount}
                       placeholder="0.00"
                       value={amountPaid}
                       onChange={(e) => setAmountPaid(e.target.value)}
@@ -279,7 +318,7 @@ export const SupplyPaymentModal: React.FC<SupplyPaymentModalProps> = ({
                     />
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Maximum: {formatCurrency(remainingAmount)}
+                    Maximum: {formatCurrency(outstandingAmount)}
                   </p>
                 </div>
 
@@ -302,7 +341,7 @@ export const SupplyPaymentModal: React.FC<SupplyPaymentModalProps> = ({
                   <div className="flex justify-between">
                     <span>New Balance:</span>
                     <span className="font-bold">
-                      {formatCurrency(remainingAmount - parseFloat(amountPaid || '0'))}
+                      {formatCurrency(outstandingAmount - parseFloat(amountPaid || '0'))}
                     </span>
                   </div>
                 </div>
@@ -325,7 +364,7 @@ export const SupplyPaymentModal: React.FC<SupplyPaymentModalProps> = ({
             </Card>
           )}
 
-          {remainingAmount <= 0 && (
+          {outstandingAmount <= 0 && (
             <Card>
               <CardContent className="text-center py-8">
                 <div className="text-green-600 mb-2">

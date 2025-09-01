@@ -30,7 +30,7 @@ import { SupplyPaymentModal } from './supply/SupplyPaymentModal';
 import { SupplyOrderDetailModal } from './supply/SupplyOrderDetailModal';
 import { usePermissions } from '@/contexts/PermissionsContext';
 import { useActivityLogger } from '@/contexts/ActivityLogger';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface SupplyManagementProps {
   onBack: () => void;

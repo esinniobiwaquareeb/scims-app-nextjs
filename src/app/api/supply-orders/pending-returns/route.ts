@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       supply_date: order.supply_date,
       expected_return_date: order.expected_return_date,
       items_pending_return: order.items?.length || 0,
-      total_quantity_pending: order.items?.reduce((sum: number, item: { quantity_supplied: number; quantity_returned: number }) => sum + (item.quantity_supplied - item.quantity_returned), 0) || 0
+      total_quantity_pending: order.items?.reduce((sum: number, item: { quantity_supplied: number; quantity_returned: number; quantity_accepted: number }) => sum + (item.quantity_supplied - item.quantity_returned - item.quantity_accepted), 0) || 0
     }));
 
     return NextResponse.json({
