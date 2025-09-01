@@ -9,7 +9,7 @@ import { ActivityLoggerProvider } from '@/contexts/ActivityLogger';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { Toaster } from 'sonner';
-
+import { Analytics } from "@vercel/analytics/next"
 export function Providers({ children }: { children: React.ReactNode }) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -37,6 +37,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
                 <PermissionsProvider>
                   {children}
                   <Toaster />
+                  <Analytics />
                 </PermissionsProvider>
               </ActivityLoggerProvider>
             </SystemProvider>
