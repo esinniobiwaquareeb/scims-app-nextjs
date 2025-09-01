@@ -26,7 +26,8 @@ import {
   Activity,
   Loader2,
   Wifi,
-  WifiOff
+  WifiOff,
+  Package
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Product, CartItem, Customer, Sale } from './types';
@@ -113,6 +114,9 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
     currentBusiness, 
     user 
   } = useAuth();
+  
+  // Add supply mode state
+  const [isSupplyMode, setIsSupplyMode] = useState(false);
   
   const { 
     translate, 
@@ -396,11 +400,77 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
     setCart(prevCart => prevCart.filter(item => item.product.id !== productId));
   }, [playSound]);
 
+  // Supply order processing
+  const processSupplyOrder = useCallback(async (onPaymentComplete?: () => void) => {
+    if (!currentStore?.id || !user?.id || !selectedCustomer) {
+      toast.error('Missing required information for supply order');
+      setIsProcessing(false);
+      return;
+    }
+
+    try {
+      const supplyData = {
+        store_id: currentStore.id,
+        customer_id: selectedCustomer.id,
+        cashier_id: user.id,
+        notes: '',
+        items: cart.map(item => ({
+          product_id: item.product.id,
+          quantity_supplied: item.quantity,
+          unit_price: item.product.price
+        }))
+      };
+
+      const response = await fetch('/api/supply-orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(supplyData),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Supply order created successfully');
+        
+        // Clear cart
+        setCart([]);
+        // The 'selectedCustomer' state expects a 'Customer' object, not 'null'.
+        // Setting it to a default 'walk-in' customer to clear the selection.
+        setSelectedCustomer({ id: 'walk-in', name: 'Walk-in Customer' });
+        
+        // Call completion callback
+        if (onPaymentComplete) {
+          onPaymentComplete();
+        }
+        
+        // Call sale completed callback
+        if (onSaleCompleted) {
+          onSaleCompleted();
+        }
+      } else {
+        toast.error(data.error || 'Failed to create supply order');
+      }
+    } catch (error) {
+      console.error('Error creating supply order:', error);
+      toast.error('Failed to create supply order');
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [currentStore?.id, user?.id, selectedCustomer, cart, onSaleCompleted]);
+
   // Payment processing
   const processPayment = useCallback(async (onPaymentComplete?: () => void) => {
     if (!currentStore?.id || cart.length === 0) return;
     
     setIsProcessing(true);
+    
+    // Handle supply mode differently
+    if (isSupplyMode) {
+      await processSupplyOrder(onPaymentComplete);
+      return;
+    }
     
     try {
       const subtotal = calculateSubtotal();
@@ -827,6 +897,16 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
           />
 
           {/* Cart Section - Right Side */}
+          {isSupplyMode && (
+            <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-orange-600" />
+                <span className="text-sm font-medium text-orange-800">
+                  Supply Mode Active - Items will be supplied without payment
+                </span>
+              </div>
+            </div>
+          )}
           <ShoppingCartComponent
             cart={cart}
             selectedCustomer={selectedCustomer || WALK_IN_CUSTOMER}
@@ -925,6 +1005,19 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
                     <Activity className="w-3 h-3 lg:w-4 lg:h-4 flex-shrink-0" />
                     <span className="font-medium hidden xs:inline">Sales</span>
                     <span className="font-medium xs:hidden lg:inline">Transactions</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsSupplyMode(!isSupplyMode)}
+                    className={`flex items-center gap-1 lg:gap-2 px-2 lg:px-3 py-1.5 lg:py-2 rounded-lg transition-all text-xs lg:text-sm ${
+                      isSupplyMode 
+                        ? 'bg-orange-500 text-white' 
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <Package className="w-3 h-3 lg:w-4 lg:h-4 flex-shrink-0" />
+                    <span className="font-medium hidden xs:inline">Supply</span>
+                    <span className="font-medium xs:hidden lg:inline">Supply Mode</span>
                   </button>
                 </div>
 

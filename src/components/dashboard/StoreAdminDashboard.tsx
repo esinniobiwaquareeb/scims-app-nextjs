@@ -25,7 +25,8 @@ import {
   FolderOpen,
   Tag,
   UserCheck,
-  Shield
+  Shield,
+  RotateCcw
 } from 'lucide-react';
 import { useStoreAdminDashboard } from '@/utils/hooks/useStoreAdminDashboard';
 
@@ -73,6 +74,13 @@ export const StoreAdminDashboard: React.FC = () => {
       icon: Settings,
       color: 'text-gray-600',
       action: '/stores'
+    },
+    {
+      title: 'Supply Management',
+      description: 'Manage supply orders, returns, and payments',
+      icon: RotateCcw,
+      color: 'text-orange-600',
+      action: '/supply-management'
     }
   ];
 

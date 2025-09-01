@@ -11,14 +11,31 @@ interface AlertDialogProps extends React.HTMLAttributes<HTMLDivElement> {
 const AlertDialog = React.forwardRef<
   HTMLDivElement,
   AlertDialogProps
->(({ className, open, onOpenChange, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("", className)}
-    data-state={open ? "open" : "closed"}
-    {...props}
-  />
-))
+>(({ className, open, onOpenChange, children, ...props }, ref) => {
+  // Don't render anything if dialog is closed
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div
+      ref={ref}
+      className={cn("fixed inset-0 z-50 flex items-center justify-center", className)}
+      data-state={open ? "open" : "closed"}
+      {...props}
+    >
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/50" 
+        onClick={() => onOpenChange?.(false)}
+      />
+      {/* Dialog content */}
+      <div className="relative z-50">
+        {children}
+      </div>
+    </div>
+  );
+})
 AlertDialog.displayName = "AlertDialog"
 
 interface AlertDialogTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -56,7 +73,7 @@ const AlertDialogContent = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "relative grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg",
+      "relative grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg animate-in fade-in-0 zoom-in-95",
       className
     )}
     {...props}

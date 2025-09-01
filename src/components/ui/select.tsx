@@ -102,22 +102,24 @@ const SelectTrigger = React.forwardRef<
       disabled={disabled}
       aria-expanded={open}
       className={cn(
-        "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2",
-        "text-sm ring-offset-background",
-        "placeholder:text-muted-foreground",
-        "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-        "disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2",
+        "text-sm text-gray-900",
+        "placeholder:text-gray-500",
+        "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
+        "hover:border-gray-400",
+        "disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-gray-50",
+        "transition-colors duration-200",
         className
       )}
       {...props}
     >
       <span className="flex-1 text-left truncate">
-        {value ? children : placeholder}
+        {children}
       </span>
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -125,7 +127,7 @@ const SelectTrigger = React.forwardRef<
         strokeLinecap="round"
         strokeLinejoin="round"
         className={cn(
-          "h-4 w-4 opacity-50 transition-transform duration-200",
+          "h-4 w-4 text-gray-500 transition-transform duration-200 flex-shrink-0",
           open ? "rotate-180" : "rotate-0"
         )}
       >
@@ -147,10 +149,10 @@ const SelectContent = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "absolute z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
-        "animate-in fade-in-0 zoom-in-95",
-        "data-[side=bottom]:slide-in-from-top-2",
-        "data-[side=top]:slide-in-from-bottom-2",
+        "absolute z-50 min-w-[8rem] overflow-hidden rounded-md border border-gray-200 bg-white p-1 text-gray-900 shadow-lg",
+        "top-full mt-1 left-0 right-0",
+        "max-h-[200px] overflow-y-auto",
+        "animate-in fade-in-0 zoom-in-95 duration-200",
         className
       )}
       {...props}
@@ -194,8 +196,10 @@ const SelectItem = React.forwardRef<
       onClick={() => onValueChange?.(value)}
       className={cn(
         "relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none",
-        "focus:bg-accent focus:text-accent-foreground",
+        "hover:bg-gray-100 focus:bg-gray-100",
+        "transition-colors duration-150",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        isSelected ? "bg-blue-50 text-blue-900 border-l-2 border-blue-500" : "text-gray-900",
         className
       )}
       {...props}
@@ -210,7 +214,7 @@ const SelectItem = React.forwardRef<
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="h-4 w-4"
+            className="h-4 w-4 text-blue-600"
           >
             <polyline points="20 6 9 17 4 12" />
           </svg>
@@ -265,10 +269,10 @@ const SelectValue = React.forwardRef<
   return (
     <span
       ref={ref}
-      className={cn("block truncate", className)}
+      className={cn("block truncate text-gray-900", className)}
       {...props}
     >
-      {value ? children : placeholder}
+      {value ? children : <span className="text-gray-500">{placeholder}</span>}
     </span>
   )
 })

@@ -776,7 +776,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
-            <Button onClick={() => setIsAddDialogOpen(true)} disabled={hasPermission('products_create')}>
+            <Button onClick={() => setIsAddDialogOpen(true)} disabled={!hasPermission('products_create')}>
               <Plus className="w-4 h-4 mr-2" />
               Add Product
             </Button>
@@ -925,25 +925,28 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
         <Card className="mb-6">
           <CardContent className="p-6">
             <div className="flex gap-4 items-center">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <Input
                   placeholder="Search products, SKU, barcode, or supplier..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full"
                 />
               </div>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {allCategories.map((category: string) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex-shrink-0">
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allCategories.map((category: string) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1068,7 +1071,12 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
                         onValueChange={(value) => setEditingProduct({ ...editingProduct, category_id: value })}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
+                          <SelectValue placeholder="Select category">
+                            {editingProduct.category_id ? 
+                              categories.find((c: Category) => c.id === editingProduct.category_id)?.name || 'Unknown Category' 
+                              : 'Select category'
+                            }
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {categories.filter((c: Category) => c.is_active).map((category: Category) => (
@@ -1089,7 +1097,12 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
                         onValueChange={(value) => setEditingProduct({ ...editingProduct, supplier_id: value })}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select supplier" />
+                          <SelectValue placeholder="Select supplier">
+                            {editingProduct.supplier_id ? 
+                              suppliers.find((s: Supplier) => s.id === editingProduct.supplier_id)?.name || 'Unknown Supplier' 
+                              : 'Select supplier'
+                            }
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {suppliers.filter((s: Supplier) => s.is_active).map((supplier: Supplier) => (
@@ -1112,7 +1125,12 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
                         onValueChange={(value) => setEditingProduct({ ...editingProduct, brand_id: value })}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select brand" />
+                          <SelectValue placeholder="Select brand">
+                            {editingProduct.brand_id ? 
+                              brands.find((b: Brand) => b.id === editingProduct.brand_id)?.name || 'Unknown Brand' 
+                              : 'Select brand'
+                            }
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {brands.filter((b: Brand) => b.is_active).map((brand: Brand) => (
@@ -1293,7 +1311,12 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
                       onValueChange={(value) => setNewProduct({ ...newProduct, category_id: value })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
+                        <SelectValue placeholder="Select category">
+                          {newProduct.category_id ? 
+                            categories.find((c: Category) => c.id === newProduct.category_id)?.name || 'Unknown Category' 
+                            : 'Select category'
+                          }
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {categories.filter((c: Category) => c.is_active).map((category: Category) => (
@@ -1314,7 +1337,12 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
                       onValueChange={(value) => setNewProduct({ ...newProduct, supplier_id: value })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select supplier" />
+                        <SelectValue placeholder="Select supplier">
+                          {newProduct.supplier_id ? 
+                            suppliers.find((s: Supplier) => s.id === newProduct.supplier_id)?.name || 'Unknown Supplier' 
+                            : 'Select supplier'
+                          }
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {suppliers.filter((s: Supplier) => s.is_active).map((supplier: Supplier) => (
@@ -1337,7 +1365,12 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
                       onValueChange={(value) => setNewProduct({ ...newProduct, brand_id: value })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select brand" />
+                        <SelectValue placeholder="Select brand">
+                          {newProduct.brand_id ? 
+                            brands.find((b: Brand) => b.id === newProduct.brand_id)?.name || 'Unknown Brand' 
+                            : 'Select brand'
+                          }
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {brands.filter((b: Brand) => b.is_active).map((brand: Brand) => (

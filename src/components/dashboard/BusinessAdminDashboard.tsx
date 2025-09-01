@@ -28,7 +28,8 @@ import {
   AlertTriangle,
   DollarSign,
   Store,
-  ShoppingCart
+  ShoppingCart,
+  RotateCcw
 } from 'lucide-react';
 import { useBusinessDashboardStats, useStoreDashboardStats } from '@/utils/hooks/useStoreData';
 
@@ -91,6 +92,13 @@ export const BusinessAdminDashboard: React.FC = () => {
       icon: BarChart3,
       color: 'text-purple-600',
       action: '/sales-report'
+    },
+    {
+      title: 'Supply Management',
+      description: 'Manage supply orders, returns, and payments',
+      icon: RotateCcw,
+      color: 'text-orange-600',
+      action: '/supply-management'
     }
   ];
 
