@@ -438,7 +438,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
         setCart([]);
         // The 'selectedCustomer' state expects a 'Customer' object, not 'null'.
         // Setting it to a default 'walk-in' customer to clear the selection.
-        setSelectedCustomer({ id: 'walk-in', name: 'Walk-in Customer' });
+        setSelectedCustomer({ id: 'walk-in', name: 'Walk-in Customer', phone: '', created_at: new Date().toISOString() });
         
         // Call completion callback
         if (onPaymentComplete) {
@@ -897,16 +897,6 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
           />
 
           {/* Cart Section - Right Side */}
-          {isSupplyMode && (
-            <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Package className="h-4 w-4 text-orange-600" />
-                <span className="text-sm font-medium text-orange-800">
-                  Supply Mode Active - Items will be supplied without payment
-                </span>
-              </div>
-            </div>
-          )}
           <ShoppingCartComponent
             cart={cart}
             selectedCustomer={selectedCustomer || WALK_IN_CUSTOMER}

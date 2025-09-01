@@ -46,6 +46,7 @@ interface PaymentModalProps {
   isProcessing: boolean;
   showSaleSuccess: boolean;
   lastSaleInfo: any;
+  isSupplyMode?: boolean;
   onSelectCustomer: () => void;
   onClearCustomer: () => void;
   onPaymentMethodChange: (method: 'cash' | 'card' | 'mixed') => void;
@@ -71,6 +72,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   isProcessing,
   showSaleSuccess,
   lastSaleInfo,
+  isSupplyMode = false,
   onSelectCustomer,
   onClearCustomer,
   onPaymentMethodChange,
@@ -97,7 +99,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
             <Receipt className="w-5 h-5" />
-            Process Payment
+            {isSupplyMode ? 'Process Supply Order' : 'Process Payment'}
           </DialogTitle>
         </DialogHeader>
         
@@ -166,45 +168,47 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </div>
           </div>
 
-          {/* Payment Method Selection */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">{translate('pos.paymentMethod') || 'Payment Method'}</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <Button 
-                variant={paymentMethod === 'cash' ? 'default' : 'outline'}
-                onClick={() => onPaymentMethodChange('cash')}
-                size="sm"
-                className="h-10 text-sm"
-              >
-                <DollarSign className="w-4 h-4 mr-1" />
-                Cash
-              </Button>
-              <Button 
-                variant={paymentMethod === 'card' ? 'default' : 'outline'}
-                onClick={() => {
-                  onPaymentMethodChange('card');
-                  // Auto-set card amount to total when card is selected
-                  onCardAmountChange(calculateTotal().toFixed(2));
-                }}
-                size="sm"
-                className="h-10 text-sm"
-              >
-                <CreditCard className="w-4 h-4 mr-1" />
-                Card
-              </Button>
-              <Button 
-                variant={paymentMethod === 'mixed' ? 'default' : 'outline'}
-                onClick={() => onPaymentMethodChange('mixed')}
-                size="sm"
-                className="h-10 text-sm"
-              >
-                Mixed
-              </Button>
+          {/* Payment Method Selection - Only show in payment mode */}
+          {!isSupplyMode && (
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">{translate('pos.paymentMethod') || 'Payment Method'}</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <Button 
+                  variant={paymentMethod === 'cash' ? 'default' : 'outline'}
+                  onClick={() => onPaymentMethodChange('cash')}
+                  size="sm"
+                  className="h-10 text-sm"
+                >
+                  <DollarSign className="w-4 h-4 mr-1" />
+                  Cash
+                </Button>
+                <Button 
+                  variant={paymentMethod === 'card' ? 'default' : 'outline'}
+                  onClick={() => {
+                    onPaymentMethodChange('card');
+                    // Auto-set card amount to total when card is selected
+                    onCardAmountChange(calculateTotal().toFixed(2));
+                  }}
+                  size="sm"
+                  className="h-10 text-sm"
+                >
+                  <CreditCard className="w-4 h-4 mr-1" />
+                  Card
+                </Button>
+                <Button 
+                  variant={paymentMethod === 'mixed' ? 'default' : 'outline'}
+                  onClick={() => onPaymentMethodChange('mixed')}
+                  size="sm"
+                  className="h-10 text-sm"
+                >
+                  Mixed
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Payment Inputs */}
-          {paymentMethod === 'card' && (
+          {/* Payment Inputs - Only show in payment mode */}
+          {!isSupplyMode && paymentMethod === 'card' && (
             <div className="space-y-3">
               <Label className="text-sm font-medium">{translate('pos.cardAmount') || 'Card Amount'}</Label>
               <Input
@@ -234,7 +238,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </div>
           )}
 
-          {paymentMethod === 'cash' && (
+          {!isSupplyMode && paymentMethod === 'cash' && (
             <div className="space-y-3">
               <div className="text-center">
                 <Label className="text-sm font-semibold text-green-700">{translate('pos.cashAmount') || 'CASH RECEIVED'}</Label>
@@ -269,7 +273,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </div>
           )}
 
-          {paymentMethod === 'mixed' && (
+          {!isSupplyMode && paymentMethod === 'mixed' && (
             <div className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
