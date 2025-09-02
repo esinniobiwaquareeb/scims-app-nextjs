@@ -34,8 +34,8 @@ interface ProductCardProps {
 export default function ProductCard({ product, business, onAddToCart }: ProductCardProps) {
   return (
     <Card className="group hover:shadow-lg transition-shadow h-full flex flex-col">
-      {/* Image Section - Fixed Height */}
-      <div className="aspect-square bg-gray-100 rounded-t-lg overflow-hidden">
+      {/* Image Section - Smaller Height */}
+      <div className="h-48 bg-gray-100 rounded-t-lg overflow-hidden">
         {product.image_url ? (
           <img
             src={product.image_url}
@@ -44,36 +44,36 @@ export default function ProductCard({ product, business, onAddToCart }: ProductC
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Package className="w-16 h-16 text-gray-400" />
+            <Package className="w-12 h-12 text-gray-400" />
           </div>
         )}
       </div>
 
       {/* Content Section - Flexible Height */}
-      <CardContent className="p-4 flex flex-col flex-1">
+      <CardContent className="p-3 flex flex-col flex-1">
         {/* Header with Title and Category */}
         <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-lg line-clamp-2 flex-1 pr-2">{product.name}</h3>
+          <h3 className="font-semibold text-base line-clamp-2 flex-1 pr-2">{product.name}</h3>
           {product.category && (
-            <Badge variant="secondary" className="ml-2 flex-shrink-0">
+            <Badge variant="secondary" className="ml-2 flex-shrink-0 text-xs">
               {product.category.name}
             </Badge>
           )}
         </div>
 
         {/* Description - Fixed Height */}
-        <div className="h-12 mb-3 overflow-hidden">
-          <p className="text-gray-600 text-sm line-clamp-2">
+        <div className="h-10 mb-2 overflow-hidden">
+          <p className="text-gray-600 text-xs line-clamp-2">
             {product.public_description || product.description}
           </p>
         </div>
 
         {/* Price and Stock - Fixed Height */}
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-2xl font-bold text-primary">
+        <div className="flex justify-between items-center mb-3">
+          <span className="text-lg font-bold text-primary">
             {business.currency.symbol}{product.price.toLocaleString()}
           </span>
-          <span className="text-sm text-gray-500">
+          <span className="text-xs text-gray-500">
             Stock: {product.stock_quantity}
           </span>
         </div>
@@ -82,10 +82,11 @@ export default function ProductCard({ product, business, onAddToCart }: ProductC
         <div className="mt-auto">
           <Button 
             onClick={() => onAddToCart(product)}
-            className="w-full"
+            className="w-full text-sm py-2"
             disabled={product.stock_quantity === 0}
+            size="sm"
           >
-            <ShoppingCart className="w-4 h-4 mr-2" />
+            <ShoppingCart className="w-3 h-3 mr-1" />
             {product.stock_quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
           </Button>
         </div>

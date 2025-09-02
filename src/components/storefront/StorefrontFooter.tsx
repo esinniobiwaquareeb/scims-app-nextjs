@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Phone, Mail, MapPin } from 'lucide-react';
-import Logo from '@/components/common/Logo';
+
 
 interface Business {
   id: string;
@@ -33,7 +33,7 @@ interface StorefrontFooterProps {
 export default function StorefrontFooter({ business }: StorefrontFooterProps) {
   return (
     <footer className="bg-white border-t mt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
             <h3 className="font-semibold mb-4">{business.name}</h3>
@@ -63,8 +63,8 @@ export default function StorefrontFooter({ business }: StorefrontFooterProps) {
             </div>
           </div>
           <div>
-            <h3 className="font-semibold mb-4">Powered by</h3>
-            <Logo size="sm" />
+            <h3 className="font-semibold mb-4">Powered by SCIMS</h3>
+            <p className="text-gray-600 text-sm">Smart Commerce Inventory Management System</p>
           </div>
         </div>
       </div>

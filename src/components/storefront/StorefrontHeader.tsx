@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Heart, Share2 } from 'lucide-react';
-import Logo from '@/components/common/Logo';
+
 
 interface Business {
   id: string;
@@ -36,16 +36,13 @@ export default function StorefrontHeader({ business }: StorefrontHeaderProps) {
     <>
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Logo size="md" />
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">{business.name}</h1>
-                {business.settings.store_description && (
-                  <p className="text-sm text-gray-600">{business.settings.store_description}</p>
-                )}
-              </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">{business.name}</h1>
+              {business.settings.store_description && (
+                <p className="text-sm text-gray-600">{business.settings.store_description}</p>
+              )}
             </div>
             <div className="flex items-center space-x-4">
               <Button variant="outline" size="sm">
