@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSystem } from "@/contexts/SystemContext";
 import { useActivityLogger } from "@/contexts/ActivityLogger";
+import { usePermissions } from "@/contexts/PermissionsContext";
 import { Header } from "@/components/common/Header";
 import { DataTable } from "@/components/common/DataTable";
 import { PasswordResetDialog } from "@/components/common/PasswordResetDialog";
@@ -293,8 +294,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   const router = useRouter();
   const { user, currentBusiness, currentStore } = useAuth();
   const { translate, formatCurrency } = useSystem();
-  // Basic permission check - proper permissions system not yet implemented
-  const hasPermission = (permission: string) => true;
+  const { hasPermission, canCreate, canEdit, canDelete } = usePermissions();
   const { logActivity } = useActivityLogger();
 
   // State
@@ -738,7 +738,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
           <Switch
             checked={staffMember.is_active}
             onCheckedChange={() => toggleStaffStatus(staffMember.id)}
-            disabled={isSaving || !hasPermission("staff_edit")}
+            disabled={isSaving || !canEdit("user")}
           />
           <Badge variant={staffMember.is_active ? "default" : "secondary"}>
             {staffMember.is_active ? "Active" : "Inactive"}
@@ -785,7 +785,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
             size="sm"
             variant="outline"
             onClick={() => openEditDialog(staffMember)}
-            disabled={!hasPermission("staff_edit")}
+            disabled={!canEdit("staff")}
           >
             <Edit className="w-3 h-3" />
           </Button>
@@ -793,7 +793,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
             size="sm" 
             variant="outline" 
             onClick={() => handlePasswordReset(staffMember)}
-            disabled={!hasPermission("staff_edit")}
+            disabled={!canEdit("staff")}
             title="Reset Password"
             className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
           >
@@ -804,7 +804,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
               <Button
                 size="sm"
                 variant="destructive"
-                disabled={isSaving || !hasPermission("staff_delete")}
+                disabled={isSaving || !canDelete("user")}
               >
                 <Trash2 className="w-3 h-3" />
               </Button>
@@ -821,7 +821,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => handleDeleteStaff(staffMember)}
-                  disabled={isSaving || !hasPermission("staff_delete")}
+                  disabled={isSaving || !canDelete("user")}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
                   {isSaving ? (
@@ -862,9 +862,10 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
             />
             Refresh
           </Button>
+          
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button disabled={!hasPermission("staff_create")}>
+              <Button disabled={!canCreate("user")}>
                 <UserPlus className="w-4 h-4 mr-2" />
                 Add Staff
               </Button>
@@ -1128,7 +1129,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                     <Switch
                       checked={staff.is_active}
                       onCheckedChange={() => toggleStaffStatus(staff.id)}
-                      disabled={isSaving || !hasPermission("staff_edit")}
+                      disabled={isSaving || !canEdit("user")}
                     />
                   ) : (
                     <div className="w-6 h-6 bg-gray-200 rounded animate-pulse" />
@@ -1180,7 +1181,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                     size="sm"
                     variant="outline"
                     onClick={() => openEditDialog(staff)}
-                    disabled={!hasPermission("staff_edit")}
+                    disabled={!canEdit("staff")}
                   >
                     <Edit className="w-3 h-3" />
                   </Button>
@@ -1188,7 +1189,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                     size="sm" 
                     variant="outline" 
                     onClick={() => handlePasswordReset(staff)}
-                    disabled={!hasPermission("staff_edit")}
+                    disabled={!canEdit("staff")}
                     title="Reset Password"
                     className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                   >
@@ -1199,7 +1200,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                       <Button
                         size="sm"
                         variant="destructive"
-                        disabled={isSaving || !hasPermission("staff_delete")}
+                        disabled={isSaving || !canDelete("user")}
                       >
                         <Trash2 className="w-3 h-3" />
                       </Button>

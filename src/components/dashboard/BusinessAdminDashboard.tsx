@@ -160,11 +160,11 @@ export const BusinessAdminDashboard: React.FC = () => {
       action: '/restock'
     },
     {
-      title: 'Business Settings',
-      description: 'Configure business preferences',
-      icon: Settings,
+      title: 'Staff',
+      description: 'Manage all staff members and roles',
+      icon: Users,
       color: 'text-gray-600',
-      action: '/business-settings'
+      action: '/staff'
     },
     {
       title: 'Roles & Permissions',
