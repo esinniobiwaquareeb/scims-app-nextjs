@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { ImageUpload } from '@/components/common/ImageUpload';
 
 import { toast } from 'sonner';
@@ -63,6 +64,9 @@ interface Product {
   supplier?: { id: string; name: string };
   brand?: { id: string; name: string };
   is_active: boolean;
+  is_public?: boolean;
+  public_description?: string;
+  public_images?: string[];
   created_at: string;
   updated_at: string;
   reorder_level?: number;
@@ -694,6 +698,23 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
       }
     },
     {
+      key: 'public',
+      label: 'Public',
+      render: (product: Product) => (
+        <div className="flex items-center">
+          {product.is_public ? (
+            <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+              Public
+            </Badge>
+          ) : (
+            <Badge variant="secondary">
+              Private
+            </Badge>
+          )}
+        </div>
+      )
+    },
+    {
       key: 'actions',
       label: 'Actions',
       render: (product: Product) => (
@@ -1154,6 +1175,26 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
                     />
                   </div>
 
+                  <div>
+                    <Label htmlFor="edit-public-description">Public Description (for website)</Label>
+                    <Textarea
+                      id="edit-public-description"
+                      value={editingProduct.public_description || ''}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, public_description: e.target.value })}
+                      placeholder="Enter public description for your website"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="edit-is-public"
+                      checked={editingProduct.is_public || false}
+                      onCheckedChange={(checked) => setEditingProduct({ ...editingProduct, is_public: checked })}
+                    />
+                    <Label htmlFor="edit-is-public">Show on public website</Label>
+                  </div>
+
                                   {/* Image Upload Section for Edit */}
                 <ImageUpload
                   currentImageUrl={editingProduct.image_url}
@@ -1392,6 +1433,26 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
                     placeholder="Enter product description"
                     rows={3}
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="add-public-description">Public Description (for website)</Label>
+                  <Textarea
+                    id="add-public-description"
+                    value={newProduct.public_description || ''}
+                    onChange={(e) => setNewProduct({ ...newProduct, public_description: e.target.value })}
+                    placeholder="Enter public description for your website"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="add-is-public"
+                    checked={newProduct.is_public || false}
+                    onCheckedChange={(checked) => setNewProduct({ ...newProduct, is_public: checked })}
+                  />
+                  <Label htmlFor="add-is-public">Show on public website</Label>
                 </div>
 
                 {/* Image Upload Section for Add */}
