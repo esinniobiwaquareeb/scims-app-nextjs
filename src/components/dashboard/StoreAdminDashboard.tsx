@@ -135,13 +135,6 @@ export const StoreAdminDashboard: React.FC = () => {
       action: '/cashiers'
     },
     {
-      title: 'Staff',
-      description: 'Manage all staff members and roles',
-      icon: Users,
-      color: 'text-indigo-600',
-      action: '/staff'
-    },
-    {
       title: 'Roles & Permissions',
       description: 'Manage staff roles and access permissions',
       icon: Shield,
