@@ -9,6 +9,8 @@ import ProductFilters from '@/components/storefront/ProductFilters';
 import ProductCard from '@/components/storefront/ProductCard';
 import StorefrontCart from '@/components/storefront/ShoppingCart';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter';
+import OrderSummaryModal from '@/components/storefront/OrderSummaryModal';
+import { generateOrderPDF } from '@/utils/pdfGenerator';
 
 interface Product {
   id: string;
@@ -80,6 +82,22 @@ export default function StorefrontPage() {
   const [isOrdering, setIsOrdering] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [showOrderSummary, setShowOrderSummary] = useState(false);
+  const [orderData, setOrderData] = useState<{
+    orderNumber: string;
+    business: Business;
+    items: CartItem[];
+    customer: {
+      name: string;
+      phone: string;
+      email?: string;
+      address?: string;
+    };
+    total: number;
+    whatsappUrl: string;
+    notes?: string;
+  } | null>(null);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -244,7 +262,28 @@ export default function StorefrontPage() {
 
       const data = await response.json();
 
-      if (data.success) {
+      if (data.success && business) {
+        // Prepare order data for summary modal
+        const orderSummaryData = {
+          orderNumber: data.order.order_number,
+          business: business,
+          items: cart.map(item => ({
+            product: item.product,
+            quantity: item.quantity
+          })),
+          customer: {
+            name: customerName,
+            phone: customerPhone,
+            email: customerEmail,
+            address: customerAddress
+          },
+          total: getCartTotal(),
+          whatsappUrl: data.whatsappUrl || '',
+          notes: orderNotes
+        };
+
+        setOrderData(orderSummaryData);
+        setShowOrderSummary(true);
         setOrderSuccess(true);
         setCart([]);
         setCustomerName('');
@@ -260,6 +299,36 @@ export default function StorefrontPage() {
       setError('Failed to place order. Please try again.');
     } finally {
       setIsOrdering(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!orderData) return;
+
+    setIsGeneratingPDF(true);
+    try {
+      const pdfData = {
+        orderNumber: orderData.orderNumber,
+        business: orderData.business,
+        items: orderData.items,
+        customer: orderData.customer,
+        total: orderData.total,
+        notes: orderData.notes,
+        orderDate: new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      };
+
+      generateOrderPDF(pdfData);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      setError('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
 
@@ -357,6 +426,15 @@ export default function StorefrontPage() {
       </div>
 
       <StorefrontFooter business={business} />
+
+      {/* Order Summary Modal */}
+      <OrderSummaryModal
+        isOpen={showOrderSummary}
+        onClose={() => setShowOrderSummary(false)}
+        orderData={orderData}
+        onDownloadPDF={handleDownloadPDF}
+        isGeneratingPDF={isGeneratingPDF}
+      />
     </div>
   );
 }

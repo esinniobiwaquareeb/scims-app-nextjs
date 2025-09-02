@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
+import { sendOrderConfirmationEmail, sendBusinessOrderNotification } from '@/lib/email/orderEmails';
 
 export async function POST(request: NextRequest) {
   try {
@@ -92,6 +93,41 @@ export async function POST(request: NextRequest) {
     } catch (whatsappError) {
       console.error('WhatsApp notification failed:', whatsappError);
       // Don't fail the order creation if WhatsApp fails
+    }
+
+    // Send email notifications
+    try {
+      // Send confirmation email to customer if email provided
+      if (customer_email) {
+        await sendOrderConfirmationEmail({
+          customerEmail: customer_email,
+          customerName: customer_name,
+          orderNumber: order.id.slice(-8).toUpperCase(),
+          businessName: business.name,
+          orderItems: order_items,
+          totalAmount: total_amount,
+          currency: business.currency?.symbol || '₦'
+        });
+      }
+
+      // Send notification email to business if business email exists
+      if (business.email) {
+        await sendBusinessOrderNotification({
+          businessEmail: business.email,
+          businessName: business.name,
+          customerName: customer_name,
+          customerPhone: customer_phone,
+          customerEmail: customer_email,
+          orderNumber: order.id.slice(-8).toUpperCase(),
+          orderItems: order_items,
+          totalAmount: total_amount,
+          currency: business.currency?.symbol || '₦',
+          notes: notes
+        });
+      }
+    } catch (emailError) {
+      console.error('Email notification failed:', emailError);
+      // Don't fail the order creation if email fails
     }
 
     // Log activity
