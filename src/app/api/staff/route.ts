@@ -135,8 +135,8 @@ export async function POST(request: NextRequest) {
   try {
     const staffData = await request.json();
 
-    // Generate a more secure default password
-    const defaultPassword = generateSecurePassword();
+    // Use default password "123456"
+    const defaultPassword = "123456";
     const passwordHash = await bcrypt.hash(defaultPassword, 12);
 
     // Step 1: Create the user
@@ -144,10 +144,10 @@ export async function POST(request: NextRequest) {
       .from('user')
       .insert({
         username: staffData.username,
-        email: staffData.email,
+        email: staffData.email && staffData.email.trim() !== '' ? staffData.email : null,
         password_hash: passwordHash,
         name: staffData.name,
-        phone: staffData.phone,
+        phone: staffData.phone && staffData.phone.trim() !== '' ? staffData.phone : null,
         role: staffData.role,
         is_active: staffData.is_active
       })
@@ -185,14 +185,4 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Helper function to generate secure password
-function generateSecurePassword(): string {
-  const length = 12;
-  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
-  let password = '';
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * charset.length);
-    password += charset[randomIndex];
-  }
-  return password;
-}
+

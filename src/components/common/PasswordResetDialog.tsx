@@ -64,6 +64,13 @@ export const PasswordResetDialog: React.FC<PasswordResetDialogProps> = ({
       return;
     }
 
+    // Validate password strength
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
+    if (!passwordRegex.test(newPassword)) {
+      toast.error('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character');
+      return;
+    }
+
     setIsResettingPassword(true);
     try {
       await onResetPassword(newPassword);

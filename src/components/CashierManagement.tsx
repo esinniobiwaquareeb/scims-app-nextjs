@@ -132,22 +132,22 @@ const CashierForm = ({
 
     <div className="grid grid-cols-2 gap-4">
       <div>
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">Email (Optional)</Label>
         <Input
           id="email"
           type="email"
           value={cashier.email || ''}
           onChange={(e) => onChange({ ...cashier, email: e.target.value })}
-          placeholder="Enter email address"
+          placeholder="Enter email address (optional)"
         />
       </div>
       <div>
-        <Label htmlFor="phone">Phone</Label>
+        <Label htmlFor="phone">Phone (Optional)</Label>
         <Input
           id="phone"
           value={cashier.phone || ''}
           onChange={(e) => onChange({ ...cashier, phone: e.target.value })}
-          placeholder="Enter phone number"
+          placeholder="Enter phone number (optional)"
         />
       </div>
     </div>

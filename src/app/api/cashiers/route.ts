@@ -177,8 +177,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate a default password
-    const defaultPassword = 'Cashier123!';
+    // Use default password "123456"
+    const defaultPassword = "123456";
     const passwordHash = await bcrypt.hash(defaultPassword, 12);
 
     // Create user account
@@ -186,10 +186,10 @@ export async function POST(request: NextRequest) {
       .from('user')
       .insert({
         username: username.toLowerCase(),
-        email,
+        email: email && email.trim() !== '' ? email : null,
         password_hash: passwordHash,
         name,
-        phone,
+        phone: phone && phone.trim() !== '' ? phone : null,
         role: 'cashier',
         is_active: true,
         is_demo: false

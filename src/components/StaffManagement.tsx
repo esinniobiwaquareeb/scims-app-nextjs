@@ -13,6 +13,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -161,22 +162,22 @@ const StaffForm = ({
 
     <div className="grid grid-cols-2 gap-4">
       <div>
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">Email (Optional)</Label>
         <Input
           id="email"
           type="email"
           value={staffMember.email || ""}
           onChange={(e) => onChange({ ...staffMember, email: e.target.value })}
-          placeholder="Enter email address"
+          placeholder="Enter email address (optional)"
         />
       </div>
       <div>
-        <Label htmlFor="phone">Phone</Label>
+        <Label htmlFor="phone">Phone (Optional)</Label>
         <Input
           id="phone"
           value={staffMember.phone || ""}
           onChange={(e) => onChange({ ...staffMember, phone: e.target.value })}
-          placeholder="Enter phone number"
+          placeholder="Enter phone number (optional)"
         />
       </div>
     </div>
@@ -320,6 +321,10 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   const [isPasswordResetDialogOpen, setIsPasswordResetDialogOpen] = useState(false);
   const [staffForPasswordReset, setStaffForPasswordReset] = useState<Staff | null>(null);
   
+  // Credentials modal state
+  const [isCredentialsModalOpen, setIsCredentialsModalOpen] = useState(false);
+  const [generatedCredentials, setGeneratedCredentials] = useState<{username: string, password: string} | null>(null);
+  
   const [newStaff, setNewStaff] = useState<Partial<Staff>>({
     name: "",
     username: "",
@@ -365,9 +370,9 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   });
 
   // React Query mutations
-  const createStaffMutation = useCreateStaff(currentBusiness?.id || "");
-  const updateStaffMutation = useUpdateStaff(currentBusiness?.id || "");
-  const deleteStaffMutation = useDeleteStaff(currentBusiness?.id || "");
+  const createStaffMutation = useCreateStaff(currentBusiness?.id || "", currentStore?.id);
+  const updateStaffMutation = useUpdateStaff(currentBusiness?.id || "", currentStore?.id);
+  const deleteStaffMutation = useDeleteStaff(currentBusiness?.id || "", currentStore?.id);
   const resetUserPasswordMutation = useResetUserPassword();
 
   // Loading states
@@ -448,7 +453,14 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
         is_active: newStaff.is_active !== false,
       };
 
-      await createStaffMutation.mutateAsync(staffData);
+      const result = await createStaffMutation.mutateAsync(staffData);
+
+      // Show credentials modal with the returned default password
+      setGeneratedCredentials({
+        username: newStaff.username!,
+        password: result.default_password || '123456' // Fallback if not returned
+      });
+      setIsCredentialsModalOpen(true);
 
       // Reset form
       setNewStaff({
@@ -1283,6 +1295,42 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
               stores={stores}
               isSaving={isSaving}
             />
+          </DialogContent>
+        </Dialog>
+
+        {/* Staff Credentials Modal */}
+        <Dialog open={isCredentialsModalOpen} onOpenChange={setIsCredentialsModalOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Staff Account Created Successfully!</DialogTitle>
+              <DialogDescription>
+                Please save these credentials securely. The staff member should change their password on first login.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="font-medium">Username:</span>
+                    <span className="font-mono text-sm">{generatedCredentials?.username}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium">Default Password:</span>
+                    <span className="font-mono text-sm bg-background px-2 py-1 rounded border">{generatedCredentials?.password}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="text-sm text-muted-foreground space-y-2">
+                <p>🔐 <strong>Security Note:</strong> This is the default password &quot;123456&quot;.</p>
+                <p>⚠️ <strong>Important:</strong> Share these credentials securely with the staff member.</p>
+                <p>🔄 <strong>First Login:</strong> They should change their password immediately.</p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setIsCredentialsModalOpen(false)}>
+                Got it
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 

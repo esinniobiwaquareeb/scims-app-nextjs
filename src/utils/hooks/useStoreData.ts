@@ -819,7 +819,7 @@ export const useDeleteCustomer = (storeId: string) => {
 };
 
 // Hook for creating staff members
-export const useCreateStaff = (storeId: string) => {
+export const useCreateStaff = (businessId: string, storeId?: string) => {
   const queryClient = useQueryClient();
   
   return useMutation({
@@ -829,7 +829,11 @@ export const useCreateStaff = (storeId: string) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(staffData),
+        body: JSON.stringify({
+          ...staffData,
+          business_id: businessId,
+          store_id: storeId || staffData.store_id
+        }),
       });
       
       if (!response.ok) {
@@ -839,8 +843,14 @@ export const useCreateStaff = (storeId: string) => {
       return response.json();
     },
     onSuccess: (data, variables) => {
-      // Invalidate and refetch staff for the store
-      queryClient.invalidateQueries({ queryKey: ['staff', storeId] });
+      // Invalidate both business staff and store staff queries
+      queryClient.invalidateQueries({ queryKey: ['businessStaff', businessId] });
+      const targetStoreId = storeId || variables.store_id;
+      if (targetStoreId) {
+        queryClient.invalidateQueries({ queryKey: ['storeStaff', targetStoreId] });
+      }
+      // Also invalidate all store-staff queries (in case store_id changed)
+      queryClient.invalidateQueries({ queryKey: ['storeStaff'] });
       toast.success('Staff member created successfully');
     },
     onError: (error) => {
@@ -851,7 +861,7 @@ export const useCreateStaff = (storeId: string) => {
 };
 
 // Hook for updating staff members
-export const useUpdateStaff = (storeId: string) => {
+export const useUpdateStaff = (businessId: string, storeId?: string) => {
   const queryClient = useQueryClient();
   
   return useMutation({
@@ -861,7 +871,11 @@ export const useUpdateStaff = (storeId: string) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(staffData),
+        body: JSON.stringify({
+          ...staffData,
+          business_id: businessId,
+          store_id: storeId || staffData.store_id
+        }),
       });
       
       if (!response.ok) {
@@ -871,8 +885,14 @@ export const useUpdateStaff = (storeId: string) => {
       return response.json();
     },
     onSuccess: (data, variables) => {
-      // Invalidate and refetch staff for the store
-      queryClient.invalidateQueries({ queryKey: ['staff', storeId] });
+      // Invalidate both business staff and store staff queries
+      queryClient.invalidateQueries({ queryKey: ['businessStaff', businessId] });
+      const targetStoreId = storeId || variables.staffData.store_id;
+      if (targetStoreId) {
+        queryClient.invalidateQueries({ queryKey: ['storeStaff', targetStoreId] });
+      }
+      // Also invalidate all store-staff queries
+      queryClient.invalidateQueries({ queryKey: ['storeStaff'] });
       toast.success('Staff member updated successfully');
     },
     onError: (error) => {
@@ -883,12 +903,16 @@ export const useUpdateStaff = (storeId: string) => {
 };
 
 // Hook for deleting staff members
-export const useDeleteStaff = (storeId: string) => {
+export const useDeleteStaff = (businessId: string, storeId?: string) => {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (staffId: string) => {
-      const response = await fetch(`/api/staff/${staffId}?store_id=${storeId}`, {
+      const url = storeId 
+        ? `/api/staff/${staffId}?store_id=${storeId}`
+        : `/api/staff/${staffId}`;
+        
+      const response = await fetch(url, {
         method: 'DELETE',
       });
       
@@ -899,8 +923,13 @@ export const useDeleteStaff = (storeId: string) => {
       return response.json();
     },
     onSuccess: (data, variables) => {
-      // Invalidate and refetch staff for the store
-      queryClient.invalidateQueries({ queryKey: ['staff', storeId] });
+      // Invalidate both business staff and store staff queries
+      queryClient.invalidateQueries({ queryKey: ['businessStaff', businessId] });
+      if (storeId) {
+        queryClient.invalidateQueries({ queryKey: ['storeStaff', storeId] });
+      }
+      // Also invalidate all store-staff queries
+      queryClient.invalidateQueries({ queryKey: ['storeStaff'] });
       toast.success('Staff member deleted successfully');
     },
     onError: (error) => {
