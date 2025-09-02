@@ -9,6 +9,8 @@ interface SelectContextType {
   open: boolean
   onOpenChange: (open: boolean) => void
   disabled?: boolean
+  selectedText?: string
+  setSelectedText?: (text: string) => void
 }
 
 const SelectContext = React.createContext<SelectContextType>({
@@ -27,6 +29,7 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
   ({ className, value, defaultValue, onValueChange, disabled, children, ...props }, ref) => {
     const [uncontrolledValue, setUncontrolledValue] = React.useState(defaultValue)
     const [open, setOpen] = React.useState(false)
+    const [selectedText, setSelectedText] = React.useState<string>('')
     const internalRef = React.useRef<HTMLDivElement>(null)
     const containerRef = (ref || internalRef) as React.RefObject<HTMLDivElement>
 
@@ -63,6 +66,14 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
       }
     }, [containerRef])
 
+    // Set initial selected text based on default value
+    React.useEffect(() => {
+      if (defaultValue && !selectedText) {
+        // This will be handled by the SelectItem components
+        setSelectedText(defaultValue)
+      }
+    }, [defaultValue, selectedText])
+
     return (
       <SelectContext.Provider
         value={{
@@ -71,6 +82,8 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
           open,
           onOpenChange: setOpen,
           disabled,
+          selectedText,
+          setSelectedText,
         }}
       >
         <div
@@ -103,10 +116,10 @@ const SelectTrigger = React.forwardRef<
       aria-expanded={open}
       className={cn(
         "flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2",
-        "text-sm text-gray-900",
+        "text-sm",
         "placeholder:text-gray-500",
         "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
-        "hover:border-gray-400",
+        "hover:border-gray-400 hover:bg-gray-50",
         "disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-gray-50",
         "transition-colors duration-200",
         className
@@ -185,21 +198,33 @@ const SelectItem = React.forwardRef<
     value: string
   }
 >(({ className, children, value, ...props }, ref) => {
-  const { value: selectedValue, onValueChange } = React.useContext(SelectContext)
+  const { value: selectedValue, onValueChange, setSelectedText } = React.useContext(SelectContext)
   const isSelected = selectedValue === value
+
+  // Set selected text when this item is selected
+  React.useEffect(() => {
+    if (isSelected && setSelectedText) {
+      setSelectedText(children as string)
+    }
+  }, [isSelected, children, setSelectedText])
+
+  const handleClick = () => {
+    onValueChange?.(value)
+    setSelectedText?.(children as string)
+  }
 
   return (
     <div
       ref={ref}
       role="option"
       aria-selected={isSelected}
-      onClick={() => onValueChange?.(value)}
+      onClick={handleClick}
       className={cn(
         "relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none",
         "hover:bg-gray-100 focus:bg-gray-100",
         "transition-colors duration-150",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-        isSelected ? "bg-blue-50 text-blue-900 border-l-2 border-blue-500" : "text-gray-900",
+        isSelected ? "bg-blue-50 text-blue-900 border-l-2 border-blue-500 font-medium" : "text-gray-900",
         className
       )}
       {...props}
@@ -265,14 +290,19 @@ const SelectValue = React.forwardRef<
     placeholder?: string;
   }
 >(({ className, children, placeholder, ...props }, ref) => {
-  const { value } = React.useContext(SelectContext)
+  const { value, selectedText } = React.useContext(SelectContext)
+  const hasValue = value && value !== ""
+  
+  // Use selectedText if available, otherwise fall back to children or value
+  const displayText = hasValue ? (selectedText || children || value) : placeholder
+  
   return (
     <span
       ref={ref}
-      className={cn("block truncate text-gray-900", className)}
+      className={cn("block truncate", hasValue ? "text-gray-900 font-medium" : "text-gray-500", className)}
       {...props}
     >
-      {value ? children : <span className="text-gray-500">{placeholder}</span>}
+      {displayText}
     </span>
   )
 })
