@@ -164,7 +164,7 @@ export const BusinessAdminDashboard: React.FC = () => {
       description: 'Configure business preferences',
       icon: Settings,
       color: 'text-gray-600',
-      action: '/settings'
+      action: '/business-settings'
     },
     {
       title: 'Roles & Permissions',

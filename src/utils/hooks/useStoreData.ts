@@ -6,10 +6,6 @@ import { toast } from 'sonner';
 // Hook for fetching store products
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-empty-object-type */
-/* eslint-disable @typescript-eslint/no-empty-interface */
-/* eslint-disable @typescript-eslint/no-empty-object-type */
-/* eslint-disable @typescript-eslint/no-empty-object-type */
 export const useStoreProducts = (storeId: string, options?: {
   enabled?: boolean;
   forceRefresh?: boolean;
@@ -257,6 +253,38 @@ export const useBusinessSettings = (businessId: string, options?: {
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: true,
     refetchOnMount: !forceRefresh,
+  });
+};
+
+// Hook for updating business settings
+export const useUpdateBusinessSettings = (businessId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (settings: any) => {
+      const response = await fetch(`/api/businesses/${businessId}/settings`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update business settings');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate and refetch business settings
+      queryClient.invalidateQueries({ queryKey: ['business-settings', businessId] });
+      toast.success('Business settings updated successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update business settings');
+    },
   });
 };
 

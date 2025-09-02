@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 
+// GET - Fetch all currencies
 export async function GET(request: NextRequest) {
   try {
-    // Fetch all active currencies
     const { data: currencies, error } = await supabase
       .from('currency')
-      .select('id, name, symbol, code')
+      .select('*')
       .eq('is_active', true)
       .order('name');
 
     if (error) {
-      console.error('Supabase error:', error);
+      console.error('Error fetching currencies:', error);
       return NextResponse.json(
         { success: false, error: 'Failed to fetch currencies' },
         { status: 500 }
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Currencies API error:', error);
+    console.error('Error in GET /api/currencies:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
