@@ -28,6 +28,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if email is verified (only for non-demo users)
+    if (!user.is_demo && !user.email_verified) {
+      return NextResponse.json(
+        { success: false, error: 'Please verify your email address before logging in. Check your email for a verification link.' },
+        { status: 401 }
+      );
+    }
+
     // Verify password using bcrypt
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
     if (!isPasswordValid) {

@@ -24,6 +24,13 @@ export interface WelcomeEmailData {
   supportEmail: string;
 }
 
+export interface VerificationEmailData {
+  to: string;
+  name: string;
+  verificationUrl: string;
+  businessName: string;
+}
+
 export interface EmailResult {
   success: boolean;
   messageId?: string;
@@ -204,6 +211,103 @@ Thank you for choosing SCIMS!
       };
     } catch (error) {
       console.error('Email sending error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  }
+
+  static async sendVerificationEmail(data: VerificationEmailData): Promise<EmailResult> {
+    try {
+      const { to, name, verificationUrl } = data;
+
+      const subject = `Verify Your Email - Welcome to SCIMS!`;
+      
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Verify Your Email - SCIMS</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #A969A7 0%, #8B5A8B 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .button { display: inline-block; background: #A969A7; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold; }
+            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+            .important { background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin: 20px 0; }
+            .verification-link { background: #fff; border: 2px solid #A969A7; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎉 Welcome to SCIMS!</h1>
+              <p>Please verify your email address to complete your registration</p>
+            </div>
+            
+            <div class="content">
+              <h2>Hello ${name},</h2>
+              
+              <p>Thank you for registering with <strong>SCIMS (Stock Control & Inventory Management System)</strong>!</p>
+              
+              <p>To complete your registration and start using your account, please verify your email address by clicking the button below:</p>
+              
+              <div class="verification-link">
+                <a href="${verificationUrl}" class="button">Verify Email Address</a>
+              </div>
+              
+              <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+              <p style="word-break: break-all; background: #f5f5f5; padding: 10px; border-radius: 4px; font-family: monospace;">
+                ${verificationUrl}
+              </p>
+              
+              <div class="important">
+                <strong>Important:</strong> This verification link will expire in 24 hours. If you don't verify your email within this time, you'll need to request a new verification email.
+              </div>
+              
+              <p>Once verified, you'll be able to:</p>
+              <ul>
+                <li>Access your SCIMS dashboard</li>
+                <li>Manage your business operations</li>
+                <li>Set up your inventory and products</li>
+                <li>Start processing sales and orders</li>
+              </ul>
+              
+              <p>If you didn't create an account with SCIMS, please ignore this email.</p>
+              
+              <p>Welcome aboard!</p>
+              <p><strong>The SCIMS Team</strong></p>
+            </div>
+            
+            <div class="footer">
+              <p>This email was sent to ${to}</p>
+              <p>© ${new Date().getFullYear()} SCIMS. All rights reserved.</p>
+              <p>If you have any questions, please contact our support team.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const mailOptions = {
+        from: `"SCIMS" <${emailConfig.auth.user}>`,
+        to: to,
+        subject: subject,
+        html: htmlContent,
+      };
+
+      const result = await transporter.sendMail(mailOptions);
+      
+      return {
+        success: true,
+        messageId: result.messageId,
+      };
+    } catch (error) {
+      console.error('Verification email sending error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
