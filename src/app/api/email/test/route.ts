@@ -21,9 +21,9 @@ export async function POST(request: NextRequest) {
       adminName: 'Test Administrator',
       adminUsername: 'admin.testbusiness',
       adminPassword: 'TestPassword123!',
-      platformUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://scims.com',
-      loginUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://scims.com'}/auth/login`,
-      supportEmail: process.env.SUPPORT_EMAIL || 'support@scims.com'
+      platformUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://scims.app',
+      loginUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://scims.app'}/auth/login`,
+      supportEmail: process.env.SUPPORT_EMAIL || 'support@scims.app'
     };
 
     const emailResult = await EmailService.sendWelcomeEmail(testEmailData);

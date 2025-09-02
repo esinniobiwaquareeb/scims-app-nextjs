@@ -249,9 +249,9 @@ export async function POST(request: NextRequest) {
 
     // Send welcome email to the business admin
     try {
-      const platformUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://scims.com';
+      const platformUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://scims.app';
       const loginUrl = `${platformUrl}/auth/login`;
-      const supportEmail = process.env.SUPPORT_EMAIL || 'support@scims.com';
+      const supportEmail = process.env.SUPPORT_EMAIL || 'support@scims.app';
 
       const emailResult = await EmailService.sendWelcomeEmail({
         businessName: business.name,
