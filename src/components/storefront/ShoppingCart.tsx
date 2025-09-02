@@ -245,8 +245,8 @@ export default function StorefrontCart({
                   </>
                 ) : (
                   <>
-                    <Phone className="w-4 h-4 mr-2" />
-                    Order via WhatsApp
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Place Order
                   </>
                 )}
               </Button>

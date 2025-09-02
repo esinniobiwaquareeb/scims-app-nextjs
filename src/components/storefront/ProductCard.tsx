@@ -49,11 +49,11 @@ export default function ProductCard({ product, business, onAddToCart }: ProductC
         )}
       </div>
 
-      {/* Content Section - Flexible Height */}
-      <CardContent className="p-3 flex flex-col flex-1">
-        {/* Header with Title and Category */}
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-base line-clamp-2 flex-1 pr-2">{product.name}</h3>
+      {/* Content Section - Fixed Height Structure */}
+      <CardContent className="p-3 flex flex-col h-48">
+        {/* Header with Title and Category - Fixed Height */}
+        <div className="flex justify-between items-start mb-2 h-12">
+          <h3 className="font-semibold text-base line-clamp-2 flex-1 pr-2 leading-tight">{product.name}</h3>
           {product.category && (
             <Badge variant="secondary" className="ml-2 flex-shrink-0 text-xs">
               {product.category.name}
@@ -62,14 +62,14 @@ export default function ProductCard({ product, business, onAddToCart }: ProductC
         </div>
 
         {/* Description - Fixed Height */}
-        <div className="h-10 mb-2 overflow-hidden">
-          <p className="text-gray-600 text-xs line-clamp-2">
+        <div className="h-10 mb-3 overflow-hidden">
+          <p className="text-gray-600 text-xs line-clamp-2 leading-tight">
             {product.public_description || product.description}
           </p>
         </div>
 
         {/* Price - Fixed Height */}
-        <div className="flex justify-between items-center mb-3">
+        <div className="flex justify-between items-center mb-3 h-6">
           <span className="text-lg font-bold text-primary">
             {business.currency.symbol}{product.price.toLocaleString()}
           </span>
