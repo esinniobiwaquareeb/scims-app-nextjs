@@ -1,11 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Download, Mail, Phone, CheckCircle, Package } from 'lucide-react';
+import { Download, Mail, Phone, CheckCircle, Package, MessageCircle } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -54,6 +54,25 @@ export default function OrderSummaryModal({
   onDownloadPDF,
   isGeneratingPDF
 }: OrderSummaryModalProps) {
+  const [whatsappOpened, setWhatsappOpened] = useState(false);
+
+  // Automatically open WhatsApp when modal opens
+  useEffect(() => {
+    if (isOpen && orderData?.whatsappUrl && !whatsappOpened) {
+      // Small delay to ensure modal is fully rendered
+      const timer = setTimeout(() => {
+        try {
+          window.open(orderData.whatsappUrl, '_blank');
+          setWhatsappOpened(true);
+        } catch (error) {
+          console.error('Failed to open WhatsApp:', error);
+        }
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, orderData?.whatsappUrl, whatsappOpened]);
+
   if (!orderData) return null;
 
   return (
@@ -171,23 +190,50 @@ export default function OrderSummaryModal({
             </CardContent>
           </Card>
 
-          {/* Actions */}
+          {/* WhatsApp Action - Prominent */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="text-center space-y-3">
+              <div className="flex items-center justify-center gap-2 text-green-800">
+                <MessageCircle className="w-5 h-5" />
+                <span className="font-semibold">Send Order to WhatsApp</span>
+              </div>
+              <p className="text-sm text-green-700">
+                {whatsappOpened 
+                  ? "WhatsApp should have opened automatically. If it didn't work, click the button below:"
+                  : "WhatsApp will open automatically in a moment. If it doesn't, click the button below:"
+                }
+              </p>
+              <Button
+                onClick={() => {
+                  window.open(orderData.whatsappUrl, '_blank');
+                  setWhatsappOpened(true);
+                }}
+                className="bg-green-600 hover:bg-green-700 text-white w-full"
+                size="lg"
+              >
+                <MessageCircle className="w-5 h-5 mr-2" />
+                {whatsappOpened ? 'Open WhatsApp Again' : 'Open WhatsApp Now'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Other Actions */}
           <div className="flex flex-col sm:flex-row gap-3">
             <Button
               onClick={onDownloadPDF}
               disabled={isGeneratingPDF}
               className="flex-1"
+              variant="outline"
             >
               <Download className="w-4 h-4 mr-2" />
               {isGeneratingPDF ? 'Generating PDF...' : 'Download Receipt'}
             </Button>
             <Button
-              onClick={() => window.open(orderData.whatsappUrl, '_blank')}
+              onClick={onClose}
               variant="outline"
               className="flex-1"
             >
-              <Phone className="w-4 h-4 mr-2" />
-              Contact via WhatsApp
+              Close
             </Button>
           </div>
 
@@ -195,8 +241,9 @@ export default function OrderSummaryModal({
           <div className="bg-blue-50 p-4 rounded-lg">
             <h4 className="font-semibold text-blue-900 mb-2">What&apos;s Next?</h4>
             <ul className="text-sm text-blue-800 space-y-1">
-              <li>• Your order has been sent to the business via WhatsApp</li>
-              <li>• The business will contact you to confirm the order and payment</li>
+              <li>• WhatsApp should open automatically with your order details</li>
+              <li>• Send the message to the business to confirm your order</li>
+              <li>• The business will contact you to confirm payment and delivery</li>
               <li>• You can download your receipt as a PDF</li>
               {orderData.customer.email && (
                 <li>• A confirmation email has been sent to your email address</li>

@@ -76,7 +76,7 @@ export async function GET(
     }
 
     // Ensure unique products (in case same product exists in multiple stores)
-    const uniqueProducts = products ? products.reduce((acc: any[], product: any) => {
+    const uniqueProducts = products ? products.reduce((acc: typeof products, product: typeof products[0]) => {
       const existingProduct = acc.find(p => p.id === product.id);
       if (!existingProduct) {
         acc.push(product);

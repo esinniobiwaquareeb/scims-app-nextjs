@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 import { sendOrderConfirmationEmail, sendBusinessOrderNotification } from '@/lib/email/orderEmails';
+import { sendWhatsAppMessage } from '@/lib/whatsapp/whatsappService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -82,8 +83,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Send WhatsApp notification
+    let whatsappUrl = '';
     try {
-      await sendWhatsAppNotification(order, business, storeSettings);
+      const whatsappResult = await sendWhatsAppNotification(order, business, storeSettings);
+      whatsappUrl = whatsappResult.whatsappUrl || '';
       
       // Update order with WhatsApp sent status
       await supabase
@@ -157,6 +160,7 @@ export async function POST(request: NextRequest) {
         total_amount: order.total_amount,
         created_at: order.created_at
       },
+      whatsappUrl,
       message: 'Order placed successfully! You will receive a confirmation via WhatsApp.'
     });
 
@@ -176,45 +180,47 @@ async function sendWhatsAppNotification(order: any, business: any, storeSettings
     throw new Error('No WhatsApp phone number configured');
   }
 
-  // Format order items
+  // Format order items with better formatting
   const orderItemsText = order.order_items.map((item: any) => {
-    return `• ${item.name} x${item.quantity} - ${item.total_price}`;
+    const currencySymbol = business.currency?.symbol || '₦';
+    return `• ${item.name} x${item.quantity} - ${currencySymbol}${item.total_price.toLocaleString()}`;
   }).join('\n');
 
   // Get currency symbol
   const currencySymbol = business.currency?.symbol || '₦';
 
-  // Format the message
+  // Format the message with proper line breaks
   const message = (storeSettings.whatsapp_message_template || 
-    'New order received from {customer_name}!\n\nOrder Details:\n{order_items}\n\nTotal: {total_amount}\n\nCustomer: {customer_name}\nPhone: {customer_phone}\nAddress: {customer_address}')
-    .replace('{customer_name}', order.customer_name)
+    `🛍️ *New Order Received!*
+
+📋 *Order Details:*
+{order_items}
+
+💰 *Total: {total_amount}*
+
+👤 *Customer Information:*
+• Name: {customer_name}
+• Phone: {customer_phone}
+• Address: {customer_address}
+
+Thank you for your order! 🙏`)
+    .replace(/{customer_name}/g, order.customer_name)
     .replace('{order_items}', orderItemsText)
     .replace('{total_amount}', `${currencySymbol}${order.total_amount.toLocaleString()}`)
     .replace('{customer_phone}', order.customer_phone)
     .replace('{customer_address}', order.customer_address || 'Not provided');
 
-  // For now, we'll just log the message
-  // In production, you would integrate with WhatsApp Business API
-  console.log('WhatsApp Message to send:', {
-    to: whatsappPhone,
-    message: message
-  });
+  // Use the WhatsApp service to send the message
+  const result = await sendWhatsAppMessage(business.id, whatsappPhone, message);
+  
+  if (!result.success) {
+    console.error('WhatsApp message failed:', result.error);
+    throw new Error(result.error || 'Failed to send WhatsApp message');
+  }
 
-  // TODO: Integrate with WhatsApp Business API
-  // Example with WhatsApp Business API:
-  // const response = await fetch('https://graph.facebook.com/v17.0/YOUR_PHONE_NUMBER_ID/messages', {
-  //   method: 'POST',
-  //   headers: {
-  //     'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
-  //     'Content-Type': 'application/json',
-  //   },
-  //   body: JSON.stringify({
-  //     messaging_product: 'whatsapp',
-  //     to: whatsappPhone.replace('+', ''),
-  //     type: 'text',
-  //     text: { body: message }
-  //   })
-  // });
-
-  return { success: true, message: 'WhatsApp notification sent' };
+  return {
+    success: true,
+    whatsappUrl: result.whatsappUrl,
+    message: 'WhatsApp notification sent'
+  };
 }
