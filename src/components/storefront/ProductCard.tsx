@@ -68,13 +68,10 @@ export default function ProductCard({ product, business, onAddToCart }: ProductC
           </p>
         </div>
 
-        {/* Price and Stock - Fixed Height */}
+        {/* Price - Fixed Height */}
         <div className="flex justify-between items-center mb-3">
           <span className="text-lg font-bold text-primary">
             {business.currency.symbol}{product.price.toLocaleString()}
-          </span>
-          <span className="text-xs text-gray-500">
-            Stock: {product.stock_quantity}
           </span>
         </div>
 
