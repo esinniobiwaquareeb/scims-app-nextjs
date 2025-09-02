@@ -3,28 +3,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  ShoppingCart, 
-  Search, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Plus,
-  Minus,
-  CheckCircle,
-  Loader2,
-  Package,
-  Heart,
-  Share2
-} from 'lucide-react';
-import Logo from '@/components/common/Logo';
+import { Loader2, Package } from 'lucide-react';
+import StorefrontHeader from '@/components/storefront/StorefrontHeader';
+import ProductFilters from '@/components/storefront/ProductFilters';
+import ProductCard from '@/components/storefront/ProductCard';
+import StorefrontCart from '@/components/storefront/ShoppingCart';
+import StorefrontFooter from '@/components/storefront/StorefrontFooter';
 
 interface Product {
   id: string;
@@ -309,134 +293,31 @@ export default function StorefrontPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Logo size="md" />
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">{business.name}</h1>
-                {business.settings.store_description && (
-                  <p className="text-sm text-gray-600">{business.settings.store_description}</p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm">
-                <Share2 className="w-4 h-4 mr-2" />
-                Share
-              </Button>
-              <Button variant="outline" size="sm">
-                <Heart className="w-4 h-4 mr-2" />
-                Save
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Banner */}
-      {business.settings.store_banner_url && (
-        <div className="h-64 bg-gradient-to-r from-primary/20 to-primary/5 flex items-center justify-center">
-          <img 
-            src={business.settings.store_banner_url} 
-            alt={`${business.name} banner`}
-            className="max-h-full max-w-full object-cover rounded-lg"
-          />
-        </div>
-      )}
+      <StorefrontHeader business={business} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-3">
-            {/* Search and Filters */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder="Search products..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-full sm:w-48">
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.name}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-full sm:w-48">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="newest">Newest</SelectItem>
-                    <SelectItem value="price-low">Price: Low to High</SelectItem>
-                    <SelectItem value="price-high">Price: High to Low</SelectItem>
-                    <SelectItem value="name">Name A-Z</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            <ProductFilters
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              categories={categories}
+            />
 
             {/* Products Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProducts.map((product) => (
-                <Card key={product.id} className="group hover:shadow-lg transition-shadow">
-                  <div className="aspect-square bg-gray-100 rounded-t-lg overflow-hidden">
-                    {product.image_url ? (
-                      <img
-                        src={product.image_url}
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Package className="w-16 h-16 text-gray-400" />
-                      </div>
-                    )}
-                  </div>
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-lg line-clamp-2">{product.name}</h3>
-                      <Badge variant="secondary" className="ml-2">
-                        {product.category?.name}
-                      </Badge>
-                    </div>
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                      {product.public_description || product.description}
-                    </p>
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-2xl font-bold text-primary">
-                        {business.currency.symbol}{product.price.toLocaleString()}
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        Stock: {product.stock_quantity}
-                      </span>
-                    </div>
-                    <Button 
-                      onClick={() => addToCart(product)}
-                      className="w-full"
-                      disabled={product.stock_quantity === 0}
-                    >
-                      <ShoppingCart className="w-4 h-4 mr-2" />
-                      {product.stock_quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
-                    </Button>
-                  </CardContent>
-                </Card>
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  business={business}
+                  onAddToCart={addToCart}
+                />
               ))}
             </div>
 
@@ -451,198 +332,31 @@ export default function StorefrontPage() {
 
           {/* Cart Sidebar */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-8">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <ShoppingCart className="w-5 h-5 mr-2" />
-                  Cart ({cart.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {cart.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">Your cart is empty</p>
-                ) : (
-                  <>
-                    {cart.map((item) => (
-                      <div key={item.product.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-12 h-12 bg-gray-200 rounded overflow-hidden">
-                          {item.product.image_url ? (
-                            <img
-                              src={item.product.image_url}
-                              alt={item.product.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Package className="w-6 h-6 text-gray-400" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm truncate">{item.product.name}</h4>
-                          <p className="text-sm text-gray-600">
-                            {business.currency.symbol}{item.product.price.toLocaleString()}
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                          >
-                            <Minus className="w-3 h-3" />
-                          </Button>
-                          <span className="w-8 text-center text-sm">{item.quantity}</span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                          >
-                            <Plus className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    <div className="border-t pt-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <span className="text-lg font-semibold">Total:</span>
-                        <span className="text-xl font-bold text-primary">
-                          {business.currency.symbol}{getCartTotal().toLocaleString()}
-                        </span>
-                      </div>
-
-                      {/* Order Form */}
-                      <div className="space-y-3">
-                        <div>
-                          <Label htmlFor="customerName">Name *</Label>
-                          <Input
-                            id="customerName"
-                            value={customerName}
-                            onChange={(e) => setCustomerName(e.target.value)}
-                            placeholder="Your full name"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="customerPhone">Phone *</Label>
-                          <Input
-                            id="customerPhone"
-                            value={customerPhone}
-                            onChange={(e) => setCustomerPhone(e.target.value)}
-                            placeholder="Your phone number"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="customerEmail">Email</Label>
-                          <Input
-                            id="customerEmail"
-                            type="email"
-                            value={customerEmail}
-                            onChange={(e) => setCustomerEmail(e.target.value)}
-                            placeholder="your@email.com"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="customerAddress">Address</Label>
-                          <Textarea
-                            id="customerAddress"
-                            value={customerAddress}
-                            onChange={(e) => setCustomerAddress(e.target.value)}
-                            placeholder="Delivery address"
-                            rows={3}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="orderNotes">Notes</Label>
-                          <Textarea
-                            id="orderNotes"
-                            value={orderNotes}
-                            onChange={(e) => setOrderNotes(e.target.value)}
-                            placeholder="Special instructions"
-                            rows={2}
-                          />
-                        </div>
-                      </div>
-
-                      {error && (
-                        <Alert variant="destructive">
-                          <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                      )}
-
-                      {orderSuccess && (
-                        <Alert className="border-green-200 bg-green-50">
-                          <CheckCircle className="w-4 h-4 text-green-600" />
-                          <AlertDescription className="text-green-800">
-                            Order placed successfully! You will receive a confirmation via WhatsApp.
-                          </AlertDescription>
-                        </Alert>
-                      )}
-
-                      <Button
-                        onClick={handleOrder}
-                        disabled={isOrdering || cart.length === 0}
-                        className="w-full"
-                      >
-                        {isOrdering ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Placing Order...
-                          </>
-                        ) : (
-                          <>
-                            <Phone className="w-4 h-4 mr-2" />
-                            Order via WhatsApp
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+            <StorefrontCart
+              cart={cart}
+              business={business}
+              onUpdateQuantity={updateQuantity}
+              onRemoveFromCart={removeFromCart}
+              onOrder={handleOrder}
+              isOrdering={isOrdering}
+              orderSuccess={orderSuccess}
+              error={error}
+              customerName={customerName}
+              setCustomerName={setCustomerName}
+              customerPhone={customerPhone}
+              setCustomerPhone={setCustomerPhone}
+              customerEmail={customerEmail}
+              setCustomerEmail={setCustomerEmail}
+              customerAddress={customerAddress}
+              setCustomerAddress={setCustomerAddress}
+              orderNotes={orderNotes}
+              setOrderNotes={setOrderNotes}
+            />
           </div>
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="bg-white border-t mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="font-semibold mb-4">{business.name}</h3>
-              <p className="text-gray-600 text-sm">{business.description}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Contact Info</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                {business.phone && (
-                  <div className="flex items-center">
-                    <Phone className="w-4 h-4 mr-2" />
-                    {business.phone}
-                  </div>
-                )}
-                {business.email && (
-                  <div className="flex items-center">
-                    <Mail className="w-4 h-4 mr-2" />
-                    {business.email}
-                  </div>
-                )}
-                {business.address && (
-                  <div className="flex items-center">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    {business.address}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Powered by</h3>
-              <Logo size="sm" />
-            </div>
-          </div>
-        </div>
-      </footer>
+      <StorefrontFooter business={business} />
     </div>
   );
 }
