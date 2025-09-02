@@ -5,7 +5,7 @@ import { DataTable } from './common/DataTable';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
@@ -496,13 +496,98 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
             <Loader2 className={`w-4 h-4 mr-2 ${businessesLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Business
-              </Button>
-            </DialogTrigger>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Business
+          </Button>
+        </div>
+      </Header>
+
+      {/* Success Message Display */}
+      {createBusinessMutation.isSuccess && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <p className="text-green-800 text-sm font-medium">
+                  Business created successfully! Welcome email sent with login credentials.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Businesses</p>
+                  <p className="text-2xl font-semibold">{stats.totalBusinesses}</p>
+                </div>
+                <Building2 className="w-8 h-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Active Subscriptions</p>
+                  <p className="text-2xl font-semibold">{stats.activeSubscriptions}</p>
+                </div>
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Stores</p>
+                  <p className="text-2xl font-semibold">{stats.totalStores}</p>
+                </div>
+                <Store className="w-8 h-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Platform Users</p>
+                  <p className="text-2xl font-semibold">{stats.platformUsers}</p>
+                </div>
+                <Users className="w-8 h-8 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Businesses Table */}
+        <DataTable
+          title="Businesses"
+          data={filteredBusinesses}
+          columns={columns}
+          searchable={true}
+          searchPlaceholder="Search businesses..."
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          onExport={exportBusinesses}
+          emptyMessage="No businesses found"
+          tableName="businesses"
+          userRole={user?.role}
+        />
+
+        {/* Add Business Dialog */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle>Add New Business</DialogTitle>
@@ -732,93 +817,6 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
             </div>
           </DialogContent>
         </Dialog>
-        </div>
-      </Header>
-
-      {/* Success Message Display */}
-      {createBusinessMutation.isSuccess && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Card className="border-green-200 bg-green-50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <p className="text-green-800 text-sm font-medium">
-                  Business created successfully! Welcome email sent with login credentials.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Businesses</p>
-                  <p className="text-2xl font-semibold">{stats.totalBusinesses}</p>
-                </div>
-                <Building2 className="w-8 h-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Active Subscriptions</p>
-                  <p className="text-2xl font-semibold">{stats.activeSubscriptions}</p>
-                </div>
-                <CheckCircle className="w-8 h-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Stores</p>
-                  <p className="text-2xl font-semibold">{stats.totalStores}</p>
-                </div>
-                <Store className="w-8 h-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Platform Users</p>
-                  <p className="text-2xl font-semibold">{stats.platformUsers}</p>
-                </div>
-                <Users className="w-8 h-8 text-orange-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Businesses Table */}
-        <DataTable
-          title="Businesses"
-          data={filteredBusinesses}
-          columns={columns}
-          searchable={true}
-          searchPlaceholder="Search businesses..."
-          searchValue={searchTerm}
-          onSearchChange={setSearchTerm}
-          onExport={exportBusinesses}
-          emptyMessage="No businesses found"
-          tableName="businesses"
-          userRole={user?.role}
-        />
-
-
 
         {/* Edit Business Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

@@ -15,7 +15,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -862,32 +861,13 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
             />
             Refresh
           </Button>
-          
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button disabled={!canCreate("user")}>
-                <UserPlus className="w-4 h-4 mr-2" />
-                Add Staff
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Add New Staff Member</DialogTitle>
-                <DialogDescription>
-                  Create a new staff account and assign to a store.
-                </DialogDescription>
-              </DialogHeader>
-              <StaffForm
-                staffMember={newStaff}
-                onChange={handleNewStaffChange}
-                onSave={handleAddStaff}
-                onCancel={closeAddDialog}
-                title="Add Staff"
-                stores={stores}
-                isSaving={isSaving}
-              />
-            </DialogContent>
-          </Dialog>
+          <Button 
+            onClick={openAddDialog}
+            disabled={!canCreate("user")}
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Add Staff
+          </Button>
         </div>
       </Header>
 
@@ -1274,6 +1254,27 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                 isSaving={isSaving}
               />
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Staff Dialog */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Add New Staff Member</DialogTitle>
+              <DialogDescription>
+                Create a new staff account and assign to a store.
+              </DialogDescription>
+            </DialogHeader>
+            <StaffForm
+              staffMember={newStaff}
+              onChange={handleNewStaffChange}
+              onSave={handleAddStaff}
+              onCancel={closeAddDialog}
+              title="Add Staff"
+              stores={stores}
+              isSaving={isSaving}
+            />
           </DialogContent>
         </Dialog>
 
