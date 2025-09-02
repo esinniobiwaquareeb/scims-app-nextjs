@@ -56,7 +56,7 @@ export async function GET(
       console.error('Error fetching stores:', storesError);
     }
 
-    // Get public products from all stores
+    // Get public products from all stores with unique products
     const { data: products, error: productsError } = await supabase
       .from('product')
       .select(`
@@ -68,11 +68,31 @@ export async function GET(
       .eq('business_id', business.id)
       .eq('is_public', true)
       .eq('is_active', true)
+      .gt('stock_quantity', 0)
       .order('created_at', { ascending: false });
 
     if (productsError) {
       console.error('Error fetching products:', productsError);
     }
+
+    // Ensure unique products (in case same product exists in multiple stores)
+    const uniqueProducts = products ? products.reduce((acc: any[], product: any) => {
+      const existingProduct = acc.find(p => p.id === product.id);
+      if (!existingProduct) {
+        acc.push(product);
+      } else {
+        // If product exists in multiple stores, combine stock quantities
+        existingProduct.stock_quantity += product.stock_quantity;
+        // Update store info to show it's available in multiple stores
+        if (!existingProduct.store_names) {
+          existingProduct.store_names = [existingProduct.store?.name];
+        }
+        if (product.store?.name && !existingProduct.store_names.includes(product.store.name)) {
+          existingProduct.store_names.push(product.store.name);
+        }
+      }
+      return acc;
+    }, []) : [];
 
     // Get categories for filtering
     const { data: categories, error: categoriesError } = await supabase
@@ -110,7 +130,7 @@ export async function GET(
         }
       },
       stores: stores || [],
-      products: products || [],
+      products: uniqueProducts,
       categories: categories || []
     });
 

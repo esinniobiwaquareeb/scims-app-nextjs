@@ -23,6 +23,7 @@ interface Product {
   category?: { name: string };
   brand?: { name: string };
   store?: { name: string };
+  store_names?: string[]; // For products available in multiple stores
   stock_quantity: number;
   created_at: string;
 }
@@ -248,7 +249,7 @@ export default function StorefrontPage() {
         },
         body: JSON.stringify({
           business_id: business?.id,
-          store_id: stores?.[0]?.id,
+          store_id: stores?.[0]?.id, // Use first store for order processing
           customer_name: customerName,
           customer_phone: customerPhone,
           customer_email: customerEmail,
