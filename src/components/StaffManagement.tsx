@@ -191,7 +191,12 @@ const StaffForm = ({
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder="Select role" />
+            <SelectValue placeholder="Select role">
+              {staffMember.role ? 
+                ROLE_OPTIONS.find(r => r.value === staffMember.role)?.label || "Unknown Role"
+                : "Select role"
+              }
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {ROLE_OPTIONS.map((role) => (
@@ -211,7 +216,12 @@ const StaffForm = ({
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder="Select store" />
+            <SelectValue placeholder="Select store">
+              {staffMember.store_id ? 
+                stores.find(s => s.id === staffMember.store_id)?.name || "Unknown Store" 
+                : "Select store"
+              }
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {stores
@@ -347,14 +357,12 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   const refetchStaff = user?.role === 'business_admin' ? refetchBusinessStaff : refetchStoreStaff;
 
   const {
-    data: storesResponse,
+    data: stores = [],
     isLoading: isLoadingStores,
     refetch: refetchStores,
   } = useBusinessStores(currentBusiness?.id || "", {
     enabled: !!currentBusiness?.id,
   });
-
-  const stores = storesResponse?.stores || [];
 
   // React Query mutations
   const createStaffMutation = useCreateStaff(currentBusiness?.id || "");
