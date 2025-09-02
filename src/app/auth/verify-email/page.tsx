@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -13,13 +12,13 @@ import {
 } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
-  ShoppingCart,
   Loader2,
   CheckCircle,
   XCircle,
   Mail,
   RefreshCw,
 } from 'lucide-react';
+import Logo from '@/components/common/Logo';
 
 export default function VerifyEmailPage() {
   const router = useRouter();
@@ -107,8 +106,8 @@ export default function VerifyEmailPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center pb-4">
-          <div className="mx-auto w-16 h-16 bg-primary rounded-lg flex items-center justify-center mb-4">
-            <ShoppingCart className="w-8 h-8 text-primary-foreground" />
+          <div className="mx-auto mb-4">
+            <Logo size="xl" />
           </div>
           <CardTitle className="text-xl">Email Verification</CardTitle>
           <CardDescription className="text-sm">

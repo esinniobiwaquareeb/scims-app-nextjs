@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  ShoppingCart, 
   MessageSquare, 
   Mail, 
   Phone, 
@@ -16,6 +15,7 @@ import {
   Globe,
   Shield
 } from 'lucide-react';
+import Logo from '@/components/common/Logo';
 
 export interface FooterProps {
   className?: string;
@@ -28,11 +28,8 @@ export const Footer: React.FC<FooterProps> = ({ className = '' }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Company Info */}
           <div className="lg:col-span-2">
-            <div className="flex items-center space-x-2 mb-6">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <ShoppingCart className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-semibold">SCIMS</span>
+            <div className="mb-6">
+              <Logo size="md" />
             </div>
             <p className="text-muted-foreground mb-6 leading-relaxed">
               The complete business management platform trusted by 4,200+ businesses worldwide. 

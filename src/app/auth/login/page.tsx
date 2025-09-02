@@ -15,11 +15,11 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-  ShoppingCart,
   Loader2,
   Eye,
   EyeOff,
 } from "lucide-react";
+import Logo from '@/components/common/Logo';
 import { DemoUser } from "@/types/auth";
 import { useRouter } from "next/navigation";
 
@@ -109,10 +109,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center pb-4">
-          <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-3">
-            <ShoppingCart className="w-6 h-6 text-primary-foreground" />
+          <div className="mx-auto mb-3">
+            <Logo size="lg" />
           </div>
-          <CardTitle className="text-xl">SCIMS</CardTitle>
           <CardDescription className="text-sm">
             Stock Control Inventory Management System
           </CardDescription>

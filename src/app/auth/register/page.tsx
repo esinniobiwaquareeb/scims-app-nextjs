@@ -21,16 +21,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  ShoppingCart,
   Loader2,
   Eye,
   EyeOff,
   Building2,
   User,
-  Mail,
-  Phone,
   MapPin,
 } from 'lucide-react';
+import Logo from '@/components/common/Logo';
 
 interface Country {
   id: string;
@@ -212,8 +210,8 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <div className="mx-auto w-16 h-16 bg-primary rounded-lg flex items-center justify-center mb-4">
-            <ShoppingCart className="w-8 h-8 text-primary-foreground" />
+          <div className="mx-auto mb-4">
+            <Logo size="xl" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Create Your SCIMS Account</h1>
           <p className="text-gray-600 mt-2">
