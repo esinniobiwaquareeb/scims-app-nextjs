@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 
-// GET - Fetch platform health metrics
+// GET - Fetch platform revenue data
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0');
 
     let query = supabase
-      .from('platform_health')
+      .from('platform_revenue')
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -26,28 +26,28 @@ export async function GET(request: NextRequest) {
     // Apply pagination
     query = query.range(offset, offset + limit - 1);
 
-    const { data: healthMetrics, error } = await query;
+    const { data: revenueData, error } = await query;
 
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch platform health metrics' },
+        { success: false, error: 'Failed to fetch platform revenue data' },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      healthMetrics: healthMetrics || [],
+      revenueData: revenueData || [],
       pagination: {
         limit,
         offset,
-        total: healthMetrics?.length || 0
+        total: revenueData?.length || 0
       }
     });
 
   } catch (error) {
-    console.error('Platform health API error:', error);
+    console.error('Platform revenue API error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -55,50 +55,53 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new platform health entry
+// POST - Create new platform revenue entry
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
     // Validate required fields
-    if (!body.service_name || !body.status) {
+    if (!body.revenue_type || !body.amount) {
       return NextResponse.json(
-        { success: false, error: 'service_name and status are required' },
+        { success: false, error: 'revenue_type and amount are required' },
         { status: 400 }
       );
     }
 
-    const healthData = {
-      service_name: body.service_name,
-      status: body.status,
-      response_time_ms: body.response_time_ms || null,
-      error_message: body.error_message || null,
+    const revenueData = {
+      revenue_type: body.revenue_type,
+      amount: body.amount,
+      currency: body.currency || 'USD',
+      business_id: body.business_id || null,
+      subscription_plan_id: body.subscription_plan_id || null,
+      payment_method: body.payment_method || null,
+      transaction_id: body.transaction_id || null,
       metadata: body.metadata || null,
       created_at: new Date().toISOString()
     };
 
-    const { data: health, error } = await supabase
-      .from('platform_health')
-      .insert(healthData)
+    const { data: revenue, error } = await supabase
+      .from('platform_revenue')
+      .insert(revenueData)
       .select()
       .single();
 
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json(
-        { success: false, error: 'Failed to create platform health entry' },
+        { success: false, error: 'Failed to create platform revenue entry' },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      health,
-      message: 'Platform health entry created successfully'
+      revenue,
+      message: 'Platform revenue entry created successfully'
     });
 
   } catch (error) {
-    console.error('Error in POST /api/platform/health:', error);
+    console.error('Error in POST /api/platform/revenue:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

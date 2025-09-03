@@ -50,6 +50,7 @@ import {
   Users
 } from 'lucide-react';
 import { Store } from '@/types/auth';
+import { Customer as DBCustomer } from '@/types/index';
 
 interface Customer {
   id: string;
@@ -77,6 +78,38 @@ interface Sale {
   paymentMethod: string;
   receiptNumber?: string;
   status?: string;
+}
+
+interface DBSale {
+  id: string;
+  customer_id: string;
+  total_amount: number;
+  transaction_date: string;
+  created_at: string;
+  [key: string]: unknown;
+}
+
+interface CustomerSale {
+  id: string;
+  customer_id: string;
+  total_amount: number;
+  transaction_date: string;
+  created_at: string;
+  receipt_number: string;
+  payment_method: string;
+  status: string;
+  sale_items: Array<{
+    id: string;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+    product: {
+      id: string;
+      name: string;
+      price: number;
+    };
+  }>;
+  [key: string]: unknown;
 }
 
 interface CustomerManagementProps {
@@ -170,13 +203,13 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   const customers = useMemo(() => {
     if (!dbCustomers || !storeSales) return [];
     
-    return dbCustomers.map((customer: Customer) => {
+    return dbCustomers.map((customer: DBCustomer) => {
       // Calculate customer statistics from sales data
-      const customerSales = storeSales.filter((sale: Sale) => sale.customerId === customer.id);
+      const customerSales = storeSales.filter((sale: DBSale) => sale.customer_id === customer.id);
       const totalPurchases = customerSales.length;
-      const totalSpent = customerSales.reduce((sum: number, sale: Sale) => sum + (sale.total || 0), 0);
+      const totalSpent = customerSales.reduce((sum: number, sale: DBSale) => sum + (sale.total_amount || 0), 0);
       const lastPurchase = customerSales.length > 0 
-        ? new Date(Math.max(...customerSales.map((s: Sale) => new Date(s.timestamp || s.createdAt).getTime())))
+        ? new Date(Math.max(...customerSales.map((s: DBSale) => new Date(s.transaction_date || s.created_at).getTime())))
         : undefined;
       
       return {
@@ -185,10 +218,10 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
         phone: customer.phone,
         email: customer.email,
         address: customer.address,
-        notes: customer.notes,
+        notes: '', // Notes field not available in database schema
         totalPurchases,
         totalSpent,
-        createdAt: new Date(customer.createdAt),
+        createdAt: new Date(customer.created_at || ''),
         lastPurchase,
         storeId: currentStore?.id || '',
         storeName: currentStore?.name || ''
@@ -260,9 +293,10 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
         phone: formData.phone.trim(),
         email: formData.email.trim() || undefined,
         address: formData.address.trim() || undefined,
+        store_id: currentStore.id,
       };
 
-      const newCustomer = await createCustomerMutation.mutateAsync(customerData as { name: string; phone: string; email?: string | undefined; address?: string | undefined; store_id: string });
+      const newCustomer = await createCustomerMutation.mutateAsync(customerData);
       
       if (newCustomer.success) {
         // Refresh customers from database
@@ -1011,14 +1045,14 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {customerSales.map((sale: Sale) => (
+                      {customerSales.map((sale: CustomerSale) => (
                         <div key={sale.id} className="flex items-center justify-between p-3 border rounded-lg">
                           <div>
                             <p className="font-medium">
-                              {sale.receiptNumber ? `Receipt #${sale.receiptNumber}` : `Sale #${sale.id.slice(-6)}`}
+                              {sale.receipt_number ? `Receipt #${sale.receipt_number}` : `Sale #${sale.id.slice(-6)}`}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {formatDateTime(sale.timestamp || sale.createdAt)} - {sale.items?.length || 0} items
+                              {formatDateTime(new Date(sale.transaction_date || sale.created_at))} - {sale.sale_items?.length || 0} items
                             </p>
                             {sale.status && (
                               <Badge variant={sale.status === 'completed' ? 'default' : 'secondary'} className="text-xs mt-1">
@@ -1027,9 +1061,9 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
                             )}
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold">{formatCurrency(sale.total)}</p>
+                            <p className="font-semibold">{formatCurrency(sale.total_amount)}</p>
                             <Badge variant="outline" className="text-xs">
-                              {sale.paymentMethod}
+                              {sale.payment_method}
                             </Badge>
                           </div>
                         </div>

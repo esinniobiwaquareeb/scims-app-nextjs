@@ -13,10 +13,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch categories for the business directly
+    // Fetch categories for the business with product counts
     const { data: categories, error } = await supabase
       .from('category')
-      .select('*')
+      .select(`
+        *,
+        products:product(count)
+      `)
       .eq('business_id', businessId)
       .eq('is_active', true)
       .order('name');
@@ -29,9 +32,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Process categories to include product count
+    const categoriesWithCounts = (categories || []).map(category => ({
+      ...category,
+      product_count: category.products?.[0]?.count || 0
+    }));
+
     return NextResponse.json({
       success: true,
-      categories: categories || []
+      categories: categoriesWithCounts
     });
 
   } catch (error) {

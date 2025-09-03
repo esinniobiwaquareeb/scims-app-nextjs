@@ -33,7 +33,6 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { 
-
   useBusinessCategories, 
   useBusinessSuppliers, 
   useBusinessBrands,
@@ -41,8 +40,7 @@ import {
   useUpdateProduct,
   useDeleteProduct,
   useStoreProducts,
-  useBusinessStores,
-  useBusinessProducts
+  useBusinessStores
 } from '@/utils/hooks/useStoreData';
 import { ProductType } from '@/types';
 
@@ -208,23 +206,14 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
     error: productsError,
     refetch: refetchProducts
   } = useStoreProducts(selectedStoreFilter, { 
-    enabled: selectedStoreFilter !== 'All' && !!selectedStoreFilter
+    enabled: !!selectedStoreFilter && selectedStoreFilter !== '',
+    businessId: currentBusiness?.id
   });
 
-  // Fetch all business products when "All stores" is selected
-  const {
-    data: allBusinessProducts = [],
-    isLoading: allBusinessProductsLoading,
-    error: allBusinessProductsError,
-    refetch: refetchAllBusinessProducts
-  } = useBusinessProducts(currentBusiness?.id || '', { 
-    enabled: selectedStoreFilter === 'All' && !!currentBusiness?.id 
-  });
-
-  // Combine products based on store filter
-  const allProducts = selectedStoreFilter === 'All' ? allBusinessProducts : products;
-  const isLoadingProducts = selectedStoreFilter === 'All' ? allBusinessProductsLoading : productsLoading;
-  const productsErrorCombined = selectedStoreFilter === 'All' ? allBusinessProductsError : productsError;
+  // useStoreProducts now handles both specific stores and "All" stores
+  const allProducts = products;
+  const isLoadingProducts = productsLoading;
+  const productsErrorCombined = productsError;
 
   const {
     data: categories = [],
@@ -361,8 +350,8 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
         ...cleanedInsertFields,
         image_url: imageUrl,
         store_id: currentStore.id,
+        business_id: currentBusiness?.id,
         is_active: true
-
       };
 
       // Use the mutation hook - this will automatically invalidate cache on success
@@ -804,11 +793,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
             <Button 
               variant="outline" 
               onClick={() => {
-                if (selectedStoreFilter === 'All') {
-                  refetchAllBusinessProducts();
-                } else {
-                  refetchProducts();
-                }
+                refetchProducts();
               }} 
               disabled={isLoadingProducts || isRefetching}
               className="text-blue-600 border-blue-200 hover:bg-blue-50"
@@ -945,7 +930,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
         {/* Filters */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <div className="flex gap-4 items-center">
+            <div className="flex gap-4 items-center flex-wrap">
               <div className="flex-1 min-w-0">
                 <Input
                   placeholder="Search products, SKU, barcode, or supplier..."
@@ -954,7 +939,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
                   className="w-full"
                 />
               </div>
-              <div className="flex-shrink-0">
+              <div className="flex gap-4 flex-shrink-0">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Select category" />
@@ -967,6 +952,23 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
                     ))}
                   </SelectContent>
                 </Select>
+                {user?.role === 'business_admin' && stores.length > 1 && (
+                  <Select value={selectedStoreFilter} onValueChange={setSelectedStoreFilter}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Select store" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All Stores</SelectItem>
+                      {stores
+                        .filter((store: any) => store.is_active)
+                        .map((store: any) => (
+                          <SelectItem key={store.id} value={store.id}>
+                            {store.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
           </CardContent>

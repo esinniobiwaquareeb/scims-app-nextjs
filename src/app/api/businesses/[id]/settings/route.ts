@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 
+interface BusinessUpdateData {
+  currency_id?: string | null;
+  language_id?: string | null;
+  country_id?: string | null;
+  business_type?: string;
+  name?: string;
+  description?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  address?: string;
+  timezone?: string;
+  updated_at: string;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -15,24 +30,96 @@ export async function GET(
       );
     }
 
+    // Fetch business information
+    const { data: business, error: businessError } = await supabase
+      .from('business')
+      .select('*')
+      .eq('id', businessId)
+      .single();
+
+
+
+    if (businessError) {
+      console.error('Business fetch error:', businessError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to fetch business information' },
+        { status: 500 }
+      );
+    }
+
     // Fetch business settings
-    const { data: settings, error } = await supabase
+    const { data: settings, error: settingsError } = await supabase
       .from('business_setting')
       .select('*')
       .eq('business_id', businessId)
       .single();
 
-    if (error) {
-      console.error('Supabase error:', error);
+    // If settings don't exist, that's okay - we'll return empty settings
+    if (settingsError && settingsError.code !== 'PGRST116') {
+      console.error('Settings fetch error:', settingsError);
       return NextResponse.json(
         { success: false, error: 'Failed to fetch business settings' },
         { status: 500 }
       );
     }
 
+    // Combine business and settings data
+    const combinedData = {
+      // Business table fields
+      name: business?.name || '',
+      description: business?.description || '',
+      industry: business?.industry || '',
+      timezone: business?.timezone || 'UTC',
+      subscription_status: business?.subscription_status || 'active',
+      subscription_expires_at: business?.subscription_expires_at || '',
+      is_active: business?.is_active ?? true,
+      address: business?.address || '',
+      email: business?.email || '',
+      phone: business?.phone || '',
+      website: business?.website || '',
+      subscription_plan_id: business?.subscription_plan_id || '',
+      currency_id: business?.currency_id || '',
+      language_id: business?.language_id || '',
+      country_id: business?.country_id || '',
+      business_type: business?.business_type || 'retail',
+      username: business?.username || '',
+      slug: business?.slug || '',
+      
+      // Business setting table fields (with defaults)
+      taxRate: settings?.tax_rate || 0,
+      enableTax: settings?.enable_tax ?? false,
+      allowReturns: settings?.allow_returns ?? true,
+      returnPeriodDays: settings?.return_period_days || 30,
+      enableSounds: settings?.enable_sounds ?? true,
+      logo_url: settings?.logo_url || '',
+      receiptHeader: settings?.receipt_header || 'Thank you for shopping with us!',
+      receiptFooter: settings?.receipt_footer || 'Returns accepted within 30 days with receipt.',
+      returnPolicy: settings?.return_policy || 'Returns accepted within 30 days with original receipt.',
+      warrantyInfo: settings?.warranty_info || 'Standard manufacturer warranty applies.',
+      termsOfService: settings?.terms_of_service || '',
+      privacyPolicy: settings?.privacy_policy || '',
+      primaryColor: settings?.primary_color || '#3B82F6',
+      secondaryColor: settings?.secondary_color || '#10B981',
+      accentColor: settings?.accent_color || '#F59E0B',
+      enable_stock_tracking: settings?.enable_stock_tracking ?? true,
+      enable_inventory_alerts: settings?.enable_inventory_alerts ?? true,
+      enable_restock_management: settings?.enable_restock_management ?? true,
+      enable_recipe_management: settings?.enable_recipe_management ?? false,
+      enable_service_booking: settings?.enable_service_booking ?? false,
+      enable_menu_management: settings?.enable_menu_management ?? false,
+      enable_ingredient_tracking: settings?.enable_ingredient_tracking ?? false,
+      enable_public_store: settings?.enable_public_store ?? false,
+      store_theme: settings?.store_theme || 'default',
+      store_banner_url: settings?.store_banner_url || '',
+      store_description: settings?.store_description || '',
+      whatsapp_phone: settings?.whatsapp_phone || '',
+      whatsapp_message_template: settings?.whatsapp_message_template || 'New order received from {customer_name}!\n\nOrder Details:\n{order_items}\n\nTotal: {total_amount}\n\nCustomer: {customer_name}\nPhone: {customer_phone}\nAddress: {customer_address}'
+    };
+
+
     return NextResponse.json({
       success: true,
-      settings: settings || {}
+      settings: combinedData
     });
 
   } catch (error) {
@@ -60,11 +147,27 @@ export async function PUT(
       );
     }
 
-    // Prepare settings data for database
+    // Prepare business data (currency_id and language_id belong to business table)
+    const businessData: Partial<BusinessUpdateData> = {};
+    if (body.currency_id !== undefined) businessData.currency_id = body.currency_id;
+    if (body.language_id !== undefined) businessData.language_id = body.language_id;
+    if (body.country_id !== undefined) businessData.country_id = body.country_id;
+    if (body.business_type !== undefined) businessData.business_type = body.business_type;
+    if (body.name !== undefined) businessData.name = body.name;
+    if (body.description !== undefined) businessData.description = body.description;
+    if (body.email !== undefined) businessData.email = body.email;
+    if (body.phone !== undefined) businessData.phone = body.phone;
+    if (body.website !== undefined) businessData.website = body.website;
+    if (body.address !== undefined) businessData.address = body.address;
+    if (body.timezone !== undefined) businessData.timezone = body.timezone;
+    
+    if (Object.keys(businessData).length > 0) {
+      businessData.updated_at = new Date().toISOString();
+    }
+
+    // Prepare settings data for database (business_setting table)
     const settingsData = {
       business_id: businessId,
-      currency_id: body.currency_id || null,
-      language_id: body.language_id || null,
       tax_rate: body.taxRate || 0,
       enable_tax: body.enableTax || false,
       allow_returns: body.allowReturns || true,
@@ -88,8 +191,30 @@ export async function PUT(
       enable_service_booking: body.enable_service_booking || false,
       enable_menu_management: body.enable_menu_management || false,
       enable_ingredient_tracking: body.enable_ingredient_tracking || false,
+      enable_public_store: body.enable_public_store || false,
+      store_theme: body.store_theme || 'default',
+      store_banner_url: body.store_banner_url || '',
+      store_description: body.store_description || '',
+      whatsapp_phone: body.whatsapp_phone || '',
+      whatsapp_message_template: body.whatsapp_message_template || 'New order received from {customer_name}!\n\nOrder Details:\n{order_items}\n\nTotal: {total_amount}\n\nCustomer: {customer_name}\nPhone: {customer_phone}\nAddress: {customer_address}',
       updated_at: new Date().toISOString()
     };
+
+    // Update business table if there's business data to update
+    if (Object.keys(businessData).length > 0) {
+      const { error: businessError } = await supabase
+        .from('business')
+        .update(businessData)
+        .eq('id', businessId);
+
+      if (businessError) {
+        console.error('Error updating business:', businessError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to update business information' },
+          { status: 500 }
+        );
+      }
+    }
 
     // Check if settings exist
     const { error: checkError } = await supabase

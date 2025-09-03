@@ -1,53 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 
-// GET - Fetch platform health metrics
+// GET - Fetch platform roles
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const startDate = searchParams.get('start_date');
-    const endDate = searchParams.get('end_date');
     const limit = parseInt(searchParams.get('limit') || '100');
     const offset = parseInt(searchParams.get('offset') || '0');
 
     let query = supabase
-      .from('platform_health')
+      .from('platform_role')
       .select('*')
       .order('created_at', { ascending: false });
-
-    // Apply date filters if provided
-    if (startDate) {
-      query = query.gte('created_at', startDate);
-    }
-    if (endDate) {
-      query = query.lte('created_at', endDate);
-    }
 
     // Apply pagination
     query = query.range(offset, offset + limit - 1);
 
-    const { data: healthMetrics, error } = await query;
+    const { data: roles, error } = await query;
 
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch platform health metrics' },
+        { success: false, error: 'Failed to fetch platform roles' },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      healthMetrics: healthMetrics || [],
+      roles: roles || [],
       pagination: {
         limit,
         offset,
-        total: healthMetrics?.length || 0
+        total: roles?.length || 0
       }
     });
 
   } catch (error) {
-    console.error('Platform health API error:', error);
+    console.error('Platform roles API error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -55,50 +45,50 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new platform health entry
+// POST - Create new platform role
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
     // Validate required fields
-    if (!body.service_name || !body.status) {
+    if (!body.name || !body.description) {
       return NextResponse.json(
-        { success: false, error: 'service_name and status are required' },
+        { success: false, error: 'name and description are required' },
         { status: 400 }
       );
     }
 
-    const healthData = {
-      service_name: body.service_name,
-      status: body.status,
-      response_time_ms: body.response_time_ms || null,
-      error_message: body.error_message || null,
-      metadata: body.metadata || null,
-      created_at: new Date().toISOString()
+    const roleData = {
+      name: body.name,
+      description: body.description,
+      permissions: body.permissions || [],
+      is_active: body.is_active !== undefined ? body.is_active : true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
-    const { data: health, error } = await supabase
-      .from('platform_health')
-      .insert(healthData)
+    const { data: role, error } = await supabase
+      .from('platform_role')
+      .insert(roleData)
       .select()
       .single();
 
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json(
-        { success: false, error: 'Failed to create platform health entry' },
+        { success: false, error: 'Failed to create platform role' },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      health,
-      message: 'Platform health entry created successfully'
+      role,
+      message: 'Platform role created successfully'
     });
 
   } catch (error) {
-    console.error('Error in POST /api/platform/health:', error);
+    console.error('Error in POST /api/platform/roles:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

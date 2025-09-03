@@ -43,6 +43,12 @@ const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
       }
     };
 
+    const handleClick = () => {
+      if (onCheckedChange) {
+        onCheckedChange(!checked);
+      }
+    };
+
     return (
       <div className="relative inline-flex items-center">
         <input
@@ -56,15 +62,17 @@ const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
           onChange={handleChange}
           {...props}
         />
-        <div className={cn(
-          "relative h-6 w-11 cursor-pointer rounded-full border-2 border-transparent",
-          "transition-all duration-200 ease-in-out",
-          getVariantColors(),
-          "peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-offset-2",
-          getFocusRingColor(),
-          "peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
-          "peer-disabled:pointer-events-none"
-        )}>
+        <div 
+          className={cn(
+            "relative h-6 w-11 cursor-pointer rounded-full border-2 border-transparent",
+            "transition-all duration-200 ease-in-out",
+            getVariantColors(),
+            "peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-offset-2",
+            getFocusRingColor(),
+            "peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
+          )}
+          onClick={handleClick}
+        >
           <div className={cn(
             "absolute left-0.5 top-0.5 h-5 w-5 rounded-full",
             "bg-white dark:bg-gray-300",

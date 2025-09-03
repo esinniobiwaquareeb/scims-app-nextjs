@@ -9,12 +9,26 @@ import { toast } from 'sonner';
 export const useStoreProducts = (storeId: string, options?: {
   enabled?: boolean;
   forceRefresh?: boolean;
+  businessId?: string;
 }) => {
-  const { enabled = true, forceRefresh = false } = options || {};
+  const { enabled = true, forceRefresh = false, businessId } = options || {};
   
   return useQuery({
-    queryKey: ['store-products', storeId],
+    queryKey: ['store-products', storeId, businessId],
     queryFn: async () => {
+      // Handle "All" case by using business_id
+      if (storeId === 'All') {
+        if (!businessId) {
+          throw new Error('business_id is required when store_id is "All"');
+        }
+        const response = await fetch(`/api/products?store_id=All&business_id=${businessId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch business products');
+        }
+        const data = await response.json();
+        return data.products || [];
+      }
+      
       const response = await fetch(`/api/products?store_id=${storeId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch products');
@@ -364,6 +378,7 @@ export const useCreateProduct = (storeId: string) => {
   return useMutation({
     mutationFn: async (productData: {
       store_id: string;
+      business_id?: string;
       name: string;
       description?: string;
       price: number;
@@ -1068,7 +1083,8 @@ export const useCustomerSales = (customerId: string, p0: string, p1: string, p2:
       if (!response.ok) {
         throw new Error('Failed to fetch customer sales');
       }
-      return response.json();
+      const data = await response.json();
+      return data.sales || [];
     },
     enabled: !!customerId,
   });

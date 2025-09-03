@@ -301,6 +301,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
                 },
                 body: JSON.stringify({
                   store_id: store.id,
+                  business_id: currentBusiness?.id,
                   ...productData
                 }),
               });

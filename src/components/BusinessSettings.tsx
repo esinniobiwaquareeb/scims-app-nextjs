@@ -6,6 +6,8 @@ import {
   useBusinessSettings, 
   useCurrencies, 
   useLanguages, 
+  useCountries,
+  useSubscriptionPlans,
   useUpdateBusinessSettings 
 } from '../utils/hooks/useStoreData';
 import { Header } from './common/Header';
@@ -35,7 +37,8 @@ import {
   Package,
   ChefHat,
   Wrench,
-  Calendar
+  Calendar,
+  Phone
 } from 'lucide-react';
 import { 
   BUSINESS_TYPES, 
@@ -49,6 +52,19 @@ interface BusinessSettingsProps {
 }
 
 interface BusinessSettings {
+  // Business table fields
+  name?: string;
+  description?: string;
+  industry?: string;
+  timezone?: string;
+  subscription_status?: string;
+  subscription_expires_at?: string;
+  is_active?: boolean;
+  address?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  subscription_plan_id?: string;
   currency_id?: string;
   currency_code?: string;
   currency_name?: string;
@@ -57,6 +73,12 @@ interface BusinessSettings {
   language_code?: string;
   language_name?: string;
   language_native_name?: string;
+  country_id?: string;
+  business_type?: string;
+  username?: string;
+  slug?: string;
+  
+  // Business setting table fields
   taxRate: number;
   enableTax: boolean;
   allowReturns: boolean;
@@ -72,7 +94,6 @@ interface BusinessSettings {
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
-  business_type?: string;
   enable_stock_tracking?: boolean;
   enable_inventory_alerts?: boolean;
   enable_restock_management?: boolean;
@@ -80,6 +101,12 @@ interface BusinessSettings {
   enable_service_booking?: boolean;
   enable_menu_management?: boolean;
   enable_ingredient_tracking?: boolean;
+  enable_public_store?: boolean;
+  store_theme?: string;
+  store_banner_url?: string;
+  store_description?: string;
+  whatsapp_phone?: string;
+  whatsapp_message_template?: string;
 }
 
 interface Currency {
@@ -98,11 +125,32 @@ interface Language {
   is_active: boolean;
 }
 
+interface Country {
+  id: string;
+  code: string;
+  name: string;
+  phone_code: string;
+  is_active: boolean;
+}
+
+interface SubscriptionPlan {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  billing_cycle: string;
+  features: string[];
+  is_active: boolean;
+}
+
 export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) => {
   const { currentBusiness, user } = useAuth();
   const { formatCurrency, translate, playSound } = useSystem();
   const { logActivity } = useActivityLogger();
   const [error, setError] = useState<string | null>(null);
+
+
 
   // Use React Query hooks for data fetching
   const {
@@ -112,6 +160,8 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
   } = useBusinessSettings(currentBusiness?.id || '', { 
     enabled: !!currentBusiness?.id && user?.role === 'business_admin' 
   });
+
+
 
   const {
     data: currencies = [],
@@ -123,15 +173,38 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
     isLoading: isLoadingLanguages
   } = useLanguages();
 
+  const {
+    data: countries = [],
+    isLoading: isLoadingCountries
+  } = useCountries();
+
+  const {
+    data: subscriptionPlans = [],
+    isLoading: isLoadingSubscriptionPlans
+  } = useSubscriptionPlans();
+
   // Update business settings mutation
   const updateSettingsMutation = useUpdateBusinessSettings(currentBusiness?.id || '');
 
   // Combined loading states
   const isLoading = isLoadingSettings;
-  const isLoadingRefs = isLoadingCurrencies || isLoadingLanguages;
+  const isLoadingRefs = isLoadingCurrencies || isLoadingLanguages || isLoadingCountries || isLoadingSubscriptionPlans;
   const isSaving = updateSettingsMutation.isPending;
 
   const [localSettings, setLocalSettings] = useState<BusinessSettings>({
+    // Business table fields
+    name: '',
+    description: '',
+    industry: '',
+    timezone: 'UTC',
+    subscription_status: 'active',
+    subscription_expires_at: '',
+    is_active: true,
+    address: '',
+    email: '',
+    phone: '',
+    website: '',
+    subscription_plan_id: '',
     currency_id: '',
     currency_code: 'USD',
     currency_name: 'US Dollar',
@@ -140,6 +213,12 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
     language_code: 'en',
     language_name: 'English',
     language_native_name: 'English',
+    country_id: '',
+    business_type: 'retail',
+    username: '',
+    slug: '',
+    
+    // Business setting table fields
     taxRate: 0,
     enableTax: true,
     allowReturns: true,
@@ -155,54 +234,28 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
     primaryColor: '#3B82F6',
     secondaryColor: '#10B981',
     accentColor: '#F59E0B',
-    business_type: 'retail',
     enable_stock_tracking: true,
     enable_inventory_alerts: true,
     enable_restock_management: true,
     enable_recipe_management: false,
     enable_service_booking: false,
     enable_menu_management: false,
-    enable_ingredient_tracking: false
+    enable_ingredient_tracking: false,
+    enable_public_store: false,
+    store_theme: 'default',
+    store_banner_url: '',
+    store_description: '',
+    whatsapp_phone: '',
+    whatsapp_message_template: 'New order received from {customer_name}!\n\nOrder Details:\n{order_items}\n\nTotal: {total_amount}\n\nCustomer: {customer_name}\nPhone: {customer_phone}\nAddress: {customer_address}'
   });
 
   // Update localSettings when currentSettings changes
   useEffect(() => {
     if (currentSettings) {
-      const transformedSettings: BusinessSettings = {
-        currency_id: currentSettings.currency_id || '',
-        currency_code: currentSettings.currency_code || 'USD',
-        currency_name: currentSettings.currency_name || 'US Dollar',
-        currency_symbol: currentSettings.currency_symbol || '$',
-        language_id: currentSettings.language_id || '',
-        language_code: currentSettings.language_code || 'en',
-        language_name: currentSettings.language_name || 'English',
-        language_native_name: currentSettings.language_native_name || 'English',
-        taxRate: currentSettings.tax_rate || 0,
-        enableTax: currentSettings.enable_tax !== undefined ? currentSettings.enable_tax : false,
-        allowReturns: currentSettings.allow_returns !== undefined ? currentSettings.allow_returns : true,
-        returnPeriodDays: currentSettings.return_period_days || 30,
-        enableSounds: currentSettings.enable_sounds !== undefined ? currentSettings.enable_sounds : true,
-        logo_url: currentSettings.logo_url || '',
-        receiptHeader: currentSettings.receipt_header || 'Thank you for shopping with us!',
-        receiptFooter: currentSettings.receipt_footer || 'Returns accepted within 30 days with receipt.',
-        returnPolicy: currentSettings.return_policy || 'Returns accepted within 30 days with original receipt.',
-        warrantyInfo: currentSettings.warranty_info || 'Standard manufacturer warranty applies.',
-        termsOfService: currentSettings.terms_of_service || '',
-        privacyPolicy: currentSettings.privacy_policy || '',
-        primaryColor: currentSettings.primary_color || '#3B82F6',
-        secondaryColor: currentSettings.secondary_color || '#10B981',
-        accentColor: currentSettings.accent_color || '#F59E0B',
-        business_type: currentSettings.business_type || 'retail',
-        enable_stock_tracking: currentSettings.enable_stock_tracking || true,
-        enable_inventory_alerts: currentSettings.enable_inventory_alerts || true,
-        enable_restock_management: currentSettings.enable_restock_management || true,
-        enable_recipe_management: currentSettings.enable_recipe_management || false,
-        enable_service_booking: currentSettings.enable_service_booking || false,
-        enable_menu_management: currentSettings.enable_menu_management || false,
-        enable_ingredient_tracking: currentSettings.enable_ingredient_tracking || false
-      };
 
-      setLocalSettings(transformedSettings);
+      
+      // The API already returns the data in the correct format, so we can use it directly
+      setLocalSettings(currentSettings as BusinessSettings);
     }
   }, [currentSettings]);
 
@@ -510,14 +563,132 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
 
         <div className={`grid gap-8 ${showReceiptPreview ? 'grid-cols-1 lg:grid-cols-3' : 'grid-cols-1'}`}>
           <div className={showReceiptPreview ? 'lg:col-span-2' : ''}>
-            <Tabs defaultValue="system" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5">
+            <Tabs defaultValue="business" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-7">
+                <TabsTrigger value="business">Business</TabsTrigger>
                 <TabsTrigger value="system">System</TabsTrigger>
                 <TabsTrigger value="branding">Branding</TabsTrigger>
                 <TabsTrigger value="receipt">Receipt</TabsTrigger>
                 <TabsTrigger value="policies">Policies</TabsTrigger>
                 <TabsTrigger value="business-type">Business Type</TabsTrigger>
+                <TabsTrigger value="store">Store</TabsTrigger>
               </TabsList>
+
+              <TabsContent value="business">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Building className="w-5 h-5" />
+                        Business Information
+                      </CardTitle>
+                      <CardDescription>
+                        Basic business details and contact information
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label>Business Name</Label>
+                        <Input
+                          value={localSettings.name || ''}
+                          onChange={(e) => setLocalSettings({...localSettings, name: e.target.value})}
+                          placeholder="Enter business name"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Description</Label>
+                        <Textarea
+                          value={localSettings.description || ''}
+                          onChange={(e) => setLocalSettings({...localSettings, description: e.target.value})}
+                          placeholder="Brief description of your business"
+                          rows={3}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Industry</Label>
+                        <Input
+                          value={localSettings.industry || ''}
+                          onChange={(e) => setLocalSettings({...localSettings, industry: e.target.value})}
+                          placeholder="e.g., Retail, Restaurant, Service"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Business Address</Label>
+                        <Textarea
+                          value={localSettings.address || ''}
+                          onChange={(e) => setLocalSettings({...localSettings, address: e.target.value})}
+                          placeholder="Full business address"
+                          rows={2}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Globe className="w-5 h-5" />
+                        Contact & Web
+                      </CardTitle>
+                      <CardDescription>
+                        Contact information and online presence
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label>Email Address</Label>
+                        <Input
+                          type="email"
+                          value={localSettings.email || ''}
+                          onChange={(e) => setLocalSettings({...localSettings, email: e.target.value})}
+                          placeholder="business@example.com"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Phone Number</Label>
+                        <Input
+                          type="tel"
+                          value={localSettings.phone || ''}
+                          onChange={(e) => setLocalSettings({...localSettings, phone: e.target.value})}
+                          placeholder="+1 (555) 123-4567"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Website</Label>
+                        <Input
+                          type="url"
+                          value={localSettings.website || ''}
+                          onChange={(e) => setLocalSettings({...localSettings, website: e.target.value})}
+                          placeholder="https://www.example.com"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Username</Label>
+                        <Input
+                          value={localSettings.username || ''}
+                          onChange={(e) => setLocalSettings({...localSettings, username: e.target.value})}
+                          placeholder="Unique username for your business"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Slug</Label>
+                        <Input
+                          value={localSettings.slug || ''}
+                          onChange={(e) => setLocalSettings({...localSettings, slug: e.target.value})}
+                          placeholder="business-slug"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
 
               <TabsContent value="system">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -547,7 +718,12 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
                           disabled={isLoadingRefs || currencies.length === 0}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder={isLoadingRefs ? "Loading currencies..." : "Select currency"} />
+                            <SelectValue placeholder={isLoadingRefs ? "Loading currencies..." : "Select currency"}>
+                              {localSettings.currency_id && currencies.length > 0 ? 
+                                `${currencies.find((c: Currency) => c.id === localSettings.currency_id)?.name} (${currencies.find((c: Currency) => c.id === localSettings.currency_id)?.symbol})` 
+                                : "Select currency"
+                              }
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             {currencies.map((currency: Currency) => (
@@ -597,7 +773,12 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
                           disabled={isLoadingRefs || languages.length === 0}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder={isLoadingRefs ? "Loading languages..." : "Select language"} />
+                            <SelectValue placeholder={isLoadingRefs ? "Loading languages..." : "Select language"}>
+                              {localSettings.language_id && languages.length > 0 ? 
+                                `${languages.find((l: Language) => l.id === localSettings.language_id)?.native_name} (${languages.find((l: Language) => l.id === localSettings.language_id)?.name})` 
+                                : "Select language"
+                              }
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             {languages.map((language: Language) => (
@@ -628,6 +809,60 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
                             ({getCurrentLanguageInfo()?.nativeName})
                           </p>
                         )}
+                      </div>
+                      
+                      <div>
+                        <Label>Country</Label>
+                        <Select 
+                          value={localSettings.country_id || ''} 
+                          onValueChange={(value) => {
+                            setLocalSettings({
+                              ...localSettings, 
+                              country_id: value
+                            });
+                          }}
+                          disabled={isLoadingRefs || countries.length === 0}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={isLoadingRefs ? "Loading countries..." : "Select country"}>
+                              {localSettings.country_id && countries.length > 0 ? 
+                                countries.find((c: Country) => c.id === localSettings.country_id)?.name 
+                                : "Select country"
+                              }
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {countries.map((country: Country) => (
+                              <SelectItem key={country.id} value={country.id}>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">{country.name}</span>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {country.code}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {!isLoadingRefs && countries.length === 0 && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            No countries available. Please check your database connection.
+                          </p>
+                        )}
+                        {!isLoadingRefs && localSettings.country_id && countries.length > 0 && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Selected: {countries.find((c: Country) => c.id === localSettings.country_id)?.name}
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <Label>Timezone</Label>
+                        <Input
+                          value={localSettings.timezone || 'UTC'}
+                          onChange={(e) => setLocalSettings({...localSettings, timezone: e.target.value})}
+                          placeholder="UTC"
+                        />
                       </div>
                     </CardContent>
                   </Card>
@@ -1185,6 +1420,111 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
                     </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="store">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Globe className="w-5 h-5" />
+                        Store Settings
+                      </CardTitle>
+                      <CardDescription>
+                        Configure your public store and online presence
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <Label htmlFor="public-store">Enable Public Store</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Allow customers to browse and order online
+                          </p>
+                        </div>
+                        <Switch
+                          id="public-store"
+                          checked={localSettings.enable_public_store || false}
+                          onCheckedChange={(enabled) => setLocalSettings({...localSettings, enable_public_store: enabled})}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Store Theme</Label>
+                        <Select 
+                          value={localSettings.store_theme || 'default'} 
+                          onValueChange={(value) => setLocalSettings({...localSettings, store_theme: value})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="default">Default</SelectItem>
+                            <SelectItem value="modern">Modern</SelectItem>
+                            <SelectItem value="classic">Classic</SelectItem>
+                            <SelectItem value="minimal">Minimal</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label>Store Description</Label>
+                        <Textarea
+                          value={localSettings.store_description || ''}
+                          onChange={(e) => setLocalSettings({...localSettings, store_description: e.target.value})}
+                          placeholder="Describe your store for online visitors"
+                          rows={3}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Store Banner URL</Label>
+                        <Input
+                          type="url"
+                          value={localSettings.store_banner_url || ''}
+                          onChange={(e) => setLocalSettings({...localSettings, store_banner_url: e.target.value})}
+                          placeholder="https://example.com/banner.jpg"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Phone className="w-5 h-5" />
+                        WhatsApp Integration
+                      </CardTitle>
+                      <CardDescription>
+                        Configure WhatsApp notifications for orders
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label>WhatsApp Phone Number</Label>
+                        <Input
+                          type="tel"
+                          value={localSettings.whatsapp_phone || ''}
+                          onChange={(e) => setLocalSettings({...localSettings, whatsapp_phone: e.target.value})}
+                          placeholder="+1234567890"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>WhatsApp Message Template</Label>
+                        <Textarea
+                          value={localSettings.whatsapp_message_template || ''}
+                          onChange={(e) => setLocalSettings({...localSettings, whatsapp_message_template: e.target.value})}
+                          placeholder="New order received from {customer_name}!"
+                          rows={6}
+                        />
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Available variables: {'{customer_name}'}, {'{order_items}'}, {'{total_amount}'}, {'{customer_phone}'}, {'{customer_address}'}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
             </Tabs>
           </div>
