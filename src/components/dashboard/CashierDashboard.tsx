@@ -34,31 +34,6 @@ import {
   RefreshCw
 } from 'lucide-react';
 
-// Receipt data interface - matches the ReceiptData interface from receipt.ts
-interface ReceiptData {
-  id?: string;
-  receiptNumber?: string;
-  customerName?: string;
-  customerPhone?: string;
-  paymentMethod?: string;
-  payment_method?: string;
-  items?: Array<{
-    name: string;
-    quantity: number;
-    price: number;
-  }>;
-  subtotal?: number;
-  tax?: number;
-  tax_amount?: number;
-  total?: number;
-  total_amount?: number;
-  cashAmount?: number;
-  cash_received?: number;
-  change?: number;
-  change_given?: number;
-  transactionDate?: Date;
-  transaction_date?: Date;
-}
 
 // Custom hooks moved outside component to prevent recreation on every render
 const useCashierSales = (cashierId: string, storeId: string) => {
@@ -351,22 +326,29 @@ export const CashierDashboard: React.FC = () => {
   };
 
   // Handle reprint receipt
-  const handleReprintReceipt = async (receiptData: ReceiptData) => {
+  const handleReprintReceipt = async (sale: Sale) => {
     try {
+      // Map sale_items to items format expected by receipt
+      const items = sale.sale_items?.map(item => ({
+        name: item.products?.name || 'Unknown Product',
+        quantity: item.quantity || 0,
+        price: item.unit_price || 0
+      })) || [];
+
       // Create receipt data structure matching the ReceiptData interface from receipt.ts
       const receipt = {
         storeName: currentStore?.name || 'Store',
-        receiptNumber: receiptData.receiptNumber || receiptData.id?.slice(-6) || 'Unknown',
+        receiptNumber: sale.receipt_number || `SALE-${sale.id.slice(-6)}`,
         cashierName: user?.name || user?.username || 'Cashier',
-        customerName: receiptData.customerName || 'Walk-in Customer',
-        paymentMethod: receiptData.paymentMethod || receiptData.payment_method || 'Unknown',
-        items: receiptData.items || [],
-        subtotal: receiptData.subtotal || 0,
-        tax: receiptData.tax || receiptData.tax_amount || 0,
-        total: receiptData.total || receiptData.total_amount || 0,
-        cashAmount: receiptData.cashAmount || receiptData.cash_received || 0,
-        change: receiptData.change || receiptData.change_given || 0,
-        transactionDate: receiptData.transactionDate || receiptData.transaction_date || new Date(),
+        customerName: sale.customerName || sale.customers?.name || 'Walk-in Customer',
+        paymentMethod: sale.payment_method || sale.paymentMethod || 'Unknown',
+        items: items,
+        subtotal: Number(sale.subtotal || 0),
+        tax: Number(sale.tax_amount || sale.tax || 0),
+        total: Number(sale.total_amount || sale.total || 0),
+        cashAmount: Number(sale.cash_received || sale.cashAmount || 0),
+        change: Number(sale.change_given || sale.change || 0),
+        transactionDate: new Date(sale.transaction_date || sale.timestamp || sale.created_at || new Date()),
         currencySymbol: getCurrentCurrency()
       };
 
@@ -955,7 +937,7 @@ export const CashierDashboard: React.FC = () => {
               <div className="flex gap-3">
                 <Button 
                   className="flex-1" 
-                  onClick={() => handleReprintReceipt(selectedSale as ReceiptData)}
+                  onClick={() => handleReprintReceipt(selectedSale)}
                 >
                   <Receipt className="w-4 h-4 mr-2" />
                   Reprint Receipt

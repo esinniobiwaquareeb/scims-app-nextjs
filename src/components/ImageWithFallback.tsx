@@ -14,6 +14,20 @@ export function ImageWithFallback(props: React.ImgHTMLAttributes<HTMLImageElemen
 
   const { src, alt, style, className, ...rest } = props
 
+  // If src is empty or null, show the fallback immediately
+  if (!src || (typeof src === 'string' && src.trim() === '')) {
+    return (
+      <div
+        className={`inline-block bg-gray-100 text-center align-middle ${className ?? ''}`}
+        style={style}
+      >
+        <div className="flex items-center justify-center w-full h-full">
+          <img src={ERROR_IMG_SRC} alt="No image available" {...rest} />
+        </div>
+      </div>
+    )
+  }
+
   return didError ? (
     <div
       className={`inline-block bg-gray-100 text-center align-middle ${className ?? ''}`}

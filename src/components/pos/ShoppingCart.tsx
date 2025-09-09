@@ -256,7 +256,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
                         <div key={item.product.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
                           <div className="w-10 h-10 bg-white rounded-lg flex-shrink-0 overflow-hidden border border-gray-200">
                             <ImageWithFallback
-                              src={item.product.image_url || ''}
+                              src={item.product.image_url || undefined}
                               alt={item.product.name}
                               className="w-full h-full object-cover"
                             />

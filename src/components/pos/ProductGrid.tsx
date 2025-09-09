@@ -157,7 +157,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
                     <CardContent className="p-2">
                       <div className="aspect-square mb-3 bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden relative">
                         <ImageWithFallback
-                          src={product.image_url || ''}
+                          src={product.image_url || undefined}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         />

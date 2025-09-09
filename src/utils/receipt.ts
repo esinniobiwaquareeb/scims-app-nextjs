@@ -56,13 +56,14 @@ export const generateReceiptHTML = (
         
         body {
           font-family: 'Courier New', monospace;
-          font-size: 10px;
+          font-size: 12px;
           margin: 0;
-          padding: 8px;
+          padding: 4px;
           width: 80mm;
           max-width: 80mm;
           background: white;
           color: black;
+          line-height: 1.3;
         }
         
         .receipt-container {
@@ -72,125 +73,139 @@ export const generateReceiptHTML = (
         
         .header {
           text-align: center;
-          margin-bottom: 15px;
+          margin-bottom: 8px;
           border-bottom: 1px dashed #000;
-          padding-bottom: 10px;
+          padding-bottom: 6px;
         }
         
         .store-name {
-          font-size: 14px;
+          font-size: 18px;
           font-weight: bold;
-          margin-bottom: 3px;
+          margin-bottom: 4px;
           text-transform: uppercase;
         }
         
         .store-address {
-          font-size: 9px;
-          margin-bottom: 3px;
+          font-size: 12px;
+          margin-bottom: 4px;
           line-height: 1.2;
         }
         
         .receipt-info {
-          margin-bottom: 15px;
+          margin-bottom: 8px;
           border-bottom: 1px dashed #000;
-          padding-bottom: 10px;
+          padding-bottom: 6px;
         }
         
         .receipt-number {
-          font-size: 10px;
-          margin-bottom: 5px;
+          font-size: 14px;
+          margin-bottom: 4px;
+          font-weight: bold;
         }
         
         .cashier-info {
-          font-size: 9px;
-          margin-bottom: 5px;
+          font-size: 12px;
+          margin-bottom: 4px;
         }
         
         .datetime {
-          font-size: 9px;
+          font-size: 12px;
           color: #666;
         }
         
         .items-section {
-          margin-bottom: 15px;
+          margin-bottom: 8px;
           border-bottom: 1px dashed #000;
-          padding-bottom: 10px;
+          padding-bottom: 6px;
         }
         
         .item {
           display: flex;
           justify-content: space-between;
-          margin-bottom: 5px;
-          font-size: 9px;
-          line-height: 1.2;
+          margin-bottom: 4px;
+          font-size: 12px;
+          line-height: 1.3;
+          padding: 2px 0;
         }
         
         .item-name {
           flex: 1;
-          margin-right: 10px;
+          margin-right: 15px;
+          font-weight: 500;
         }
         
         .item-details {
           text-align: right;
           white-space: nowrap;
+          font-weight: 500;
         }
         
         .totals-section {
-          margin-bottom: 15px;
+          margin-bottom: 8px;
           border-bottom: 1px dashed #000;
-          padding-bottom: 10px;
+          padding-bottom: 6px;
         }
         
         .total-row {
           display: flex;
           justify-content: space-between;
           margin-bottom: 3px;
-          font-size: 10px;
+          font-size: 13px;
+          padding: 2px 0;
         }
         
         .total-row.final {
           font-weight: bold;
-          font-size: 12px;
-          border-top: 1px solid #000;
-          padding-top: 5px;
-          margin-top: 5px;
+          font-size: 16px;
+          border-top: 2px solid #000;
+          padding-top: 4px;
+          margin-top: 4px;
         }
         
         .payment-info {
-          margin-bottom: 15px;
+          margin-bottom: 8px;
           border-bottom: 1px dashed #000;
-          padding-bottom: 10px;
+          padding-bottom: 6px;
         }
         
         .payment-row {
           display: flex;
           justify-content: space-between;
           margin-bottom: 3px;
-          font-size: 9px;
+          font-size: 12px;
+          padding: 2px 0;
         }
         
         .footer {
           text-align: center;
-          font-size: 8px;
+          font-size: 11px;
           line-height: 1.3;
           color: #666;
+          margin-top: 8px;
         }
         
         .divider {
           border-top: 1px dashed #000;
-          margin: 10px 0;
+          margin: 6px 0;
         }
         
         @media print {
           body { 
             margin: 0; 
-            padding: 5px;
+            padding: 3px;
             -webkit-print-color-adjust: exact;
             color-adjust: exact;
+            font-size: 12px;
           }
           .receipt-container {
             width: 80mm;
             max-width: 80mm;
+          }
+          .store-name {
+            font-size: 16px;
+          }
+          .total-row.final {
+            font-size: 14px;
           }
         }
       </style>
@@ -214,14 +229,14 @@ export const generateReceiptHTML = (
         
         <!-- Items -->
         <div class="items-section">
-          <div class="item" style="font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 8px;">
+          <div class="item" style="font-weight: bold; border-bottom: 2px solid #000; padding-bottom: 4px; margin-bottom: 6px; background-color: #f5f5f5; padding: 4px;">
             <span class="item-name">ITEM</span>
-            <span class="item-details">QTY × PRICE</span>
+            <span class="item-details">QTY × PRICE = TOTAL</span>
           </div>
           ${receiptData.items?.map((item: { name: string; quantity: number; price: number; }) => `
-            <div class="item">
+            <div class="item" style="border-bottom: 1px dotted #ccc;">
               <span class="item-name">${item.name}</span>
-              <span class="item-details">${item.quantity} × ${receiptData.currencySymbol || '$'}${item.price}</span>
+              <span class="item-details">${item.quantity} × ${receiptData.currencySymbol || '$'}${item.price.toFixed(2)} = ${receiptData.currencySymbol || '$'}${(item.quantity * item.price).toFixed(2)}</span>
             </div>
           `).join('') || ''}
         </div>
@@ -230,17 +245,17 @@ export const generateReceiptHTML = (
         <div class="totals-section">
           <div class="total-row">
             <span>Subtotal:</span>
-            <span>${receiptData.currencySymbol || '$'}${receiptData.subtotal}</span>
+            <span>${receiptData.currencySymbol || '$'}${receiptData.subtotal.toFixed(2)}</span>
           </div>
           ${receiptData.tax > 0 ? `
             <div class="total-row">
               <span>Tax:</span>
-              <span>${receiptData.currencySymbol || '$'}${receiptData.tax}</span>
+              <span>${receiptData.currencySymbol || '$'}${receiptData.tax.toFixed(2)}</span>
             </div>
           ` : ''}
           <div class="total-row final">
             <span>TOTAL:</span>
-            <span>${receiptData.currencySymbol || '$'}${receiptData.total}</span>
+            <span>${receiptData.currencySymbol || '$'}${receiptData.total.toFixed(2)}</span>
           </div>
         </div>
         
@@ -253,11 +268,11 @@ export const generateReceiptHTML = (
             </div>
             <div class="payment-row">
               <span>Cash Received:</span>
-              <span>${receiptData.currencySymbol || '$'}${receiptData.cashAmount}</span>
+              <span>${receiptData.currencySymbol || '$'}${receiptData.cashAmount.toFixed(2)}</span>
             </div>
             <div class="payment-row">
               <span>Change:</span>
-              <span>${receiptData.currencySymbol || '$'}${receiptData.change || 0}</span>
+              <span>${receiptData.currencySymbol || '$'}${(receiptData.change || 0).toFixed(2)}</span>
             </div>
           </div>
         ` : `
