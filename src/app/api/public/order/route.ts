@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 import { sendOrderConfirmationEmail, sendBusinessOrderNotification } from '@/lib/email/orderEmails';
 import { sendWhatsAppMessage } from '@/lib/whatsapp/whatsappService';
+import { getBaseUrl } from '@/utils/getBaseUrl';
 
 export async function POST(request: NextRequest) {
   try {
@@ -131,6 +132,40 @@ export async function POST(request: NextRequest) {
     } catch (emailError) {
       console.error('Email notification failed:', emailError);
       // Don't fail the order creation if email fails
+    }
+
+    // Create notification for the order
+    try {
+      const notificationResponse = await fetch(`${getBaseUrl()}/api/orders/webhook`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId: order.id,
+          storeId: store_id,
+          businessId: business_id,
+          orderData: {
+            customer_name,
+            customer_phone,
+            customer_email: customer_email || null,
+            customer_address: customer_address || null,
+            total_amount,
+            subtotal,
+            order_items,
+            notes: notes || null
+          }
+        }),
+      });
+
+      if (!notificationResponse.ok) {
+        console.error('Failed to create order notification:', await notificationResponse.text());
+      } else {
+        console.log('Order notification created successfully');
+      }
+    } catch (notificationError) {
+      console.error('Error creating order notification:', notificationError);
+      // Don't fail the order creation if notification fails
     }
 
     // Log activity

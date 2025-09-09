@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { Notification, NotificationStats } from '@/types/notification';
@@ -41,7 +42,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       }
 
       const data = await response.json();
-      setNotifications(data.notifications || []);
+      // Ensure all notifications have valid createdAt dates
+      const validNotifications = (data.notifications || []).map((notification: any) => ({
+        ...notification,
+        createdAt: notification.created_at || notification.createdAt || new Date().toISOString(),
+        updatedAt: notification.updated_at || notification.updatedAt || new Date().toISOString(),
+      }));
+      setNotifications(validNotifications);
     } catch (err) {
       console.error('Error fetching notifications:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch notifications');
@@ -170,16 +177,40 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
   }, [currentStore?.id, currentBusiness?.id, fetchNotifications]);
 
-  // Set up polling for new notifications every 30 seconds
+  // Set up polling for new notifications every 10 seconds for better real-time experience
   useEffect(() => {
     if (!currentStore?.id || !currentBusiness?.id) return;
 
     const interval = setInterval(() => {
       fetchNotifications();
-    }, 30000); // 30 seconds
+    }, 10000); // 10 seconds for better real-time experience
 
     return () => clearInterval(interval);
   }, [currentStore?.id, currentBusiness?.id, fetchNotifications]);
+
+  // Optional: Play sound for new order notifications (can be enabled if needed)
+  // useEffect(() => {
+  //   const newOrderNotifications = notifications.filter(
+  //     notification => 
+  //       notification.type === 'order' && 
+  //       !notification.isRead &&
+  //       new Date(notification.createdAt).getTime() > Date.now() - 15000 // Last 15 seconds
+  //   );
+
+  //   if (newOrderNotifications.length > 0) {
+  //     // Play notification sound
+  //     try {
+  //       const audio = new Audio('/sounds/notification.mp3');
+  //       audio.volume = 0.5;
+  //       audio.play().catch(() => {
+  //         // Fallback to system beep if audio file doesn't exist
+  //         console.log('\u0007'); // System beep
+  //       });
+  //     } catch {
+  //       console.log('\u0007'); // System beep fallback
+  //     }
+  //   }
+  // }, [notifications]);
 
   const value: NotificationContextType = {
     notifications,

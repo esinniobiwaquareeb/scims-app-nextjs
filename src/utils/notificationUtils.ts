@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Notification } from '@/types/notification';
+import { getBaseUrl } from './getBaseUrl';
 
 export interface OrderNotificationData {
   orderId: string;
@@ -38,7 +38,7 @@ export async function createOrderNotification(
       businessId,
     };
 
-    const response = await fetch('/api/notifications', {
+    const response = await fetch(`${getBaseUrl()}/api/notifications`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -47,10 +47,11 @@ export async function createOrderNotification(
     });
 
     if (!response.ok) {
-      throw new Error('Failed to create order notification');
+      const errorData = await response.json();
+      throw new Error(`Failed to create order notification: ${errorData.error || 'Unknown error'}`);
     }
 
-    console.log('Order notification created successfully');
+    console.log(`Order notification created successfully for order ${orderData.orderId}`);
   } catch (error) {
     console.error('Error creating order notification:', error);
     // Don't throw error to avoid breaking the order creation flow
@@ -74,7 +75,7 @@ export async function createSystemNotification(
       businessId,
     };
 
-    const response = await fetch('/api/notifications', {
+    const response = await fetch(`${getBaseUrl()}/api/notifications`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -109,7 +110,7 @@ export async function createAlertNotification(
       businessId,
     };
 
-    const response = await fetch('/api/notifications', {
+    const response = await fetch(`${getBaseUrl()}/api/notifications`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

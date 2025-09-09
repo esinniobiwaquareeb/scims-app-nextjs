@@ -24,8 +24,19 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Notification } from '@/types/notification';
-import { createTestOrderNotification } from '@/utils/testNotifications';
-import { useAuth } from '@/contexts/AuthContext';
+
+// Helper function to safely format dates
+const formatNotificationTime = (dateString: string): string => {
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return 'Unknown time';
+    }
+    return formatDistanceToNow(date, { addSuffix: true });
+  } catch {
+    return 'Unknown time';
+  }
+};
 
 interface NotificationPanelProps {
   isOpen: boolean;
@@ -33,7 +44,6 @@ interface NotificationPanelProps {
 }
 
 export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
-  const { currentStore, currentBusiness } = useAuth();
   const {
     notifications,
     stats,
@@ -99,12 +109,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
     await deleteNotification(notificationId);
   };
 
-  const handleCreateTestNotification = async () => {
-    if (currentStore?.id && currentBusiness?.id) {
-      await createTestOrderNotification(currentStore.id, currentBusiness.id);
-      await refreshNotifications();
-    }
-  };
+
 
   if (!isOpen) return null;
 
@@ -188,18 +193,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
               </Button>
             </div>
 
-            {/* Test button for development */}
-            <div className="flex gap-2 mt-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleCreateTestNotification}
-                className="flex-1"
-              >
-                <Bell className="w-4 h-4 mr-1" />
-                Test Order
-              </Button>
-            </div>
+
           </CardHeader>
 
           <CardContent className="p-0 flex-1">
@@ -266,36 +260,58 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
 
                               {/* Order details for order notifications */}
                               {notification.type === 'order' && notification.data && (
-                                <div className="bg-gray-50 rounded-md p-3 mb-2">
-                                  <div className="grid grid-cols-2 gap-2 text-xs">
-                                    {notification.data.customerName && (
+                                <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-2">
+                                  <div className="grid grid-cols-1 gap-2 text-xs">
+                                    <div className="flex items-center justify-between">
                                       <div className="flex items-center gap-1">
-                                        <User className="w-3 h-3 text-gray-500" />
-                                        <span className="font-medium">Customer:</span>
-                                        <span>{notification.data.customerName}</span>
+                                        <User className="w-3 h-3 text-green-600" />
+                                        <span className="font-medium text-green-800">Customer:</span>
+                                        <span className="text-green-700">{notification.data.customerName}</span>
                                       </div>
-                                    )}
+                                      {notification.data.totalAmount && (
+                                        <div className="flex items-center gap-1">
+                                          <DollarSign className="w-3 h-3 text-green-600" />
+                                          <span className="font-bold text-green-800">${notification.data.totalAmount.toFixed(2)}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                    
                                     {notification.data.customerPhone && (
                                       <div className="flex items-center gap-1">
-                                        <Phone className="w-3 h-3 text-gray-500" />
-                                        <span className="font-medium">Phone:</span>
-                                        <span>{notification.data.customerPhone}</span>
+                                        <Phone className="w-3 h-3 text-green-600" />
+                                        <span className="font-medium text-green-800">Phone:</span>
+                                        <span className="text-green-700">{notification.data.customerPhone}</span>
                                       </div>
                                     )}
-                                    {notification.data.totalAmount && (
-                                      <div className="flex items-center gap-1">
-                                        <DollarSign className="w-3 h-3 text-gray-500" />
-                                        <span className="font-medium">Total:</span>
-                                        <span>${notification.data.totalAmount.toFixed(2)}</span>
+                                    
+                                    {notification.data.orderItems && notification.data.orderItems.length > 0 && (
+                                      <div className="mt-2">
+                                        <div className="flex items-center gap-1 mb-1">
+                                          <Package className="w-3 h-3 text-green-600" />
+                                          <span className="font-medium text-green-800">Order Items:</span>
+                                        </div>
+                                        <div className="space-y-1">
+                                          {notification.data.orderItems.slice(0, 3).map((item: { name: string; quantity: number; price: number }, index: number) => (
+                                            <div key={index} className="flex justify-between text-xs text-green-700">
+                                              <span>{item.name}</span>
+                                              <span>Qty: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</span>
+                                            </div>
+                                          ))}
+                                          {notification.data.orderItems.length > 3 && (
+                                            <div className="text-xs text-green-600 font-medium">
+                                              +{notification.data.orderItems.length - 3} more items
+                                            </div>
+                                          )}
+                                        </div>
                                       </div>
                                     )}
-                                    {notification.data.orderItems && (
-                                      <div className="flex items-center gap-1 col-span-2">
-                                        <Package className="w-3 h-3 text-gray-500" />
-                                        <span className="font-medium">Items:</span>
-                                        <span>{notification.data.orderItems.length} items</span>
+                                    
+                                    <div className="mt-2 pt-2 border-t border-green-200">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-xs text-green-600 font-medium">Order ID: {notification.data.orderId}</span>
+                                        <span className="text-xs text-green-600">Status: Pending</span>
                                       </div>
-                                    )}
+                                    </div>
                                   </div>
                                 </div>
                               )}
@@ -303,13 +319,26 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                               <div className="flex items-center gap-2 text-xs text-gray-500">
                                 <Clock className="w-3 h-3" />
                                 <span>
-                                  {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                                  {formatNotificationTime(notification.createdAt)}
                                 </span>
                               </div>
                             </div>
 
                             <div className="flex items-center gap-1 ml-2">
-                              {!notification.isRead && (
+                              {/* Quick action for order notifications */}
+                              {notification.type === 'order' && !notification.isRead && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleMarkAsRead(notification)}
+                                  className="h-8 px-3 text-xs bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                  <Check className="w-3 h-3 mr-1" />
+                                  Process
+                                </Button>
+                              )}
+                              
+                              {!notification.isRead && notification.type !== 'order' && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -319,6 +348,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                                   <Check className="w-4 h-4" />
                                 </Button>
                               )}
+                              
                               <Button
                                 variant="ghost"
                                 size="sm"
