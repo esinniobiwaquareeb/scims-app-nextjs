@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
@@ -25,7 +24,6 @@ import {
   User,
   History,
   Receipt,
-  Search,
   Eye,
   DollarSign,
   Plus,
@@ -370,6 +368,7 @@ export const CashierDashboard: React.FC = () => {
     {
       key: 'id',
       label: 'Sale ID',
+      searchable: true,
       render: (sale: Sale) => (
         <div className="font-medium">
           #{sale.id.slice(-6)}
@@ -379,6 +378,7 @@ export const CashierDashboard: React.FC = () => {
     {
       key: 'timestamp',
       label: 'Date & Time',
+      searchable: false,
       render: (sale: Sale) => (
         <div className="text-sm">
           <div className="font-medium">{formatTableDateTime(sale.timestamp || sale.transaction_date || sale.created_at || new Date())}</div>
@@ -388,6 +388,7 @@ export const CashierDashboard: React.FC = () => {
     {
       key: 'customer',
       label: 'Customer',
+      searchable: true,
       render: (sale: Sale) => (
         <div className="text-sm">
           {(sale.customerName || sale.customers?.name) && (sale.customerName || sale.customers?.name) !== 'Walk-in Customer' ? (
@@ -406,6 +407,7 @@ export const CashierDashboard: React.FC = () => {
     {
       key: 'items',
       label: 'Items',
+      searchable: true,
       render: (sale: Sale) => (
         <div className="text-sm">
           <p className="font-medium">{sale.sale_items?.length || 0} items</p>
@@ -418,6 +420,7 @@ export const CashierDashboard: React.FC = () => {
     {
       key: 'payment',
       label: 'Payment',
+      searchable: true,
       render: (sale: Sale) => (
         <div className="text-sm">
           <div className="flex items-center gap-2 mb-1">
@@ -441,6 +444,7 @@ export const CashierDashboard: React.FC = () => {
     {
       key: 'total',
       label: 'Total',
+      searchable: true,
       render: (sale: Sale) => (
         <div className="text-right">
           <p className="font-semibold text-green-600">
@@ -452,6 +456,7 @@ export const CashierDashboard: React.FC = () => {
     {
       key: 'actions',
       label: 'Actions',
+      searchable: false,
       render: (sale: Sale) => (
         <Button
           size="sm"
@@ -621,28 +626,6 @@ export const CashierDashboard: React.FC = () => {
                 </Card>
               </div>
 
-              {/* Quick Access POS Card */}
-              <Card className="border-brand-primary/20 bg-brand-primary/5">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-brand-primary mb-2">Ready to Start a Sale?</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Open the Point of Sale system to process transactions, manage inventory, and serve customers.
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={() => router.push('/pos')} 
-                      className="bg-brand-primary hover:bg-brand-primary/90 text-white px-6 py-3 text-lg font-medium"
-                      size="lg"
-                    >
-                      <ShoppingCart className="w-6 h-6 mr-3" />
-                      Open POS
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Main Content Tabs */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                 <TabsList className="grid w-full grid-cols-3">
@@ -724,22 +707,6 @@ export const CashierDashboard: React.FC = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="flex items-center gap-4 mb-6">
-                        <div className="flex-1">
-                          <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                            <Input
-                              placeholder="Search sales by ID, customer name, phone, or product names..."
-                              value={searchTerm}
-                              onChange={(e) => setSearchTerm(e.target.value)}
-                              className="pl-10"
-                            />
-                          </div>
-                          {searchTerm.trim() && (
-                            <p className="text-sm text-muted-foreground mt-2">
-                              Found {filteredSalesData.length} sales matching &quot;{searchTerm}&quot;
-                            </p>
-                          )}
-                        </div>
                         <Select value={dateFilter} onValueChange={setDateFilter}>
                           <SelectTrigger className="w-40">
                             <SelectValue placeholder="Date Filter" />
@@ -762,7 +729,10 @@ export const CashierDashboard: React.FC = () => {
                         title="Sales History"
                         data={filteredSalesData}
                         columns={salesColumns}
-                        searchable={false}
+                        searchable={true}
+                        searchPlaceholder="Search sales by ID, customer name, phone, or product names..."
+                        searchValue={searchTerm}
+                        onSearchChange={setSearchTerm}
                         emptyMessage={searchTerm.trim() ? `No sales found matching &quot;${searchTerm}&quot;` : "No sales found"}
                         tableName="sales"
                         userRole={user?.role}
