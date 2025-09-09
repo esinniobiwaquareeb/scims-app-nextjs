@@ -14,12 +14,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch roles for the business
+    // Fetch all roles for the business (both system and custom)
+    // The UI will handle displaying them with appropriate badges and edit permissions
     const { data: roles, error } = await supabase
       .from('role')
       .select('*')
       .eq('business_id', businessId)
       .eq('is_active', true)
+      .order('is_system_role', { ascending: false }) // System roles first
       .order('name');
 
     if (error) {
@@ -30,7 +32,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(roles || []);
+    return NextResponse.json({
+      success: true,
+      roles: roles || []
+    });
   } catch (error) {
     console.error('Error fetching roles:', error);
     return NextResponse.json(

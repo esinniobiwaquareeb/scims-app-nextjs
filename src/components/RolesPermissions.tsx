@@ -61,10 +61,20 @@ interface UserRole {
   role_id: string;
   business_id: string;
   store_id: string | null;
-  user_name: string;
-  user_email: string;
-  role_name: string;
-  permissions: string[];
+  assigned_at: string;
+  is_active: boolean;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    username: string;
+    role: string;
+  };
+  role: {
+    id: string;
+    name: string;
+    description: string;
+  };
 }
 
 export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) => {
@@ -97,7 +107,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
   // Helper function to check if user can edit a role
   const canEditRole = useCallback((role: Role) => {
     const isBusinessAdmin = user?.role === 'business_admin' || 
-                           userRoles.some(ur => ur.role_name === 'business_admin' && ur.user_id === user?.id);
+                           userRoles.some(ur => ur.role.name === 'business_admin' && ur.user_id === user?.id);
     
     // Business admins can edit all roles, others can only edit custom roles
     return isBusinessAdmin || !role.is_system_role;
@@ -346,8 +356,8 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
       setSelectedUser(null);
       loadData();
       
-      logActivity('user_update', 'roles', `Role assigned to user "${selectedUser.user_name}"`, {
-        user_name: selectedUser.user_name,
+      logActivity('user_update', 'roles', `Role assigned to user "${selectedUser.user.name}"`, {
+        user_name: selectedUser.user.name,
         role_name: roles.find(r => r.id === selectedUser.role_id)?.name || 'Unknown'
       });
     } catch (err: unknown) {
@@ -730,11 +740,11 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
               {userRoles.map(userRole => (
                 <div key={userRole.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex-1">
-                    <h3 className="font-medium">{userRole.user_name}</h3>
-                    <p className="text-sm text-gray-600">{userRole.user_email}</p>
+                    <h3 className="font-medium">{userRole.user.name}</h3>
+                    <p className="text-sm text-gray-600">{userRole.user.email}</p>
                     <div className="flex items-center gap-2 mt-2">
                       <Badge variant="outline" className="text-xs">
-                        {userRole.role_name}
+                        {userRole.role.name}
                       </Badge>
                       {userRole.store_id && (
                         <Badge variant="secondary" className="text-xs">
@@ -752,8 +762,8 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
                         setSelectedUser(userRole);
                         setIsAssignRoleDialogOpen(true);
                       }}
-                      disabled={userRole.role_name === 'business_admin' || !hasPermission('roles_assign')}
-                      title={userRole.role_name === 'business_admin' ? 'Business admin role cannot be changed' : 'Change user role'}
+                      disabled={userRole.role.name === 'business_admin' || !hasPermission('roles_assign')}
+                      title={userRole.role.name === 'business_admin' ? 'Business admin role cannot be changed' : 'Change user role'}
                     >
                       <Edit className="w-3 h-3" />
                     </Button>
@@ -944,10 +954,10 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
             <div>
               <Label>User</Label>
               <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                <p className="font-medium">{selectedUser?.user_name}</p>
-                <p className="text-sm text-muted-foreground">{selectedUser?.user_email}</p>
+                <p className="font-medium">{selectedUser?.user.name}</p>
+                <p className="text-sm text-muted-foreground">{selectedUser?.user.email}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Current role: <Badge variant="outline" className="text-xs">{selectedUser?.role_name}</Badge>
+                  Current role: <Badge variant="outline" className="text-xs">{selectedUser?.role.name}</Badge>
                 </p>
               </div>
             </div>
