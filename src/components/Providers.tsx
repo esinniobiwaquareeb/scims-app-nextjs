@@ -8,6 +8,7 @@ import { SystemProvider } from '@/contexts/SystemContext';
 import { ActivityLoggerProvider } from '@/contexts/ActivityLogger';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import { NotificationProvider } from '@/contexts/NotificationContext';
 import { Toaster } from 'sonner';
 import { Analytics } from "@vercel/analytics/next"
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -35,9 +36,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <SystemProvider>
               <ActivityLoggerProvider>
                 <PermissionsProvider>
-                  {children}
-                  <Toaster />
-                  <Analytics />
+                  <NotificationProvider>
+                    {children}
+                    <Toaster />
+                    <Analytics />
+                  </NotificationProvider>
                 </PermissionsProvider>
               </ActivityLoggerProvider>
             </SystemProvider>

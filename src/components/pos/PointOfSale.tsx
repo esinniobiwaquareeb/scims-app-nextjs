@@ -86,6 +86,7 @@ import { SaveCartDialog } from './SaveCartDialog';
 import { LoadSavedCartsDialog } from './LoadSavedCartsDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface PointOfSaleProps {
   onBack: () => void;
@@ -1015,12 +1016,9 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
                 {/* Secondary Actions - Responsive Layout */}
                 <div className="flex items-center gap-1 lg:gap-2">
                   {/* Notifications - Hidden on very small screens */}
-                  <button className="flex items-center gap-1 lg:gap-2 px-2 lg:px-3 py-1.5 lg:py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all text-xs lg:text-sm hidden sm:flex">
-                    <svg className="w-3 h-3 lg:w-4 lg:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM8 9l-5 5 5 5V9z" />
-                    </svg>
-                    <span className="font-medium hidden lg:inline">Notifications</span>
-                  </button>
+                  <div className="hidden sm:flex">
+                    <NotificationBell className="flex items-center gap-1 lg:gap-2 px-2 lg:px-3 py-1.5 lg:py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all text-xs lg:text-sm" />
+                  </div>
 
                   {/* More - Hidden on very small screens */}
                   <button className="flex items-center gap-1 lg:gap-2 px-2 lg:px-3 py-1.5 lg:py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all text-xs lg:text-sm hidden sm:flex">

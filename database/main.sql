@@ -1473,6 +1473,51 @@ from
 
 
 -- ======================
+-- NOTIFICATION
+-- ======================
+
+create table public.notification (
+  id uuid not null default gen_random_uuid (),
+  type character varying(20) not null default 'system'::character varying,
+  title character varying(255) not null,
+  message text not null,
+  data jsonb null default '{}'::jsonb,
+  is_read boolean null default false,
+  store_id uuid not null,
+  business_id uuid not null,
+  created_at timestamp without time zone null default now(),
+  updated_at timestamp without time zone null default now(),
+  constraint notification_pkey primary key (id),
+  constraint notification_type_check check (
+    (
+      (type)::text = any (
+        array[
+          'order'::text,
+          'system'::text,
+          'alert'::text
+        ]
+      )
+    )
+  ),
+  constraint notification_business_id_fkey foreign KEY (business_id) references business (id) on delete CASCADE,
+  constraint notification_store_id_fkey foreign KEY (store_id) references store (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_notification_store_id on public.notification using btree (store_id) TABLESPACE pg_default;
+
+create index IF not exists idx_notification_business_id on public.notification using btree (business_id) TABLESPACE pg_default;
+
+create index IF not exists idx_notification_type on public.notification using btree (type) TABLESPACE pg_default;
+
+create index IF not exists idx_notification_is_read on public.notification using btree (is_read) TABLESPACE pg_default;
+
+create index IF not exists idx_notification_created_at on public.notification using btree (created_at) TABLESPACE pg_default;
+
+create trigger update_notification_updated_at BEFORE
+update on notification for EACH row
+execute FUNCTION update_updated_at_column ();
+
+-- ======================
 -- UTILITY FUNCTIONS
 -- ======================
 
