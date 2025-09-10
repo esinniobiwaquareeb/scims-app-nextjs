@@ -679,7 +679,7 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
                           type="tel"
                           value={localSettings.phone || ''}
                           onChange={(e) => setLocalSettings({...localSettings, phone: e.target.value})}
-                          placeholder="+1 (555) 123-4567"
+                          placeholder="+234 815 464 4324"
                         />
                       </div>
                       

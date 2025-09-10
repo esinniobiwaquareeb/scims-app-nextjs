@@ -267,7 +267,7 @@ export default function SupportPage() {
                   <Phone className="w-6 h-6 text-primary" />
                 </div>
                 <h3 className="font-semibold">Phone Support</h3>
-                <p className="text-muted-foreground text-sm">+1 (555) 123-4567</p>
+                <p className="text-muted-foreground text-sm">+234 815 464 4324</p>
                 <button 
                   className="text-primary hover:underline"
                   onClick={() => window.open('tel:+15551234567', '_blank')}

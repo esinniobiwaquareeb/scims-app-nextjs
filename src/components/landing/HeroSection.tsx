@@ -9,6 +9,12 @@ import Image from 'next/image';
 // Dashboard images data - moved outside component to prevent recreation
 const dashboardImages = [
   {
+    src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/pos-page.png',
+    alt: 'SCIMS POS System',
+    title: 'Point of Sale',
+    description: 'Process sales and transactions'
+  },
+  {
     src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/business-admin-dashboard.png',
     alt: 'SCIMS Business Admin Dashboard',
     title: 'Business Dashboard',
@@ -19,12 +25,6 @@ const dashboardImages = [
     alt: 'SCIMS Inventory Management',
     title: 'Inventory Management',
     description: 'Track products and stock levels'
-  },
-  {
-    src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/pos-page.png',
-    alt: 'SCIMS POS System',
-    title: 'Point of Sale',
-    description: 'Process sales and transactions'
   },
   {
     src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/pos-payment.png',

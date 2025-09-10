@@ -206,7 +206,7 @@ export default function TermsOfServicePage() {
               </div>
               <div className="flex items-center justify-center space-x-3">
                 <Phone className="w-5 h-5 text-primary" />
-                <span>+1 (555) 123-4567</span>
+                <span>+234 815 464 4324</span>
               </div>
               <div className="flex items-center justify-center space-x-3">
                 <MapPin className="w-5 h-5 text-primary" />

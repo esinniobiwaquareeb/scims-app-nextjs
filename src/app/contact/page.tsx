@@ -57,14 +57,14 @@ export default function ContactPage() {
       icon: MessageSquare,
       title: 'WhatsApp Support',
       description: 'Get instant help via WhatsApp',
-      contact: '+234 800 000 0000',
+      contact: '+234 815 464 4324',
       action: 'Chat Now'
     },
     {
       icon: Phone,
       title: 'Phone Support',
       description: 'Call us for immediate assistance',
-      contact: '+234 800 000 0000',
+      contact: '+234 815 464 4324',
       action: 'Call Now'
     },
     {
