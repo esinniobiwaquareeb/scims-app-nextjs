@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSystem } from '@/contexts/SystemContext';
 import { Header } from '@/components/common/Header';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
@@ -22,9 +20,7 @@ import {
   Settings,
   Loader2,
   Search,
-  UserCheck,
   Lock,
-  Unlock,
   Eye
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
@@ -79,7 +75,6 @@ interface UserRole {
 
 export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) => {
   const { user, currentBusiness } = useAuth();
-  const { translate } = useSystem();
   const { hasPermission } = usePermissions();
   const { logActivity } = useActivityLogger();
   
@@ -88,10 +83,12 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isAddRoleDialogOpen, setIsAddRoleDialogOpen] = useState(false);
   const [isEditRoleDialogOpen, setIsEditRoleDialogOpen] = useState(false);
+  const [isDeleteRoleDialogOpen, setIsDeleteRoleDialogOpen] = useState(false);
   const [isAssignRoleDialogOpen, setIsAssignRoleDialogOpen] = useState(false);
   const [isViewPermissionsDialogOpen, setIsViewPermissionsDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserRole | null>(null);
+  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
@@ -113,12 +110,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
     return isBusinessAdmin || !role.is_system_role;
   }, [user, userRoles]);
 
-  // Load data
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!currentBusiness?.id) return;
     
     try {
@@ -149,7 +141,12 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentBusiness?.id]);
+
+  // Load data
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Group permissions by category for the modal
   const groupedPermissions = useMemo(() => {
@@ -418,30 +415,19 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" onClick={onBack}>
-                <Shield className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">Roles & Permissions</h1>
-                <p className="text-sm text-muted-foreground">
-                  Manage staff roles and access permissions
-                  {currentBusiness && ` for ${currentBusiness.name}`}
-                </p>
-              </div>
-            </div>
-            <Dialog open={isAddRoleDialogOpen} onOpenChange={setIsAddRoleDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Role
-                </Button>
-              </DialogTrigger>
+      <Header
+        title="Roles & Permissions"
+        subtitle={`Manage staff roles and access permissions${currentBusiness ? ` for ${currentBusiness.name}` : ''}`}
+        showBackButton
+        onBack={onBack}
+      >
+        <Dialog open={isAddRoleDialogOpen} onOpenChange={setIsAddRoleDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Role
+            </Button>
+          </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
                 <DialogHeader>
                   <DialogTitle>Create New Role</DialogTitle>
@@ -535,9 +521,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
                 </div>
               </DialogContent>
             </Dialog>
-          </div>
-        </div>
-      </header>
+      </Header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Error Display */}
@@ -604,173 +588,207 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
         {/* Search and Filters */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <div className="flex gap-4 items-center">
-              <div className="flex-1 relative">
+            <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+              <div className="flex-1 w-full min-w-0 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   placeholder="Search roles or users..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="w-full pl-10"
                 />
               </div>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filter by category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="All">All Categories</SelectItem>
-                  {Array.from(new Set(permissions.map(perm => perm.category)))
-                    .sort()
-                    .map(category => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2 sm:gap-4">
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Filter by category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="All">All Categories</SelectItem>
+                    {Array.from(new Set(permissions.map(perm => perm.category)))
+                      .sort()
+                      .map(category => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadData}
+                  disabled={isLoading}
+                  className="flex items-center gap-2"
+                >
+                  <Loader2 className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Roles Section */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Roles</CardTitle>
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Roles ({filteredRoles.length})</CardTitle>
+              {searchTerm && (
+                <div className="text-sm text-muted-foreground">
+                  {filteredRoles.length} of {roles.length} roles found
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {filteredRoles.map(role => (
-                <div key={role.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium">{role.name}</h3>
-                      {role.is_system_role && (
-                        <div className="flex items-center gap-1">
-                          <Lock className="w-4 h-4 text-blue-500" />
-                          <Badge variant="outline" className="text-xs text-blue-600">System</Badge>
-                          {canEditRole(role) && (
-                            <Badge variant="secondary" className="text-xs text-green-600">Editable</Badge>
-                          )}
-                        </div>
-                      )}
-                      {role.name === 'business_admin' && (
-                        <Badge variant="secondary" className="text-xs">Owner</Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">{role.description}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="outline" className="text-xs">
-                        {role.permissions.length} permissions
-                      </Badge>
-                      <Badge variant={role.is_active ? "default" : "secondary"} className="text-xs">
-                        {role.is_system_role ? 'System' : 'Custom'}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openViewPermissionsDialog(role)}
-                      title="View permissions"
-                    >
-                      <Eye className="w-3 h-3" />
-                    </Button>
-                    
+            {filteredRoles.length === 0 ? (
+              <div className="text-center py-8">
+                <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                {searchTerm ? (
+                  <div>
+                    <p className="text-muted-foreground mb-2">No roles found for &quot;{searchTerm}&quot;</p>
                     <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => openEditDialog(role)}
-                      disabled={!hasPermission('roles_edit') || !canEditRole(role)}
-                      title={!canEditRole(role) ? 'Only business admins can edit system roles' : 'Edit role permissions'}
+                      variant="outline" 
+                      onClick={() => setSearchTerm('')}
+                      className="text-sm"
                     >
-                      <Edit className="w-3 h-3" />
+                      Clear search
                     </Button>
-                    
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          size="sm" 
-                          variant="destructive"
-                          disabled={isSaving || !hasPermission('roles_delete')}
-                          title="Delete this role"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Role</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete the role &quot;{role.name}&quot;? This action cannot be undone.
-                            {role.is_system_role && (
-                              <span className="block mt-2 text-amber-600">
-                                ⚠️ This is a system role. Deleting it may affect system functionality.
-                              </span>
-                            )}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteRole(role)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Delete Role
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
                   </div>
-                </div>
-              ))}
-            </div>
+                ) : (
+                  <p className="text-muted-foreground">No roles found</p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredRoles.map(role => (
+                  <div key={role.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-medium">{role.name}</h3>
+                        {role.is_system_role && (
+                          <div className="flex items-center gap-1">
+                            <Lock className="w-4 h-4 text-blue-500" />
+                            <Badge variant="outline" className="text-xs text-blue-600">System</Badge>
+                            {canEditRole(role) && (
+                              <Badge variant="secondary" className="text-xs text-green-600">Editable</Badge>
+                            )}
+                          </div>
+                        )}
+                        {role.name === 'business_admin' && (
+                          <Badge variant="secondary" className="text-xs">Owner</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">{role.description}</p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {role.permissions.length} permissions
+                        </Badge>
+                        <Badge variant={role.is_active ? "default" : "secondary"} className="text-xs">
+                          {role.is_system_role ? 'System' : 'Custom'}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openViewPermissionsDialog(role)}
+                        title="View permissions"
+                      >
+                        <Eye className="w-3 h-3" />
+                      </Button>
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => openEditDialog(role)}
+                        disabled={!hasPermission('roles_edit') || !canEditRole(role)}
+                        title={!canEditRole(role) ? 'Only business admins can edit system roles' : 'Edit role permissions'}
+                      >
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                      
+                      <Button 
+                        size="sm" 
+                        variant="destructive"
+                        onClick={() => {
+                          setRoleToDelete(role);
+                          setIsDeleteRoleDialogOpen(true);
+                        }}
+                        disabled={isSaving || !hasPermission('roles_delete') || role.is_system_role}
+                        title={role.is_system_role ? 'System roles cannot be deleted' : 'Delete this role'}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
         {/* User Roles Section */}
         <Card>
           <CardHeader>
-            <CardTitle>User Role Assignments</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>User Role Assignments ({userRoles.length})</CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {userRoles.map(userRole => (
-                <div key={userRole.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex-1">
-                    <h3 className="font-medium">{userRole.user.name}</h3>
-                    <p className="text-sm text-gray-600">{userRole.user.email}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="outline" className="text-xs">
-                        {userRole.role.name}
-                      </Badge>
-                      {userRole.store_id && (
-                        <Badge variant="secondary" className="text-xs">
-                          Store Assigned
+            {userRoles.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                <p className="text-muted-foreground">No user role assignments found</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {userRoles.map(userRole => (
+                  <div key={userRole.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-medium">{userRole.user.name}</h3>
+                        <Badge variant="outline" className="text-xs">
+                          @{userRole.user.username}
                         </Badge>
-                      )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">{userRole.user.email}</p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {userRole.role.name}
+                        </Badge>
+                        {userRole.store_id && (
+                          <Badge variant="outline" className="text-xs">
+                            Store Assigned
+                          </Badge>
+                        )}
+                        <Badge variant={userRole.is_active ? "default" : "secondary"} className="text-xs">
+                          {userRole.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedUser(userRole);
+                          setIsAssignRoleDialogOpen(true);
+                        }}
+                        disabled={userRole.role.name === 'business_admin' || !hasPermission('roles_assign')}
+                        title={userRole.role.name === 'business_admin' ? 'Business admin role cannot be changed' : 'Change user role'}
+                      >
+                        <Edit className="w-3 h-3" />
+                      </Button>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedUser(userRole);
-                        setIsAssignRoleDialogOpen(true);
-                      }}
-                      disabled={userRole.role.name === 'business_admin' || !hasPermission('roles_assign')}
-                      title={userRole.role.name === 'business_admin' ? 'Business admin role cannot be changed' : 'Change user role'}
-                    >
-                      <Edit className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>
@@ -1028,6 +1046,46 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Role Confirmation Dialog */}
+      <AlertDialog open={isDeleteRoleDialogOpen} onOpenChange={setIsDeleteRoleDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Role</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the role &quot;{roleToDelete?.name}&quot;? This action cannot be undone.
+              {roleToDelete?.is_system_role && (
+                <span className="block mt-2 text-amber-600">
+                  ⚠️ This is a system role. Deleting it may affect system functionality.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteRoleDialogOpen(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (roleToDelete) {
+                  handleDeleteRole(roleToDelete);
+                  setIsDeleteRoleDialogOpen(false);
+                  setRoleToDelete(null);
+                }
+              }}
+              disabled={isSaving || !hasPermission('roles_delete')}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete Role'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

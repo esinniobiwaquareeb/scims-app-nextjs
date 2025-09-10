@@ -26,7 +26,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,8 +37,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   useBusinessStaff,
   useStoreStaff,
@@ -51,8 +50,6 @@ import {
 } from "@/utils/hooks/useStoreData";
 import { toast } from "sonner";
 import {
-
-  Plus,
   Edit,
   Trash2,
   UserPlus,
@@ -61,12 +58,6 @@ import {
   Loader2,
   Search,
   Eye,
-  Download,
-  Calendar,
-  Filter,
-  UserCheck,
-  Settings,
-  Receipt,
   RefreshCw,
   Key,
   Users,
@@ -123,7 +114,6 @@ const StaffForm = ({
   onChange,
   onSave,
   onCancel,
-  title,
   stores,
   isSaving,
 }: {
@@ -131,7 +121,6 @@ const StaffForm = ({
   onChange: (staffMember: Partial<Staff>) => void;
   onSave: () => void;
   onCancel: () => void;
-  title: string;
   stores: Store[];
   isSaving: boolean;
 }) => (
@@ -299,12 +288,11 @@ const StaffForm = ({
 
 export const StaffManagement: React.FC<StaffManagementProps> = ({
   onBack,
-  onNavigate,
 }) => {
   const router = useRouter();
   const { user, currentBusiness, currentStore } = useAuth();
-  const { translate, formatCurrency } = useSystem();
-  const { hasPermission, canCreate, canEdit, canDelete } = usePermissions();
+  const { formatCurrency } = useSystem();
+  const { canCreate, canEdit, canDelete } = usePermissions();
   const { logActivity } = useActivityLogger();
 
   // State
@@ -314,8 +302,9 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   );
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
-  const [originalStaff, setOriginalStaff] = useState<Staff | null>(null);
+  const [staffToDelete, setStaffToDelete] = useState<Staff | null>(null);
   
   // Password reset state
   const [isPasswordResetDialogOpen, setIsPasswordResetDialogOpen] = useState(false);
@@ -534,7 +523,10 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
 
       try {
         const updatedStaff = { ...staff, is_active: !staff.is_active };
-        await updateStaffMutation.mutateAsync(updatedStaff);
+        await updateStaffMutation.mutateAsync({
+          staffId: id,
+          staffData: updatedStaff
+        });
       } catch (error: unknown) {
         console.error("Error toggling staff status:", error);
         toast.error("Failed to update staff status");
@@ -554,13 +546,6 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
     }
   }, [refetchStaff, refetchStores]);
 
-  const handleViewStaffDetail = useCallback(
-    (staffMember: Staff) => {
-  
-      router.push(`/staff/${staffMember.id}`);
-    },
-    [router]
-  );
 
   const openEditDialog = useCallback((staffMember: Staff) => {
     setSelectedStaff({ ...staffMember }); // Create a copy to avoid reference issues
@@ -647,7 +632,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
       console.error('Error resetting password:', error);
       throw error; // Re-throw to let the component handle it
     }
-  }, [staffForPasswordReset, resetUserPasswordMutation, currentBusiness, user]);
+  }, [staffForPasswordReset, resetUserPasswordMutation, currentBusiness, user, logActivity]);
 
   const closePasswordResetDialog = useCallback(() => {
     setIsPasswordResetDialogOpen(false);
@@ -665,200 +650,6 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
     );
   }
 
-  // DataTable columns configuration
-  const columns = [
-    {
-      key: "staffMember",
-      header: "Staff Member",
-      render: (staffMember: Staff) => (
-        <div className="flex items-center gap-3">
-          <Avatar>
-            <AvatarFallback>{getInitials(staffMember.name)}</AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-medium">{staffMember.name}</p>
-            <p className="text-sm text-muted-foreground">{staffMember.email}</p>
-            <p className="text-xs text-muted-foreground">
-              @{staffMember.username}
-            </p>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "role",
-      header: "Role",
-      render: (staffMember: Staff) => (
-        <Badge
-          variant="outline"
-          className={`${
-            ROLE_OPTIONS.find((r) => r.value === staffMember.role)?.color ||
-            "bg-gray-500"
-          } text-white`}
-        >
-          {ROLE_OPTIONS.find((r) => r.value === staffMember.role)?.label ||
-            staffMember.role}
-        </Badge>
-      ),
-    },
-    {
-      key: "store",
-      header: "Store",
-      render: (staffMember: Staff) => (
-        <div>
-          <p className="font-medium">
-            {staffMember.storeName || "Not assigned"}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {staffMember.phone || "No phone"}
-          </p>
-        </div>
-      ),
-    },
-    {
-      key: "performance",
-      header: "Performance",
-      render: (staffMember: Staff) => (
-        <div className="text-sm">
-          <p className="font-medium">
-            {formatCurrency(staffMember.totalSales || 0)}
-          </p>
-          <p className="text-muted-foreground">
-            {staffMember.transactionCount || 0} transactions
-          </p>
-        </div>
-      ),
-    },
-    {
-      key: "permissions",
-      header: "Permissions",
-      render: (staffMember: Staff) => (
-        <div className="flex flex-wrap gap-1">
-          {(staffMember.permissions || ["pos"])
-            .slice(0, 3)
-            .map((permission) => (
-              <Badge key={permission} variant="secondary" className="text-xs">
-                {permission}
-              </Badge>
-            ))}
-          {(staffMember.permissions || []).length > 3 && (
-            <Badge variant="outline" className="text-xs">
-              +{(staffMember.permissions || []).length - 3}
-            </Badge>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "status",
-      header: "Status",
-      render: (staffMember: Staff) => (
-        <div className="flex items-center gap-2">
-          <Switch
-            checked={staffMember.is_active}
-            onCheckedChange={() => toggleStaffStatus(staffMember.id)}
-            disabled={isSaving || !canEdit("user")}
-          />
-          <Badge variant={staffMember.is_active ? "default" : "secondary"}>
-            {staffMember.is_active ? "Active" : "Inactive"}
-          </Badge>
-        </div>
-      ),
-    },
-    {
-      key: "created",
-      header: "Created",
-      render: (staffMember: Staff) => (
-        <div>
-          <p className="text-sm">
-            {new Date(staffMember.created_at).toLocaleDateString()}
-          </p>
-          {staffMember.last_login && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Last login:{" "}
-              {new Date(staffMember.last_login).toLocaleDateString()}
-            </p>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "actions",
-      header: "Actions",
-      render: (staffMember: Staff) => (
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleViewStaffDetail(staffMember)}
-            disabled={!staffMember.store_id}
-            title={
-              !staffMember.store_id
-                ? "Staff not assigned to store"
-                : "View details"
-            }
-          >
-            <Eye className="w-3 h-3" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => openEditDialog(staffMember)}
-            disabled={!canEdit("staff")}
-          >
-            <Edit className="w-3 h-3" />
-          </Button>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={() => handlePasswordReset(staffMember)}
-            disabled={!canEdit("staff")}
-            title="Reset Password"
-            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-          >
-            <Key className="w-3 h-3" />
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                size="sm"
-                variant="destructive"
-                disabled={isSaving || !canDelete("user")}
-              >
-                <Trash2 className="w-3 h-3" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Staff Member</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete {staffMember.name}? This
-                  action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => handleDeleteStaff(staffMember)}
-                  disabled={isSaving || !canDelete("user")}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Deleting...
-                    </>
-                  ) : (
-                    "Delete Staff Member"
-                  )}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      ),
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -988,46 +779,48 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
         {/* Search and Filters */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <div className="flex gap-4 items-center flex-wrap">
-              <div className="flex-1 relative min-w-[200px]">
+            <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+              <div className="flex-1 w-full min-w-0 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   placeholder="Search staff by name, email, or username..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="w-full pl-10"
                 />
               </div>
-              {user?.role === "business_admin" && stores.length > 1 && (
-                <Select
-                  value={selectedStoreFilter}
-                  onValueChange={setSelectedStoreFilter}
+              <div className="flex gap-2 sm:gap-4">
+                {user?.role === "business_admin" && stores.length > 1 && (
+                  <Select
+                    value={selectedStoreFilter}
+                    onValueChange={setSelectedStoreFilter}
+                  >
+                    <SelectTrigger className="w-full sm:w-48">
+                      <SelectValue placeholder="Filter by store" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All Stores</SelectItem>
+                      {stores
+                        .filter((s: Store) => s.is_active)
+                        .map((store: Store) => (
+                          <SelectItem key={store.id} value={store.id}>
+                            {store.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefresh}
+                  disabled={isLoading}
+                  className="flex items-center gap-2"
                 >
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Filter by store" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="All">All Stores</SelectItem>
-                    {stores
-                      .filter((s: Store) => s.is_active)
-                      .map((store: Store) => (
-                        <SelectItem key={store.id} value={store.id}>
-                          {store.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={isLoading}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
+                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1195,43 +988,17 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                   >
                     <Key className="w-3 h-3" />
                   </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        disabled={isSaving || !canDelete("user")}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Staff Member</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete {staff.name}? This
-                          action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDeleteStaff(staff)}
-                          disabled={isSaving}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          {isSaving ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Deleting...
-                            </>
-                          ) : (
-                            "Delete Staff"
-                          )}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    disabled={isSaving || !canDelete("user")}
+                    onClick={() => {
+                      setStaffToDelete(staff);
+                      setIsDeleteDialogOpen(true);
+                    }}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
                 </div>
               ),
             },
@@ -1269,7 +1036,6 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                 onChange={handleSelectedStaffChange}
                 onSave={handleEditStaff}
                 onCancel={closeEditDialog}
-                title="Edit Staff"
                 stores={stores}
                 isSaving={isSaving}
               />
@@ -1291,7 +1057,6 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
               onChange={handleNewStaffChange}
               onSave={handleAddStaff}
               onCancel={closeAddDialog}
-              title="Add Staff"
               stores={stores}
               isSaving={isSaving}
             />
@@ -1333,6 +1098,41 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Staff Member</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete {staffToDelete?.name}? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (staffToDelete) {
+                    handleDeleteStaff(staffToDelete);
+                    setIsDeleteDialogOpen(false);
+                    setStaffToDelete(null);
+                  }
+                }}
+                disabled={isSaving || !canDelete("user")}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete Staff Member"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Password Reset Dialog */}
         <PasswordResetDialog
