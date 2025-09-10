@@ -31,6 +31,13 @@ export interface VerificationEmailData {
   businessName: string;
 }
 
+export interface PasswordResetEmailData {
+  to: string;
+  name: string;
+  resetUrl: string;
+  businessName?: string;
+}
+
 export interface EmailResult {
   success: boolean;
   messageId?: string;
@@ -323,6 +330,93 @@ Thank you for choosing SCIMS!
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Connection failed',
+      };
+    }
+  }
+
+  static async sendPasswordResetEmail(data: PasswordResetEmailData): Promise<EmailResult> {
+    try {
+      const { to, name, resetUrl, businessName = 'SCIMS' } = data;
+
+      const subject = `Password Reset Request - ${businessName}`;
+      
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Password Reset Request</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #A969A7 0%, #8B5A8B 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .button { display: inline-block; background: #A969A7; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+            .important { background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin: 20px 0; }
+            .security { background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 6px; padding: 15px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔐 Password Reset Request</h1>
+              <p>Reset your ${businessName} account password</p>
+            </div>
+            
+            <div class="content">
+              <h2>Hello ${name},</h2>
+              
+              <p>We received a request to reset your password for your <strong>${businessName}</strong> account.</p>
+              
+              <p>If you requested this password reset, click the button below to set a new password:</p>
+              
+              <div style="text-align: center;">
+                <a href="${resetUrl}" class="button">Reset My Password</a>
+              </div>
+              
+              <div class="important">
+                <strong>⏰ Important:</strong> This link will expire in 24 hours for security reasons.
+              </div>
+              
+              <div class="security">
+                <strong>🔒 Security Notice:</strong> If you didn't request this password reset, please ignore this email. Your password will remain unchanged.
+              </div>
+              
+              <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+              <p style="word-break: break-all; background: #f5f5f5; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px;">
+                ${resetUrl}
+              </p>
+            </div>
+            
+            <div class="footer">
+              <p>This email was sent from ${businessName} - Stock Control Inventory Management System</p>
+              <p>If you have any questions, please contact our support team.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const mailOptions = {
+        from: `"${businessName}" <${process.env.SMTP_USER}>`,
+        to: to,
+        subject: subject,
+        html: htmlContent,
+      };
+
+      const result = await transporter.sendMail(mailOptions);
+      
+      return {
+        success: true,
+        messageId: result.messageId,
+      };
+    } catch (error) {
+      console.error('Password reset email sending error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }

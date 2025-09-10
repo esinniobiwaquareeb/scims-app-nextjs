@@ -22,6 +22,7 @@ import {
 import Logo from '@/components/common/Logo';
 import { DemoUser } from "@/types/auth";
 import { useRouter } from "next/navigation";
+import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -29,6 +30,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [demoUsers, setDemoUsers] = useState<DemoUser[]>([]);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const { login, isLoading } = useAuth();
   const router = useRouter();
 
@@ -186,6 +188,17 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
+
+          <div className="text-center">
+            <Button
+              variant="link"
+              onClick={() => setIsForgotPasswordOpen(true)}
+              disabled={isLoading}
+              className="text-sm text-blue-600 hover:text-blue-800 h-auto p-0"
+            >
+              Forgot your password?
+            </Button>
+          </div>
           
           {demoUsers.length > 0 && (
             <div className="pt-2 border-t">
@@ -230,6 +243,12 @@ export default function LoginPage() {
           )}
         </CardContent>
       </Card>
+
+      <ForgotPasswordDialog
+        isOpen={isForgotPasswordOpen}
+        onClose={() => setIsForgotPasswordOpen(false)}
+        onBackToLogin={() => setIsForgotPasswordOpen(false)}
+      />
     </div>
   );
 }
