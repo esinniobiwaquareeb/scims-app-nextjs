@@ -9,14 +9,14 @@ import { DataTable } from '@/components/common/DataTable';
 import { PasswordResetDialog } from '@/components/common/PasswordResetDialog';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from './ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Switch } from './ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Avatar, AvatarFallback } from './ui/avatar';
 import { 
   useBusinessCashiers, 
   useBusinessStores, 
@@ -30,7 +30,6 @@ import {
 import { toast } from 'sonner';
 import { 
   Users, 
-  Plus, 
   Edit, 
   Trash2,
   UserPlus,
@@ -40,11 +39,6 @@ import {
   Search,
   Eye,
   Download,
-  Calendar,
-  Filter,
-  UserCheck,
-  Settings,
-  Receipt,
   Key
 } from 'lucide-react';
 
@@ -95,7 +89,6 @@ const CashierForm = ({
   onChange, 
   onSave, 
   onCancel,
-  title,
   stores,
   isSaving
 }: {
@@ -103,7 +96,6 @@ const CashierForm = ({
   onChange: (cashier: Partial<Cashier>) => void;
   onSave: () => void;
   onCancel: () => void;
-  title: string;
   stores: Store[];
   isSaving: boolean;
 }) => (
@@ -232,23 +224,22 @@ const CashierForm = ({
   </div>
 );
 
-export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack, onNavigate }) => {
+export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) => {
   const router = useRouter();
   const { user, currentBusiness, currentStore } = useAuth();
-  const { translate, formatCurrency } = useSystem();
+  const { formatCurrency } = useSystem();
   const { hasPermission } = usePermissions();
   const { logActivity } = useActivityLogger();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStoreFilter, setSelectedStoreFilter] = useState('All');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isCredentialsModalOpen, setIsCredentialsModalOpen] = useState(false);
   const [generatedCredentials, setGeneratedCredentials] = useState<{username: string, password: string} | null>(null);
   const [isSalesViewOpen, setIsSalesViewOpen] = useState(false);
   const [selectedCashier, setSelectedCashier] = useState<Cashier | null>(null);
   const [originalCashier, setOriginalCashier] = useState<Cashier | null>(null);
-  const [selectedCashierForSales, setSelectedCashierForSales] = useState<Cashier | null>(null);
+  const [selectedCashierForSales] = useState<Cashier | null>(null);
   
   // Password reset state
   const [isPasswordResetDialogOpen, setIsPasswordResetDialogOpen] = useState(false);
@@ -304,8 +295,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack, on
   // Cashier sales query (only when needed)
   const { 
     data: cashierSales = [], 
-    isLoading: isLoadingSales,
-    refetch: refetchCashierSales
+    isLoading: isLoadingSales
   } = useCashierSales(
     selectedCashierForSales?.id || '', 
     selectedCashierForSales?.store_id || '', 
@@ -341,24 +331,6 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack, on
     return matchesSearch && matchesStore;
   });
 
-  // Load cashier sales
-  const loadCashierSales = useCallback(async (cashier: Cashier) => {
-    if (!cashier.store_id) {
-      toast.error('Cashier is not assigned to a store');
-      return;
-    }
-
-    try {
-      setSelectedCashierForSales(cashier);
-      setIsSalesViewOpen(true);
-      
-      // Refetch sales data for the selected cashier
-      await refetchCashierSales();
-    } catch (err: unknown) {
-      console.error('Failed to load cashier sales:', err);
-      toast.error('Failed to load sales data');
-    }
-  }, [refetchCashierSales]);
 
   // Transform sales data for display (since React Query returns raw data)
   const transformedCashierSales = cashierSales.map((sale: CashierSale) => ({
@@ -773,31 +745,13 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack, on
             <Loader2 className={`w-4 h-4 mr-2 ${isLoadingCashiers || isLoadingStores ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button disabled={!hasPermission('cashiers_create')}>
-                <UserPlus className="w-4 h-4 mr-2" />
-                Add Cashier
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Add New Cashier</DialogTitle>
-                <DialogDescription>
-                  Create a new cashier account and assign to a store.
-                </DialogDescription>
-              </DialogHeader>
-              <CashierForm
-                cashier={newCashier}
-                onChange={handleNewCashierChange}
-                onSave={handleAddCashier}
-                onCancel={() => setIsAddDialogOpen(false)}
-                title="Add Cashier"
-                stores={stores}
-                isSaving={isSaving}
-              />
-            </DialogContent>
-          </Dialog>
+          <Button 
+            disabled={!hasPermission('cashiers_create')}
+            onClick={() => setIsAddDialogOpen(true)}
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Add Cashier
+          </Button>
         </div>
       </Header>
 
@@ -956,6 +910,26 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack, on
           }
         />
 
+        {/* Add Cashier Dialog */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Add New Cashier</DialogTitle>
+              <DialogDescription>
+                Create a new cashier account and assign to a store.
+              </DialogDescription>
+            </DialogHeader>
+            <CashierForm
+              cashier={newCashier}
+              onChange={handleNewCashierChange}
+              onSave={handleAddCashier}
+              onCancel={() => setIsAddDialogOpen(false)}
+              stores={stores}
+              isSaving={isSaving}
+            />
+          </DialogContent>
+        </Dialog>
+
         {/* Edit Cashier Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="max-w-lg">
@@ -971,7 +945,6 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack, on
                 onChange={handleSelectedCashierChange as (cashier: Partial<Cashier>) => void}
                 onSave={handleUpdateCashier}
                 onCancel={() => setIsEditDialogOpen(false)}
-                title="Edit Cashier"
                 stores={stores}
                 isSaving={isSaving}
             />

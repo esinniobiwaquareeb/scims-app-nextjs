@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { useActivityLogger } from '@/contexts/ActivityLogger';
@@ -10,12 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { 
   useStoreCustomers,
   useStoreSales,
@@ -27,7 +24,6 @@ import {
 } from '@/utils/hooks/useStoreData';
 import { toast } from 'sonner';
 import { 
-
   Plus, 
   Search, 
   Edit, 
@@ -39,9 +35,7 @@ import {
   TrendingUp,
   Receipt,
   User,
-  Filter,
   Download,
-  FileText,
   Activity,
   Eye,
   Loader2,
@@ -67,18 +61,6 @@ interface Customer {
   storeName?: string;
 }
 
-interface Sale {
-  createdAt: Date;
-  id: string;
-  customerId: string;
-  customerName: string;
-  total: number;
-  items: unknown[];
-  timestamp: Date;
-  paymentMethod: string;
-  receiptNumber?: string;
-  status?: string;
-}
 
 interface DBSale {
   id: string;
@@ -119,13 +101,10 @@ interface CustomerManagementProps {
 export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }) => {
   const { user, currentStore, currentBusiness } = useAuth();
   const { 
-    translate, 
     formatCurrency, 
     formatDate,
     formatDateTime,
-    formatRelativeTime,
-    isToday,
-    isYesterday
+    formatRelativeTime
   } = useSystem();
   const { logActivity } = useActivityLogger();
   
@@ -145,6 +124,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showCustomerDetail, setShowCustomerDetail] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   // React Query hooks
   const {
@@ -184,8 +164,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   // Customer sales query (only when needed)
   const {
     data: customerSales = [],
-    isLoading: isLoadingCustomerSales,
-    refetch: refetchCustomerSales
+    isLoading: isLoadingCustomerSales
   } = useCustomerSales(
     selectedCustomer?.id || '', 
     currentStore?.id || '',
@@ -197,7 +176,6 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
 
   // Loading states
   const isLoading = isLoadingCustomers || isLoadingSales || isLoadingCustomerSales || isLoadingBusinessStores;
-  const isSaving = createCustomerMutation.isPending || updateCustomerMutation.isPending || deleteCustomerMutation.isPending;
 
   // Transform database customers to match our interface with calculated stats
   const customers = useMemo(() => {
@@ -227,7 +205,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
         storeName: currentStore?.name || ''
       };
     });
-  }, [dbCustomers, storeSales, currentStore?.id]);
+  }, [dbCustomers, storeSales, currentStore?.id, currentStore?.name]);
 
   // Check if phone number already exists (for validation)
   const isPhoneNumberExists = useCallback((phone: string, excludeCustomerId?: string) => {
@@ -471,7 +449,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
       console.error('Failed to load export utilities:', error);
       toast.error('Export functionality not available');
     });
-  }, [filteredCustomers, currentStore?.name]);
+  }, [filteredCustomers, currentStore?.name, logActivity]);
 
 
 
@@ -567,28 +545,16 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
           <Button variant="ghost" size="sm" onClick={() => openEditDialog(customer)}>
             <Edit className="w-4 h-4" />
           </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <Trash2 className="w-4 h-4 text-red-600" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Customer</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete {customer.name}? This action cannot be undone.
-                  Their purchase history will be preserved but they will no longer appear in the customer list.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => handleDeleteCustomer(customer)}>
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => {
+              setSelectedCustomer(customer);
+              setIsDeleteDialogOpen(true);
+            }}
+          >
+            <Trash2 className="w-4 h-4 text-red-600" />
+          </Button>
         </div>
       )
     }
@@ -1076,6 +1042,31 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Customer</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedCustomer?.name}? This action cannot be undone.
+              Their purchase history will be preserved but they will no longer appear in the customer list.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (selectedCustomer) {
+                handleDeleteCustomer(selectedCustomer);
+                setIsDeleteDialogOpen(false);
+                setSelectedCustomer(null);
+              }
+            }}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
