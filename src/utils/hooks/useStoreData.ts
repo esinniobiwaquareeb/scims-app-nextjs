@@ -749,7 +749,7 @@ export const useDeleteBusinessSupplier = (businessId: string) => {
   
   return useMutation({
     mutationFn: async (supplierId: string) => {
-      const response = await fetch(`/api/suppliers/${supplierId}`, {
+      const response = await fetch(`/api/suppliers/${supplierId}?business_id=${businessId}`, {
         method: 'DELETE',
       });
       

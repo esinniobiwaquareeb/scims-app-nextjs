@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { toast } from 'sonner';
@@ -6,14 +6,12 @@ import { useActivityLogger } from '@/contexts/ActivityLogger';
 import { Header } from '@/components/common/Header';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { 
   useBusinessSuppliers,
   useCreateBusinessSupplier,
@@ -67,7 +65,6 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
   const {
     data: suppliers = [],
     isLoading: isLoadingSuppliers,
-    error: suppliersError,
     refetch: refetchSuppliers
   } = useBusinessSuppliers(currentBusiness?.id || '', {
     enabled: !!currentBusiness?.id
@@ -79,7 +76,6 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
   const deleteSupplierMutation = useDeleteBusinessSupplier(currentBusiness?.id || '');
 
   // Loading states
-  const isLoading = isLoadingSuppliers;
   const isSaving = createSupplierMutation.isPending || updateSupplierMutation.isPending || deleteSupplierMutation.isPending;
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -260,7 +256,7 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
       console.error('Failed to load export utilities:', error);
       toast.error('Export functionality not available');
     });
-  }, [filteredSuppliers, currentBusiness?.name]);
+  }, [filteredSuppliers, currentBusiness?.name, logActivity]);
 
   const columns = [
     {
@@ -307,7 +303,7 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
     {
       key: 'business',
       label: 'Business Info',
-      render: (supplier: Supplier) => (
+      render: () => (
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Package className="w-4 h-4 text-gray-400" />
@@ -319,7 +315,7 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
     {
       key: 'performance',
       label: 'Performance',
-      render: (supplier: Supplier) => (
+      render: () => (
         <div className="text-right">
           <p className="font-medium">N/A</p>
           <p className="text-sm text-muted-foreground">N/A</p>
@@ -375,13 +371,11 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
 
   const SupplierForm = ({ 
     supplier, 
-    onChange, 
     onSubmit, 
     submitLabel,
     isLoading = false
   }: { 
     supplier: Supplier; 
-    onChange?: (field: string, value: string) => void; 
     onSubmit: (updatedSupplier: Supplier) => void;
     submitLabel: string;
     isLoading?: boolean;
@@ -501,31 +495,13 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
           <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingSuppliers ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button disabled={isSaving}>
-              <Plus className="w-4 h-4 mr-2" />
-              {translate('common.add')} Supplier
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{translate('common.add')} New Supplier</DialogTitle>
-              <DialogDescription>
-                Add a new supplier to your business directory
-              </DialogDescription>
-            </DialogHeader>
-            <SupplierForm
-              supplier={newSupplier as unknown as Supplier}
-              onChange={(field: string, value: string) => {
-                // This will be handled by the local state in SupplierForm
-              }}
-              onSubmit={handleAddSupplier}
-              submitLabel={translate('common.add')}
-              isLoading={createSupplierMutation.isPending}
-            />
-          </DialogContent>
-        </Dialog>
+        <Button 
+          disabled={isSaving}
+          onClick={() => setIsAddDialogOpen(true)}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          {translate('common.add')} Supplier
+        </Button>
       </Header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -596,6 +572,24 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
         />
       </main>
 
+      {/* Add Supplier Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{translate('common.add')} New Supplier</DialogTitle>
+            <DialogDescription>
+              Add a new supplier to your business directory
+            </DialogDescription>
+          </DialogHeader>
+          <SupplierForm
+            supplier={newSupplier as unknown as Supplier}
+            onSubmit={handleAddSupplier}
+            submitLabel={translate('common.add')}
+            isLoading={createSupplierMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-2xl">
@@ -608,10 +602,6 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
           {editingSupplier && (
             <SupplierForm
               supplier={editingSupplier}
-              onChange={(field: string, value: string) => {
-                // This will be handled by the local state in SupplierForm
-                // We'll update the editingSupplier when the form is submitted
-              }}
               onSubmit={handleUpdateSupplier as unknown as (updatedSupplier: Supplier) => void}
               submitLabel={translate('common.save')}
               isLoading={updateSupplierMutation.isPending}
