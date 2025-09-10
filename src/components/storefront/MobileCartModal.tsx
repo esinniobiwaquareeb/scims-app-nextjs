@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -119,20 +118,30 @@ export default function MobileCartModal({
 }: MobileCartModalProps) {
   const { isDark } = useTheme();
 
+  if (!isOpen) return null;
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`max-w-md mx-auto h-[90vh] flex flex-col p-0 ${
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className={`relative w-full max-w-md mx-auto h-[90vh] max-h-[90vh] flex flex-col rounded-lg shadow-lg border ${
         isDark 
           ? 'bg-gray-900 border-gray-700' 
           : 'bg-white border-gray-200'
       }`}>
-        <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b">
+        {/* Header */}
+        <div className="flex-shrink-0 p-6 pb-4 border-b">
           <div className="flex items-center justify-between">
-            <DialogTitle className={`text-xl font-bold ${
+            <h2 className={`text-xl font-bold ${
               isDark ? 'text-white' : 'text-gray-900'
             }`}>
               Shopping Cart ({cart.length})
-            </DialogTitle>
+            </h2>
             <Button
               variant="ghost"
               size="sm"
@@ -142,10 +151,11 @@ export default function MobileCartModal({
               <X className="h-4 w-4" />
             </Button>
           </div>
-        </DialogHeader>
+        </div>
         
-        <div className="flex-1 overflow-hidden flex flex-col">
-          <div className="flex-1 overflow-y-auto">
+        {/* Content */}
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto min-h-0">
             <div className="p-6">
               <MobileCartContent
                 cart={cart}
@@ -172,8 +182,8 @@ export default function MobileCartModal({
             </div>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
 
