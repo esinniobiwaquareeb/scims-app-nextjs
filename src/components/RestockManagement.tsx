@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { useActivityLogger } from '@/contexts/ActivityLogger';
 import { Header } from '@/components/common/Header';
-import { DataTable } from '@/components/common/DataTable';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -13,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
-import { ScrollArea } from './ui/scroll-area';
 import { toast } from 'sonner';
 import { 
   Package, 
@@ -21,15 +19,12 @@ import {
   Edit, 
   Trash2, 
   AlertTriangle,
-  CheckCircle,
-  Clock,
-  Truck,
   Download,
   RefreshCw,
-  Loader2
+  Loader2,
+  Search
 } from 'lucide-react';
 import { 
-
   useCreateRestockOrder, 
   useUpdateRestockOrderStatus, 
   useReceiveRestockItems,
@@ -102,7 +97,7 @@ interface RestockManagementProps {
 
 export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) => {
   const { user, currentStore, currentBusiness } = useAuth();
-  const { translate, formatCurrency } = useSystem();
+  const { formatCurrency } = useSystem();
   const { logActivity } = useActivityLogger();
   
   // UI State
@@ -323,8 +318,22 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
 
   // Filter orders
   const filteredOrders = restockOrders.filter((order: RestockOrder) => {
-    const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.supplier?.name.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!searchTerm) {
+      const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+      return matchesStatus;
+    }
+    
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = 
+      order.id.toLowerCase().includes(searchLower) ||
+      order.supplier?.name?.toLowerCase().includes(searchLower) ||
+      order.notes?.toLowerCase().includes(searchLower) ||
+      order.status.toLowerCase().includes(searchLower) ||
+      order.items?.some(item => 
+        item.product?.name?.toLowerCase().includes(searchLower) ||
+        item.product?.sku?.toLowerCase().includes(searchLower)
+      );
+    
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -493,12 +502,22 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
           <Card>
             <CardContent className="p-6">
               <div className="flex gap-4 items-center">
-                <div className="flex-1">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     placeholder="Search orders, suppliers..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full h-10 pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                   />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 w-4 h-4"
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-48">
@@ -523,7 +542,14 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
           {/* Restock Orders Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Restock Orders</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Restock Orders</CardTitle>
+                {searchTerm && (
+                  <div className="text-sm text-gray-600">
+                    {filteredOrders.length} of {restockOrders.length} orders found
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {isAllStoresSelected ? (
@@ -537,7 +563,20 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
               ) : filteredOrders.length === 0 ? (
                 <div className="text-center py-8">
                   <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-muted-foreground">No restock orders found</p>
+                  {searchTerm ? (
+                    <div>
+                      <p className="text-muted-foreground mb-2">No restock orders found for &quot;{searchTerm}&quot;</p>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setSearchTerm('')}
+                        className="text-sm"
+                      >
+                        Clear search
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">No restock orders found</p>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4">
