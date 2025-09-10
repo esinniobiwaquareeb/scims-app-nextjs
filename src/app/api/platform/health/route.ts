@@ -36,13 +36,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Get count for pagination
+    const { count } = await supabase
+      .from('platform_health')
+      .select('*', { count: 'exact', head: true });
+
     return NextResponse.json({
       success: true,
       healthMetrics: healthMetrics || [],
       pagination: {
         limit,
         offset,
-        total: healthMetrics?.length || 0
+        total: count || 0
       }
     });
 
@@ -73,8 +78,7 @@ export async function POST(request: NextRequest) {
       status: body.status,
       response_time_ms: body.response_time_ms || null,
       error_message: body.error_message || null,
-      metadata: body.metadata || null,
-      created_at: new Date().toISOString()
+      metadata: body.metadata || null
     };
 
     const { data: health, error } = await supabase

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Loader2, Package } from 'lucide-react';
+import { Loader2, Package, Heart } from 'lucide-react';
 import StorefrontHeader from '@/components/storefront/StorefrontHeader';
 import ProductFilters from '@/components/storefront/ProductFilters';
 import ProductCard from '@/components/storefront/ProductCard';
@@ -111,6 +111,43 @@ export default function StorefrontPage() {
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
+  
+  // Payment method
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
+  const [availablePaymentMethods, setAvailablePaymentMethods] = useState<string[]>(['pay_on_delivery']);
+  
+  // Wishlist
+  const [wishlist, setWishlist] = useState<string[]>([]);
+
+  const fetchPlatformSettings = useCallback(async () => {
+    try {
+      const response = await fetch('/api/platform/settings');
+      const data = await response.json();
+      
+      if (data.success) {
+        // Update available payment methods based on platform settings
+        const methods: string[] = [];
+        if (data.settings.enable_pay_on_delivery) {
+          methods.push('pay_on_delivery');
+        }
+        if (data.settings.enable_online_payment) {
+          methods.push('online_payment');
+        }
+        
+        setAvailablePaymentMethods(methods);
+        
+        // Set default payment method
+        if (methods.length > 0 && !selectedPaymentMethod) {
+          setSelectedPaymentMethod(methods[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching platform settings:', error);
+      // Fallback to default payment methods
+      setAvailablePaymentMethods(['pay_on_delivery']);
+      setSelectedPaymentMethod('pay_on_delivery');
+    }
+  }, [selectedPaymentMethod]);
 
   const fetchStoreData = useCallback(async () => {
     try {
@@ -175,8 +212,9 @@ export default function StorefrontPage() {
   useEffect(() => {
     if (slug) {
       fetchStoreData();
+      fetchPlatformSettings();
     }
-  }, [slug, fetchStoreData]);
+  }, [slug, fetchStoreData, fetchPlatformSettings]);
 
   useEffect(() => {
     filterProducts();
@@ -213,6 +251,23 @@ export default function StorefrontPage() {
           : item
       )
     );
+  };
+
+  const updateProductQuantity = (product: Product, quantity: number) => {
+    updateQuantity(product.id, quantity);
+  };
+
+  const addToWishlist = (product: Product) => {
+    setWishlist(prev => [...prev, product.id]);
+  };
+
+  const removeFromWishlist = (product: Product) => {
+    setWishlist(prev => prev.filter(id => id !== product.id));
+  };
+
+  const getCartQuantity = (productId: string) => {
+    const item = cart.find(item => item.product.id === productId);
+    return item ? item.quantity : 0;
   };
 
   const getCartTotal = () => {
@@ -257,7 +312,8 @@ export default function StorefrontPage() {
           order_items: orderItems,
           subtotal: getCartTotal(),
           total_amount: getCartTotal(),
-          notes: orderNotes
+          notes: orderNotes,
+          payment_method: selectedPaymentMethod
         }),
       });
 
@@ -362,66 +418,113 @@ export default function StorefrontPage() {
   if (!business) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <StorefrontHeader business={business} />
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-4">
-            <ProductFilters
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              categories={categories}
-            />
+            {/* Products Count and Filters */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Our Products
+                  </h2>
+                  <p className="text-gray-600 mt-1">
+                    {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} available
+                  </p>
+                </div>
+                <div className="flex items-center space-x-4 text-sm">
+                  {cart.length > 0 && (
+                    <div className="text-primary font-medium">
+                      {cart.length} {cart.length === 1 ? 'item' : 'items'} in cart
+                    </div>
+                  )}
+                  {wishlist.length > 0 && (
+                    <div className="text-red-500 font-medium flex items-center">
+                      <Heart className="w-4 h-4 mr-1 fill-current" />
+                      {wishlist.length} {wishlist.length === 1 ? 'item' : 'items'} in wishlist
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <ProductFilters
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                categories={categories}
+              />
+            </div>
 
             {/* Products Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
                   business={business}
                   onAddToCart={addToCart}
+                  onAddToWishlist={addToWishlist}
+                  onRemoveFromWishlist={removeFromWishlist}
+                  onUpdateQuantity={updateProductQuantity}
+                  cartQuantity={getCartQuantity(product.id)}
+                  isInWishlist={wishlist.includes(product.id)}
                 />
               ))}
             </div>
 
             {filteredProducts.length === 0 && (
-              <div className="text-center py-12">
-                <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No products found</h3>
-                <p className="text-gray-600">Try adjusting your search or filters</p>
+              <div className="text-center py-16">
+                <div className="bg-white rounded-2xl shadow-sm border p-12 max-w-md mx-auto">
+                  <Package className="w-20 h-20 text-gray-300 mx-auto mb-6" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No products found</h3>
+                  <p className="text-gray-600 mb-6">Try adjusting your search or filters to find what you&pos;re looking for</p>
+                  <Button 
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSelectedCategory('');
+                    }}
+                    variant="outline"
+                  >
+                    Clear Filters
+                  </Button>
+                </div>
               </div>
             )}
           </div>
 
           {/* Cart Sidebar */}
           <div className="lg:col-span-1">
-            <StorefrontCart
-              cart={cart}
-              business={business}
-              onUpdateQuantity={updateQuantity}
-              onRemoveFromCart={removeFromCart}
-              onOrder={handleOrder}
-              isOrdering={isOrdering}
-              orderSuccess={orderSuccess}
-              error={error}
-              customerName={customerName}
-              setCustomerName={setCustomerName}
-              customerPhone={customerPhone}
-              setCustomerPhone={setCustomerPhone}
-              customerEmail={customerEmail}
-              setCustomerEmail={setCustomerEmail}
-              customerAddress={customerAddress}
-              setCustomerAddress={setCustomerAddress}
-              orderNotes={orderNotes}
-              setOrderNotes={setOrderNotes}
-            />
+            <div className="sticky top-24">
+              <StorefrontCart
+                cart={cart}
+                business={business}
+                onUpdateQuantity={updateQuantity}
+                onOrder={handleOrder}
+                isOrdering={isOrdering}
+                orderSuccess={orderSuccess}
+                error={error}
+                customerName={customerName}
+                setCustomerName={setCustomerName}
+                customerPhone={customerPhone}
+                setCustomerPhone={setCustomerPhone}
+                customerEmail={customerEmail}
+                setCustomerEmail={setCustomerEmail}
+                customerAddress={customerAddress}
+                setCustomerAddress={setCustomerAddress}
+                orderNotes={orderNotes}
+                setOrderNotes={setOrderNotes}
+                selectedPaymentMethod={selectedPaymentMethod}
+                setSelectedPaymentMethod={setSelectedPaymentMethod}
+                availablePaymentMethods={availablePaymentMethods}
+              />
+            </div>
           </div>
         </div>
       </div>

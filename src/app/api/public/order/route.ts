@@ -19,7 +19,8 @@ export async function POST(request: NextRequest) {
       order_items,
       subtotal,
       total_amount,
-      notes
+      notes,
+      payment_method
     } = orderData;
 
     // Validation
@@ -70,6 +71,7 @@ export async function POST(request: NextRequest) {
         subtotal,
         total_amount,
         notes: notes || null,
+        payment_method: payment_method || 'pay_on_delivery',
         status: 'pending'
       })
       .select()

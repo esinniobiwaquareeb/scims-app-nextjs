@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,13 +10,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   ShoppingCart, 
-  Phone, 
   Plus,
   Minus,
   CheckCircle,
   Loader2,
-  Package
+  Package,
+  CreditCard,
+  Truck
 } from 'lucide-react';
+import PaymentMethodSelector from './PaymentMethodSelector';
 
 interface Product {
   id: string;
@@ -45,7 +48,6 @@ interface ShoppingCartProps {
   cart: CartItem[];
   business: Business;
   onUpdateQuantity: (productId: string, quantity: number) => void;
-  onRemoveFromCart: (productId: string) => void;
   onOrder: () => void;
   isOrdering: boolean;
   orderSuccess: boolean;
@@ -60,13 +62,15 @@ interface ShoppingCartProps {
   setCustomerAddress: (address: string) => void;
   orderNotes: string;
   setOrderNotes: (notes: string) => void;
+  selectedPaymentMethod: string;
+  setSelectedPaymentMethod: (method: string) => void;
+  availablePaymentMethods: string[];
 }
 
 export default function StorefrontCart({
   cart,
   business,
   onUpdateQuantity,
-  onRemoveFromCart,
   onOrder,
   isOrdering,
   orderSuccess,
@@ -80,7 +84,10 @@ export default function StorefrontCart({
   customerAddress,
   setCustomerAddress,
   orderNotes,
-  setOrderNotes
+  setOrderNotes,
+  selectedPaymentMethod,
+  setSelectedPaymentMethod,
+  availablePaymentMethods
 }: ShoppingCartProps) {
   const getCartTotal = () => {
     return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
@@ -109,9 +116,11 @@ export default function StorefrontCart({
                 <div key={item.product.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                   <div className="w-12 h-12 bg-gray-200 rounded overflow-hidden flex-shrink-0">
                     {item.product.image_url ? (
-                      <img
+                      <Image
                         src={item.product.image_url}
                         alt={item.product.name}
+                        width={48}
+                        height={48}
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -213,6 +222,14 @@ export default function StorefrontCart({
                     className="mt-1"
                   />
                 </div>
+                
+                {/* Payment Method Selection */}
+                <PaymentMethodSelector
+                  selectedMethod={selectedPaymentMethod}
+                  onMethodChange={setSelectedPaymentMethod}
+                  availableMethods={availablePaymentMethods}
+                  disabled={isOrdering}
+                />
               </div>
 
               {/* Error/Success Messages */}
@@ -234,7 +251,7 @@ export default function StorefrontCart({
               {/* Order Button */}
               <Button
                 onClick={onOrder}
-                disabled={isOrdering || cart.length === 0}
+                disabled={isOrdering || cart.length === 0 || !selectedPaymentMethod}
                 className="w-full mt-4"
                 size="lg"
               >
@@ -245,8 +262,15 @@ export default function StorefrontCart({
                   </>
                 ) : (
                   <>
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Place Order
+                    {selectedPaymentMethod === 'pay_on_delivery' ? (
+                      <Truck className="w-4 h-4 mr-2" />
+                    ) : (
+                      <CreditCard className="w-4 h-4 mr-2" />
+                    )}
+                    {selectedPaymentMethod === 'pay_on_delivery' 
+                      ? 'Place Order (Pay on Delivery)'
+                      : 'Place Order (Online Payment)'
+                    }
                   </>
                 )}
               </Button>

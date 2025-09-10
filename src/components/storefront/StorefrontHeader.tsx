@@ -77,21 +77,32 @@ export default function StorefrontHeader({ business }: StorefrontHeaderProps) {
   return (
     <>
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white/95 backdrop-blur-sm shadow-sm border-b sticky top-0 z-50">
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">{business.name}</h1>
-              {business.settings.store_description && (
-                <p className="text-sm text-gray-600">{business.settings.store_description}</p>
-              )}
-            </div>
             <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm" onClick={handleShare}>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 group-hover:text-primary transition-colors">
+                  {business.name}
+                </h1>
+                {business.settings.store_description && (
+                  <p className="text-sm text-gray-600 line-clamp-1 max-w-md">
+                    {business.settings.store_description}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleShare}
+                className="hover:bg-primary/5 hover:border-primary/20 transition-all duration-200"
+              >
                 {isCopied ? (
                   <>
-                    <Check className="w-4 h-4 mr-2" />
-                    Copied!
+                    <Check className="w-4 h-4 mr-2 text-green-600" />
+                    <span className="text-green-600 font-medium">Copied!</span>
                   </>
                 ) : (
                   <>
@@ -100,7 +111,11 @@ export default function StorefrontHeader({ business }: StorefrontHeaderProps) {
                   </>
                 )}
               </Button>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-all duration-200"
+              >
                 <Heart className="w-4 h-4 mr-2" />
                 Save
               </Button>
@@ -110,15 +125,51 @@ export default function StorefrontHeader({ business }: StorefrontHeaderProps) {
       </header>
 
       {/* Banner */}
-      {business.settings.store_banner_url && (
-        <div className="h-64 bg-gradient-to-r from-primary/20 to-primary/5 flex items-center justify-center">
-          <img 
-            src={business.settings.store_banner_url} 
-            alt={`${business.name} banner`}
-            className="max-h-full max-w-full object-cover rounded-lg"
-          />
-        </div>
-      )}
+      <div className="w-full relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+        {business.settings.store_banner_url ? (
+          <div className="relative w-full h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80">
+            <img 
+              src={business.settings.store_banner_url} 
+              alt={`${business.name} banner`}
+              className="absolute inset-0 w-full h-full object-cover object-center"
+              loading="eager"
+              onError={(e) => {
+                // Hide the image if it fails to load
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+            {/* Gradient overlay for better text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
+            
+            {/* Store info overlay */}
+            <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
+              <div className="max-w-4xl mx-auto">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg">
+                  Welcome to {business.name}
+                </h2>
+                {business.settings.store_description && (
+                  <p className="text-lg sm:text-xl text-white/90 max-w-2xl drop-shadow-md">
+                    {business.settings.store_description}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="w-full h-32 sm:h-40 md:h-48 lg:h-56 xl:h-64 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/5 flex items-center justify-center">
+            <div className="text-center px-4">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary/80 mb-2">
+                {business.name}
+              </h2>
+              {business.settings.store_description && (
+                <p className="text-lg sm:text-xl text-primary/60 max-w-2xl mx-auto">
+                  {business.settings.store_description}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </>
   );
 }

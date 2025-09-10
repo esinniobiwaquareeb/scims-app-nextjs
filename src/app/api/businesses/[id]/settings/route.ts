@@ -13,6 +13,8 @@ interface BusinessUpdateData {
   website?: string;
   address?: string;
   timezone?: string;
+  username?: string;
+  slug?: string;
   updated_at: string;
 }
 
@@ -160,6 +162,41 @@ export async function PUT(
     if (body.website !== undefined) businessData.website = body.website;
     if (body.address !== undefined) businessData.address = body.address;
     if (body.timezone !== undefined) businessData.timezone = body.timezone;
+    if (body.username !== undefined) businessData.username = body.username;
+    if (body.slug !== undefined) businessData.slug = body.slug;
+    
+    // Validate unique constraints before updating
+    if (businessData.username) {
+      const { data: existingUser } = await supabase
+        .from('business')
+        .select('id')
+        .eq('username', businessData.username)
+        .neq('id', businessId)
+        .single();
+      
+      if (existingUser) {
+        return NextResponse.json(
+          { success: false, error: 'Username already exists' },
+          { status: 400 }
+        );
+      }
+    }
+    
+    if (businessData.slug) {
+      const { data: existingSlug } = await supabase
+        .from('business')
+        .select('id')
+        .eq('slug', businessData.slug)
+        .neq('id', businessId)
+        .single();
+      
+      if (existingSlug) {
+        return NextResponse.json(
+          { success: false, error: 'Slug already exists' },
+          { status: 400 }
+        );
+      }
+    }
     
     if (Object.keys(businessData).length > 0) {
       businessData.updated_at = new Date().toISOString();
@@ -183,7 +220,6 @@ export async function PUT(
       primary_color: body.primaryColor || '#3B82F6',
       secondary_color: body.secondaryColor || '#10B981',
       accent_color: body.accentColor || '#F59E0B',
-      business_type: body.business_type || 'retail',
       enable_stock_tracking: body.enable_stock_tracking || true,
       enable_inventory_alerts: body.enable_inventory_alerts || true,
       enable_restock_management: body.enable_restock_management || true,

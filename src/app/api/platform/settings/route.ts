@@ -79,6 +79,13 @@ export async function GET(request: NextRequest) {
       require_email_verification: false,
       session_timeout: 480,
       max_login_attempts: 5,
+      platform_phone: '+1-800-SCIMS-01',
+      platform_whatsapp: '+1-800-SCIMS-01',
+      platform_email: 'support@scims.app',
+      platform_website: 'https://scims.app',
+      enable_pay_on_delivery: true,
+      enable_online_payment: false,
+      payment_methods: ['pay_on_delivery'],
       supported_currencies: transformedCurrencies,
       supported_languages: transformedLanguages
     };
@@ -122,7 +129,14 @@ export async function PUT(request: NextRequest) {
       allow_username_login,
       require_email_verification,
       session_timeout,
-      max_login_attempts
+      max_login_attempts,
+      platform_phone,
+      platform_whatsapp,
+      platform_email,
+      platform_website,
+      enable_pay_on_delivery,
+      enable_online_payment,
+      payment_methods
     } = body;
 
     // Validate required fields
@@ -159,6 +173,13 @@ export async function PUT(request: NextRequest) {
           require_email_verification,
           session_timeout,
           max_login_attempts,
+          platform_phone,
+          platform_whatsapp,
+          platform_email,
+          platform_website,
+          enable_pay_on_delivery,
+          enable_online_payment,
+          payment_methods,
           updated_at: new Date().toISOString()
         })
         .eq('id', existingSettings.id)
@@ -191,7 +212,14 @@ export async function PUT(request: NextRequest) {
           allow_username_login,
           require_email_verification,
           session_timeout,
-          max_login_attempts
+          max_login_attempts,
+          platform_phone,
+          platform_whatsapp,
+          platform_email,
+          platform_website,
+          enable_pay_on_delivery,
+          enable_online_payment,
+          payment_methods
         })
         .select()
         .single();

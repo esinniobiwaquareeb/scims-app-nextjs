@@ -443,6 +443,44 @@ execute FUNCTION update_updated_at_column ();
 
 
 -- ======================
+-- PLATFORM HEALTH
+-- ======================
+
+create table public.platform_health (
+  id uuid not null default gen_random_uuid (),
+  service_name character varying(100) not null,
+  status character varying(20) not null default 'operational'::character varying,
+  response_time_ms integer null,
+  error_message text null,
+  metadata jsonb null default '{}'::jsonb,
+  created_at timestamp without time zone null default now(),
+  updated_at timestamp without time zone null default now(),
+  constraint platform_health_pkey primary key (id),
+  constraint platform_health_status_check check (
+    (
+      (status)::text = any (
+        array[
+          'operational'::text,
+          'degraded'::text,
+          'outage'::text,
+          'maintenance'::text
+        ]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+create index IF not exists idx_platform_health_service_name on public.platform_health using btree (service_name) TABLESPACE pg_default;
+
+create index IF not exists idx_platform_health_status on public.platform_health using btree (status) TABLESPACE pg_default;
+
+create index IF not exists idx_platform_health_created_at on public.platform_health using btree (created_at) TABLESPACE pg_default;
+
+create trigger update_platform_health_updated_at BEFORE
+update on platform_health for EACH row
+execute FUNCTION update_updated_at_column ();
+
+-- ======================
 -- PLATFORM REVENUE
 -- ======================
 
@@ -517,6 +555,13 @@ create table public.platform_setting (
   disk_usage numeric(5, 2) null default 0.00,
   active_connections integer null default 0,
   last_health_check timestamp without time zone null default now(),
+  platform_phone character varying(50) null,
+  platform_whatsapp character varying(50) null,
+  platform_email character varying(255) null,
+  platform_website character varying(255) null default 'https://scims.app'::character varying,
+  enable_pay_on_delivery boolean null default true,
+  enable_online_payment boolean null default false,
+  payment_methods jsonb null default '["pay_on_delivery"]'::jsonb,
   created_at timestamp without time zone null default now(),
   updated_at timestamp without time zone null default now(),
   constraint platform_setting_pkey primary key (id)
@@ -598,6 +643,7 @@ create table public.public_order (
   total_amount numeric(10, 2) not null default 0,
   status character varying(20) not null default 'pending'::character varying,
   notes text null,
+  payment_method character varying(50) null default 'pay_on_delivery'::character varying,
   whatsapp_sent boolean null default false,
   whatsapp_message_id character varying(255) null,
   created_at timestamp without time zone null default now(),

@@ -5,6 +5,18 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react'],
   },
   
+  // Image optimization
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'eutsywibykwwvpqsrgkz.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+  },
+  
   // Headers for PWA
   async headers() {
     return [

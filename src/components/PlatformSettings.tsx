@@ -31,7 +31,9 @@ import {
   EyeOff,
   Save,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Phone,
+  MessageCircle
 } from 'lucide-react';
 interface PlatformSettingsProps {
   onBack: () => void;
@@ -66,6 +68,13 @@ interface PlatformSettingsData {
   require_email_verification: boolean;
   session_timeout: number;
   max_login_attempts: number;
+  platform_phone?: string;
+  platform_whatsapp?: string;
+  platform_email?: string;
+  platform_website?: string;
+  enable_pay_on_delivery?: boolean;
+  enable_online_payment?: boolean;
+  payment_methods?: string[];
   supported_currencies: Currency[];
   supported_languages: Language[];
 }
@@ -138,7 +147,14 @@ export const PlatformSettings: React.FC<PlatformSettingsProps> = ({ onBack }) =>
         session_timeout: 480,
         max_login_attempts: 5,
         allow_username_login: true,
-        require_email_verification: false
+        require_email_verification: false,
+        platform_phone: '+1-800-SCIMS-01',
+        platform_whatsapp: '+1-800-SCIMS-01',
+        platform_email: 'support@scims.app',
+        platform_website: 'https://scims.app',
+        enable_pay_on_delivery: true,
+        enable_online_payment: false,
+        payment_methods: ['pay_on_delivery']
       };
       setLocalSettings(defaultSettings);
       toast.info('Settings reset to defaults');
@@ -311,10 +327,12 @@ export const PlatformSettings: React.FC<PlatformSettingsProps> = ({ onBack }) =>
         </div>
 
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="localization">Localization</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="contact">Contact</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="system">System</TabsTrigger>
             <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
           </TabsList>
@@ -601,6 +619,185 @@ export const PlatformSettings: React.FC<PlatformSettingsProps> = ({ onBack }) =>
                       Max login attempts: {localSettings.max_login_attempts}<br />
                       Username login: {localSettings.allow_username_login ? 'Enabled' : 'Disabled'}<br />
                       Email verification: {localSettings.require_email_verification ? 'Required' : 'Optional'}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="contact">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Phone className="w-5 h-5" />
+                    Platform Contact Information
+                  </CardTitle>
+                  <CardDescription>Configure platform contact details for support and communication</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="platformPhone">Platform Phone</Label>
+                    <Input
+                      id="platformPhone"
+                      value={localSettings.platform_phone || ''}
+                      onChange={(e) => handleInputChange('platform_phone', e.target.value)}
+                      placeholder="+1-800-SCIMS-01"
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Main platform support phone number
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="platformEmail">Platform Email</Label>
+                    <Input
+                      id="platformEmail"
+                      type="email"
+                      value={localSettings.platform_email || ''}
+                      onChange={(e) => handleInputChange('platform_email', e.target.value)}
+                      placeholder="support@scims.app"
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Main platform support email address
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="platformWebsite">Platform Website</Label>
+                    <Input
+                      id="platformWebsite"
+                      value={localSettings.platform_website || ''}
+                      onChange={(e) => handleInputChange('platform_website', e.target.value)}
+                      placeholder="https://scims.app"
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Official platform website URL
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5" />
+                    WhatsApp Integration
+                  </CardTitle>
+                  <CardDescription>Configure WhatsApp support and messaging</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="platformWhatsApp">WhatsApp Number</Label>
+                    <Input
+                      id="platformWhatsApp"
+                      value={localSettings.platform_whatsapp || ''}
+                      onChange={(e) => handleInputChange('platform_whatsapp', e.target.value)}
+                      placeholder="+1-800-SCIMS-01"
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      WhatsApp number for platform support (include country code)
+                    </p>
+                  </div>
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <MessageCircle className="w-4 h-4 text-blue-600" />
+                      <span className="font-medium text-blue-800">WhatsApp Integration</span>
+                    </div>
+                    <p className="text-sm text-blue-700">
+                      This number will be used in the storefront footer for customer support. 
+                      Customers can click to start a WhatsApp conversation with platform support.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="payments">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5" />
+                    Payment Methods
+                  </CardTitle>
+                  <CardDescription>Configure available payment methods for storefronts</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label>Pay on Delivery</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Allow customers to pay when their order is delivered
+                      </p>
+                    </div>
+                    <Switch
+                      checked={localSettings.enable_pay_on_delivery ?? true}
+                      onCheckedChange={(checked) => handleInputChange('enable_pay_on_delivery', checked)}
+                    />
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label>Online Payment</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Allow customers to pay online with cards or digital wallets
+                      </p>
+                    </div>
+                    <Switch
+                      checked={localSettings.enable_online_payment ?? false}
+                      onCheckedChange={(checked) => handleInputChange('enable_online_payment', checked)}
+                    />
+                  </div>
+                  <Separator />
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <DollarSign className="w-4 h-4 text-blue-600" />
+                      <span className="font-medium text-blue-800">Payment Configuration</span>
+                    </div>
+                    <p className="text-sm text-blue-700">
+                      These settings control which payment methods are available to customers on storefronts. 
+                      At least one payment method must be enabled.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="w-5 h-5" />
+                    Payment Settings
+                  </CardTitle>
+                  <CardDescription>Additional payment configuration options</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Available Payment Methods</Label>
+                    <div className="mt-2 space-y-2">
+                      {localSettings.payment_methods?.map((method, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <span className="capitalize">{method.replace('_', ' ')}</span>
+                          <Badge variant="secondary">Active</Badge>
+                        </div>
+                      )) || (
+                        <p className="text-sm text-muted-foreground">No payment methods configured</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <span className="font-medium text-green-800">Current Status</span>
+                    </div>
+                    <p className="text-sm text-green-700">
+                      {localSettings.enable_pay_on_delivery && localSettings.enable_online_payment
+                        ? 'Both payment methods are enabled'
+                        : localSettings.enable_pay_on_delivery
+                        ? 'Only pay on delivery is enabled'
+                        : localSettings.enable_online_payment
+                        ? 'Only online payment is enabled'
+                        : 'No payment methods are enabled'}
                     </p>
                   </div>
                 </CardContent>

@@ -38,7 +38,8 @@ import {
   ChefHat,
   Wrench,
   Calendar,
-  Phone
+  Phone,
+  AlertTriangle
 } from 'lucide-react';
 import { 
   BUSINESS_TYPES, 
@@ -288,6 +289,27 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
 
   const handleSave = async () => {
     if (!currentBusiness?.id || user?.role !== 'business_admin') return;
+    
+    // Client-side validation
+    if (localSettings.taxRate < 0 || localSettings.taxRate > 100) {
+      setError('Tax rate must be between 0 and 100');
+      return;
+    }
+    
+    if (localSettings.returnPeriodDays < 1 || localSettings.returnPeriodDays > 365) {
+      setError('Return period must be between 1 and 365 days');
+      return;
+    }
+    
+    if (localSettings.slug && !/^[a-z0-9-]+$/.test(localSettings.slug)) {
+      setError('Slug can only contain lowercase letters, numbers, and hyphens');
+      return;
+    }
+    
+    if (localSettings.username && !/^[a-zA-Z0-9._-]+$/.test(localSettings.username)) {
+      setError('Username can only contain letters, numbers, dots, underscores, and hyphens');
+      return;
+    }
     
     try {
       const settingsToSave = {
@@ -1452,6 +1474,43 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
                         />
                       </div>
                       
+                      {/* Public Store URL Display */}
+                      {localSettings.enable_public_store && localSettings.slug && (
+                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <Label className="text-sm font-medium text-blue-900">Your Public Store URL</Label>
+                              <p className="text-sm text-blue-700 mt-1">
+                                {typeof window !== 'undefined' ? window.location.origin : 'https://scims.app'}/s/{localSettings.slug}
+                              </p>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const storeUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://scims.app'}/s/${localSettings.slug}`;
+                                window.open(storeUrl, '_blank');
+                              }}
+                              className="text-blue-600 border-blue-300 hover:bg-blue-100"
+                            >
+                              <Globe className="w-4 h-4 mr-2" />
+                              Open Store
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {localSettings.enable_public_store && !localSettings.slug && (
+                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                            <p className="text-sm text-yellow-800">
+                              Please set a business slug below to generate your public store URL.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
                       <div>
                         <Label>Store Theme</Label>
                         <Select 
@@ -1481,13 +1540,96 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
                       </div>
                       
                       <div>
-                        <Label>Store Banner URL</Label>
-                        <Input
-                          type="url"
-                          value={localSettings.store_banner_url || ''}
-                          onChange={(e) => setLocalSettings({...localSettings, store_banner_url: e.target.value})}
-                          placeholder="https://example.com/banner.jpg"
-                        />
+                        <Label>Store Banner</Label>
+                        <div className="space-y-4">
+                          {/* Current Banner Preview */}
+                          {localSettings.store_banner_url && (
+                            <div className="relative">
+                              <img
+                                src={localSettings.store_banner_url}
+                                alt="Store Banner Preview"
+                                className="w-full h-32 object-cover rounded-lg border"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="absolute top-2 right-2"
+                                onClick={() => setLocalSettings({...localSettings, store_banner_url: ''})}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          )}
+                          
+                          {/* File Upload */}
+                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                            <input
+                              type="file"
+                              id="banner-upload"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  try {
+                                    // Create FormData for file upload
+                                    const formData = new FormData();
+                                    formData.append('file', file);
+                                    formData.append('storeId', currentBusiness?.id || 'business-settings');
+                                    formData.append('type', 'banner');
+                                    
+                                    // Upload to the image upload API
+                                    const response = await fetch('/api/upload/image', {
+                                      method: 'POST',
+                                      body: formData,
+                                    });
+                                    
+                                    if (response.ok) {
+                                      const data = await response.json();
+                                      setLocalSettings({...localSettings, store_banner_url: data.url});
+                                      toast.success('Banner uploaded successfully');
+                                    } else {
+                                      const errorData = await response.json();
+                                      throw new Error(errorData.error || 'Upload failed');
+                                    }
+                                  } catch (error) {
+                                    console.error('Upload error:', error);
+                                    toast.error(`Failed to upload banner image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                                  }
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor="banner-upload"
+                              className="cursor-pointer flex flex-col items-center gap-2"
+                            >
+                              <Upload className="w-8 h-8 text-gray-400" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {localSettings.store_banner_url ? 'Change Banner' : 'Upload Banner'}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  PNG, JPG, GIF up to 10MB
+                                </p>
+                              </div>
+                            </label>
+                          </div>
+                          
+                          {/* URL Input as Fallback */}
+                          <div>
+                            <Label className="text-sm text-gray-600">Or enter image URL</Label>
+                            <Input
+                              type="url"
+                              value={localSettings.store_banner_url || ''}
+                              onChange={(e) => setLocalSettings({...localSettings, store_banner_url: e.target.value})}
+                              placeholder="https://example.com/banner.jpg"
+                              className="mt-1"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
