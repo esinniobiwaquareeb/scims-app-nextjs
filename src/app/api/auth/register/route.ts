@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
           country_id: countryId || null,
           currency_id: currencyId || null,
           language_id: languageId || null,
-          subscription_status: 'trial',
+          subscription_status: 'active',
           is_active: true
         })
         .select()

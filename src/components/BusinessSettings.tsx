@@ -252,8 +252,6 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
   // Update localSettings when currentSettings changes
   useEffect(() => {
     if (currentSettings) {
-
-      
       // The API already returns the data in the correct format, so we can use it directly
       setLocalSettings(currentSettings as BusinessSettings);
     }
@@ -262,17 +260,22 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
   // Update localSettings when currencies or languages change
   useEffect(() => {
     if (currencies.length > 0 || languages.length > 0) {
-      setLocalSettings(prev => ({
-        ...prev,
-        currency_code: currencies.find((c: Currency) => c.id === localSettings.currency_id)?.code || prev.currency_code,
-        currency_name: currencies.find((c: Currency) => c.id === localSettings.currency_id)?.name || prev.currency_name,
-        currency_symbol: currencies.find((c: Currency) => c.id === localSettings.currency_id)?.symbol || prev.currency_symbol,
-        language_code: languages.find((l: Language) => l.id === localSettings.language_id)?.code || prev.language_code,
-        language_name: languages.find((l: Language) => l.id === localSettings.language_id)?.name || prev.language_name,
-        language_native_name: languages.find((l: Language) => l.id === localSettings.language_id)?.native_name || prev.language_native_name
-      }));
+      setLocalSettings(prev => {
+        const currency = currencies.find((c: Currency) => c.id === prev.currency_id);
+        const language = languages.find((l: Language) => l.id === prev.language_id);
+        
+        return {
+          ...prev,
+          currency_code: currency?.code || prev.currency_code,
+          currency_name: currency?.name || prev.currency_name,
+          currency_symbol: currency?.symbol || prev.currency_symbol,
+          language_code: language?.code || prev.language_code,
+          language_name: language?.name || prev.language_name,
+          language_native_name: language?.native_name || prev.language_native_name
+        };
+      });
     }
-  }, [currencies, languages, localSettings.currency_id, localSettings.language_id]);
+  }, [currencies, languages]);
 
   // Handle errors from React Query
   useEffect(() => {
