@@ -123,13 +123,13 @@ export default function ContactPage() {
       <section className="relative py-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
         <div className="relative max-w-7xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
-            Get in Touch
+            Get Your FREE Website
             <span className="text-primary block">
-              We&apos;re Here to Help
+              + Complete Business Solution
             </span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-            Have questions about SCIMS? Need help getting started? Our team is ready to assist you with any questions or concerns.
+            Have questions about SCIMS + your FREE ₦500,000 website? Need help getting started? Our team is ready to help you grow your business with our complete solution.
           </p>
         </div>
       </section>

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { X, Download, Smartphone, Monitor, Tablet } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -23,6 +24,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) =
   const [showPrompt, setShowPrompt] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const { isDark, mounted } = useTheme();
 
   useEffect(() => {
     // Check if app is already installed
@@ -135,6 +137,11 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) =
     localStorage.setItem('pwa-prompt-dismissed', Date.now().toString());
   };
 
+  // Don't render until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return null;
+  }
+
   // Don't show if already installed or if recently dismissed
   if (isInstalled || !showPrompt) {
     return null;
@@ -148,39 +155,51 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) =
 
   return (
     <div className="fixed bottom-4 right-4 z-50 max-w-sm w-full">
-      <Card className="shadow-lg border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
+      <Card className={`shadow-lg border-0 ${
+        isDark 
+          ? 'bg-gradient-to-r from-gray-800 to-gray-900 border-gray-700' 
+          : 'bg-gradient-to-r from-blue-50 to-indigo-50'
+      }`}>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Download className="w-5 h-5 text-blue-600" />
+            <CardTitle className={`text-lg flex items-center gap-2 ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}>
+              <Download className={`w-5 h-5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
               Install SCIMS
             </CardTitle>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleClose}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
             >
-              <X className="w-4 h-4" />
+              <X className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
             </Button>
           </div>
-          <CardDescription>
+          <CardDescription className={isDark ? 'text-gray-300' : 'text-gray-600'}>
             Install SCIMS on your device for quick access and offline functionality
           </CardDescription>
         </CardHeader>
         
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-3 text-sm text-gray-600">
+          <div className={`flex items-center gap-3 text-sm ${
+            isDark ? 'text-gray-300' : 'text-gray-600'
+          }`}>
             <Smartphone className="w-4 h-4" />
             <span>Access from home screen</span>
           </div>
           
-          <div className="flex items-center gap-3 text-sm text-gray-600">
+          <div className={`flex items-center gap-3 text-sm ${
+            isDark ? 'text-gray-300' : 'text-gray-600'
+          }`}>
             <Monitor className="w-4 h-4" />
             <span>Works offline</span>
           </div>
           
-          <div className="flex items-center gap-3 text-sm text-gray-600">
+          <div className={`flex items-center gap-3 text-sm ${
+            isDark ? 'text-gray-300' : 'text-gray-600'
+          }`}>
             <Tablet className="w-4 h-4" />
             <span>Faster loading</span>
           </div>
@@ -189,7 +208,11 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) =
             <Button
               onClick={handleInstall}
               disabled={isInstalling}
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              className={`flex-1 ${
+                isDark 
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
             >
               {isInstalling ? 'Installing...' : 'Install App'}
             </Button>
@@ -197,7 +220,11 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) =
             <Button
               variant="outline"
               onClick={handleDismiss}
-              className="px-4"
+              className={`px-4 ${
+                isDark 
+                  ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
             >
               Maybe Later
             </Button>

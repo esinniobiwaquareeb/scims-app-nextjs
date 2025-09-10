@@ -17,14 +17,18 @@ export default function PricingClient() {
       price: '₦15,000',
       period: '/month',
       description: 'Perfect for single shop owners',
+      originalPrice: '₦65,000',
+      savings: '₦50,000',
       features: [
+        '🎁 FREE Professional Website (Worth ₦500,000)',
         '1 Store Location',
         'Up to 3 Staff Members',
         '500 Products/Services',
         'Basic Reporting',
         'WhatsApp Receipts',
         'SMS Integration',
-        'Works Offline'
+        'Works Offline',
+        '24/7 Online Sales'
       ],
       popular: false,
       businessTypes: ['All business types']
@@ -34,7 +38,10 @@ export default function PricingClient() {
       price: '₦35,000',
       period: '/month',
       description: 'Best for growing businesses',
+      originalPrice: '₦85,000',
+      savings: '₦50,000',
       features: [
+        '🎁 FREE Professional Website (Worth ₦500,000)',
         '3 Store Locations',
         'Up to 15 Staff Members',
         '5,000 Products/Services',
@@ -43,7 +50,8 @@ export default function PricingClient() {
         'Multi-store Management',
         'Priority Support',
         'Email Receipts',
-        'Customer Database'
+        'Customer Database',
+        'Advanced Analytics'
       ],
       popular: true,
       businessTypes: ['All business types', 'Multi-location support']
@@ -53,7 +61,10 @@ export default function PricingClient() {
       price: 'Custom',
       period: '',
       description: 'For large organizations',
+      originalPrice: '₦500,000+',
+      savings: '₦500,000',
       features: [
+        '🎁 FREE Professional Website (Worth ₦500,000)',
         'Unlimited Stores',
         'Unlimited Staff',
         'Unlimited Products/Services',
@@ -62,7 +73,8 @@ export default function PricingClient() {
         'Advanced Integration',
         'Dedicated Support',
         'Custom Training',
-        'API Access'
+        'API Access',
+        'Custom Website Design'
       ],
       popular: false,
       businessTypes: ['All business types', 'Custom integrations']
@@ -94,10 +106,10 @@ export default function PricingClient() {
       <section className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <SectionHeader
-            badge="💰 Simple Pricing"
-            title="Plans That Grow With Your Business"
-            description="Choose the perfect plan for your business type and scale. All plans include receipt delivery and work across all business types."
-            maxWidth="3xl"
+            badge="🎁 FREE Website Included"
+            title="Get Everything Your Business Needs + FREE ₦500,000 Website"
+            description="Stop paying for separate systems! Get complete business management PLUS a professional online store. All plans include the FREE website worth ₦500,000."
+            maxWidth="4xl"
           />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -114,12 +126,16 @@ export default function PricingClient() {
 
           <div className="text-center mt-12">
             <p className="text-muted-foreground mb-6">
-              All plans include 14-day free trial • No setup fees • Cancel anytime
+              🎁 FREE ₦500,000 Website • 14-day free trial • No setup fees • Cancel anytime
             </p>
             <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
               <div className="flex items-center space-x-2">
                 <CheckCircle2 className="w-4 h-4 text-primary" />
-                <span>All business types supported</span>
+                <span><strong>FREE Professional Website</strong></span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-primary" />
+                <span>24/7 Online Sales</span>
               </div>
               <div className="flex items-center space-x-2">
                 <CheckCircle2 className="w-4 h-4 text-primary" />
@@ -128,10 +144,6 @@ export default function PricingClient() {
               <div className="flex items-center space-x-2">
                 <CheckCircle2 className="w-4 h-4 text-primary" />
                 <span>Works offline</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <CheckCircle2 className="w-4 h-4 text-primary" />
-                <span>24/7 support</span>
               </div>
             </div>
           </div>

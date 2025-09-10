@@ -159,20 +159,21 @@ export default function DemoPage() {
       <section className="relative py-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
         <div className="relative max-w-7xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
-            Try SCIMS
+            Try SCIMS + FREE Website
             <span className="text-primary block">
               No Signup Required
             </span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-            Experience SCIMS from different perspectives. Choose a demo role and explore all features with sample data.
+            Experience SCIMS from different perspectives. See how the FREE ₦500,000 website works with your business management system. 
+            Choose a demo role and explore all features with sample data.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button 
-              className="bg-primary text-primary-foreground px-8 py-4 rounded-lg hover:bg-primary/90 transition-colors duration-200 text-lg"
+              className="bg-primary text-primary-foreground px-8 py-4 rounded-lg hover:bg-primary/90 transition-colors duration-200 text-lg shadow-lg hover:shadow-xl"
               onClick={handleGetStarted}
             >
-              Start Free Trial
+              Get FREE Website + Start Trial
             </button>
             <button 
               className="border border-primary text-primary px-8 py-4 rounded-lg hover:bg-primary/10 transition-colors duration-200 text-lg"
@@ -300,7 +301,7 @@ export default function DemoPage() {
           <SectionHeader
             badge="✨ Demo Features"
             title="What&apos;s Included in the Demo"
-            description="Experience the full power of SCIMS with realistic sample data"
+            description="Experience the full power of SCIMS + FREE website with realistic sample data"
             maxWidth="3xl"
           />
 
@@ -320,11 +321,11 @@ export default function DemoPage() {
             <Card className="text-center">
               <CardContent className="p-8">
                 <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <BarChart3 className="w-8 h-8 text-primary" />
+                  <Globe className="w-8 h-8 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold mb-4">Real Analytics</h3>
+                <h3 className="text-xl font-semibold mb-4">FREE Website Demo</h3>
                 <p className="text-muted-foreground">
-                  View actual reports and analytics with sample business data
+                  See how your FREE ₦500,000 website works with your business system
                 </p>
               </CardContent>
             </Card>
@@ -332,11 +333,11 @@ export default function DemoPage() {
             <Card className="text-center">
               <CardContent className="p-8">
                 <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Users className="w-8 h-8 text-primary" />
+                  <BarChart3 className="w-8 h-8 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold mb-4">Role-Based Access</h3>
+                <h3 className="text-xl font-semibold mb-4">Real Analytics</h3>
                 <p className="text-muted-foreground">
-                  Experience different user roles and their specific permissions
+                  View actual reports and analytics with sample business data
                 </p>
               </CardContent>
             </Card>
@@ -348,10 +349,10 @@ export default function DemoPage() {
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Ready to Get Started?
+            Ready to Get Your FREE Website?
           </h2>
           <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Try the demo first, then start your free trial to set up your own business.
+            Try the demo first, then start your free trial to get your FREE ₦500,000 website + complete business management system.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
@@ -366,7 +367,7 @@ export default function DemoPage() {
               className="border-2 border-primary text-primary px-10 py-6 rounded-lg hover:bg-primary/10 transition-all duration-300 text-lg"
               onClick={handleGetStarted}
             >
-              Start Free Trial
+              Get FREE Website + Start Trial
               <ArrowRight className="ml-2 w-5 h-5 inline" />
             </button>
           </div>

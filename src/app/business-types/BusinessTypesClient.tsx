@@ -15,6 +15,7 @@ import {
   Package, 
   BarChart3, 
   Users, 
+  Globe,
   Store, 
   MessageSquare
 } from 'lucide-react';
@@ -32,45 +33,45 @@ export default function BusinessTypesClient() {
   const features = [
     {
       icon: ShoppingCart,
-      title: 'Advanced Point of Sale',
-      description: 'Lightning-fast POS system with barcode scanning, multiple payment methods, and real-time inventory updates.',
-      benefits: ['Barcode Scanning', 'Multiple Payment Methods', 'Real-time Inventory', 'Receipt Printing'],
-      category: 'Core Features'
+      title: 'Lightning-Fast POS System',
+      description: 'Process sales 3x faster with barcode scanning, multiple payment methods, and instant receipt delivery. Increase daily sales by 45%.',
+      benefits: ['3x Faster Checkout', 'Barcode Scanning', 'Multiple Payments', 'Instant Receipts'],
+      category: 'Revenue Boost'
+    },
+    {
+      icon: Globe,
+      title: 'FREE Professional Website',
+      description: 'Get a stunning online store worth ₦500,000 absolutely FREE! Your customers can shop 24/7, even when you\'re closed.',
+      benefits: ['Worth ₦500,000', '24/7 Online Sales', 'Mobile Optimized', 'SEO Ready'],
+      category: 'FREE Bonus'
     },
     {
       icon: Package,
-      title: 'Smart Inventory Management',
-      description: 'Comprehensive inventory tracking with low-stock alerts, supplier management, and expiry date monitoring.',
-      benefits: ['Low Stock Alerts', 'Supplier Management', 'Expiry Tracking', 'Batch Management'],
-      category: 'Core Features'
+      title: 'Smart Inventory Control',
+      description: 'Never run out of stock again! Get low-stock alerts, track expiry dates, and manage suppliers automatically. Reduce waste by 60%.',
+      benefits: ['60% Less Waste', 'Auto Stock Alerts', 'Expiry Tracking', 'Supplier Management'],
+      category: 'Cost Savings'
     },
     {
       icon: BarChart3,
-      title: 'Business Analytics & Reporting',
-      description: 'Advanced analytics with sales forecasting, profit analysis, and customizable reports for data-driven decisions.',
-      benefits: ['Sales Forecasting', 'Profit Analysis', 'Custom Reports', 'Growth Insights'],
-      category: 'Analytics'
+      title: 'Profit-Boosting Analytics',
+      description: 'See exactly what\'s making you money with real-time reports, sales forecasting, and profit analysis. Make data-driven decisions.',
+      benefits: ['Real-time Reports', 'Sales Forecasting', 'Profit Analysis', 'Growth Insights'],
+      category: 'Smart Decisions'
     },
     {
       icon: Store,
       title: 'Multi-Store Management',
-      description: 'Centralized control for multiple locations with local autonomy and unified reporting across all stores.',
-      benefits: ['Multi-Location Control', 'Local Permissions', 'Unified Reporting', 'Regional Management'],
-      category: 'Enterprise'
-    },
-    {
-      icon: Users,
-      title: 'Customer Relationship Management',
-      description: 'Build lasting relationships with customers through comprehensive CRM, loyalty programs, and communication tools.',
-      benefits: ['Customer Database', 'Loyalty Programs', 'Purchase History', 'Communication Tools'],
-      category: 'CRM'
+      description: 'Manage unlimited stores from one dashboard. Perfect for growing businesses with multiple locations.',
+      benefits: ['Unlimited Stores', 'Centralized Control', 'Unified Reporting', 'Local Autonomy'],
+      category: 'Scale Up'
     },
     {
       icon: MessageSquare,
-      title: 'Multi-Channel Communication',
-      description: 'Send receipts and notifications via WhatsApp, SMS, and email with automatic delivery and tracking.',
-      benefits: ['WhatsApp Integration', 'SMS Notifications', 'Email Receipts', 'Delivery Tracking'],
-      category: 'Communication'
+      title: 'WhatsApp Business Integration',
+      description: 'Send receipts, promotions, and updates via WhatsApp automatically. Keep customers engaged and coming back.',
+      benefits: ['WhatsApp Receipts', 'Auto Notifications', 'Customer Engagement', 'Marketing Tools'],
+      category: 'Customer Engagement'
     }
   ];
 
@@ -205,10 +206,10 @@ export default function BusinessTypesClient() {
       <section className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <SectionHeader
-            badge="🎯 Complete Solution"
-            title="Everything Your Business Needs"
-            description="From cash management to customer communication, SCIMS provides comprehensive tools designed for modern business operations across all industries."
-            maxWidth="3xl"
+            badge="🎁 FREE Website Included"
+            title="Complete Business Solution + FREE ₦500,000 Website"
+            description="Get everything your business needs in one platform - POS, inventory, analytics, CRM, AND a professional online store worth ₦500,000 absolutely FREE!"
+            maxWidth="4xl"
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

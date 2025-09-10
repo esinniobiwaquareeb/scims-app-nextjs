@@ -46,28 +46,32 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <div className="text-center lg:text-left">
             <AnimatedSection animation="fadeUp" delay={0.2}>
               <Badge variant="secondary" className="mb-6">
-                🚀 Trusted by 4,200+ Businesses Worldwide
+                🎉 NEW: Get Your FREE Professional Website + Complete Business Management
               </Badge>
             </AnimatedSection>
             
             <AnimatedSection animation="fadeUp" delay={0.4}>
               <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
-                The Complete Business
+                Everything Your Business Needs
                 <span className="text-primary block">
-                  Management Platform
+                  + FREE Website Included
                 </span>
               </h1>
             </AnimatedSection>
             
             <AnimatedSection animation="fadeUp" delay={0.6}>
               <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                From retail stores to restaurants, pharmacies to service businesses - SCIMS provides industry-specific 
-                tools, automatic receipt delivery, and works seamlessly across all devices, online and offline.
+                <strong>Stop paying for separate systems!</strong> Get complete business management (POS, inventory, analytics) 
+                PLUS a professional online store that works 24/7. From retail to restaurants - everything in one platform.
               </p>
             </AnimatedSection>
 
             <AnimatedSection animation="fadeUp" delay={0.7}>
               <div className="flex flex-wrap items-center gap-6 mb-8 text-sm text-muted-foreground">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                  <span><strong>FREE Website</strong> (Worth ₦500,000)</span>
+                </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle2 className="w-5 h-5 text-green-500" />
                   <span>14-day free trial</span>
@@ -78,11 +82,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle2 className="w-5 h-5 text-green-500" />
-                  <span>Cancel anytime</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-500" />
-                  <span>24/7 support</span>
+                  <span>Works offline</span>
                 </div>
               </div>
             </AnimatedSection>
@@ -91,10 +91,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
                 <Button 
                   size="lg" 
-                  className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300" 
+                  className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70" 
                   onClick={handleGetStarted}
                 >
-                  Start Free Trial
+                  Get FREE Website + Start Trial
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
                 <Button 
@@ -104,14 +104,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   onClick={() => handleStartDemo('store_admin')}
                 >
                   <MousePointer className="mr-2 w-5 h-5" />
-                  Try Live Demo
+                  See Live Demo
                 </Button>
               </div>
             </AnimatedSection>
 
             <AnimatedSection animation="fadeUp" delay={1.0}>
               <p className="text-sm text-muted-foreground">
-                ✨ No payment required • 14-day free trial • Works offline • Instant receipts
+                🎁 FREE ₦500,000 Website • No payment required • 14-day trial • Works offline
               </p>
             </AnimatedSection>
           </div>
@@ -151,23 +151,23 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <div className="text-3xl md:text-4xl font-bold text-primary mb-2">
                 4,200+
               </div>
-              <div className="text-muted-foreground">Active Businesses</div>
+              <div className="text-muted-foreground">Businesses Growing</div>
             </div>
             <div>
               <div className="text-3xl md:text-4xl font-bold text-primary mb-2">
                 ₦1,500M+
               </div>
-              <div className="text-muted-foreground">Sales Processed</div>
+              <div className="text-muted-foreground">Revenue Generated</div>
             </div>
             <div>
               <div className="text-3xl md:text-4xl font-bold text-primary mb-2">
-                250K+
+                45%
               </div>
-              <div className="text-muted-foreground">Receipts Sent Daily</div>
+              <div className="text-muted-foreground">Average Sales Increase</div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold text-primary">24/7</div>
-              <div className="text-muted-foreground">WhatsApp Support</div>
+              <div className="text-3xl md:text-4xl font-bold text-primary">₦500K</div>
+              <div className="text-muted-foreground">Website Value FREE</div>
             </div>
           </div>
         </AnimatedSection>

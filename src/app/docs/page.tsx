@@ -22,98 +22,148 @@ export default function DocsPage() {
   const documentationSections = [
     {
       title: 'Getting Started',
-      description: 'Learn the basics of SCIMS and set up your first business',
+      description: 'Learn the basics of SCIMS and set up your FREE ₦500,000 website',
       icon: BookOpen,
+      href: '/docs/getting-started',
       articles: [
-        'Quick Start Guide',
-        'Business Type Setup',
-        'First Store Configuration',
-        'Adding Your First Products',
-        'Setting Up Staff Accounts'
+        { title: 'Quick Start Guide', href: '/docs/getting-started/quick-start' },
+        { title: 'FREE Website Setup', href: '/docs/getting-started/website-setup' },
+        { title: 'Business Type Configuration', href: '/docs/getting-started/business-type' },
+        { title: 'First Store Configuration', href: '/docs/getting-started/store-setup' },
+        { title: 'Adding Your First Products', href: '/docs/getting-started/products' },
+        { title: 'Setting Up Staff Accounts', href: '/docs/getting-started/staff' }
       ]
     },
     {
       title: 'Point of Sale',
       description: 'Master the POS system for efficient sales processing',
       icon: FileText,
+      href: '/docs/pos',
       articles: [
-        'POS Interface Overview',
-        'Processing Sales',
-        'Payment Methods',
-        'Receipt Management',
-        'Offline Mode Usage'
+        { title: 'POS Interface Overview', href: '/docs/pos/interface' },
+        { title: 'Processing Sales', href: '/docs/pos/processing-sales' },
+        { title: 'Payment Methods', href: '/docs/pos/payment-methods' },
+        { title: 'Receipt Management', href: '/docs/pos/receipts' },
+        { title: 'Offline Mode Usage', href: '/docs/pos/offline-mode' }
       ]
     },
     {
       title: 'Inventory Management',
       description: 'Manage your products, stock, and suppliers effectively',
       icon: FileText,
+      href: '/docs/inventory',
       articles: [
-        'Product Catalog Setup',
-        'Stock Tracking',
-        'Low Stock Alerts',
-        'Supplier Management',
-        'Purchase Orders'
+        { title: 'Product Catalog Setup', href: '/docs/inventory/catalog' },
+        { title: 'Stock Tracking', href: '/docs/inventory/stock-tracking' },
+        { title: 'Low Stock Alerts', href: '/docs/inventory/alerts' },
+        { title: 'Supplier Management', href: '/docs/inventory/suppliers' },
+        { title: 'Purchase Orders', href: '/docs/inventory/purchase-orders' }
+      ]
+    },
+    {
+      title: 'FREE Website Management',
+      description: 'Master your FREE ₦500,000 professional website',
+      icon: FileText,
+      href: '/docs/website',
+      articles: [
+        { title: 'Website Setup & Configuration', href: '/docs/website/setup' },
+        { title: 'Online Store Management', href: '/docs/website/store-management' },
+        { title: 'Product Sync with Website', href: '/docs/website/product-sync' },
+        { title: 'Payment Integration', href: '/docs/website/payments' },
+        { title: 'SEO Optimization', href: '/docs/website/seo' },
+        { title: 'Mobile Optimization', href: '/docs/website/mobile' },
+        { title: 'Customer Orders Management', href: '/docs/website/orders' }
       ]
     },
     {
       title: 'Customer Management',
       description: 'Build and maintain customer relationships',
       icon: FileText,
+      href: '/docs/customers',
       articles: [
-        'Customer Database',
-        'Loyalty Programs',
-        'Communication Tools',
-        'Customer Analytics',
-        'Marketing Campaigns'
+        { title: 'Customer Database', href: '/docs/customers/database' },
+        { title: 'Loyalty Programs', href: '/docs/customers/loyalty' },
+        { title: 'Communication Tools', href: '/docs/customers/communication' },
+        { title: 'Customer Analytics', href: '/docs/customers/analytics' },
+        { title: 'Marketing Campaigns', href: '/docs/customers/marketing' }
       ]
     },
     {
       title: 'Reports & Analytics',
       description: 'Understand your business performance with detailed reports',
       icon: FileText,
+      href: '/docs/reports',
       articles: [
-        'Sales Reports',
-        'Inventory Reports',
-        'Customer Analytics',
-        'Financial Reports',
-        'Custom Report Builder'
+        { title: 'Sales Reports', href: '/docs/reports/sales' },
+        { title: 'Inventory Reports', href: '/docs/reports/inventory' },
+        { title: 'Customer Analytics', href: '/docs/reports/customers' },
+        { title: 'Financial Reports', href: '/docs/reports/financial' },
+        { title: 'Custom Report Builder', href: '/docs/reports/custom' }
       ]
     },
     {
       title: 'Multi-Store Management',
       description: 'Manage multiple locations from a single dashboard',
       icon: FileText,
+      href: '/docs/multi-store',
       articles: [
-        'Store Setup',
-        'Cross-Store Inventory',
-        'Centralized Reporting',
-        'Staff Management',
-        'Regional Settings'
+        { title: 'Store Setup', href: '/docs/multi-store/setup' },
+        { title: 'Cross-Store Inventory', href: '/docs/multi-store/inventory' },
+        { title: 'Centralized Reporting', href: '/docs/multi-store/reporting' },
+        { title: 'Staff Management', href: '/docs/multi-store/staff' },
+        { title: 'Regional Settings', href: '/docs/multi-store/regional' }
       ]
     }
   ];
 
   const videoTutorials = [
     {
-      title: 'SCIMS Overview',
+      title: 'SCIMS + FREE Website Overview',
       duration: '5:30',
-      description: 'Complete overview of SCIMS features and capabilities'
+      description: 'Complete overview of SCIMS features and your FREE ₦500,000 website',
+      href: '/docs/videos/overview'
     },
     {
       title: 'Setting Up Your First Store',
       duration: '8:15',
-      description: 'Step-by-step guide to configuring your first store'
+      description: 'Step-by-step guide to configuring your first store and FREE website',
+      href: '/docs/videos/store-setup'
     },
     {
       title: 'POS System Tutorial',
       duration: '12:45',
-      description: 'Learn how to use the Point of Sale system effectively'
+      description: 'Learn how to use the Point of Sale system effectively',
+      href: '/docs/videos/pos-tutorial'
     },
     {
       title: 'Inventory Management',
       duration: '10:20',
-      description: 'Master inventory tracking and management features'
+      description: 'Master inventory tracking and management features',
+      href: '/docs/videos/inventory'
+    },
+    {
+      title: 'FREE Website Management',
+      duration: '15:30',
+      description: 'Complete guide to managing your FREE ₦500,000 professional website',
+      href: '/docs/videos/website-management'
+    },
+    {
+      title: 'Customer Management & Loyalty',
+      duration: '9:45',
+      description: 'Build customer relationships and loyalty programs',
+      href: '/docs/videos/customer-management'
+    },
+    {
+      title: 'Reports & Analytics',
+      duration: '11:20',
+      description: 'Understand your business performance with detailed reports',
+      href: '/docs/videos/reports'
+    },
+    {
+      title: 'Multi-Store Management',
+      duration: '13:15',
+      description: 'Manage multiple locations from a single dashboard',
+      href: '/docs/videos/multi-store'
     }
   ];
 
@@ -136,13 +186,13 @@ export default function DocsPage() {
       <section className="relative py-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
         <div className="relative max-w-7xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
-            SCIMS Documentation
+            SCIMS + FREE Website
             <span className="text-primary block">
-              Everything You Need to Know
+              Complete Documentation
             </span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-            Comprehensive guides, tutorials, and resources to help you get the most out of SCIMS for your business.
+            Comprehensive guides, tutorials, and resources to help you master SCIMS and your FREE ₦500,000 professional website.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button 
@@ -200,16 +250,22 @@ export default function DocsPage() {
                 <CardContent>
                   <div className="space-y-2">
                     {section.articles.map((article, articleIndex) => (
-                      <div key={articleIndex} className="flex items-center justify-between p-2 rounded hover:bg-muted/50 transition-colors">
-                        <span className="text-sm">{article}</span>
-                        <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                      </div>
+                      <a
+                        key={articleIndex}
+                        href={article.href}
+                        className="flex items-center justify-between p-2 rounded hover:bg-muted/50 transition-colors group"
+                      >
+                        <span className="text-sm group-hover:text-primary">{article.title}</span>
+                        <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
+                      </a>
                     ))}
                   </div>
-                  <Button variant="outline" className="w-full mt-4">
-                    View All Articles
-                    <ArrowRight className="ml-2 w-4 h-4" />
-                  </Button>
+                  <a href={section.href}>
+                    <Button variant="outline" className="w-full mt-4">
+                      View All Articles
+                      <ArrowRight className="ml-2 w-4 h-4" />
+                    </Button>
+                  </a>
                 </CardContent>
               </Card>
             ))}
@@ -243,10 +299,12 @@ export default function DocsPage() {
                         </span>
                       </div>
                       <p className="text-muted-foreground mb-4">{video.description}</p>
-                      <Button variant="outline" size="sm">
-                        <Video className="w-4 h-4 mr-2" />
-                        Watch Now
-                      </Button>
+                      <a href={video.href}>
+                        <Button variant="outline" size="sm" className="group">
+                          <Video className="w-4 h-4 mr-2 group-hover:text-primary" />
+                          Watch Now
+                        </Button>
+                      </a>
                     </div>
                   </div>
                 </CardContent>

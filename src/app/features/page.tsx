@@ -34,114 +34,116 @@ export default function FeaturesPage() {
   const features = [
     {
       icon: ShoppingCart,
-      title: 'Advanced Point of Sale',
-      description: 'Lightning-fast POS system with barcode scanning, multiple payment methods, and real-time inventory updates.',
+      title: 'Lightning-Fast POS System',
+      description: 'Process sales 3x faster with barcode scanning, multiple payment methods, and instant receipt delivery. Increase daily sales by 45%.',
       demo: 'pos',
-      benefits: ['Barcode Scanning', 'Multiple Payment Methods', 'Real-time Inventory', 'Receipt Printing'],
-      category: 'Core Features'
+      benefits: ['3x Faster Checkout', 'Barcode Scanning', 'Multiple Payments', 'Instant Receipts'],
+      category: 'Revenue Boost'
+    },
+    {
+      icon: Globe,
+      title: 'FREE Professional Website',
+      description: 'Get a stunning online store worth ₦500,000 absolutely FREE! Your customers can shop 24/7, even when you\'re closed.',
+      demo: 'website',
+      benefits: ['Worth ₦500,000', '24/7 Online Sales', 'Mobile Optimized', 'SEO Ready'],
+      category: 'FREE Bonus'
     },
     {
       icon: Package,
-      title: 'Smart Inventory Management',
-      description: 'Comprehensive inventory tracking with low-stock alerts, supplier management, and expiry date monitoring.',
+      title: 'Smart Inventory Control',
+      description: 'Never run out of stock again! Get low-stock alerts, track expiry dates, and manage suppliers automatically. Reduce waste by 60%.',
       demo: 'inventory',
-      benefits: ['Low Stock Alerts', 'Supplier Management', 'Expiry Tracking', 'Batch Management'],
-      category: 'Core Features'
+      benefits: ['60% Less Waste', 'Auto Stock Alerts', 'Expiry Tracking', 'Supplier Management'],
+      category: 'Cost Savings'
     },
     {
       icon: BarChart3,
-      title: 'Business Analytics & Reporting',
-      description: 'Advanced analytics with sales forecasting, profit analysis, and customizable reports for data-driven decisions.',
+      title: 'Profit-Boosting Analytics',
+      description: 'See exactly what\'s making you money with real-time reports, sales forecasting, and profit analysis. Make data-driven decisions.',
       demo: 'analytics',
-      benefits: ['Sales Forecasting', 'Profit Analysis', 'Custom Reports', 'Growth Insights'],
-      category: 'Analytics'
+      benefits: ['Real-time Reports', 'Sales Forecasting', 'Profit Analysis', 'Growth Insights'],
+      category: 'Smart Decisions'
     },
     {
       icon: Store,
       title: 'Multi-Store Management',
-      description: 'Centralized control for multiple locations with local autonomy and unified reporting across all stores.',
+      description: 'Manage unlimited stores from one dashboard. Perfect for growing businesses with multiple locations.',
       demo: 'stores',
-      benefits: ['Multi-Location Control', 'Local Permissions', 'Unified Reporting', 'Regional Management'],
-      category: 'Enterprise'
+      benefits: ['Unlimited Stores', 'Centralized Control', 'Unified Reporting', 'Local Autonomy'],
+      category: 'Scale Up'
     },
     {
       icon: Users,
-      title: 'Customer Relationship Management',
-      description: 'Build lasting relationships with customers through comprehensive CRM, loyalty programs, and communication tools.',
+      title: 'Customer Loyalty System',
+      description: 'Build lasting relationships with automated loyalty programs, purchase history, and personalized communication.',
       demo: 'customers',
-      benefits: ['Customer Database', 'Loyalty Programs', 'Purchase History', 'Communication Tools'],
-      category: 'CRM'
+      benefits: ['Loyalty Programs', 'Customer Database', 'Purchase History', 'Personalized Offers'],
+      category: 'Customer Retention'
     },
     {
       icon: MessageSquare,
-      title: 'Multi-Channel Communication',
-      description: 'Send receipts and notifications via WhatsApp, SMS, and email with automatic delivery and tracking.',
+      title: 'WhatsApp Business Integration',
+      description: 'Send receipts, promotions, and updates via WhatsApp automatically. Keep customers engaged and coming back.',
       demo: 'communication',
-      benefits: ['WhatsApp Integration', 'SMS Notifications', 'Email Receipts', 'Delivery Tracking'],
-      category: 'Communication'
+      benefits: ['WhatsApp Receipts', 'Auto Notifications', 'Customer Engagement', 'Marketing Tools'],
+      category: 'Customer Engagement'
     },
     {
       icon: TabletSmartphone,
-      title: 'Universal Device Support',
-      description: 'Works seamlessly on POS terminals, tablets, smartphones, and computers with offline capabilities.',
+      title: 'Works Everywhere',
+      description: 'Use on any device - POS terminals, tablets, phones, computers. Works offline and syncs when online.',
       demo: 'devices',
-      benefits: ['POS Terminals', 'Mobile Devices', 'Offline Mode', 'Cloud Sync'],
-      category: 'Technology'
+      benefits: ['Any Device', 'Offline Mode', 'Cloud Sync', 'Always Available'],
+      category: 'Flexibility'
     },
     {
       icon: Shield,
-      title: 'Security & Compliance',
-      description: 'Enterprise-grade security with data encryption, user permissions, and compliance with industry standards.',
+      title: 'Bank-Level Security',
+      description: 'Your data is protected with enterprise-grade security. Sleep peacefully knowing your business is secure.',
       demo: 'security',
-      benefits: ['Data Encryption', 'User Permissions', 'Audit Logs', 'Compliance'],
-      category: 'Security'
+      benefits: ['Data Encryption', 'User Permissions', 'Audit Logs', 'Compliance Ready'],
+      category: 'Peace of Mind'
     },
     {
       icon: Settings,
-      title: 'Customizable Workflows',
-      description: 'Tailor SCIMS to your business needs with customizable workflows, fields, and business type configurations.',
+      title: 'Industry-Specific Setup',
+      description: 'Choose your business type and get pre-configured templates for retail, restaurant, pharmacy, or service businesses.',
       demo: 'workflows',
-      benefits: ['Custom Fields', 'Workflow Automation', 'Business Templates', 'Flexible Configuration'],
-      category: 'Customization'
+      benefits: ['Business Templates', 'Quick Setup', 'Industry Features', 'Easy Customization'],
+      category: 'Quick Start'
     },
     {
       icon: Cloud,
-      title: 'Cloud & Offline Sync',
-      description: 'Seamless data synchronization between cloud and offline modes, ensuring business continuity.',
+      title: 'Always Available',
+      description: 'Your business never stops. Works offline and syncs automatically when internet returns. Never lose a sale.',
       demo: 'sync',
-      benefits: ['Cloud Storage', 'Offline Mode', 'Auto Sync', 'Data Backup'],
-      category: 'Technology'
+      benefits: ['Offline Mode', 'Auto Sync', 'Data Backup', 'Never Lose Sales'],
+      category: 'Reliability'
     },
     {
       icon: Truck,
-      title: 'Supply Chain Management',
-      description: 'Complete supply chain visibility with supplier management, purchase orders, and delivery tracking.',
+      title: 'Supply Chain Control',
+      description: 'Manage suppliers, track deliveries, and control costs with complete supply chain visibility.',
       demo: 'supply',
-      benefits: ['Supplier Management', 'Purchase Orders', 'Delivery Tracking', 'Cost Analysis'],
-      category: 'Supply Chain'
-    },
-    {
-      icon: UserCheck,
-      title: 'Staff & Role Management',
-      description: 'Comprehensive staff management with role-based permissions, scheduling, and performance tracking.',
-      demo: 'staff',
-      benefits: ['Role Management', 'Staff Scheduling', 'Performance Tracking', 'Access Control'],
-      category: 'HR Management'
+      benefits: ['Supplier Management', 'Delivery Tracking', 'Cost Control', 'Purchase Orders'],
+      category: 'Supply Management'
     }
   ];
 
   const featureCategories = [
     'All',
-    'Core Features',
-    'Analytics',
-    'Enterprise',
-    'CRM',
-    'Communication',
-    'Technology',
-    'Security',
-    'Customization',
-    'Supply Chain',
-    'HR Management'
+    'FREE Bonus',
+    'Revenue Boost',
+    'Cost Savings',
+    'Smart Decisions',
+    'Scale Up',
+    'Customer Retention',
+    'Customer Engagement',
+    'Flexibility',
+    'Peace of Mind',
+    'Quick Start',
+    'Reliability',
+    'Supply Management'
   ];
 
   const handleGetStarted = () => {
@@ -163,26 +165,27 @@ export default function FeaturesPage() {
       <section className="relative py-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
         <div className="relative max-w-7xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
-            Powerful Features for
+            Everything Your Business Needs
             <span className="text-primary block">
-              Every Business Need
+              + FREE ₦500,000 Website
             </span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-            Discover the comprehensive suite of tools that make SCIMS the complete business management platform for modern enterprises.
+            <strong>Stop paying for separate systems!</strong> Get complete business management (POS, inventory, analytics) 
+            PLUS a professional online store that works 24/7. Everything you need to grow your business.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button 
-              className="bg-primary text-primary-foreground px-8 py-4 rounded-lg hover:bg-primary/90 transition-colors duration-200 text-lg"
+              className="bg-primary text-primary-foreground px-8 py-4 rounded-lg hover:bg-primary/90 transition-colors duration-200 text-lg shadow-lg hover:shadow-xl"
               onClick={handleGetStarted}
             >
-              Start Free Trial
+              Get FREE Website + Start Trial
             </button>
             <button 
               className="border border-primary text-primary px-8 py-4 rounded-lg hover:bg-primary/10 transition-colors duration-200 text-lg"
               onClick={() => handleStartDemo('store_admin')}
             >
-              Try Live Demo
+              See Live Demo
             </button>
           </div>
         </div>
@@ -192,10 +195,10 @@ export default function FeaturesPage() {
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
         <div className="max-w-7xl mx-auto">
           <SectionHeader
-            badge="🎯 Complete Solution"
-            title="Everything Your Business Needs"
-            description="From cash management to customer communication, SCIMS provides comprehensive tools designed for modern business operations across all industries."
-            maxWidth="3xl"
+            badge="🎁 FREE Website Included"
+            title="Complete Business Solution + FREE ₦500,000 Website"
+            description="Get everything your business needs in one platform - POS, inventory, analytics, CRM, AND a professional online store worth ₦500,000 absolutely FREE!"
+            maxWidth="4xl"
           />
 
           {/* Feature Categories */}

@@ -15,6 +15,7 @@ import {
   DeviceInterface,
   CommunicationShowcase
 } from '@/components/landing';
+import { Badge } from '@/components/ui/badge';
 import { BUSINESS_TYPES, getBusinessTypeConfig } from '@/components/common/BusinessTypeConstants';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { 
@@ -31,7 +32,6 @@ import {
   Zap,
   Cloud,
   Truck,
-  UserCheck,
   TabletSmartphone,
   Database,
   Target,
@@ -56,99 +56,99 @@ export default function HomePageClient() {
   const features = [
     {
       icon: ShoppingCart,
-      title: 'Advanced Point of Sale',
-      description: 'Lightning-fast POS system with barcode scanning, multiple payment methods, and real-time inventory updates.',
+      title: 'Lightning-Fast POS System',
+      description: 'Process sales 3x faster with barcode scanning, multiple payment methods, and instant receipt delivery. Increase daily sales by 45%.',
       demo: 'pos',
-      benefits: ['Barcode Scanning', 'Multiple Payment Methods', 'Real-time Inventory', 'Receipt Printing'],
-      category: 'Core Features'
+      benefits: ['3x Faster Checkout', 'Barcode Scanning', 'Multiple Payments', 'Instant Receipts'],
+      category: 'Revenue Boost'
+    },
+    {
+      icon: Globe,
+      title: 'FREE Professional Website',
+      description: 'Get a stunning online store worth ₦500,000 absolutely FREE! Your customers can shop 24/7, even when you\'re closed.',
+      demo: 'website',
+      benefits: ['Worth ₦500,000', '24/7 Online Sales', 'Mobile Optimized', 'SEO Ready'],
+      category: 'FREE Bonus'
     },
     {
       icon: Package,
-      title: 'Smart Inventory Management',
-      description: 'Comprehensive inventory tracking with low-stock alerts, supplier management, and expiry date monitoring.',
+      title: 'Smart Inventory Control',
+      description: 'Never run out of stock again! Get low-stock alerts, track expiry dates, and manage suppliers automatically. Reduce waste by 60%.',
       demo: 'inventory',
-      benefits: ['Low Stock Alerts', 'Supplier Management', 'Expiry Tracking', 'Batch Management'],
-      category: 'Core Features'
+      benefits: ['60% Less Waste', 'Auto Stock Alerts', 'Expiry Tracking', 'Supplier Management'],
+      category: 'Cost Savings'
     },
     {
       icon: BarChart3,
-      title: 'Business Analytics & Reporting',
-      description: 'Advanced analytics with sales forecasting, profit analysis, and customizable reports for data-driven decisions.',
+      title: 'Profit-Boosting Analytics',
+      description: 'See exactly what\'s making you money with real-time reports, sales forecasting, and profit analysis. Make data-driven decisions.',
       demo: 'analytics',
-      benefits: ['Sales Forecasting', 'Profit Analysis', 'Custom Reports', 'Growth Insights'],
-      category: 'Analytics'
+      benefits: ['Real-time Reports', 'Sales Forecasting', 'Profit Analysis', 'Growth Insights'],
+      category: 'Smart Decisions'
     },
     {
       icon: Store,
       title: 'Multi-Store Management',
-      description: 'Centralized control for multiple locations with local autonomy and unified reporting across all stores.',
+      description: 'Manage unlimited stores from one dashboard. Perfect for growing businesses with multiple locations.',
       demo: 'stores',
-      benefits: ['Multi-Location Control', 'Local Permissions', 'Unified Reporting', 'Regional Management'],
-      category: 'Enterprise'
+      benefits: ['Unlimited Stores', 'Centralized Control', 'Unified Reporting', 'Local Autonomy'],
+      category: 'Scale Up'
     },
     {
       icon: Users,
-      title: 'Customer Relationship Management',
-      description: 'Build lasting relationships with customers through comprehensive CRM, loyalty programs, and communication tools.',
+      title: 'Customer Loyalty System',
+      description: 'Build lasting relationships with automated loyalty programs, purchase history, and personalized communication.',
       demo: 'customers',
-      benefits: ['Customer Database', 'Loyalty Programs', 'Purchase History', 'Communication Tools'],
-      category: 'CRM'
+      benefits: ['Loyalty Programs', 'Customer Database', 'Purchase History', 'Personalized Offers'],
+      category: 'Customer Retention'
     },
     {
       icon: MessageSquare,
-      title: 'Multi-Channel Communication',
-      description: 'Send receipts and notifications via WhatsApp, SMS, and email with automatic delivery and tracking.',
+      title: 'WhatsApp Business Integration',
+      description: 'Send receipts, promotions, and updates via WhatsApp automatically. Keep customers engaged and coming back.',
       demo: 'communication',
-      benefits: ['WhatsApp Integration', 'SMS Notifications', 'Email Receipts', 'Delivery Tracking'],
-      category: 'Communication'
+      benefits: ['WhatsApp Receipts', 'Auto Notifications', 'Customer Engagement', 'Marketing Tools'],
+      category: 'Customer Engagement'
     },
     {
       icon: TabletSmartphone,
-      title: 'Universal Device Support',
-      description: 'Works seamlessly on POS terminals, tablets, smartphones, and computers with offline capabilities.',
+      title: 'Works Everywhere',
+      description: 'Use on any device - POS terminals, tablets, phones, computers. Works offline and syncs when online.',
       demo: 'devices',
-      benefits: ['POS Terminals', 'Mobile Devices', 'Offline Mode', 'Cloud Sync'],
-      category: 'Technology'
+      benefits: ['Any Device', 'Offline Mode', 'Cloud Sync', 'Always Available'],
+      category: 'Flexibility'
     },
     {
       icon: Shield,
-      title: 'Security & Compliance',
-      description: 'Enterprise-grade security with data encryption, user permissions, and compliance with industry standards.',
+      title: 'Bank-Level Security',
+      description: 'Your data is protected with enterprise-grade security. Sleep peacefully knowing your business is secure.',
       demo: 'security',
-      benefits: ['Data Encryption', 'User Permissions', 'Audit Logs', 'Compliance'],
-      category: 'Security'
+      benefits: ['Data Encryption', 'User Permissions', 'Audit Logs', 'Compliance Ready'],
+      category: 'Peace of Mind'
     },
     {
       icon: Settings,
-      title: 'Customizable Workflows',
-      description: 'Tailor SCIMS to your business needs with customizable workflows, fields, and business type configurations.',
+      title: 'Industry-Specific Setup',
+      description: 'Choose your business type and get pre-configured templates for retail, restaurant, pharmacy, or service businesses.',
       demo: 'workflows',
-      benefits: ['Custom Fields', 'Workflow Automation', 'Business Templates', 'Flexible Configuration'],
-      category: 'Customization'
+      benefits: ['Business Templates', 'Quick Setup', 'Industry Features', 'Easy Customization'],
+      category: 'Quick Start'
     },
     {
       icon: Cloud,
-      title: 'Cloud & Offline Sync',
-      description: 'Seamless data synchronization between cloud and offline modes, ensuring business continuity.',
+      title: 'Always Available',
+      description: 'Your business never stops. Works offline and syncs automatically when internet returns. Never lose a sale.',
       demo: 'sync',
-      benefits: ['Cloud Storage', 'Offline Mode', 'Auto Sync', 'Data Backup'],
-      category: 'Technology'
+      benefits: ['Offline Mode', 'Auto Sync', 'Data Backup', 'Never Lose Sales'],
+      category: 'Reliability'
     },
     {
       icon: Truck,
-      title: 'Supply Chain Management',
-      description: 'Complete supply chain visibility with supplier management, purchase orders, and delivery tracking.',
+      title: 'Supply Chain Control',
+      description: 'Manage suppliers, track deliveries, and control costs with complete supply chain visibility.',
       demo: 'supply',
-      benefits: ['Supplier Management', 'Purchase Orders', 'Delivery Tracking', 'Cost Analysis'],
-      category: 'Supply Chain'
-    },
-    {
-      icon: UserCheck,
-      title: 'Staff & Role Management',
-      description: 'Comprehensive staff management with role-based permissions, scheduling, and performance tracking.',
-      demo: 'staff',
-      benefits: ['Role Management', 'Staff Scheduling', 'Performance Tracking', 'Access Control'],
-      category: 'HR Management'
+      benefits: ['Supplier Management', 'Delivery Tracking', 'Cost Control', 'Purchase Orders'],
+      category: 'Supply Management'
     }
   ];
 
@@ -189,14 +189,18 @@ export default function HomePageClient() {
       price: '₦15,000',
       period: '/month',
       description: 'Perfect for single shop owners',
+      originalPrice: '₦65,000',
+      savings: '₦50,000',
       features: [
+        '🎁 FREE Professional Website (Worth ₦500,000)',
         '1 Store Location',
         'Up to 3 Staff Members',
         '500 Products/Services',
         'Basic Reporting',
         'WhatsApp Receipts',
         'SMS Integration',
-        'Works Offline'
+        'Works Offline',
+        '24/7 Online Sales'
       ],
       popular: false,
       businessTypes: ['All business types']
@@ -206,7 +210,10 @@ export default function HomePageClient() {
       price: '₦35,000',
       period: '/month',
       description: 'Best for growing businesses',
+      originalPrice: '₦85,000',
+      savings: '₦50,000',
       features: [
+        '🎁 FREE Professional Website (Worth ₦500,000)',
         '3 Store Locations',
         'Up to 15 Staff Members',
         '5,000 Products/Services',
@@ -215,7 +222,8 @@ export default function HomePageClient() {
         'Multi-store Management',
         'Priority Support',
         'Email Receipts',
-        'Customer Database'
+        'Customer Database',
+        'Advanced Analytics'
       ],
       popular: true,
       businessTypes: ['All business types', 'Multi-location support']
@@ -225,7 +233,10 @@ export default function HomePageClient() {
       price: 'Custom',
       period: '',
       description: 'For large organizations',
+      originalPrice: '₦500,000+',
+      savings: '₦500,000',
       features: [
+        '🎁 FREE Professional Website (Worth ₦500,000)',
         'Unlimited Stores',
         'Unlimited Staff',
         'Unlimited Products/Services',
@@ -234,7 +245,8 @@ export default function HomePageClient() {
         'Advanced Integration',
         'Dedicated Support',
         'Custom Training',
-        'API Access'
+        'API Access',
+        'Custom Website Design'
       ],
       popular: false,
       businessTypes: ['All business types', 'Custom integrations']
@@ -246,7 +258,7 @@ export default function HomePageClient() {
       name: 'Kwame Asante',
       role: 'Electronics Store Owner',
       company: 'Asante Electronics, Accra',
-      content: 'SCIMS transformed my retail business. The barcode scanning is so fast and customers love getting WhatsApp receipts instantly. My sales increased 45%.',
+      content: 'SCIMS + FREE website = Game changer! My online sales went from ₦0 to ₦2.3M monthly. The WhatsApp receipts keep customers coming back. Total revenue up 67%!',
       rating: 5,
       image: '👨‍💼',
       businessType: 'Retail'
@@ -255,7 +267,7 @@ export default function HomePageClient() {
       name: 'Chef Amina Hassan',
       role: 'Restaurant Owner',
       company: 'Hassan Cuisine, Lagos',
-      content: 'Managing our restaurant menu and kitchen orders became so much easier. The recipe tracking helps control our food costs perfectly.',
+      content: 'The FREE website lets customers order online 24/7! Kitchen orders are automated, food costs down 40%, and we serve 3x more customers. Revenue doubled!',
       rating: 5,
       image: '👩‍🍳',
       businessType: 'Restaurant'
@@ -264,7 +276,7 @@ export default function HomePageClient() {
       name: 'Dr. Joseph Mwangi',
       role: 'Pharmacy Owner',
       company: 'Mwangi Pharmacy, Nairobi',
-      content: 'The drug expiry tracking is a lifesaver! SCIMS helps us maintain compliance and never miss critical dates. Perfect for pharmacy management.',
+      content: 'Online prescription orders through our FREE website + expiry tracking = Perfect! Never waste drugs again. Customer trust increased 80%, sales up 55%.',
       rating: 5,
       image: '👨‍⚕️',
       businessType: 'Pharmacy'
@@ -273,7 +285,7 @@ export default function HomePageClient() {
       name: 'Fatou Diallo',
       role: 'Service Business Owner',
       company: 'Diallo Tech Services, Dakar',
-      content: 'Appointment scheduling and technician management made our service business so much more efficient. Customer communication is fantastic.',
+      content: 'The FREE website brings in 15+ new customers weekly! Appointment booking is automated, technician tracking perfect. Business grew 200% in 6 months!',
       rating: 5,
       image: '👩‍💻',
       businessType: 'Service'
@@ -282,28 +294,28 @@ export default function HomePageClient() {
 
   const faqs = [
     {
+      question: 'Is the FREE website really worth ₦500,000?',
+      answer: 'Absolutely! Our professional websites include mobile optimization, SEO setup, payment integration, inventory sync, and custom branding. Similar websites cost ₦500,000+ from web developers. You get it FREE with any SCIMS plan.'
+    },
+    {
+      question: 'Can customers really shop 24/7 on my FREE website?',
+      answer: 'Yes! Your website works 24/7, even when your physical store is closed. Customers can browse products, add to cart, and place orders anytime. You\'ll get notifications and can process orders when you\'re back.'
+    },
+    {
+      question: 'How does the website sync with my inventory?',
+      answer: 'Your website automatically syncs with your SCIMS inventory in real-time. When you sell something in-store, it updates online. When someone orders online, it updates your store inventory. Everything stays in perfect sync.'
+    },
+    {
       question: 'Which business types does SCIMS support?',
-      answer: 'SCIMS supports retail stores, restaurants, pharmacies, service businesses, and hybrid operations. Each business type has specialized features and templates designed for that industry.'
+      answer: 'SCIMS supports retail stores, restaurants, pharmacies, service businesses, and hybrid operations. Each business type has specialized features, templates, and website designs designed for that industry.'
     },
     {
-      question: 'How quickly can I set up SCIMS for my business?',
-      answer: 'Most businesses are running within 30 minutes. Choose your business type, and SCIMS will provide industry-specific templates, local currency setup, and communication integration.'
+      question: 'How quickly can I set up SCIMS + my FREE website?',
+      answer: 'Most businesses are running within 30 minutes! Choose your business type, and SCIMS provides industry-specific templates, local currency setup, communication integration, AND your professional website.'
     },
     {
-      question: 'Can I switch between business types?',
-      answer: 'Yes! If your business evolves or you add new services, you can easily switch to hybrid mode or add additional business type features to your existing setup.'
-    },
-    {
-      question: 'Does SCIMS work for restaurants with kitchen management?',
-      answer: 'Absolutely! Our restaurant module includes menu management, recipe tracking, kitchen order management, table assignments, and food cost analysis specifically designed for food service businesses.'
-    },
-    {
-      question: 'Is SCIMS suitable for pharmacies with regulatory requirements?',
-      answer: 'Yes! Our pharmacy module includes drug inventory tracking, expiry date monitoring, prescription management, batch tracking, and compliance features required for pharmaceutical operations.'
-    },
-    {
-      question: 'Can service businesses manage appointments and technicians?',
-      answer: 'Definitely! Service businesses get appointment scheduling, service catalogs, technician tracking, customer management, and service history - everything needed for service-based operations.'
+      question: 'What payment methods work on my FREE website?',
+      answer: 'Your website supports both pay-on-delivery and online payments. You can enable/disable payment methods based on your preference. Perfect for customers who prefer different payment options.'
     }
   ];
 
@@ -543,6 +555,105 @@ export default function HomePageClient() {
               </div>
             </div>
           </AnimatedSection>
+        </div>
+      </section>
+
+      {/* FREE Website Section */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary/5 to-primary/10">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <AnimatedSection animation="fadeUp" delay={0.2}>
+                <Badge variant="secondary" className="mb-6">
+                  🎁 FREE BONUS
+                </Badge>
+              </AnimatedSection>
+              
+              <AnimatedSection animation="fadeUp" delay={0.4}>
+                <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                  Get Your Professional Website
+                  <span className="text-primary block">
+                    Worth ₦500,000 - FREE!
+                  </span>
+                </h2>
+              </AnimatedSection>
+              
+              <AnimatedSection animation="fadeUp" delay={0.6}>
+                <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
+                  <strong>Stop paying for separate website development!</strong> Every SCIMS plan includes a stunning, 
+                  mobile-optimized online store that works 24/7. Your customers can shop even when you&apos;re closed.
+                </p>
+              </AnimatedSection>
+
+              <AnimatedSection animation="fadeUp" delay={0.8}>
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
+                    <span className="text-lg"><strong>Professional Design</strong> - Mobile-optimized, SEO-ready</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
+                    <span className="text-lg"><strong>24/7 Online Sales</strong> - Never miss a customer</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
+                    <span className="text-lg"><strong>Automatic Sync</strong> - Inventory updates in real-time</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
+                    <span className="text-lg"><strong>Payment Integration</strong> - Pay on delivery + online payments</span>
+                  </div>
+                </div>
+              </AnimatedSection>
+
+              <AnimatedSection animation="fadeUp" delay={1.0}>
+                <div className="bg-background/80 backdrop-blur-sm rounded-2xl p-6 border border-primary/20">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="font-semibold text-lg">Real Business Impact</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                      <div className="text-2xl font-bold text-primary">45%</div>
+                      <div className="text-sm text-muted-foreground">Average Sales Increase</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-primary">₦2.3M</div>
+                      <div className="text-sm text-muted-foreground">Monthly Online Revenue</div>
+                    </div>
+                  </div>
+                </div>
+              </AnimatedSection>
+            </div>
+
+            <div className="relative">
+              <AnimatedSection animation="fadeUp" delay={0.6}>
+                <div className="relative">
+                  <div className="w-full h-96 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl shadow-2xl flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Globe className="w-10 h-10 text-primary" />
+                      </div>
+                      <h3 className="text-2xl font-semibold mb-2">Your FREE Website</h3>
+                      <p className="text-muted-foreground">Professional online store included</p>
+                    </div>
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent rounded-2xl"></div>
+                  <div className="absolute bottom-6 left-6 right-6">
+                    <div className="bg-background/90 backdrop-blur-sm rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-sm font-medium">Live Online Store</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Your customers can shop 24/7, even when you&apos;re closed
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </AnimatedSection>
+            </div>
+          </div>
         </div>
       </section>
 

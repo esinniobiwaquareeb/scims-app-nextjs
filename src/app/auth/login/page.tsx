@@ -115,7 +115,7 @@ export default function LoginPage() {
             <Logo size="lg" />
           </div>
           <CardDescription className="text-sm">
-            Stock Control Inventory Management System
+            Complete Business Management + FREE ₦500,000 Website
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

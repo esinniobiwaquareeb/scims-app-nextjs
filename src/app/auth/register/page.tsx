@@ -213,10 +213,13 @@ export default function RegisterPage() {
           <div className="mx-auto mb-4">
             <Logo size="xl" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Create Your SCIMS Account</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Get Your FREE Website + SCIMS Account</h1>
           <p className="text-gray-600 mt-2">
-            Get started with your business management system
+            Get started with complete business management + FREE ₦500,000 professional website
           </p>
+          <div className="mt-4 inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+            🎁 FREE ₦500,000 Website Included
+          </div>
         </div>
 
         <Card className="max-w-4xl mx-auto">
@@ -226,7 +229,7 @@ export default function RegisterPage() {
               Account Registration
             </CardTitle>
             <CardDescription>
-              Fill in your details to create your SCIMS account and business profile
+              Fill in your details to create your SCIMS account and get your FREE ₦500,000 professional website
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -515,10 +518,10 @@ export default function RegisterPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Creating Account...
+                      Creating Account + FREE Website...
                     </>
                   ) : (
-                    'Create Account'
+                    'Get FREE Website + Create Account'
                   )}
                 </Button>
                 <Button
