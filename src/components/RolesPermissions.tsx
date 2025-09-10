@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/components/common/Header';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -421,106 +421,10 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
         showBackButton
         onBack={onBack}
       >
-        <Dialog open={isAddRoleDialogOpen} onOpenChange={setIsAddRoleDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Role
-            </Button>
-          </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
-                <DialogHeader>
-                  <DialogTitle>Create New Role</DialogTitle>
-                  <DialogDescription>
-                    Define a new role with specific permissions
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="role-name">Role Name</Label>
-                    <Input
-                      id="role-name"
-                      value={newRole.name}
-                      onChange={(e) => setNewRole(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="e.g., Senior Manager"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="role-description">Description</Label>
-                    <Textarea
-                      id="role-description"
-                      value={newRole.description}
-                      onChange={(e) => setNewRole(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Describe what this role can do"
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Permissions</Label>
-                    <ScrollArea className="h-64 border rounded-md p-4">
-                      {Object.entries(groupedPermissions).map(([category, perms]) => (
-                        <div key={category} className="mb-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-medium text-sm text-gray-700">{category}</h4>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => selectAllCategoryPermissions(category)}
-                                className="text-xs"
-                              >
-                                Select All
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => deselectAllCategoryPermissions(category)}
-                                className="text-xs"
-                              >
-                                Deselect All
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            {perms.map(permission => (
-                              <div key={permission.id} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={permission.id}
-                                  checked={newRole.permissions.includes(permission.id)}
-                                  onCheckedChange={() => togglePermission(permission.id)}
-                                />
-                                <Label htmlFor={permission.id} className="text-sm">
-                                  {permission.name}
-                                </Label>
-                              </div>
-                            ))}
-                          </div>
-                          <Separator className="mt-2" />
-                        </div>
-                      ))}
-                    </ScrollArea>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 justify-end pt-4">
-                  <Button variant="outline" onClick={closeAddDialog} disabled={isSaving}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleAddRole} disabled={isSaving || !newRole.name.trim()}>
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      'Save Role'
-                    )}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+        <Button onClick={() => setIsAddRoleDialogOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Role
+        </Button>
       </Header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -1086,6 +990,102 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Add Role Dialog */}
+      <Dialog open={isAddRoleDialogOpen} onOpenChange={setIsAddRoleDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Create New Role</DialogTitle>
+            <DialogDescription>
+              Define a new role with specific permissions
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="role-name">Role Name</Label>
+              <Input
+                id="role-name"
+                value={newRole.name}
+                onChange={(e) => setNewRole(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="e.g., Senior Manager"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="role-description">Description</Label>
+              <Textarea
+                id="role-description"
+                value={newRole.description}
+                onChange={(e) => setNewRole(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Describe what this role can do"
+              />
+            </div>
+
+            <div>
+              <Label>Permissions</Label>
+              <ScrollArea className="h-64 border rounded-md p-4">
+                {Object.entries(groupedPermissions).map(([category, perms]) => (
+                  <div key={category} className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-sm text-gray-700">{category}</h4>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => selectAllCategoryPermissions(category)}
+                          className="text-xs"
+                        >
+                          Select All
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => deselectAllCategoryPermissions(category)}
+                          className="text-xs"
+                        >
+                          Deselect All
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {perms.map(permission => (
+                        <div key={permission.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={permission.id}
+                            checked={newRole.permissions.includes(permission.id)}
+                            onCheckedChange={() => togglePermission(permission.id)}
+                          />
+                          <Label htmlFor={permission.id} className="text-sm">
+                            {permission.name}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                    <Separator className="mt-2" />
+                  </div>
+                ))}
+              </ScrollArea>
+            </div>
+          </div>
+
+          <div className="flex gap-2 justify-end pt-4">
+            <Button variant="outline" onClick={closeAddDialog} disabled={isSaving}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddRole} disabled={isSaving || !newRole.name.trim()}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Role'
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -73,16 +73,16 @@ export async function PUT(
     }
 
     // Validate required fields
-    if (!body.name || !body.store_id) {
+    if (!body.name) {
       return NextResponse.json(
-        { error: 'Name and store_id are required' },
+        { error: 'Name is required' },
         { status: 400 }
       );
     }
 
-    // Update the staff member
-    const { data, error } = await supabase
-      .from('staff')
+    // Update the user record
+    const { data: userData, error: userError } = await supabase
+      .from('user')
       .update({
         name: body.name,
         email: body.email || null,
@@ -92,19 +92,37 @@ export async function PUT(
         updated_at: new Date().toISOString()
       })
       .eq('id', staffId)
-      .eq('store_id', body.store_id)
       .select()
       .single();
 
-    if (error) {
-      console.error('Supabase error updating staff:', error);
+    if (userError) {
+      console.error('Supabase error updating user:', userError);
       return NextResponse.json(
         { error: 'Failed to update staff member' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(data);
+    // If store_id is provided, update the user_business_role
+    if (body.store_id) {
+      const { error: roleError } = await supabase
+        .from('user_business_role')
+        .update({
+          store_id: body.store_id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', staffId);
+
+      if (roleError) {
+        console.error('Supabase error updating user role:', roleError);
+        // Don't fail the entire operation if role update fails
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      user: userData
+    });
   } catch (error) {
     console.error('Error updating staff:', error);
     return NextResponse.json(
@@ -121,8 +139,6 @@ export async function DELETE(
 ) {
   try {
     const { id: staffId } = await params;
-    const { searchParams } = new URL(request.url);
-    const storeId = searchParams.get('store_id');
 
     if (!staffId) {
       return NextResponse.json(
@@ -131,29 +147,34 @@ export async function DELETE(
       );
     }
 
-    if (!storeId) {
-      return NextResponse.json(
-        { error: 'Store ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Delete the staff member
-    const { error } = await supabase
-      .from('staff')
+    // Deactivate the user (soft delete)
+    const { error: userError } = await supabase
+      .from('user')
       .update({
         is_active: false,
         updated_at: new Date().toISOString()
       })
-      .eq('id', staffId)
-      .eq('store_id', storeId);
+      .eq('id', staffId);
 
-    if (error) {
-      console.error('Supabase error deleting staff:', error);
+    if (userError) {
+      console.error('Supabase error deactivating user:', userError);
       return NextResponse.json(
         { error: 'Failed to delete staff member' },
         { status: 500 }
       );
+    }
+
+    // Also deactivate the user_business_role
+    const { error: roleError } = await supabase
+      .from('user_business_role')
+      .update({
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', staffId);
+
+    if (roleError) {
+      console.error('Supabase error updating user role:', roleError);
+      // Don't fail the entire operation if role update fails
     }
 
     return NextResponse.json({ success: true });
