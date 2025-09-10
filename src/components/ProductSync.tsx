@@ -10,19 +10,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import { 
   Package, 
   Copy, 
   RefreshCw,
-  CheckCircle,
   AlertTriangle,
   Loader2,
-  Download,
-  Upload
+  Download
 } from 'lucide-react';
 
 interface Product {
@@ -56,7 +54,7 @@ interface ProductSyncProps {
 
 export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
   const { user, currentBusiness, currentStore } = useAuth();
-  const { translate, formatCurrency } = useSystem();
+  const { formatCurrency } = useSystem();
   const { logActivity } = useActivityLogger();
   
   // State
@@ -75,6 +73,77 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [syncMode, setSyncMode] = useState<'copy' | 'sync'>('copy');
   
+  // Load data function
+  const loadData = useCallback(async () => {
+    if (!currentBusiness?.id) {
+      setError('No business selected');
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Load all stores in the business first
+      const storesResponse = await fetch(`/api/businesses/${currentBusiness.id}/stores`);
+      if (!storesResponse.ok) {
+        throw new Error('Failed to fetch stores');
+      }
+      const storesData = await storesResponse.json();
+      const businessStores = storesData.stores || [];
+      setStores(businessStores);
+      
+      if (businessStores.length === 0) {
+        setError('No stores found in this business. Please ensure your business has at least one store configured.');
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Products will be loaded by the useEffect when currentStore changes
+      
+    } catch (err: unknown) {
+      console.error('Error loading sync data:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load sync data';
+      setError(errorMessage);
+      toast.error('Failed to load sync data');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentBusiness?.id]);
+
+  // Load products for a specific store
+  const loadProductsForStore = useCallback(async (storeId: string) => {
+    try {
+      setLoadingProducts(true);
+      setError(null);
+      
+      const productsResponse = await fetch(`/api/products?store_id=${storeId}`);
+      if (!productsResponse.ok) {
+        throw new Error('Failed to fetch products');
+      }
+      const productsData = await productsResponse.json();
+      const storeProducts = productsData.products || [];
+      
+      setProducts(storeProducts);
+      
+      if (storeProducts.length === 0) {
+        const storeName = stores.find(s => s.id === storeId)?.name || 'Unknown';
+        setError(`No products found in store "${storeName}". Please add products to this store or select a different source store.`);
+      } else {
+        setError(null);
+      }
+    } catch (err: unknown) {
+      const storeName = stores.find(s => s.id === storeId)?.name || 'Unknown';
+      const errorMessage = err instanceof Error ? err.message : `Failed to load products from store "${storeName}"`;
+      setError(errorMessage);
+      setProducts([]);
+    } finally {
+      setLoadingProducts(false);
+    }
+  }, [stores]);
+
   // Load data
   useEffect(() => {
     if (currentBusiness?.id) {
@@ -83,7 +152,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
       setLoading(false);
       setError('No business selected. Please ensure you are logged into a business account.');
     }
-  }, [currentBusiness?.id, user?.role]);
+  }, [currentBusiness?.id, user?.role, loadData]);
 
   // Load products when current store changes
   useEffect(() => {
@@ -91,7 +160,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
       setSelectedProducts([]); // Clear selected products when store changes
       loadProductsForStore(currentStore.id);
     }
-  }, [currentStore?.id, stores.length]);
+  }, [currentStore?.id, stores.length, loadProductsForStore]);
 
   // Filter products
   const filteredProducts = products.filter(product => {
@@ -144,98 +213,45 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
     );
   }
 
-  const loadData = async () => {
-    if (!currentBusiness?.id) {
-      setError('No business selected');
-      setLoading(false);
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Load all stores in the business first
-      const storesResponse = await fetch(`/api/businesses/${currentBusiness.id}/stores`);
-      if (!storesResponse.ok) {
-        throw new Error('Failed to fetch stores');
-      }
-      const storesData = await storesResponse.json();
-      const businessStores = storesData.stores || [];
-      setStores(businessStores);
-      
-      if (businessStores.length === 0) {
-        setError('No stores found in this business. Please ensure your business has at least one store configured.');
-        setProducts([]);
-        setLoading(false);
-        return;
-      }
-      
-      // Load products for the current store if available
-      if (currentStore?.id && businessStores.length > 0) {
-        setTimeout(() => loadProductsForStore(currentStore.id), 100);
-      }
-      
-    } catch (err: unknown) {
-      console.error('Error loading sync data:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load sync data';
-      setError(errorMessage);
-      toast.error('Failed to load sync data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Load products for a specific store
-  const loadProductsForStore = async (storeId: string) => {
-    try {
-      setLoadingProducts(true);
-      setError(null);
-      
-      const productsResponse = await fetch(`/api/products?store_id=${storeId}`);
-      if (!productsResponse.ok) {
-        throw new Error('Failed to fetch products');
-      }
-      const productsData = await productsResponse.json();
-      const storeProducts = productsData.products || [];
-      
-      setProducts(storeProducts);
-      
-      if (storeProducts.length === 0) {
-        const storeName = stores.find(s => s.id === storeId)?.name || 'Unknown';
-        setError(`No products found in store "${storeName}". Please add products to this store or select a different source store.`);
-      } else {
-        setError(null);
-      }
-    } catch (err: unknown) {
-      const storeName = stores.find(s => s.id === storeId)?.name || 'Unknown';
-      const errorMessage = err instanceof Error ? err.message : `Failed to load products from store "${storeName}"`;
-      setError(errorMessage);
-      setProducts([]);
-    } finally {
-      setLoadingProducts(false);
-    }
-  };
-
   // Get unique categories
   const categories = ['all', ...Array.from(new Set(products.map(p => p.categories?.name).filter(Boolean) as string[]))];
 
   // Handle product selection
-  const toggleProductSelection = (productId: string) => {
-    setSelectedProducts(prev => 
-      prev.includes(productId) 
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
-    );
+  const toggleProductSelection = (productId: string, checked?: boolean) => {
+    if (checked !== undefined) {
+      // Called from checkbox onCheckedChange
+      setSelectedProducts(prev => 
+        checked 
+          ? [...prev, productId]
+          : prev.filter(id => id !== productId)
+      );
+    } else {
+      // Called from button click
+      setSelectedProducts(prev => 
+        prev.includes(productId) 
+          ? prev.filter(id => id !== productId)
+          : [...prev, productId]
+      );
+    }
   };
 
   // Handle store selection
-  const toggleStoreSelection = (storeId: string) => {
-    setSelectedStores(prev => 
-      prev.includes(storeId) 
-        ? prev.filter(id => id !== storeId)
-        : [...prev, storeId]
-    );
+  const toggleStoreSelection = (storeId: string, checked?: boolean) => {
+    if (checked !== undefined) {
+      // Called from checkbox onCheckedChange
+      setSelectedStores(prev => 
+        checked 
+          ? [...prev, storeId]
+          : prev.filter(id => id !== storeId)
+      );
+    } else {
+      // Called from button click
+      setSelectedStores(prev => 
+        prev.includes(storeId) 
+          ? prev.filter(id => id !== storeId)
+          : [...prev, storeId]
+      );
+    }
   };
 
   // Select all products
@@ -415,7 +431,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
       render: (product: Product) => (
         <Checkbox
           checked={selectedProducts.includes(product.id)}
-          onCheckedChange={() => toggleProductSelection(product.id)}
+          onCheckedChange={(checked) => toggleProductSelection(product.id, checked)}
         />
       )
     },
@@ -565,30 +581,33 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
             {/* Filters */}
             <Card>
               <CardContent className="p-6">
-                <div className="flex gap-4 items-center">
-                  <div className="flex-1">
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                  <div className="flex-1 w-full min-w-0">
                     <Input
                       placeholder="Search products by name, SKU, or barcode..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full"
                     />
                   </div>
-                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Filter by category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(category => (
-                        <SelectItem key={category} value={category}>
-                          {category === 'all' ? 'All Categories' : category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button variant="outline" onClick={() => currentStore?.id && loadProductsForStore(currentStore.id)}>
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Refresh
-                  </Button>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue placeholder="Filter by category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map(category => (
+                          <SelectItem key={category} value={category}>
+                            {category === 'all' ? 'All Categories' : category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button variant="outline" onClick={() => currentStore?.id && loadProductsForStore(currentStore.id)}>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Refresh
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -642,28 +661,20 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
             {/* Sync Mode Selection */}
             <div>
               <Label className="text-sm font-medium mb-2 block">Sync Mode</Label>
-              <div className="space-y-2">
+              <RadioGroup value={syncMode} onValueChange={(value) => setSyncMode(value as 'copy' | 'sync')} className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="copy-mode"
-                    checked={syncMode === 'copy'}
-                    onCheckedChange={() => setSyncMode('copy')}
-                  />
-                  <Label htmlFor="copy-mode">
+                  <RadioGroupItem value="copy" id="copy-mode" />
+                  <Label htmlFor="copy-mode" className="cursor-pointer">
                     Copy Products - Create new products in target stores
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="sync-mode"
-                    checked={syncMode === 'sync'}
-                    onCheckedChange={() => setSyncMode('sync')}
-                  />
-                  <Label htmlFor="sync-mode">
+                  <RadioGroupItem value="sync" id="sync-mode" />
+                  <Label htmlFor="sync-mode" className="cursor-pointer">
                     Sync Products - Update existing products or create new ones
                   </Label>
                 </div>
-              </div>
+              </RadioGroup>
             </div>
 
             <Separator />
@@ -688,7 +699,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
                     <Checkbox
                       id={store.id}
                       checked={selectedStores.includes(store.id)}
-                      onCheckedChange={() => toggleStoreSelection(store.id)}
+                      onCheckedChange={(checked) => toggleStoreSelection(store.id, checked)}
                     />
                     <Label htmlFor={store.id} className="flex-1">
                       {store.name}

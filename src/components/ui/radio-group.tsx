@@ -21,12 +21,13 @@ interface RadioGroupItemProps {
 }
 
 const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
-  ({ className, value, onValueChange, disabled, children }, ref) => {
+  ({ className, value, onValueChange, disabled, children, ...props }, ref) => {
     return (
       <div
         ref={ref}
         className={cn("grid gap-2", className)}
         role="radiogroup"
+        {...props}
       >
         {React.Children.map(children, (child) => {
           if (React.isValidElement<RadioGroupItemProps>(child)) {

@@ -11,14 +11,9 @@ export default function ProductsPage() {
     router.push('/dashboard');
   };
 
-  const handleNavigate = (view: string) => {
-    router.push(`/${view}`);
-  };
-
   return (
     <ProductManagement 
       onBack={handleBack}
-      onNavigate={handleNavigate}
     />
   );
 }
