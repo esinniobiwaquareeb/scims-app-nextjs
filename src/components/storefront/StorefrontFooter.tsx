@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Phone, Mail, MapPin, ExternalLink, MessageCircle, Globe } from 'lucide-react';
 import Image from 'next/image';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface Business {
   id: string;
@@ -40,6 +41,7 @@ interface StorefrontFooterProps {
 
 export default function StorefrontFooter({ business }: StorefrontFooterProps) {
   const [platformSettings, setPlatformSettings] = useState<PlatformSettings | null>(null);
+  const { isDark } = useTheme();
 
   useEffect(() => {
     // Fetch platform settings
@@ -65,13 +67,23 @@ export default function StorefrontFooter({ business }: StorefrontFooterProps) {
   };
 
   return (
-    <footer className="bg-gray-900 text-white mt-16">
+    <footer className={`mt-16 ${
+      isDark 
+        ? 'bg-gray-900 text-white' 
+        : 'bg-gray-50 text-gray-900'
+    }`}>
       <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Business Info */}
           <div className="lg:col-span-1">
-            <h3 className="text-lg font-semibold mb-4 text-white">{business.name}</h3>
-            <p className="text-gray-300 text-sm mb-4 leading-relaxed">
+            <h3 className={`text-lg font-semibold mb-4 ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}>
+              {business.name}
+            </h3>
+            <p className={`text-sm mb-4 leading-relaxed ${
+              isDark ? 'text-gray-300' : 'text-gray-600'
+            }`}>
               {business.settings.store_description || business.description}
             </p>
             {business.website && (
@@ -79,7 +91,11 @@ export default function StorefrontFooter({ business }: StorefrontFooterProps) {
                 href={business.website.startsWith('http') ? business.website : `https://${business.website}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                className={`inline-flex items-center text-sm transition-colors ${
+                  isDark 
+                    ? 'text-blue-400 hover:text-blue-300' 
+                    : 'text-blue-600 hover:text-blue-700'
+                }`}
               >
                 <Globe className="w-4 h-4 mr-2" />
                 Visit Website
@@ -90,14 +106,24 @@ export default function StorefrontFooter({ business }: StorefrontFooterProps) {
 
           {/* Contact Info */}
           <div className="lg:col-span-1">
-            <h3 className="text-lg font-semibold mb-4 text-white">Contact Us</h3>
-            <div className="space-y-3 text-sm text-gray-300">
+            <h3 className={`text-lg font-semibold mb-4 ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}>
+              Contact Us
+            </h3>
+            <div className={`space-y-3 text-sm ${
+              isDark ? 'text-gray-300' : 'text-gray-600'
+            }`}>
               {business.phone && (
                 <div className="flex items-center">
-                  <Phone className="w-4 h-4 mr-3 text-blue-400" />
+                  <Phone className={`w-4 h-4 mr-3 ${
+                    isDark ? 'text-blue-400' : 'text-blue-600'
+                  }`} />
                   <a 
                     href={`tel:${business.phone}`}
-                    className="hover:text-white transition-colors"
+                    className={`transition-colors ${
+                      isDark ? 'hover:text-white' : 'hover:text-gray-900'
+                    }`}
                   >
                     {business.phone}
                   </a>
@@ -105,10 +131,14 @@ export default function StorefrontFooter({ business }: StorefrontFooterProps) {
               )}
               {business.email && (
                 <div className="flex items-center">
-                  <Mail className="w-4 h-4 mr-3 text-blue-400" />
+                  <Mail className={`w-4 h-4 mr-3 ${
+                    isDark ? 'text-blue-400' : 'text-blue-600'
+                  }`} />
                   <a 
                     href={`mailto:${business.email}`}
-                    className="hover:text-white transition-colors"
+                    className={`transition-colors ${
+                      isDark ? 'hover:text-white' : 'hover:text-gray-900'
+                    }`}
                   >
                     {business.email}
                   </a>
@@ -116,8 +146,14 @@ export default function StorefrontFooter({ business }: StorefrontFooterProps) {
               )}
               {business.address && (
                 <div className="flex items-start">
-                  <MapPin className="w-4 h-4 mr-3 text-blue-400 mt-0.5" />
-                  <span className="leading-relaxed">{business.address}</span>
+                  <MapPin className={`w-4 h-4 mr-3 mt-0.5 ${
+                    isDark ? 'text-blue-400' : 'text-blue-600'
+                  }`} />
+                  <span className={`leading-relaxed transition-colors ${
+                    isDark ? 'hover:text-white' : 'hover:text-gray-900'
+                  }`}>
+                    {business.address}
+                  </span>
                 </div>
               )}
             </div>
@@ -125,14 +161,24 @@ export default function StorefrontFooter({ business }: StorefrontFooterProps) {
 
           {/* Platform Support */}
           <div className="lg:col-span-1">
-            <h3 className="text-lg font-semibold mb-4 text-white">Platform Support</h3>
-            <div className="space-y-3 text-sm text-gray-300">
+            <h3 className={`text-lg font-semibold mb-4 ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}>
+              Platform Support
+            </h3>
+            <div className={`space-y-3 text-sm ${
+              isDark ? 'text-gray-300' : 'text-gray-600'
+            }`}>
               {platformSettings?.platform_phone && (
                 <div className="flex items-center">
-                  <Phone className="w-4 h-4 mr-3 text-blue-400" />
+                  <Phone className={`w-4 h-4 mr-3 ${
+                    isDark ? 'text-blue-400' : 'text-blue-600'
+                  }`} />
                   <a 
                     href={`tel:${platformSettings.platform_phone}`}
-                    className="hover:text-white transition-colors"
+                    className={`transition-colors ${
+                      isDark ? 'hover:text-white' : 'hover:text-gray-900'
+                    }`}
                   >
                     {platformSettings.platform_phone}
                   </a>
@@ -140,10 +186,14 @@ export default function StorefrontFooter({ business }: StorefrontFooterProps) {
               )}
               {platformSettings?.platform_email && (
                 <div className="flex items-center">
-                  <Mail className="w-4 h-4 mr-3 text-blue-400" />
+                  <Mail className={`w-4 h-4 mr-3 ${
+                    isDark ? 'text-blue-400' : 'text-blue-600'
+                  }`} />
                   <a 
                     href={`mailto:${platformSettings.platform_email}`}
-                    className="hover:text-white transition-colors"
+                    className={`transition-colors ${
+                      isDark ? 'hover:text-white' : 'hover:text-gray-900'
+                    }`}
                   >
                     {platformSettings.platform_email}
                   </a>
@@ -152,7 +202,11 @@ export default function StorefrontFooter({ business }: StorefrontFooterProps) {
               {platformSettings?.platform_whatsapp && (
                 <button
                   onClick={() => handleWhatsAppClick(platformSettings.platform_whatsapp!)}
-                  className="flex items-center text-blue-400 hover:text-blue-300 transition-colors"
+                  className={`flex items-center transition-colors ${
+                    isDark 
+                      ? 'text-blue-400 hover:text-blue-300' 
+                      : 'text-blue-600 hover:text-blue-700'
+                  }`}
                 >
                   <MessageCircle className="w-4 h-4 mr-3" />
                   WhatsApp Support
@@ -171,10 +225,16 @@ export default function StorefrontFooter({ business }: StorefrontFooterProps) {
                 height={32}
                 className="mr-3"
               />
-              <h3 className="text-lg font-semibold text-white">Powered by SCIMS</h3>
+              <h3 className={`text-lg font-semibold ${
+                isDark ? 'text-white' : 'text-gray-900'
+              }`}>
+                Powered by SCIMS
+              </h3>
             </div>
-            <p className="text-gray-300 text-sm mb-4">
-              Smart Commerce Inventory Management System
+            <p className={`text-sm mb-4 ${
+              isDark ? 'text-gray-300' : 'text-gray-600'
+            }`}>
+              Stock Control Inventory Management System
             </p>
             <div className="space-y-2">
               {platformSettings?.platform_website && (
@@ -182,7 +242,11 @@ export default function StorefrontFooter({ business }: StorefrontFooterProps) {
                   href={platformSettings.platform_website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                  className={`inline-flex items-center text-sm transition-colors ${
+                    isDark 
+                      ? 'text-blue-400 hover:text-blue-300' 
+                      : 'text-blue-600 hover:text-blue-700'
+                  }`}
                 >
                   Learn More
                   <ExternalLink className="w-3 h-3 ml-1" />
@@ -193,18 +257,30 @@ export default function StorefrontFooter({ business }: StorefrontFooterProps) {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-gray-700 mt-8 pt-8">
+        <div className={`border-t mt-8 pt-8 ${
+          isDark ? 'border-gray-700' : 'border-gray-200'
+        }`}>
           <div className="flex flex-col sm:flex-row justify-between items-center">
-            <p className="text-gray-400 text-sm">
+            <p className={`text-sm ${
+              isDark ? 'text-gray-400' : 'text-gray-500'
+            }`}>
               © {new Date().getFullYear()} {business.name}. All rights reserved.
             </p>
             <div className="flex items-center space-x-4 mt-4 sm:mt-0">
-              <span className="text-gray-400 text-sm">Powered by</span>
+              <span className={`text-sm ${
+                isDark ? 'text-gray-400' : 'text-gray-500'
+              }`}>
+                Powered by
+              </span>
               <a
                 href={platformSettings?.platform_website || 'https://scims.app'}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center text-white hover:text-blue-400 transition-colors"
+                className={`flex items-center transition-colors ${
+                  isDark 
+                    ? 'text-white hover:text-blue-400' 
+                    : 'text-gray-900 hover:text-blue-600'
+                }`}
               >
                 <Image
                   src="/icons/scims-alt-16x16.png"

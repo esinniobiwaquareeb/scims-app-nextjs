@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ShoppingCart, Package, Heart, Plus, Minus } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface Product {
   id: string;
@@ -48,11 +49,20 @@ export default function ProductCard({
   isInWishlist = false
 }: ProductCardProps) {
   const isOutOfStock = product.stock_quantity === 0;
+  const { isDark } = useTheme();
 
   return (
-    <Card className="group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col bg-white border-0 shadow-md">
+    <Card className={`group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col border-0 shadow-md ${
+      isDark 
+        ? 'bg-gray-800 border-gray-700' 
+        : 'bg-white border-gray-200'
+    }`}>
       {/* Image Section with Overlay */}
-      <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 rounded-t-lg overflow-hidden">
+      <div className={`relative h-48 bg-gradient-to-br rounded-t-lg overflow-hidden ${
+        isDark 
+          ? 'from-gray-700 to-gray-800' 
+          : 'from-gray-50 to-gray-100'
+      }`}>
         {product.image_url ? (
           <Image
             src={product.image_url}
@@ -115,14 +125,18 @@ export default function ProductCard({
       <CardContent className="p-4 flex flex-col flex-1">
         {/* Title */}
         <div className="mb-2">
-          <h3 className="font-semibold text-base line-clamp-2 leading-tight text-gray-900 group-hover:text-primary transition-colors">
+          <h3 className={`font-semibold text-base line-clamp-2 leading-tight group-hover:text-primary transition-colors ${
+            isDark ? 'text-white' : 'text-gray-900'
+          }`}>
             {product.name}
           </h3>
         </div>
 
         {/* Description */}
         <div className="mb-3 flex-1">
-          <p className="text-gray-600 text-sm line-clamp-2 leading-relaxed">
+          <p className={`text-sm line-clamp-2 leading-relaxed ${
+            isDark ? 'text-gray-300' : 'text-gray-600'
+          }`}>
             {product.public_description || product.description}
           </p>
         </div>
@@ -135,7 +149,9 @@ export default function ProductCard({
               {business.currency.symbol}{product.price.toLocaleString()}
             </span>
             {product.brand && (
-              <span className="text-xs text-gray-500 font-medium">
+              <span className={`text-xs font-medium ${
+                isDark ? 'text-gray-400' : 'text-gray-500'
+              }`}>
                 {product.brand.name}
               </span>
             )}
@@ -144,21 +160,29 @@ export default function ProductCard({
           {/* Action Buttons */}
           {cartQuantity > 0 ? (
             /* Quantity Controls */
-            <div className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
+            <div className={`flex items-center justify-between rounded-lg p-2 ${
+              isDark ? 'bg-gray-700' : 'bg-gray-50'
+            }`}>
               <Button
                 size="sm"
                 variant="ghost"
-                className="w-8 h-8 p-0 rounded-full hover:bg-gray-200"
+                className={`w-8 h-8 p-0 rounded-full ${
+                  isDark ? 'hover:bg-gray-600' : 'hover:bg-gray-200'
+                }`}
                 onClick={() => onUpdateQuantity?.(product, cartQuantity - 1)}
                 disabled={isOutOfStock}
               >
                 <Minus className="w-4 h-4" />
               </Button>
-              <span className="text-sm font-medium px-3">{cartQuantity}</span>
+              <span className={`text-sm font-medium px-3 ${
+                isDark ? 'text-white' : 'text-gray-900'
+              }`}>{cartQuantity}</span>
               <Button
                 size="sm"
                 variant="ghost"
-                className="w-8 h-8 p-0 rounded-full hover:bg-gray-200"
+                className={`w-8 h-8 p-0 rounded-full ${
+                  isDark ? 'hover:bg-gray-600' : 'hover:bg-gray-200'
+                }`}
                 onClick={() => onUpdateQuantity?.(product, cartQuantity + 1)}
                 disabled={isOutOfStock || cartQuantity >= product.stock_quantity}
               >
@@ -171,7 +195,11 @@ export default function ProductCard({
               onClick={() => onAddToCart(product)}
               className={`w-full text-sm py-2.5 font-medium transition-all duration-200 ${
                 isOutOfStock 
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                  ? `${
+                      isDark 
+                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed' 
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    }` 
                   : 'bg-primary hover:bg-primary/90 hover:shadow-md active:scale-95'
               }`}
               disabled={isOutOfStock}

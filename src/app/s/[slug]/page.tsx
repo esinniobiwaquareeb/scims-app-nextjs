@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Loader2, Package, Heart } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 import StorefrontHeader from '@/components/storefront/StorefrontHeader';
 import ProductFilters from '@/components/storefront/ProductFilters';
 import ProductCard from '@/components/storefront/ProductCard';
@@ -63,6 +64,7 @@ interface CartItem {
 export default function StorefrontPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const { isDark } = useTheme();
 
   const [business, setBusiness] = useState<Business | null>(null);
   const [stores, setStores] = useState<Array<{
@@ -418,7 +420,11 @@ export default function StorefrontPage() {
   if (!business) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className={`min-h-screen bg-gradient-to-br ${
+      isDark 
+        ? 'from-gray-900 via-gray-800 to-gray-900' 
+        : 'from-gray-50 via-white to-gray-50'
+    }`}>
       <StorefrontHeader business={business} />
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
@@ -429,10 +435,14 @@ export default function StorefrontPage() {
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
+                  <h2 className={`text-2xl font-bold ${
+                    isDark ? 'text-white' : 'text-gray-900'
+                  }`}>
                     Our Products
                   </h2>
-                  <p className="text-gray-600 mt-1">
+                  <p className={`mt-1 ${
+                    isDark ? 'text-gray-300' : 'text-gray-600'
+                  }`}>
                     {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} available
                   </p>
                 </div>
@@ -481,10 +491,24 @@ export default function StorefrontPage() {
 
             {filteredProducts.length === 0 && (
               <div className="text-center py-16">
-                <div className="bg-white rounded-2xl shadow-sm border p-12 max-w-md mx-auto">
-                  <Package className="w-20 h-20 text-gray-300 mx-auto mb-6" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No products found</h3>
-                  <p className="text-gray-600 mb-6">Try adjusting your search or filters to find what you&pos;re looking for</p>
+                <div className={`rounded-2xl shadow-sm border p-12 max-w-md mx-auto ${
+                  isDark 
+                    ? 'bg-gray-800 border-gray-700' 
+                    : 'bg-white border-gray-200'
+                }`}>
+                  <Package className={`w-20 h-20 mx-auto mb-6 ${
+                    isDark ? 'text-gray-400' : 'text-gray-300'
+                  }`} />
+                  <h3 className={`text-xl font-semibold mb-2 ${
+                    isDark ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    No products found
+                  </h3>
+                  <p className={`mb-6 ${
+                    isDark ? 'text-gray-300' : 'text-gray-600'
+                  }`}>
+                    Try adjusting your search or filters to find what you&apos;re looking for
+                  </p>
                   <Button 
                     onClick={() => {
                       setSearchTerm('');

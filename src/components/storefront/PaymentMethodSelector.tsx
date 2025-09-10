@@ -3,7 +3,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { RadioGroupItem } from '@/components/ui/radio-group';
 import { CreditCard, Truck, Smartphone, Wallet } from 'lucide-react';
 
 interface PaymentMethodSelectorProps {
@@ -71,18 +71,16 @@ export default function PaymentMethodSelector({
   return (
     <div className="space-y-3">
       <Label className="text-base font-medium">Payment Method</Label>
-      <RadioGroup
-        value={selectedMethod}
-        onValueChange={onMethodChange}
-        disabled={disabled}
-        className="space-y-2"
-      >
+      <div className="space-y-2">
         {availableMethods.map((method) => (
           <div key={method} className="relative">
             <RadioGroupItem
               value={method}
               id={method}
               className="peer sr-only"
+              checked={selectedMethod === method}
+              onValueChange={onMethodChange}
+              disabled={disabled}
             />
             <Label
               htmlFor={method}
@@ -113,7 +111,7 @@ export default function PaymentMethodSelector({
             </Label>
           </div>
         ))}
-      </RadioGroup>
+      </div>
     </div>
   );
 }

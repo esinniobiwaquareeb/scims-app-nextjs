@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Share2, Check, Store, Phone, Mail } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 
 interface Business {
@@ -34,6 +35,7 @@ interface StorefrontHeaderProps {
 
 export default function StorefrontHeader({ business }: StorefrontHeaderProps) {
   const [isCopied, setIsCopied] = useState(false);
+  const { isDark } = useTheme();
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -78,7 +80,11 @@ export default function StorefrontHeader({ business }: StorefrontHeaderProps) {
   return (
     <>
       {/* Header */}
-      <header className="bg-white/95 backdrop-blur-sm shadow-sm border-b sticky top-0 z-50">
+      <header className={`backdrop-blur-sm shadow-sm border-b sticky top-0 z-50 ${
+        isDark 
+          ? 'bg-gray-900/95 border-gray-700' 
+          : 'bg-white/95 border-gray-200'
+      }`}>
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             {/* Brand Section */}
@@ -88,11 +94,15 @@ export default function StorefrontHeader({ business }: StorefrontHeaderProps) {
                   <Store className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">
+                  <h1 className={`text-xl font-bold ${
+                    isDark ? 'text-white' : 'text-gray-900'
+                  }`}>
                     {business.name}
                   </h1>
                   {business.settings.store_description && (
-                    <p className="text-sm text-gray-600 line-clamp-1 max-w-md">
+                    <p className={`text-sm line-clamp-1 max-w-md ${
+                      isDark ? 'text-gray-300' : 'text-gray-600'
+                    }`}>
                       {business.settings.store_description}
                     </p>
                   )}
@@ -103,7 +113,9 @@ export default function StorefrontHeader({ business }: StorefrontHeaderProps) {
             {/* Contact & Actions */}
             <div className="flex items-center space-x-4">
               {/* Contact Info */}
-              <div className="hidden md:flex items-center space-x-4 text-sm text-gray-600">
+              <div className={`hidden md:flex items-center space-x-4 text-sm ${
+                isDark ? 'text-gray-300' : 'text-gray-600'
+              }`}>
                 {business.phone && (
                   <div className="flex items-center space-x-1">
                     <Phone className="w-4 h-4" />
@@ -176,14 +188,26 @@ export default function StorefrontHeader({ business }: StorefrontHeaderProps) {
             </div>
           </div>
         ) : (
-          <div className="w-full h-32 sm:h-40 md:h-48 lg:h-56 xl:h-64 bg-gradient-to-br from-primary/10 via-primary/5 to-gray-50 flex items-center justify-center">
+          <div className={`w-full h-32 sm:h-40 md:h-48 lg:h-56 xl:h-64 bg-gradient-to-br flex items-center justify-center ${
+            isDark 
+              ? 'from-primary/20 via-primary/10 to-gray-800' 
+              : 'from-primary/10 via-primary/5 to-gray-50'
+          }`}>
             <div className="text-center px-4 max-w-4xl mx-auto">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-lg">
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+              <div className={`backdrop-blur-sm rounded-2xl p-8 border shadow-lg ${
+                isDark 
+                  ? 'bg-gray-800/80 border-gray-700/20' 
+                  : 'bg-white/80 border-white/20'
+              }`}>
+                <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-2 ${
+                  isDark ? 'text-white' : 'text-gray-900'
+                }`}>
                   {business.name}
                 </h2>
                 {business.settings.store_description && (
-                  <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+                  <p className={`text-lg sm:text-xl max-w-2xl mx-auto ${
+                    isDark ? 'text-gray-300' : 'text-gray-600'
+                  }`}>
                     {business.settings.store_description}
                   </p>
                 )}

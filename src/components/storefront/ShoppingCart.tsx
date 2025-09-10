@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useTheme } from '@/contexts/ThemeContext';
 import { 
   ShoppingCart, 
   Plus,
@@ -89,12 +90,17 @@ export default function StorefrontCart({
   setSelectedPaymentMethod,
   availablePaymentMethods
 }: ShoppingCartProps) {
+  const { isDark } = useTheme();
   const getCartTotal = () => {
     return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
   };
 
   return (
-    <Card className="sticky top-8">
+    <Card className={`sticky top-8 ${
+      isDark 
+        ? 'bg-gray-800 border-gray-700' 
+        : 'bg-white border-gray-200'
+    }`}>
       <CardHeader>
         <CardTitle className="flex items-center">
           <ShoppingCart className="w-5 h-5 mr-2" />
@@ -104,9 +110,19 @@ export default function StorefrontCart({
       <CardContent className="space-y-4">
         {cart.length === 0 ? (
           <div className="text-center py-8">
-            <Package className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-500">Your cart is empty</p>
-            <p className="text-sm text-gray-400 mt-1">Add some products to get started</p>
+            <Package className={`w-12 h-12 mx-auto mb-3 ${
+              isDark ? 'text-gray-500' : 'text-gray-400'
+            }`} />
+            <p className={`${
+              isDark ? 'text-gray-300' : 'text-gray-500'
+            }`}>
+              Your cart is empty
+            </p>
+            <p className={`text-sm mt-1 ${
+              isDark ? 'text-gray-400' : 'text-gray-400'
+            }`}>
+              Add some products to get started
+            </p>
           </div>
         ) : (
           <>
@@ -130,8 +146,14 @@ export default function StorefrontCart({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm truncate">{item.product.name}</h4>
-                    <p className="text-sm text-gray-600">
+                    <h4 className={`font-medium text-sm truncate ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      {item.product.name}
+                    </h4>
+                    <p className={`text-sm ${
+                      isDark ? 'text-gray-300' : 'text-gray-600'
+                    }`}>
                       {business.currency.symbol}{item.product.price.toLocaleString()}
                     </p>
                   </div>
@@ -144,7 +166,11 @@ export default function StorefrontCart({
                     >
                       <Minus className="w-3 h-3" />
                     </Button>
-                    <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                    <span className={`w-8 text-center text-sm font-medium ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      {item.quantity}
+                    </span>
                     <Button
                       size="sm"
                       variant="outline"
@@ -159,9 +185,15 @@ export default function StorefrontCart({
             </div>
             
             {/* Total */}
-            <div className="border-t pt-4">
+            <div className={`border-t pt-4 ${
+              isDark ? 'border-gray-700' : 'border-gray-200'
+            }`}>
               <div className="flex justify-between items-center mb-4">
-                <span className="text-lg font-semibold">Total:</span>
+                <span className={`text-lg font-semibold ${
+                  isDark ? 'text-white' : 'text-gray-900'
+                }`}>
+                  Total:
+                </span>
                 <span className="text-xl font-bold text-primary">
                   {business.currency.symbol}{getCartTotal().toLocaleString()}
                 </span>

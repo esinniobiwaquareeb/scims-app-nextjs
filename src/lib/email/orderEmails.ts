@@ -109,7 +109,7 @@ export async function sendOrderConfirmationEmail(data: CustomerOrderData) {
           <p>If you have any questions, please contact ${data.businessName} directly.</p>
         </div>
         <div class="footer">
-          <p>This email was sent automatically by SCIMS (Smart Commerce Inventory Management System)</p>
+          <p>This email was sent automatically by SCIMS (Stock Control Inventory Management System)</p>
         </div>
       </div>
     </body>
@@ -215,7 +215,7 @@ export async function sendBusinessOrderNotification(data: BusinessOrderData) {
           <p class="urgent">Please respond to the customer promptly to confirm their order.</p>
         </div>
         <div class="footer">
-          <p>This notification was sent automatically by SCIMS (Smart Commerce Inventory Management System)</p>
+          <p>This notification was sent automatically by SCIMS (Stock Control Inventory Management System)</p>
         </div>
       </div>
     </body>
