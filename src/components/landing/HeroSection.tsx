@@ -1,10 +1,44 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, CheckCircle2, Eye, MousePointer, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, CheckCircle2, MousePointer, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { AnimatedSection } from './AnimatedSection';
 import Image from 'next/image';
+
+// Dashboard images data - moved outside component to prevent recreation
+const dashboardImages = [
+  {
+    src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/business-admin-dashboard.png',
+    alt: 'SCIMS Business Admin Dashboard',
+    title: 'Business Dashboard',
+    description: 'Complete business management overview'
+  },
+  {
+    src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/inventory.png',
+    alt: 'SCIMS Inventory Management',
+    title: 'Inventory Management',
+    description: 'Track products and stock levels'
+  },
+  {
+    src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/pos-page.png',
+    alt: 'SCIMS POS System',
+    title: 'Point of Sale',
+    description: 'Process sales and transactions'
+  },
+  {
+    src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/pos-payment.png',
+    alt: 'SCIMS Payment Processing',
+    title: 'Payment Processing',
+    description: 'Secure payment handling'
+  },
+  {
+    src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/pos-receipt.png',
+    alt: 'SCIMS Receipt Generation',
+    title: 'Receipt Generation',
+    description: 'Professional receipt printing'
+  }
+];
 
 export interface HeroSectionProps {
   onGetStarted?: () => void;
@@ -22,42 +56,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   
   // Carousel state
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  
-  // Dashboard images data
-  const dashboardImages = [
-    {
-      src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/business-admin-dashboard.png',
-      alt: 'SCIMS Business Admin Dashboard',
-      title: 'Business Dashboard',
-      description: 'Complete business management overview'
-    },
-    {
-      src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/inventory.png',
-      alt: 'SCIMS Inventory Management',
-      title: 'Inventory Management',
-      description: 'Track products and stock levels'
-    },
-    {
-      src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/pos-page.png',
-      alt: 'SCIMS POS System',
-      title: 'Point of Sale',
-      description: 'Process sales and transactions'
-    },
-    {
-      src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/pos-payment.png',
-      alt: 'SCIMS Payment Processing',
-      title: 'Payment Processing',
-      description: 'Secure payment handling'
-    },
-    {
-      src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/pos-receipt.png',
-      alt: 'SCIMS Receipt Generation',
-      title: 'Receipt Generation',
-      description: 'Professional receipt printing'
-    }
-  ];
 
+  // Event handlers
   const handleGetStarted = () => {
     if (onGetStarted) {
       onGetStarted();
@@ -74,27 +74,29 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     }
   };
 
-  // Carousel navigation functions
-  const nextImage = () => {
+  // Carousel navigation functions - optimized with useCallback
+  const nextImage = useCallback(() => {
     setCurrentImageIndex((prev) => (prev + 1) % dashboardImages.length);
-  };
+  }, []);
 
-  const prevImage = () => {
+  const prevImage = useCallback(() => {
     setCurrentImageIndex((prev) => (prev - 1 + dashboardImages.length) % dashboardImages.length);
-  };
+  }, []);
 
-  const goToImage = (index: number) => {
+  const goToImage = useCallback((index: number) => {
     setCurrentImageIndex(index);
-  };
+  }, []);
 
   return (
     <section className={`relative py-32 px-4 sm:px-6 lg:px-8 overflow-hidden ${className}`}>
+      {/* Background animation */}
       <motion.div 
         className="absolute inset-0 bg-muted/20"
         style={{ y }}
       />
       <div className="relative max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Left content - Hero text and CTA */}
           <div className="text-center lg:text-left">
             <AnimatedSection animation="fadeUp" delay={0.2}>
               <Badge variant="secondary" className="mb-6">
@@ -121,6 +123,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
           </div>
 
+          {/* Right content - Dashboard carousel */}
           <div className="lg:pl-8">
             <AnimatedSection animation="fadeUp" delay={0.6}>
               <div className="relative">
