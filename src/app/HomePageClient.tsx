@@ -629,16 +629,13 @@ export default function HomePageClient() {
             <div className="relative">
               <AnimatedSection animation="fadeUp" delay={0.6}>
                 <div className="relative">
-                  <div className="w-full h-96 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl shadow-2xl flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Globe className="w-10 h-10 text-primary" />
-                      </div>
-                      <h3 className="text-2xl font-semibold mb-2">Your FREE Website</h3>
-                      <p className="text-muted-foreground">Professional online store included</p>
-                    </div>
+                  <div className="w-full rounded-2xl shadow-2xl overflow-hidden">
+                    <img
+                      src="https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/website-shot.png"
+                      alt="SCIMS FREE Website Screenshot"
+                      className="w-full h-auto rounded-2xl"
+                    />
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent rounded-2xl"></div>
                   <div className="absolute bottom-6 left-6 right-6">
                     <div className="bg-background/90 backdrop-blur-sm rounded-lg p-4">
                       <div className="flex items-center space-x-2 mb-2">
