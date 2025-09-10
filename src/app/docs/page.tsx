@@ -355,9 +355,11 @@ export default function DocsPage() {
                     <p className="text-muted-foreground mb-4">
                       Configure your store details, currency, and basic settings.
                     </p>
-                    <Button variant="outline" size="sm">
-                      View Setup Guide
-                    </Button>
+                    <a href="/docs/getting-started/store-setup">
+                      <Button variant="outline" size="sm">
+                        View Setup Guide
+                      </Button>
+                    </a>
                   </div>
                 </div>
               </CardContent>
@@ -374,9 +376,11 @@ export default function DocsPage() {
                     <p className="text-muted-foreground mb-4">
                       Import your product catalog or add products manually.
                     </p>
-                    <Button variant="outline" size="sm">
-                      Product Import Guide
-                    </Button>
+                    <a href="/docs/getting-started/products">
+                      <Button variant="outline" size="sm">
+                        Product Import Guide
+                      </Button>
+                    </a>
                   </div>
                 </div>
               </CardContent>
@@ -393,9 +397,11 @@ export default function DocsPage() {
                     <p className="text-muted-foreground mb-4">
                       Begin processing sales with the POS system and send receipts to customers.
                     </p>
-                    <Button variant="outline" size="sm">
-                      POS Tutorial
-                    </Button>
+                    <a href="/docs/pos/processing-sales">
+                      <Button variant="outline" size="sm">
+                        POS Tutorial
+                      </Button>
+                    </a>
                   </div>
                 </div>
               </CardContent>
@@ -421,6 +427,7 @@ export default function DocsPage() {
                 <h3 className="text-lg font-semibold mb-2">User Manual</h3>
                 <p className="text-muted-foreground mb-4">Complete user manual in PDF format</p>
                 <Button variant="outline" size="sm">
+                  <Download className="w-4 h-4 mr-2" />
                   Download PDF
                 </Button>
               </CardContent>
@@ -432,6 +439,7 @@ export default function DocsPage() {
                 <h3 className="text-lg font-semibold mb-2">API Documentation</h3>
                 <p className="text-muted-foreground mb-4">Technical documentation for developers</p>
                 <Button variant="outline" size="sm">
+                  <ExternalLink className="w-4 h-4 mr-2" />
                   View API Docs
                 </Button>
               </CardContent>
@@ -443,6 +451,7 @@ export default function DocsPage() {
                 <h3 className="text-lg font-semibold mb-2">Best Practices</h3>
                 <p className="text-muted-foreground mb-4">Industry best practices and tips</p>
                 <Button variant="outline" size="sm">
+                  <Download className="w-4 h-4 mr-2" />
                   Download Guide
                 </Button>
               </CardContent>
