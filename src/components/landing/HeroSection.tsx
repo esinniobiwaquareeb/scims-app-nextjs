@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, CheckCircle2, Eye, MousePointer } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Eye, MousePointer, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { AnimatedSection } from './AnimatedSection';
+import Image from 'next/image';
 
 export interface HeroSectionProps {
   onGetStarted?: () => void;
@@ -18,6 +19,44 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 }) => {
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 500], [0, 150]);
+  
+  // Carousel state
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Dashboard images data
+  const dashboardImages = [
+    {
+      src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/business-admin-dashboard.png',
+      alt: 'SCIMS Business Admin Dashboard',
+      title: 'Business Dashboard',
+      description: 'Complete business management overview'
+    },
+    {
+      src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/inventory.png',
+      alt: 'SCIMS Inventory Management',
+      title: 'Inventory Management',
+      description: 'Track products and stock levels'
+    },
+    {
+      src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/pos-page.png',
+      alt: 'SCIMS POS System',
+      title: 'Point of Sale',
+      description: 'Process sales and transactions'
+    },
+    {
+      src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/pos-payment.png',
+      alt: 'SCIMS Payment Processing',
+      title: 'Payment Processing',
+      description: 'Secure payment handling'
+    },
+    {
+      src: 'https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/pos-receipt.png',
+      alt: 'SCIMS Receipt Generation',
+      title: 'Receipt Generation',
+      description: 'Professional receipt printing'
+    }
+  ];
 
   const handleGetStarted = () => {
     if (onGetStarted) {
@@ -33,6 +72,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     } else {
       window.location.href = `/demo?type=${demoType}`;
     }
+  };
+
+  // Carousel navigation functions
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % dashboardImages.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + dashboardImages.length) % dashboardImages.length);
+  };
+
+  const goToImage = (index: number) => {
+    setCurrentImageIndex(index);
   };
 
   return (
@@ -64,6 +116,71 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <strong>Stop paying for separate systems!</strong> Get complete business management (POS, inventory, analytics) 
                 PLUS a professional online store that works 24/7. From retail to restaurants - everything in one platform.
               </p>
+            </AnimatedSection>
+
+
+          </div>
+
+          <div className="lg:pl-8">
+            <AnimatedSection animation="fadeUp" delay={0.6}>
+              <div className="relative">
+                {/* Main Image Display */}
+                <div className="w-full h-96 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl shadow-2xl overflow-hidden relative">
+                  <Image
+                    src={dashboardImages[currentImageIndex].src}
+                    alt={dashboardImages[currentImageIndex].alt}
+                    fill
+                    className="object-cover rounded-2xl"
+                    priority
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl"></div>
+                  
+                  {/* Navigation Arrows */}
+                  <button
+                    onClick={prevImage}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background backdrop-blur-sm rounded-full p-2 transition-all duration-200 hover:scale-110"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background backdrop-blur-sm rounded-full p-2 transition-all duration-200 hover:scale-110"
+                    aria-label="Next image"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Image Info Overlay */}
+                <div className="absolute bottom-6 left-6 right-6">
+                  <div className="bg-background/90 backdrop-blur-sm rounded-lg p-4">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm font-medium">{dashboardImages[currentImageIndex].title}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {dashboardImages[currentImageIndex].description}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Dots Indicator */}
+                <div className="flex justify-center space-x-2 mt-4">
+                  {dashboardImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => goToImage(index)}
+                      className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                        index === currentImageIndex
+                          ? 'bg-primary scale-125'
+                          : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                      }`}
+                      aria-label={`Go to image ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
             </AnimatedSection>
 
             <AnimatedSection animation="fadeUp" delay={0.7}>
@@ -113,34 +230,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <p className="text-sm text-muted-foreground">
                 🎁 FREE ₦500,000 Website • No payment required • 14-day trial • Works offline
               </p>
-            </AnimatedSection>
-          </div>
-
-          <div className="lg:pl-8">
-            <AnimatedSection animation="fadeUp" delay={0.6}>
-              <div className="relative">
-                <div className="w-full h-96 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl shadow-2xl flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Eye className="w-8 h-8 text-primary" />
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2">SCIMS Dashboard</h3>
-                    <p className="text-muted-foreground">Complete business management solution</p>
-                  </div>
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent rounded-2xl"></div>
-                <div className="absolute bottom-6 left-6 right-6">
-                  <div className="bg-background/90 backdrop-blur-sm rounded-lg p-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-sm font-medium">Live Dashboard</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Real-time business insights across all industries
-                    </p>
-                  </div>
-                </div>
-              </div>
             </AnimatedSection>
           </div>
         </div>

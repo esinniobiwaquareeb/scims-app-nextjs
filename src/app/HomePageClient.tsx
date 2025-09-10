@@ -561,32 +561,30 @@ export default function HomePageClient() {
       {/* FREE Website Section */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary/5 to-primary/10">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start mb-12">
+            <div className="space-y-6">
               <AnimatedSection animation="fadeUp" delay={0.2}>
-                <Badge variant="secondary" className="mb-6">
-                  🎁 FREE BONUS
-                </Badge>
-              </AnimatedSection>
-              
-              <AnimatedSection animation="fadeUp" delay={0.4}>
-                <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
-                  Get Your Professional Website
-                  <span className="text-primary block">
-                    Worth ₦500,000 - FREE!
-                  </span>
-                </h2>
-              </AnimatedSection>
-              
-              <AnimatedSection animation="fadeUp" delay={0.6}>
-                <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                  <strong>Stop paying for separate website development!</strong> Every SCIMS plan includes a stunning, 
-                  mobile-optimized online store that works 24/7. Your customers can shop even when you&apos;re closed.
-                </p>
+                <div className="space-y-4">
+                  <Badge variant="secondary" className="mb-4">
+                    🎁 FREE BONUS
+                  </Badge>
+                  
+                  <h2 className="text-4xl md:text-5xl font-bold leading-tight">
+                    Get Your Professional Website
+                    <span className="text-primary block">
+                      Worth ₦500,000 - FREE!
+                    </span>
+                  </h2>
+                  
+                  <p className="text-lg text-muted-foreground leading-relaxed">
+                    <strong>Stop paying for separate website development!</strong> Every SCIMS plan includes a stunning, 
+                    mobile-optimized online store that works 24/7. Your customers can shop even when you&apos;re closed.
+                  </p>
+                </div>
               </AnimatedSection>
 
-              <AnimatedSection animation="fadeUp" delay={0.8}>
-                <div className="space-y-4 mb-8">
+              <AnimatedSection animation="fadeUp" delay={0.4}>
+                <div className="space-y-3">
                   <div className="flex items-center space-x-3">
                     <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
                     <span className="text-lg"><strong>Professional Design</strong> - Mobile-optimized, SEO-ready</span>
@@ -605,30 +603,11 @@ export default function HomePageClient() {
                   </div>
                 </div>
               </AnimatedSection>
-
-              <AnimatedSection animation="fadeUp" delay={1.0}>
-                <div className="bg-background/80 backdrop-blur-sm rounded-2xl p-6 border border-primary/20">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="font-semibold text-lg">Real Business Impact</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-primary">45%</div>
-                      <div className="text-sm text-muted-foreground">Average Sales Increase</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-primary">₦2.3M</div>
-                      <div className="text-sm text-muted-foreground">Monthly Online Revenue</div>
-                    </div>
-                  </div>
-                </div>
-              </AnimatedSection>
             </div>
 
-            <div className="relative">
-              <AnimatedSection animation="fadeUp" delay={0.6}>
-                <div className="relative">
+            <div className="lg:sticky lg:top-8">
+              <AnimatedSection animation="fadeUp" delay={0.4}>
+                <div className="space-y-4">
                   <div className="w-full rounded-2xl shadow-2xl overflow-hidden">
                     <img
                       src="https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/website-shot.png"
@@ -636,21 +615,47 @@ export default function HomePageClient() {
                       className="w-full h-auto rounded-2xl"
                     />
                   </div>
-                  <div className="absolute bottom-6 left-6 right-6">
-                    <div className="bg-background/90 backdrop-blur-sm rounded-lg p-4">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-sm font-medium">Live Online Store</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Your customers can shop 24/7, even when you&apos;re closed
-                      </p>
+                  <div className="bg-background/90 backdrop-blur-sm rounded-lg p-4 border border-primary/20">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm font-medium">Live Online Store</span>
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      Your customers can shop 24/7, even when you&apos;re closed
+                    </p>
                   </div>
                 </div>
               </AnimatedSection>
             </div>
           </div>
+
+          {/* Real Business Impact Card - Full Width */}
+          <AnimatedSection animation="fadeUp" delay={0.8}>
+            <div className="bg-background/80 backdrop-blur-sm rounded-2xl p-8 border border-primary/20">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="font-semibold text-xl">Real Business Impact</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+                <div>
+                  <div className="text-4xl font-bold text-primary mb-2">45%</div>
+                  <div className="text-sm text-muted-foreground">Average Sales Increase</div>
+                </div>
+                <div>
+                  <div className="text-4xl font-bold text-primary mb-2">₦2.3M</div>
+                  <div className="text-sm text-muted-foreground">Monthly Online Revenue</div>
+                </div>
+                <div>
+                  <div className="text-4xl font-bold text-primary mb-2">24/7</div>
+                  <div className="text-sm text-muted-foreground">Always Open for Business</div>
+                </div>
+                <div>
+                  <div className="text-4xl font-bold text-primary mb-2">100%</div>
+                  <div className="text-sm text-muted-foreground">Mobile Optimized</div>
+                </div>
+              </div>
+            </div>
+          </AnimatedSection>
         </div>
       </section>
 
