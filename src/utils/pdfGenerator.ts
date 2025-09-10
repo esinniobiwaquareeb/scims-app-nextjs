@@ -150,8 +150,13 @@ export function generateOrderPDF(orderData: OrderData): void {
 
     yPosition = addText(item.product.name, col1, yPosition, 70);
     doc.text(item.quantity.toString(), col2, yPosition - 3);
-    doc.text(`${orderData.business.currency.symbol}${item.product.price.toLocaleString()}`, col3, yPosition - 3);
-    doc.text(`${orderData.business.currency.symbol}${(item.product.price * item.quantity).toLocaleString()}`, col4, yPosition - 3);
+    
+    // Format currency properly
+    const priceText = `${orderData.business.currency.symbol}${item.product.price.toFixed(2)}`;
+    const totalText = `${orderData.business.currency.symbol}${(item.product.price * item.quantity).toFixed(2)}`;
+    
+    doc.text(priceText, col3, yPosition - 3);
+    doc.text(totalText, col4, yPosition - 3);
     yPosition += 5;
   });
 
@@ -161,7 +166,7 @@ export function generateOrderPDF(orderData: OrderData): void {
   // Total
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  const totalText = `Total Amount: ${orderData.business.currency.symbol}${orderData.total.toLocaleString()}`;
+  const totalText = `Total Amount: ${orderData.business.currency.symbol}${orderData.total.toFixed(2)}`;
   yPosition = addText(totalText, col3, yPosition);
 
   // Order Notes

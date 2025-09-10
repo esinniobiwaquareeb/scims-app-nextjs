@@ -11,6 +11,8 @@ import ProductCard from '@/components/storefront/ProductCard';
 import StorefrontCart from '@/components/storefront/ShoppingCart';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter';
 import OrderSummaryModal from '@/components/storefront/OrderSummaryModal';
+import MobileCartButton from '@/components/storefront/MobileCartButton';
+import MobileCartModal from '@/components/storefront/MobileCartModal';
 import { generateOrderPDF } from '@/utils/pdfGenerator';
 
 interface Product {
@@ -86,6 +88,7 @@ export default function StorefrontPage() {
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [error, setError] = useState('');
   const [showOrderSummary, setShowOrderSummary] = useState(false);
+  const [showMobileCart, setShowMobileCart] = useState(false);
   const [orderData, setOrderData] = useState<{
     orderNumber: string;
     business: Business;
@@ -554,6 +557,38 @@ export default function StorefrontPage() {
       </div>
 
       <StorefrontFooter business={business} />
+
+      {/* Mobile Cart Button */}
+      <MobileCartButton
+        cartCount={cart.length}
+        onClick={() => setShowMobileCart(true)}
+      />
+
+      {/* Mobile Cart Modal */}
+      <MobileCartModal
+        isOpen={showMobileCart}
+        onClose={() => setShowMobileCart(false)}
+        cart={cart}
+        business={business}
+        onUpdateQuantity={updateQuantity}
+        onOrder={handleOrder}
+        isOrdering={isOrdering}
+        orderSuccess={orderSuccess}
+        error={error}
+        customerName={customerName}
+        setCustomerName={setCustomerName}
+        customerPhone={customerPhone}
+        setCustomerPhone={setCustomerPhone}
+        customerEmail={customerEmail}
+        setCustomerEmail={setCustomerEmail}
+        customerAddress={customerAddress}
+        setCustomerAddress={setCustomerAddress}
+        orderNotes={orderNotes}
+        setOrderNotes={setOrderNotes}
+        selectedPaymentMethod={selectedPaymentMethod}
+        setSelectedPaymentMethod={setSelectedPaymentMethod}
+        availablePaymentMethods={availablePaymentMethods}
+      />
 
       {/* Order Summary Modal */}
       <OrderSummaryModal
