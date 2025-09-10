@@ -422,9 +422,9 @@ export default function StorefrontPage() {
       <StorefrontHeader business={business} />
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-4">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Main Content */}
+              <div className="lg:col-span-8">
             {/* Products Count and Filters */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
@@ -463,7 +463,7 @@ export default function StorefrontPage() {
             </div>
 
             {/* Products Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
@@ -499,8 +499,8 @@ export default function StorefrontPage() {
             )}
           </div>
 
-          {/* Cart Sidebar */}
-          <div className="lg:col-span-1">
+              {/* Cart Sidebar */}
+              <div className="lg:col-span-4">
             <div className="sticky top-24">
               <StorefrontCart
                 cart={cart}

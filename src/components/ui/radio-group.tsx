@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import * as React from "react"
@@ -47,9 +46,7 @@ const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
 RadioGroup.displayName = "RadioGroup"
 
 const RadioGroupItem = React.forwardRef<HTMLInputElement, RadioGroupItemProps>(
-  ({ className, value, id, disabled, ...props }, ref) => {
-    const { checked, onValueChange } = props as any
-
+  ({ className, value, id, disabled, checked, onValueChange, ...props }, ref) => {
     return (
       <input
         ref={ref}
