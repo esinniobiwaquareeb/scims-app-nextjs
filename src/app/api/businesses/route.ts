@@ -117,13 +117,14 @@ export async function POST(request: NextRequest) {
 
     // Create business admin user account
     const businessAdminData = {
-      username: `admin.${business.name.toLowerCase().replace(/\s+/g, '.')}`,
+      username: businessData.username || `admin.${business.name.toLowerCase().replace(/\s+/g, '.')}`,
       email: businessData.email,
       name: `${business.name} Administrator`,
       password_hash: passwordHash,
       role: 'business_admin',
       is_active: true,
-      is_demo: false // Real business users are not demo users
+      is_demo: false, // Real business users are not demo users
+      email_verified: true // Auto-verify admin users created by superadmin
     };
 
     const { data: user, error: userError } = await supabase

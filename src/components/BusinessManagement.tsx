@@ -118,6 +118,7 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
   const [newBusiness, setNewBusiness] = useState({
     name: '',
     email: '',
+    username: '',
     phone: '',
     address: '',
     website: '',
@@ -231,9 +232,40 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
     }
   };
 
+  const resetNewBusinessForm = () => {
+    setNewBusiness({
+      name: '',
+      email: '',
+      username: '',
+      phone: '',
+      address: '',
+      website: '',
+      description: '',
+      business_type: 'retail',
+      country_id: '',
+      currency_id: '',
+      language_id: '',
+      timezone: 'UTC',
+      subscription_plan_id: '',
+      subscription_status: 'active',
+      is_active: true
+    });
+  };
+
   const handleAddBusiness = async () => {
-    if (!newBusiness.name || !newBusiness.email) {
-      toast.error('Please fill in required fields');
+    if (!newBusiness.name || !newBusiness.email || !newBusiness.username) {
+      toast.error('Please fill in all required fields (Business Name, Email, and Admin Username)');
+      return;
+    }
+
+    // Validate username format
+    if (newBusiness.username.length < 3) {
+      toast.error('Username must be at least 3 characters long');
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9._-]+$/.test(newBusiness.username)) {
+      toast.error('Username can only contain letters, numbers, dots, underscores, and hyphens');
       return;
     }
 
@@ -244,22 +276,7 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
       const result = await createBusinessMutation.mutateAsync(newBusiness);
       
       // Reset form and close dialog on success
-      setNewBusiness({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        website: '',
-        description: '',
-        business_type: 'retail',
-        country_id: '',
-        currency_id: '',
-        language_id: '',
-        timezone: 'UTC',
-        subscription_plan_id: '',
-        subscription_status: 'active',
-        is_active: true
-      });
+      resetNewBusinessForm();
       setIsAddDialogOpen(false);
       
       // Show success message with admin credentials
@@ -587,7 +604,10 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
         />
 
         {/* Add Business Dialog */}
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+          setIsAddDialogOpen(open);
+          if (!open) resetNewBusinessForm();
+        }}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle>Add New Business</DialogTitle>
@@ -617,6 +637,19 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
                     placeholder="Enter email address"
                   />
                 </div>
+              </div>
+
+              <div>
+                <Label htmlFor="add-username">Admin Username *</Label>
+                <Input
+                  id="add-username"
+                  value={newBusiness.username}
+                  onChange={(e) => setNewBusiness({ ...newBusiness, username: e.target.value })}
+                  placeholder="Enter admin username"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  This will be the username for the business administrator account
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -806,7 +839,10 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
               </div>
 
               <div className="flex gap-2 justify-end pt-4 border-t">
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={submitting}>
+                <Button variant="outline" onClick={() => {
+                  setIsAddDialogOpen(false);
+                  resetNewBusinessForm();
+                }} disabled={submitting}>
                   Cancel
                 </Button>
                 <Button onClick={handleAddBusiness} disabled={submitting}>
