@@ -10,7 +10,7 @@ import { PasswordResetDialog } from '@/components/common/PasswordResetDialog';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -234,12 +234,14 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
   const [selectedStoreFilter, setSelectedStoreFilter] = useState('All');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isCredentialsModalOpen, setIsCredentialsModalOpen] = useState(false);
   const [generatedCredentials, setGeneratedCredentials] = useState<{username: string, password: string} | null>(null);
   const [isSalesViewOpen, setIsSalesViewOpen] = useState(false);
   const [selectedCashier, setSelectedCashier] = useState<Cashier | null>(null);
   const [originalCashier, setOriginalCashier] = useState<Cashier | null>(null);
   const [selectedCashierForSales] = useState<Cashier | null>(null);
+  const [cashierToDelete, setCashierToDelete] = useState<Cashier | null>(null);
   
   // Password reset state
   const [isPasswordResetDialogOpen, setIsPasswordResetDialogOpen] = useState(false);
@@ -325,7 +327,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
 
   const filteredCashiers = accessibleCashiers.filter((cashier: Cashier) => {
     const matchesSearch = cashier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         cashier.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (cashier.email && cashier.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (cashier.username && cashier.username.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStore = selectedStoreFilter === 'All' || cashier.store_id === selectedStoreFilter;
     return matchesSearch && matchesStore;
@@ -384,10 +386,12 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
 
       const result = await createCashierMutation.mutateAsync(cashierData as { name: string; username: string; email: string; phone?: string | undefined; store_id?: string | undefined });
       
+      console.log('Cashier creation result:', result);
+      
       // Show credentials modal with the returned default password
       setGeneratedCredentials({
         username: newCashier.username,
-        password: result.default_password || 'Password not generated' // Fallback if not returned
+        password: result.user?.default_password || 'Password not generated' // Fallback if not returned
       });
       setIsCredentialsModalOpen(true);
       
@@ -687,42 +691,17 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
           >
             <Key className="w-3 h-3" />
           </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button 
-                size="sm" 
-                variant="destructive"
-                disabled={isSaving || !hasPermission('cashiers_delete')}
-              >
-                <Trash2 className="w-3 h-3" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Cashier</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete {cashier.name}? This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => handleDeleteCashier(cashier)}
-                  disabled={isSaving || !hasPermission('cashiers_delete')}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Deleting...
-                    </>
-                  ) : (
-                    'Delete Cashier'
-                  )}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button 
+            size="sm" 
+            variant="destructive"
+            disabled={isSaving || !hasPermission('cashiers_delete')}
+            onClick={() => {
+              setCashierToDelete(cashier);
+              setIsDeleteDialogOpen(true);
+            }}
+          >
+            <Trash2 className="w-3 h-3" />
+          </Button>
         </div>
       )
     }
@@ -1152,6 +1131,41 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Cashier</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete {cashierToDelete?.name}? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (cashierToDelete) {
+                    handleDeleteCashier(cashierToDelete);
+                    setIsDeleteDialogOpen(false);
+                    setCashierToDelete(null);
+                  }
+                }}
+                disabled={isSaving || !hasPermission('cashiers_delete')}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete Cashier'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Password Reset Dialog */}
         <PasswordResetDialog
