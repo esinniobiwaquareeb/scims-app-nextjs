@@ -44,9 +44,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('Brand creation request body:', body);
     const { name, description, logo_url, website, contact_person, contact_email, contact_phone, business_id } = body;
 
     if (!name || !business_id) {
+      console.log('Validation failed:', { name: !!name, business_id: !!business_id });
       return NextResponse.json(
         { success: false, error: 'Name and business_id are required' },
         { status: 400 }

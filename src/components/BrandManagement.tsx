@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActivityLogger } from '@/contexts/ActivityLogger';
 import { Header } from '@/components/common/Header';
@@ -6,8 +6,8 @@ import { DataTable } from '@/components/common/DataTable';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +30,13 @@ interface BrandManagementProps {
 export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
   const { user, currentBusiness } = useAuth();
   const { logActivity } = useActivityLogger();
+  
+  // Debug logging
+  console.log('BrandManagement rendered', { 
+    user: user?.id, 
+    currentBusiness: currentBusiness?.id,
+    userRole: user?.role 
+  });
   
   // Dialog and form state
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -71,8 +78,21 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
     updateBrandMutation.isPending || 
     deleteBrandMutation.isPending;
 
+  // Initialize form data with business_id when component mounts
+  useEffect(() => {
+    if (currentBusiness?.id) {
+      setFormData((prev: BrandFormData) => ({
+        ...prev,
+        business_id: currentBusiness.id
+      }));
+    }
+  }, [currentBusiness?.id]);
+
   const resetForm = () => {
-    setFormData({ ...INITIAL_BRAND_FORM_DATA });
+    setFormData({ 
+      ...INITIAL_BRAND_FORM_DATA,
+      business_id: currentBusiness?.id || ''
+    });
     setSelectedBrand(null);
     setBrandToDelete(null);
     setSearchTerm(''); // Reset search when form is reset
@@ -117,7 +137,7 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
   };
 
   const handleFormChange = (field: keyof BrandFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev: BrandFormData) => ({ ...prev, [field]: value }));
   };
 
   const handleCreate = async () => {
@@ -150,6 +170,8 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
         logo_url: logoUrl
       };
 
+      console.log('Creating brand with data:', brandData);
+
       // Use the mutation hook - this will automatically invalidate cache on success
       const brand = await createBrandMutation.mutateAsync(brandData);
       
@@ -179,7 +201,8 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
       website: brand.website || '',
       contact_person: brand.contact_person || '',
       contact_email: brand.contact_email || '',
-      contact_phone: brand.contact_phone || ''
+      contact_phone: brand.contact_phone || '',
+      business_id: currentBusiness?.id || ''
     });
     setShowEditDialog(true);
     // Reset editing logo state
@@ -407,14 +430,23 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
                   </span>
                 </div>
               </div>
-              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => resetForm()} disabled={isMutating}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Brand
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+              <Button 
+                onClick={() => {
+                  console.log('Add Brand button clicked');
+                  resetForm();
+                  setShowCreateDialog(true);
+                }} 
+                disabled={isMutating}
+                className="bg-primary hover:bg-primary/90"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Brand
+              </Button>
+            </div>
+          </CardHeader>
+          
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>Create New Brand</DialogTitle>
                     <DialogDescription>
@@ -567,8 +599,6 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
                   </div>
                 </DialogContent>
               </Dialog>
-            </div>
-          </CardHeader>
           <CardContent>
             {/* Logo Filter */}
             <div className="mb-4 flex items-center gap-4">

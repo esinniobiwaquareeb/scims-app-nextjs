@@ -1,4 +1,4 @@
-import { Brand } from '@/types';
+import { Brand, BrandFormData } from '@/types';
 
 export const BRAND_FORM_FIELDS = {
   name: { label: 'Brand Name', required: true, placeholder: 'Enter brand name' },
@@ -72,12 +72,13 @@ export const BRAND_TABLE_COLUMNS = [
   }
 ];
 
-export const INITIAL_BRAND_FORM_DATA = {
+export const INITIAL_BRAND_FORM_DATA: BrandFormData = {
   name: '',
   description: '',
   logo_url: '',
   website: '',
   contact_person: '',
   contact_email: '',
-  contact_phone: ''
+  contact_phone: '',
+  business_id: ''
 };

@@ -10,13 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { ImageUpload } from '@/components/common/ImageUpload';
+import Image from 'next/image';
 
 import { toast } from 'sonner';
 import { 
@@ -26,11 +27,8 @@ import {
   Package,
   AlertTriangle,
   Loader2,
-  Download,
   RefreshCw,
-  X,
-  Copy,
-  ArrowLeft
+  Copy
 } from 'lucide-react';
 import { 
   useBusinessCategories, 
@@ -42,7 +40,6 @@ import {
   useStoreProducts,
   useBusinessStores
 } from '@/utils/hooks/useStoreData';
-import { ProductType } from '@/types';
 
 interface Product {
   id: string;
@@ -93,15 +90,14 @@ interface Brand {
 
 interface ProductManagementProps {
   onBack: () => void;
-  onNavigate: (view: string) => void;
 }
 
-export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, onNavigate }) => {
+export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) => {
   const { user, currentStore, currentBusiness } = useAuth();
-  const { translate, formatCurrency } = useSystem();
+  const { formatCurrency } = useSystem();
   
   // Simple permission check - replace with proper permission system later
-  const hasPermission = (permission: string) => {
+  const hasPermission = () => {
     if (user?.role === 'superadmin') return true;
     if (user?.role === 'business_admin') return true;
     if (user?.role === 'store_admin') return true;
@@ -115,6 +111,8 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
   );
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   
   // Data states
   const [isSaving, setIsSaving] = useState(false);
@@ -135,14 +133,14 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
     supplier_id: null,
     brand_id: null,
     image_url: '',
-    reorder_level: 0
+    reorder_level: 0,
+    is_public: false,
+    public_description: ''
   });
 
   // Image upload state
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [editingImageFile, setEditingImageFile] = useState<File | null>(null);
-  const [editingImagePreview, setEditingImagePreview] = useState<string | null>(null);
 
 
 
@@ -163,7 +161,6 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
       reorder_level: 0
     });
     setSelectedImageFile(null);
-    setImagePreview(null);
   }, []);
 
   // Image upload function
@@ -263,17 +260,15 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
     if (editingProduct) {
       // Clear any previous editing state when switching to a new product
       setEditingImageFile(null);
-      setEditingImagePreview(null);
       setError(null);
     }
-  }, [editingProduct?.id]); // Only trigger when the product ID changes
+  }, [editingProduct]); // Trigger when editingProduct changes
 
   // Clear editing state when edit dialog closes
   useEffect(() => {
     if (!editingProduct) {
       // Clear all editing state when dialog closes
       setEditingImageFile(null);
-      setEditingImagePreview(null);
       setError(null);
     }
   }, [editingProduct]);
@@ -332,9 +327,6 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
 
       // Filter out join fields that don't exist in the database
       const {
-        category,
-        supplier,
-        brand,
         ...insertFields
       } = newProduct;
 
@@ -403,9 +395,6 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
 
       // Filter out join fields that don't exist in the database
       const {
-        category,
-        supplier,
-        brand,
         ...updateFields
       } = editingProduct;
 
@@ -430,7 +419,9 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
         supplier_id: cleanedUpdateFields.supplier_id,
         brand_id: cleanedUpdateFields.brand_id,
         image_url: imageUrl,
-        is_active: cleanedUpdateFields.is_active
+        is_active: cleanedUpdateFields.is_active,
+        is_public: cleanedUpdateFields.is_public,
+        public_description: cleanedUpdateFields.public_description
       };
 
       // Use the mutation hook - this will automatically invalidate cache on success
@@ -442,7 +433,6 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
       // Close dialog and reset state on success
       setEditingProduct(null);
       setEditingImageFile(null);
-      setEditingImagePreview(null);
       
       // Force immediate refetch to ensure UI is updated
       setIsRefetching(true);
@@ -521,7 +511,6 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
 
       setNewProduct(clonedProduct);
       setSelectedImageFile(null);
-      setImagePreview(null);
 
       if (isAddDialogOpen) {
         setIsAddDialogOpen(false);
@@ -550,7 +539,6 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
   const closeEditDialog = useCallback(() => {
     setEditingProduct(null);
     setEditingImageFile(null);
-    setEditingImagePreview(null);
     setError(null);
   }, []);
 
@@ -608,9 +596,11 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
       render: (product: Product) => (
         <div className="w-16 h-16 rounded-lg overflow-hidden border bg-gray-100">
           {product.image_url ? (
-            <img 
+            <Image 
               src={product.image_url} 
               alt={product.name}
+              width={64}
+              height={64}
               className="w-full h-full object-cover"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
@@ -706,16 +696,16 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
     {
       key: 'actions',
       label: 'Actions',
-      render: (product: Product) => (
+      render: (product: Product) => {
+        return (
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => {
             // Clear any previous editing state first
             setEditingImageFile(null);
-            setEditingImagePreview(null);
             setError(null);
             // Then set the new product to edit
             setEditingProduct(product);
-          }} disabled={isSaving || !hasPermission('products_edit') || updateProductMutation.isPending || isMutating}>
+          }} disabled={isSaving || !hasPermission() || updateProductMutation.isPending || isMutating}>
             <Edit className="w-3 h-3" />
           </Button>
           
@@ -723,7 +713,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
             size="sm" 
             variant="outline" 
             onClick={() => handleCloneProduct(product)}
-            disabled={isSaving || !hasPermission('products_create') || isMutating}
+            disabled={isSaving || !hasPermission() || isMutating}
             className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 hover:bg-blue-50"
             title={`Clone "${product.name}" to create a similar product`}
           >
@@ -731,36 +721,22 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
             Clone
           </Button>
           
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button 
-                size="sm" 
-                variant="destructive"
-                disabled={isSaving || !hasPermission('products_delete') || deleteProductMutation.isPending || isMutating}
-              >
-                <Trash2 className="w-3 h-3" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Product</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete &quot;{product.name}&quot;? This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={() => handleDeleteProduct(product.id)}
-                  disabled={!hasPermission('products_delete') || deleteProductMutation.isPending || isMutating}
-                >
-                  Delete Product
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button 
+            size="sm" 
+            variant="destructive"
+            onClick={() => {
+              setProductToDelete(product);
+              setShowDeleteDialog(true);
+            }}
+            disabled={isSaving || !hasPermission() || deleteProductMutation.isPending || isMutating}
+            className="bg-red-500 hover:bg-red-600 text-white"
+            title="Delete product"
+          >
+            <Trash2 className="w-3 h-3" />
+          </Button>
         </div>
-      )
+        );
+      }
     }
   ];
 
@@ -786,7 +762,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
-            <Button onClick={() => setIsAddDialogOpen(true)} disabled={!hasPermission('products_create')}>
+            <Button onClick={() => setIsAddDialogOpen(true)} disabled={!hasPermission()}>
               <Plus className="w-4 h-4 mr-2" />
               Add Product
             </Button>
@@ -1500,6 +1476,41 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack, on
             </ScrollArea>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Product</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete &quot;{productToDelete?.name}&quot;? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel 
+                onClick={() => {
+                  setProductToDelete(null);
+                  setShowDeleteDialog(false);
+                }}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => {
+                  if (productToDelete) {
+                    handleDeleteProduct(productToDelete.id);
+                    setProductToDelete(null);
+                    setShowDeleteDialog(false);
+                  }
+                }}
+                disabled={!hasPermission() || deleteProductMutation.isPending || isMutating}
+                className="bg-red-500 hover:bg-red-600"
+              >
+                Delete Product
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );

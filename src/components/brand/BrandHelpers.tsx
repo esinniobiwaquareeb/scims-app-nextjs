@@ -1,28 +1,8 @@
 // Brand API helper functions
+import { Brand, BrandFormData } from '@/types';
 
-export interface Brand {
-  id: string;
-  name: string;
-  description?: string;
-  logo_url?: string;
-  website?: string;
-  contact_person?: string;
-  contact_email?: string;
-  contact_phone?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface BrandFormData {
-  name: string;
-  description: string;
-  logo_url: string;
-  website: string;
-  contact_person: string;
-  contact_email: string;
-  contact_phone: string;
-}
+// Re-export types for backward compatibility
+export type { Brand, BrandFormData };
 
 export const brandApi = {
   async fetchBrands(businessId: string): Promise<Brand[]> {
@@ -33,7 +13,7 @@ export const brandApi = {
       }
       const data = await response.json();
       return data.brands || [];
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch brands');
     }
   },
@@ -45,10 +25,7 @@ export const brandApi = {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          business_id: businessId,
-          ...formData
-        }),
+        body: JSON.stringify(formData),
       });
       
       if (!response.ok) {
@@ -58,7 +35,7 @@ export const brandApi = {
       
       const data = await response.json();
       return data.brand || data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to create brand');
     }
   },
@@ -70,10 +47,7 @@ export const brandApi = {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          business_id: businessId,
-          ...formData
-        }),
+        body: JSON.stringify(formData),
       });
       
       if (!response.ok) {
@@ -83,7 +57,7 @@ export const brandApi = {
       
       const data = await response.json();
       return data.brand || data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to update brand');
     }
   },
@@ -102,7 +76,7 @@ export const brandApi = {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to delete brand');
       }
-    } catch (error) {
+    } catch {
       throw new Error('Failed to delete brand');
     }
   }

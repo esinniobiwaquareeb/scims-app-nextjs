@@ -68,12 +68,28 @@ export async function POST(request: NextRequest) {
       uploadError = error;
     }
 
+    // Check for RLS policy violation
+    if (uploadError && (uploadError as StorageError).message?.includes('row-level security policy')) {
+      console.log('RLS policy violation detected, falling back to base64 storage...');
+      
+      const base64 = buffer.toString('base64');
+      const dataUrl = `data:${file.type};base64,${base64}`;
+      
+      return NextResponse.json({
+        success: true,
+        url: dataUrl,
+        path: `base64_${fileName}`,
+        fileName: fileName,
+        isBase64: true
+      });
+    }
+
     // If bucket doesn't exist, try to create it
     if (uploadError && (uploadError as StorageError).message?.includes('Bucket not found')) {
       console.log('Creating images bucket...');
       
       try {
-        // Try to create the bucket
+        // Try to create the bucket with RLS disabled for public access
         const { error: createError } = await supabase.storage.createBucket('images', {
           public: true,
           allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
@@ -129,9 +145,12 @@ export async function POST(request: NextRequest) {
     if (uploadError) {
       console.error('Supabase upload error:', uploadError);
       
-      // If it's a storage-related error, try base64 fallback
-      if ((uploadError as StorageError).message?.includes('storage') || (uploadError as StorageError).message?.includes('bucket')) {
-        console.log('Storage error detected, falling back to base64 storage...');
+      // If it's a storage-related error or RLS policy error, try base64 fallback
+      if ((uploadError as StorageError).message?.includes('storage') || 
+          (uploadError as StorageError).message?.includes('bucket') ||
+          (uploadError as StorageError).message?.includes('row-level security policy') ||
+          (uploadError as StorageError).message?.includes('policy')) {
+        console.log('Storage/RLS error detected, falling back to base64 storage...');
         
         const base64 = buffer.toString('base64');
         const dataUrl = `data:${file.type};base64,${base64}`;

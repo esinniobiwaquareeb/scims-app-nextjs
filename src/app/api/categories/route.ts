@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 
+interface CreateCategoryData {
+  name: string;
+  description?: string;
+  business_id: string;
+  is_active?: boolean;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -45,6 +52,82 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Categories API error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body: CreateCategoryData = await request.json();
+    const { name, description, business_id, is_active = true } = body;
+
+    // Validate required fields
+    if (!name || !business_id) {
+      return NextResponse.json(
+        { success: false, error: 'Name and business_id are required' },
+        { status: 400 }
+      );
+    }
+
+    // Check if category with same name already exists for this business
+    const { data: existingCategory, error: checkError } = await supabase
+      .from('category')
+      .select('id')
+      .eq('business_id', business_id)
+      .eq('name', name.trim())
+      .eq('is_active', true)
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking existing category:', checkError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to validate category' },
+        { status: 500 }
+      );
+    }
+
+    if (existingCategory) {
+      return NextResponse.json(
+        { success: false, error: 'Category with this name already exists' },
+        { status: 409 }
+      );
+    }
+
+    // Create the category
+    const { data: newCategory, error: createError } = await supabase
+      .from('category')
+      .insert({
+        name: name.trim(),
+        description: description?.trim() || null,
+        business_id,
+        is_active,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (createError) {
+      console.error('Supabase error creating category:', createError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to create category' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      category: {
+        ...newCategory,
+        product_count: 0
+      }
+    });
+
+  } catch (error) {
+    console.error('Create category API error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

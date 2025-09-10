@@ -5,20 +5,16 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react'],
   },
   
-  // Image optimization
+  // Image optimization - Allow all domains
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'eutsywibykwwvpqsrgkz.supabase.co',
-        port: '',
-        pathname: '/storage/v1/object/public/**',
+        hostname: '**',
       },
       {
-        protocol: 'https',
-        hostname: 'scims-app.vercel.app',
-        port: '',
-        pathname: '/**',
+        protocol: 'http',
+        hostname: '**',
       },
     ],
   },
