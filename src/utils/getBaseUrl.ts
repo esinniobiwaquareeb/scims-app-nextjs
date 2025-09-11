@@ -11,8 +11,8 @@ export function getBaseUrl(): string {
     }
     
     // Check for custom app URL
-    if (process.env.NEXT_PUBLIC_APP_URL) {
-      return process.env.NEXT_PUBLIC_APP_URL;
+    if (process.env.NEXT_PUBLIC_BASE_URL) {
+      return process.env.NEXT_PUBLIC_BASE_URL;
     }
     
     // Default to localhost for development

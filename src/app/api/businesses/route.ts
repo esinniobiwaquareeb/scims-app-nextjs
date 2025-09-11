@@ -250,7 +250,7 @@ export async function POST(request: NextRequest) {
 
     // Send welcome email to the business admin
     try {
-      const platformUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://scims.app';
+      const platformUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://scims.app';
       const loginUrl = `${platformUrl}/auth/login`;
       const supportEmail = process.env.SUPPORT_EMAIL || 'support@scims.app';
 
