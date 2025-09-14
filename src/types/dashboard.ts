@@ -57,6 +57,12 @@ export interface Sale {
     name?: string;
     phone?: string;
   };
+  customer?: {
+    id?: string;
+    name?: string;
+    phone?: string;
+    email?: string;
+  };
   users?: {
     username: string;
   };

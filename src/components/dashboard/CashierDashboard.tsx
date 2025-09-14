@@ -339,7 +339,7 @@ export const CashierDashboard: React.FC = () => {
         storeName: currentStore?.name || 'Store',
         receiptNumber: sale.receipt_number || `SALE-${sale.id.slice(-6)}`,
         cashierName: user?.name || user?.username || 'Cashier',
-        customerName: sale.customerName || sale.customers?.name || 'Walk-in Customer',
+        customerName: sale.customerName || sale.customer?.name || 'Walk-in Customer',
         paymentMethod: sale.payment_method || sale.paymentMethod || 'Unknown',
         items: items,
         subtotal: Number(sale.subtotal || 0),

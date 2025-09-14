@@ -30,8 +30,8 @@ export const SaleDetailDialog: React.FC<SaleDetailDialogProps> = ({
       storeName: '', // This should be passed from parent or context
       receiptNumber: sale.receipt_number,
       cashierName: '', // This should be passed from parent or context
-      customerName: sale.customer_id && sale.customer_id !== 'walk-in' ? (sale.customers?.name || 'Customer') : 'Walk-in Customer',
-      customerPhone: sale.customer_id && sale.customer_id !== 'walk-in' ? (sale.customers?.phone || '') : '',
+      customerName: sale.customer_id && sale.customer_id !== 'walk-in' ? (sale.customer?.name || 'Customer') : 'Walk-in Customer',
+      customerPhone: sale.customer_id && sale.customer_id !== 'walk-in' ? (sale.customer?.phone || '') : '',
       paymentMethod: sale.payment_method,
       items: sale.sale_items?.map(item => ({
         name: item.products?.name || 'Unknown Product',
