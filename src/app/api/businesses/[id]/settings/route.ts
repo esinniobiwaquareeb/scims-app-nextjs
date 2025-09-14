@@ -90,6 +90,8 @@ export async function GET(
       // Business setting table fields (with defaults)
       taxRate: settings?.tax_rate || 0,
       enableTax: settings?.enable_tax ?? false,
+      discountRate: settings?.discount_rate || 0,
+      enableDiscount: settings?.enable_discount ?? false,
       allowReturns: settings?.allow_returns ?? true,
       returnPeriodDays: settings?.return_period_days || 30,
       enableSounds: settings?.enable_sounds ?? true,
@@ -207,6 +209,8 @@ export async function PUT(
       business_id: businessId,
       tax_rate: body.taxRate || 0,
       enable_tax: body.enableTax || false,
+      discount_rate: body.discountRate || 0,
+      enable_discount: body.enableDiscount || false,
       allow_returns: body.allowReturns || true,
       return_period_days: body.returnPeriodDays || 30,
       enable_sounds: body.enableSounds || true,

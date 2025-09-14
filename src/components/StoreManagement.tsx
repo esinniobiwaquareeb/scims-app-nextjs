@@ -1,11 +1,13 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDemoRestrictions } from '@/hooks/useDemoRestrictions';
 import { Header } from '@/components/common/Header';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,7 +24,8 @@ import {
   Eye,
   Trash2,
   RefreshCw,
-  Loader2
+  Loader2,
+  AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -58,6 +61,7 @@ interface Store {
 export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
   const router = useRouter();
   const { user, currentBusiness, currentStore } = useAuth();
+  const { isDemoUser, canPerformAction, getRestrictionMessage, showDemoWarning } = useDemoRestrictions();
 
   // Check if user is store admin
   const isStoreAdmin = user?.role === 'store_admin';
@@ -243,6 +247,12 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
   };
 
   const handleDeleteStore = useCallback(async (store: Store) => {
+    // Check demo restrictions
+    if (!canPerformAction('delete')) {
+      toast.error(getRestrictionMessage('delete'));
+      return;
+    }
+
     if (!confirm(`Are you sure you want to delete "${store.name}"? This action cannot be undone.`)) {
       return;
     }
@@ -260,7 +270,7 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
     } finally {
       setSubmitting(false);
     }
-  }, [deleteStoreMutation, refetchStores]);
+  }, [canPerformAction, getRestrictionMessage, deleteStoreMutation, refetchStores]);
 
   const handleViewStoreDetails = useCallback((store: Store) => {
     router.push(`/stores/${store.id}`);
@@ -419,6 +429,20 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
           )}
         </div>
       </Header>
+
+      {/* Demo Warning Banner */}
+      {isDemoUser && (
+        <div className="px-6 py-4">
+          <Alert className="border-amber-200 bg-amber-50">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <strong>Demo Mode:</strong> You are currently viewing the system in demo mode. 
+              Some actions like deleting stores are restricted to prevent data loss. 
+              This allows you to explore the system safely.
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
 
       {/* Add Store Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

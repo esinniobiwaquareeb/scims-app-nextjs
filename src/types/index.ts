@@ -295,6 +295,8 @@ export interface StoreSettings {
   return_period_days?: number;
   enable_tax?: boolean;
   tax_rate?: number;
+  enable_discount?: boolean;
+  discount_rate?: number;
   enable_sounds?: boolean;
   created_at?: string;
   updated_at?: string;

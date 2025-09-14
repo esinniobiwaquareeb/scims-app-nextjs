@@ -20,7 +20,8 @@ import {
   User,
   Phone,
   DollarSign,
-  Package
+  Package,
+  X
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Notification } from '@/types/notification';
@@ -57,6 +58,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
   } = useNotifications();
 
   const [filter, setFilter] = useState<'all' | 'unread' | 'orders' | 'system' | 'alerts'>('all');
+  const [processingNotifications, setProcessingNotifications] = useState<Set<string>>(new Set());
 
   const filteredNotifications = notifications.filter(notification => {
     switch (filter) {
@@ -105,6 +107,42 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
     }
   };
 
+  const handleProcessOrder = async (notification: Notification) => {
+    if (notification.type === 'order' && notification.data?.orderId) {
+      // Add to processing set
+      setProcessingNotifications(prev => new Set(prev).add(notification.id));
+      
+      try {
+        // Process the order by updating its status to confirmed
+        const response = await fetch(`/api/orders/${notification.data.orderId}/process`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status: 'confirmed' }),
+        });
+
+        if (response.ok) {
+          // Mark notification as read after successful processing
+          await markAsRead(notification.id);
+          // Refresh notifications to get updated data
+          await refreshNotifications();
+        } else {
+          console.error('Failed to process order:', await response.text());
+        }
+      } catch (error) {
+        console.error('Error processing order:', error);
+      } finally {
+        // Remove from processing set
+        setProcessingNotifications(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(notification.id);
+          return newSet;
+        });
+      }
+    }
+  };
+
   const handleDeleteNotification = async (notificationId: string) => {
     await deleteNotification(notificationId);
   };
@@ -116,8 +154,8 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
   return (
     <div className="fixed inset-0 z-50 bg-black/50" onClick={onClose}>
       <div className="fixed right-0 top-0 h-full w-96 bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <Card className="h-full rounded-none border-0">
-          <CardHeader className="border-b">
+        <Card className="h-full rounded-none border-0 flex flex-col">
+          <CardHeader className="border-b flex-shrink-0">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <BellRing className="w-5 h-5" />
@@ -137,8 +175,8 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                 >
                   <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={onClose}>
-                  ×
+                <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
+                  <X className="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -196,7 +234,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
 
           </CardHeader>
 
-          <CardContent className="p-0 flex-1">
+          <CardContent className="p-0 flex-1 overflow-hidden">
             <ScrollArea className="h-full">
               {isLoading ? (
                 <div className="flex items-center justify-center p-8">
@@ -330,11 +368,21 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                                 <Button
                                   variant="default"
                                   size="sm"
-                                  onClick={() => handleMarkAsRead(notification)}
-                                  className="h-8 px-3 text-xs bg-green-600 hover:bg-green-700 text-white"
+                                  onClick={() => handleProcessOrder(notification)}
+                                  disabled={processingNotifications.has(notification.id)}
+                                  className="h-8 px-3 text-xs bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
                                 >
-                                  <Check className="w-3 h-3 mr-1" />
-                                  Process
+                                  {processingNotifications.has(notification.id) ? (
+                                    <>
+                                      <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                                      Processing...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Check className="w-3 h-3 mr-1" />
+                                      Process
+                                    </>
+                                  )}
                                 </Button>
                               )}
                               

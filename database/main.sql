@@ -117,6 +117,8 @@ create table public.business_setting (
   business_id uuid not null,
   tax_rate numeric(5, 2) null default 0.00,
   enable_tax boolean null default false,
+  discount_rate numeric(5, 2) null default 0.00,
+  enable_discount boolean null default false,
   allow_returns boolean null default true,
   return_period_days integer null default 30,
   enable_sounds boolean null default true,
@@ -961,6 +963,8 @@ create table public.store_setting (
   store_id uuid not null,
   tax_rate numeric(5, 2) null default 0.00,
   enable_tax boolean null default false,
+  discount_rate numeric(5, 2) null default 0.00,
+  enable_discount boolean null default false,
   allow_returns boolean null default true,
   return_period_days integer null default 30,
   enable_sounds boolean null default true,
@@ -1074,6 +1078,7 @@ create table public.supply_order (
   supply_number character varying(50) not null,
   status character varying(20) not null default 'supplied'::character varying,
   subtotal numeric(10, 2) not null default 0,
+  discount_amount numeric(10, 2) not null default 0,
   tax_amount numeric(10, 2) not null default 0,
   total_amount numeric(10, 2) not null default 0,
   notes text null,
@@ -1572,6 +1577,84 @@ CREATE OR REPLACE FUNCTION public.update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Function to reduce stock when items are supplied
+CREATE OR REPLACE FUNCTION public.reduce_stock_on_supply()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Reduce stock quantity when items are supplied
+    UPDATE product 
+    SET stock_quantity = stock_quantity - NEW.quantity_supplied
+    WHERE id = NEW.product_id;
+    
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Function to restore stock when items are returned
+CREATE OR REPLACE FUNCTION public.restore_stock_on_return()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Restore stock quantity when items are returned
+    UPDATE product 
+    SET stock_quantity = stock_quantity + NEW.quantity_returned
+    WHERE id = (
+        SELECT product_id 
+        FROM supply_order_item 
+        WHERE id = NEW.supply_order_item_id
+    );
+    
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Function to update supply order status based on items
+CREATE OR REPLACE FUNCTION public.update_supply_order_status()
+RETURNS TRIGGER AS $$
+DECLARE
+    order_id UUID;
+    total_supplied INTEGER;
+    total_returned INTEGER;
+    total_accepted INTEGER;
+    new_status VARCHAR(20);
+BEGIN
+    -- Get the supply order ID
+    IF TG_TABLE_NAME = 'supply_order_item' THEN
+        order_id := NEW.supply_order_id;
+    ELSE
+        order_id := (
+            SELECT supply_order_id 
+            FROM supply_order_item 
+            WHERE id = NEW.supply_order_item_id
+        );
+    END IF;
+    
+    -- Calculate totals for the order
+    SELECT 
+        COALESCE(SUM(quantity_supplied), 0),
+        COALESCE(SUM(quantity_returned), 0),
+        COALESCE(SUM(quantity_accepted), 0)
+    INTO total_supplied, total_returned, total_accepted
+    FROM supply_order_item
+    WHERE supply_order_id = order_id;
+    
+    -- Determine new status
+    IF total_returned + total_accepted = 0 THEN
+        new_status := 'supplied';
+    ELSIF total_returned + total_accepted < total_supplied THEN
+        new_status := 'partially_returned';
+    ELSE
+        new_status := 'fully_returned';
+    END IF;
+    
+    -- Update the supply order status
+    UPDATE supply_order 
+    SET status = new_status
+    WHERE id = order_id;
+    
     RETURN NEW;
 END;
 $$ language 'plpgsql';

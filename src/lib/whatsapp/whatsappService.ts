@@ -88,8 +88,25 @@ export class WhatsAppService {
       return '';
     }
     
-    const encodedMessage = encodeURIComponent(message);
+    // Clean and format the message for better WhatsApp compatibility
+    const cleanedMessage = this.cleanMessageForWhatsApp(message);
+    const encodedMessage = encodeURIComponent(cleanedMessage);
     return `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodedMessage}`;
+  }
+
+  // Clean message for better WhatsApp compatibility
+  private cleanMessageForWhatsApp(message: string): string {
+    return message
+      // Ensure proper line breaks
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      // Remove excessive line breaks
+      .replace(/\n{3,}/g, '\n\n')
+      // Ensure proper spacing around special characters
+      .replace(/\*\s+/g, '*')
+      .replace(/\s+\*/g, '*')
+      // Clean up any trailing whitespace
+      .trim();
   }
 }
 

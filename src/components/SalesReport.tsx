@@ -383,9 +383,9 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
       if (debouncedSearchTerm) {
         const searchLower = debouncedSearchTerm.toLowerCase();
         const matchesReceipt = sale.receipt_number.toLowerCase().includes(searchLower);
-        const matchesCustomer = (sale.customer?.name || sale.customers?.name)?.toLowerCase().includes(searchLower) ||
-                              (sale.customer?.phone || sale.customers?.phone)?.includes(debouncedSearchTerm) ||
-                              (sale.customer?.email || sale.customers?.email)?.toLowerCase().includes(searchLower);
+        const matchesCustomer = sale.customers?.name?.toLowerCase().includes(searchLower) ||
+                              sale.customers?.phone?.includes(debouncedSearchTerm) ||
+                              sale.customers?.email?.toLowerCase().includes(searchLower);
         const matchesProduct = sale.sale_items?.some((item: SaleItem) => 
           item.products?.name.toLowerCase().includes(searchLower) ||
           item.products?.sku.toLowerCase().includes(searchLower)
@@ -592,11 +592,11 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
       render: (sale: Sale) => (
         <div className="text-sm">
           <div className="font-medium">
-            {sale.customer?.name || sale.customers?.name || 'Walk-in Customer'}
+            {sale.customers?.name || 'Walk-in Customer'}
           </div>
-          {(sale.customer?.phone || sale.customers?.phone) && (
+          {sale.customers?.phone && (
             <div className="text-xs text-muted-foreground">
-              {sale.customer?.phone || sale.customers?.phone}
+              {sale.customers?.phone}
             </div>
           )}
         </div>

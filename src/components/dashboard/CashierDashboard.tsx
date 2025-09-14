@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Header } from '@/components/common/Header';
 import { DataTable } from '@/components/common/DataTable';
 import { ImageWithFallback } from '@/components/common/ImageWithFallback';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { Sale, SalesStats, ActivityLog } from '@/types/dashboard';
 import { calculateSalesStats, formatDateTime, formatTableDateTime } from '@/utils/dashboardUtils';
 import { 
@@ -541,6 +542,7 @@ export const CashierDashboard: React.FC = () => {
         subtitle={`Welcome back, ${user?.name || user?.username}`}
       >
         <div className="flex items-center gap-2">
+          <NotificationBell className="mr-2" />
           <Button 
             onClick={() => router.push('/pos')} 
             variant="outline"

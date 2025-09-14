@@ -43,7 +43,9 @@ export async function GET(request: NextRequest) {
       query = query.eq('id', storeId);
     }
 
-    if (isActive !== null) {
+    // Only filter by is_active if explicitly requested
+    // By default, show both active and inactive stores
+    if (isActive !== null && isActive !== undefined) {
       query = query.eq('is_active', isActive === 'true');
     }
 

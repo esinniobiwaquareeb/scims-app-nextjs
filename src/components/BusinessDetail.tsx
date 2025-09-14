@@ -410,7 +410,7 @@ export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business
       key: 'customer',
       header: 'Customer',
       render: (sale: any) => (
-        <div>{sale.customer?.name || 'Walk-in'}</div>
+        <div>{sale.customers?.name || 'Walk-in'}</div>
       )
     },
     {

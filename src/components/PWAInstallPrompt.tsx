@@ -36,11 +36,28 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) =
       }
     };
 
+    // Check if prompt was dismissed in this session
+    const checkDismissalStatus = () => {
+      const sessionDismissed = sessionStorage.getItem('pwa-prompt-dismissed-session');
+      const permanentlyDismissed = localStorage.getItem('pwa-prompt-dismissed-permanent');
+      
+      // If dismissed in this session or permanently, don't show
+      if (sessionDismissed || permanentlyDismissed) {
+        return false;
+      }
+      
+      return true;
+    };
+
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setShowPrompt(true);
+      
+      // Only show if not dismissed
+      if (checkDismissalStatus()) {
+        setShowPrompt(true);
+      }
     };
 
     // Listen for appinstalled event
@@ -58,17 +75,25 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) =
     window.addEventListener('appinstalled', handleAppInstalled);
 
     // Check if we should show the prompt (e.g., user has been on site for a while)
-    const timer = setTimeout(() => {
-      if (!isInstalled && !showPrompt) {
-        // Show a gentle reminder after 30 seconds
-        setShowPrompt(true);
-      }
-    }, 30000);
+    // Only if not dismissed and not installed
+    if (!isInstalled && checkDismissalStatus()) {
+      const timer = setTimeout(() => {
+        if (!isInstalled && !showPrompt) {
+          // Show a gentle reminder after 30 seconds
+          setShowPrompt(true);
+        }
+      }, 30000);
+
+      return () => {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        window.removeEventListener('appinstalled', handleAppInstalled);
+        clearTimeout(timer);
+      };
+    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
-      clearTimeout(timer);
     };
   }, [isInstalled, showPrompt]);
 
@@ -133,8 +158,14 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) =
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    // Store dismissal in localStorage to avoid showing again soon
-    localStorage.setItem('pwa-prompt-dismissed', Date.now().toString());
+    // Store dismissal in sessionStorage to avoid showing again in this session
+    sessionStorage.setItem('pwa-prompt-dismissed-session', 'true');
+  };
+
+  const handleDismissPermanently = () => {
+    setShowPrompt(false);
+    // Store permanent dismissal in localStorage
+    localStorage.setItem('pwa-prompt-dismissed-permanent', 'true');
   };
 
   // Don't render until mounted to avoid hydration mismatch
@@ -142,14 +173,8 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) =
     return null;
   }
 
-  // Don't show if already installed or if recently dismissed
+  // Don't show if already installed or if not showing
   if (isInstalled || !showPrompt) {
-    return null;
-  }
-
-  // Check if recently dismissed (within last 24 hours)
-  const lastDismissed = localStorage.getItem('pwa-prompt-dismissed');
-  if (lastDismissed && Date.now() - parseInt(lastDismissed) < 24 * 60 * 60 * 1000) {
     return null;
   }
 
@@ -204,11 +229,11 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) =
             <span>Faster loading</span>
           </div>
 
-          <div className="flex gap-2 pt-2">
+          <div className="flex flex-col gap-2 pt-2">
             <Button
               onClick={handleInstall}
               disabled={isInstalling}
-              className={`flex-1 ${
+              className={`w-full ${
                 isDark 
                   ? 'bg-blue-600 hover:bg-blue-700 text-white' 
                   : 'bg-blue-600 hover:bg-blue-700'
@@ -217,17 +242,31 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) =
               {isInstalling ? 'Installing...' : 'Install App'}
             </Button>
             
-            <Button
-              variant="outline"
-              onClick={handleDismiss}
-              className={`px-4 ${
-                isDark 
-                  ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
-                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Maybe Later
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleDismiss}
+                className={`flex-1 ${
+                  isDark 
+                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Maybe Later
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={handleDismissPermanently}
+                className={`flex-1 ${
+                  isDark 
+                    ? 'border-gray-600 text-gray-400 hover:bg-gray-700' 
+                    : 'border-gray-300 text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                Never
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

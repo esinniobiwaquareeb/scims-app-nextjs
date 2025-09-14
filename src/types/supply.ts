@@ -8,6 +8,7 @@ export interface SupplyOrder {
   supply_number: string;
   status: 'supplied' | 'partially_returned' | 'fully_returned' | 'completed' | 'cancelled';
   subtotal: number;
+  discount_amount: number;
   tax_amount: number;
   total_amount: number;
   notes?: string;

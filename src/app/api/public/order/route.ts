@@ -101,6 +101,8 @@ export async function POST(request: NextRequest) {
       // Don't fail the order creation if WhatsApp fails
     }
 
+    // Note: Stock reduction will be handled when the order is processed via notifications
+
     // Send email notifications
     try {
       // Send confirmation email to customer if email provided
@@ -226,8 +228,8 @@ async function sendWhatsAppNotification(order: any, business: any, storeSettings
   // Get currency symbol
   const currencySymbol = business.currency?.symbol || '₦';
 
-  // Format the message with proper line breaks
-  const message = (storeSettings.whatsapp_message_template || 
+  // Format the message with proper line breaks and escape special characters
+  let message = storeSettings.whatsapp_message_template || 
     `🛍️ *New Order Received!*
 
 📋 *Order Details:*
@@ -240,12 +242,18 @@ async function sendWhatsAppNotification(order: any, business: any, storeSettings
 • Phone: {customer_phone}
 • Address: {customer_address}
 
-Thank you for your order! 🙏`)
-    .replace(/{customer_name}/g, order.customer_name)
+Thank you for your order! 🙏`;
+
+  // Replace placeholders with actual values
+  message = message
+    .replace(/{customer_name}/g, order.customer_name || 'N/A')
     .replace('{order_items}', orderItemsText)
     .replace('{total_amount}', `${currencySymbol}${order.total_amount.toLocaleString()}`)
-    .replace('{customer_phone}', order.customer_phone)
-    .replace('{customer_address}', order.customer_address || 'Not provided');
+    .replace('{customer_phone}', order.customer_phone || 'N/A')
+    .replace('{customer_address}', order.customer_address || 'Not provided')
+    // Clean up any double line breaks and ensure proper formatting
+    .replace(/\n\n\n+/g, '\n\n')
+    .trim();
 
   // Use the WhatsApp service to send the message
   const result = await sendWhatsAppMessage(business.id, whatsappPhone, message);

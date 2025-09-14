@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
+import { checkDemoRestrictions, createDemoRestrictedResponse } from '@/utils/demoRestrictions';
 
 export async function GET(
   request: NextRequest,
@@ -120,6 +121,16 @@ export async function DELETE(
 ) {
   try {
     const { id: storeId } = await params;
+
+    // Get user from request headers (assuming it's passed from middleware)
+    const userHeader = request.headers.get('x-user');
+    const user = userHeader ? JSON.parse(userHeader) : null;
+
+    // Check demo restrictions
+    const restriction = checkDemoRestrictions(user, 'delete');
+    if (!restriction.allowed) {
+      return createDemoRestrictedResponse(restriction.message!);
+    }
 
     const { error } = await supabase
       .from('store')

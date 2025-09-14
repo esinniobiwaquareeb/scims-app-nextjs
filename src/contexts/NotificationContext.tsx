@@ -42,9 +42,12 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       }
 
       const data = await response.json();
-      // Ensure all notifications have valid createdAt dates
+      // Ensure all notifications have valid createdAt dates and proper field mapping
       const validNotifications = (data.notifications || []).map((notification: any) => ({
         ...notification,
+        isRead: notification.is_read || notification.isRead || false,
+        storeId: notification.store_id || notification.storeId,
+        businessId: notification.business_id || notification.businessId,
         createdAt: notification.created_at || notification.createdAt || new Date().toISOString(),
         updatedAt: notification.updated_at || notification.updatedAt || new Date().toISOString(),
       }));

@@ -53,6 +53,8 @@ export async function GET(
       language_id: null,
       tax_rate: 0.00,
       enable_tax: false,
+      discount_rate: 0.00,
+      enable_discount: false,
       allow_returns: true,
       return_period_days: 30,
       enable_sounds: true,

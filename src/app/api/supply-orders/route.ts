@@ -110,8 +110,38 @@ export async function POST(request: NextRequest) {
 
     // Calculate totals
     const subtotal = supplyData.items.reduce((sum, item) => sum + (item.quantity_supplied * item.unit_price), 0);
+    
+    // Get store settings to determine discount rate
+    const { data: storeSettings } = await supabase
+      .from('store_setting')
+      .select('enable_discount, discount_rate')
+      .eq('store_id', supplyData.store_id)
+      .single();
+    
+    // Get business settings as fallback
+    const { data: businessSettings } = await supabase
+      .from('business_setting')
+      .select('enable_discount, discount_rate')
+      .eq('business_id', (await supabase
+        .from('store')
+        .select('business_id')
+        .eq('id', supplyData.store_id)
+        .single()
+      ).data?.business_id)
+      .single();
+    
+    // Determine discount rate (store overrides business)
+    let discountRate = 0;
+    if (storeSettings?.enable_discount) {
+      discountRate = storeSettings.discount_rate || 0;
+    } else if (businessSettings?.enable_discount) {
+      discountRate = businessSettings.discount_rate || 0;
+    }
+    
+    const discountAmount = subtotal * (discountRate / 100);
+    const discountedSubtotal = subtotal - discountAmount;
     const taxAmount = 0; // You can implement tax calculation logic here
-    const totalAmount = subtotal + taxAmount;
+    const totalAmount = discountedSubtotal + taxAmount;
 
     // Generate supply number using JavaScript (database function has ambiguous column reference)
     const currentYear = new Date().getFullYear();
@@ -128,6 +158,7 @@ export async function POST(request: NextRequest) {
         supply_number: finalSupplyNumber,
         status: 'supplied',
         subtotal,
+        discount_amount: discountAmount,
         tax_amount: taxAmount,
         total_amount: totalAmount,
         notes: supplyData.notes,

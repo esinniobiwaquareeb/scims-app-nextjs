@@ -101,6 +101,8 @@ export const StoreSettings: React.FC<StoreSettingsProps> = ({ storeId, store, st
     return_period_days: storeSettings?.return_period_days || 30,
     enable_tax: storeSettings?.enable_tax ?? false,
     tax_rate: storeSettings?.tax_rate || 0,
+    enable_discount: storeSettings?.enable_discount ?? false,
+    discount_rate: storeSettings?.discount_rate || 0,
     enable_sounds: storeSettings?.enable_sounds ?? true
   });
 
@@ -150,6 +152,8 @@ export const StoreSettings: React.FC<StoreSettingsProps> = ({ storeId, store, st
         return_period_days: storeSettings?.return_period_days || prev.return_period_days,
         enable_tax: storeSettings?.enable_tax ?? prev.enable_tax,
         tax_rate: storeSettings?.tax_rate || prev.tax_rate,
+        enable_discount: storeSettings?.enable_discount ?? prev.enable_discount,
+        discount_rate: storeSettings?.discount_rate || prev.discount_rate,
         enable_sounds: storeSettings?.enable_sounds ?? prev.enable_sounds
       }));
     }
@@ -229,15 +233,21 @@ export const StoreSettings: React.FC<StoreSettingsProps> = ({ storeId, store, st
               <span>Subtotal:</span>
               <span>$45.49</span>
             </div>
+            {localSettings.enable_discount && localSettings.discount_rate > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Discount ({localSettings.discount_rate}%):</span>
+                <span>-${(45.49 * (localSettings.discount_rate / 100)).toFixed(2)}</span>
+              </div>
+            )}
             {localSettings.enable_tax && (
               <div className="flex justify-between">
                 <span>Tax ({localSettings.tax_rate}%):</span>
-                <span>${(45.49 * (localSettings.tax_rate / 100)).toFixed(2)}</span>
+                <span>${(45.49 * (1 - (localSettings.enable_discount ? localSettings.discount_rate / 100 : 0)) * (localSettings.tax_rate / 100)).toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between font-bold">
               <span>Total:</span>
-              <span>${(localSettings.enable_tax ? 45.49 * (1 + localSettings.tax_rate / 100) : 45.49).toFixed(2)}</span>
+              <span>${(45.49 * (1 - (localSettings.enable_discount ? localSettings.discount_rate / 100 : 0)) * (1 + (localSettings.enable_tax ? localSettings.tax_rate / 100 : 0))).toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -784,6 +794,54 @@ export const StoreSettings: React.FC<StoreSettingsProps> = ({ storeId, store, st
                       </div>
                     )}
                   </div>
+
+                  <Separator />
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Label className="flex items-center gap-2">
+                          <Calculator className="w-4 h-4" />
+                          Enable Store Discount
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          Override business-wide discount for this store
+                        </p>
+                      </div>
+                      <Switch
+                        checked={localSettings.enable_discount}
+                        onCheckedChange={(checked) => setLocalSettings({...localSettings, enable_discount: checked})}
+                      />
+                    </div>
+
+                    {localSettings.enable_discount && (
+                      <div>
+                        <Label htmlFor="discountRate">Store Discount Rate (%)</Label>
+                        <Input
+                          id="discountRate"
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          value={localSettings.discount_rate}
+                          onChange={(e) => setLocalSettings({...localSettings, discount_rate: parseFloat(e.target.value) || 0})}
+                          placeholder="0.00"
+                        />
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Store-specific discount rate. Leave disabled to use business-wide discount.
+                        </p>
+                      </div>
+                    )}
+
+                    {!localSettings.enable_discount && (
+                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-sm text-blue-700">
+                          <strong>Using Business-Wide Discount:</strong> This store will use the discount rate set at the business level. 
+                          Enable store discount above to override with a store-specific rate.
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -842,6 +900,12 @@ export const StoreSettings: React.FC<StoreSettingsProps> = ({ storeId, store, st
                         <span>Tax Calculation:</span>
                         <Badge variant={localSettings.enable_tax ? "default" : "secondary"}>
                           {localSettings.enable_tax ? `${localSettings.tax_rate}%` : "Disabled"}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Discount:</span>
+                        <Badge variant={localSettings.enable_discount ? "default" : "secondary"}>
+                          {localSettings.enable_discount ? `${localSettings.discount_rate}%` : "Business Default"}
                         </Badge>
                       </div>
                       <div className="flex justify-between">

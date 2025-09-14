@@ -82,6 +82,8 @@ interface BusinessSettings {
   // Business setting table fields
   taxRate: number;
   enableTax: boolean;
+  discountRate: number;
+  enableDiscount: boolean;
   allowReturns: boolean;
   returnPeriodDays: number;
   enableSounds: boolean;
@@ -221,7 +223,9 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
     
     // Business setting table fields
     taxRate: 0,
-    enableTax: true,
+    enableTax: false,
+    discountRate: 0,
+    enableDiscount: false,
     allowReturns: true,
     returnPeriodDays: 30,
     enableSounds: true,
@@ -293,6 +297,11 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
     // Client-side validation
     if (localSettings.taxRate < 0 || localSettings.taxRate > 100) {
       setError('Tax rate must be between 0 and 100');
+      return;
+    }
+    
+    if (localSettings.discountRate < 0 || localSettings.discountRate > 100) {
+      setError('Discount rate must be between 0 and 100');
       return;
     }
     
@@ -448,15 +457,21 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
               <span>{translate('common.subtotal')}:</span>
               <span>{currentCurrency ? formatCurrency(45.49, currentCurrency.code) : '$45.49'}</span>
             </div>
+            {localSettings.enableDiscount && localSettings.discountRate > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Discount ({localSettings.discountRate}%):</span>
+                <span>-{currentCurrency ? formatCurrency(45.49 * (localSettings.discountRate / 100), currentCurrency.code) : `$${(45.49 * (localSettings.discountRate / 100)).toFixed(2)}`}</span>
+              </div>
+            )}
             {localSettings.enableTax && (
               <div className="flex justify-between">
                 <span>{translate('common.tax')} ({localSettings.taxRate}%):</span>
-                <span>{currentCurrency ? formatCurrency(45.49 * (localSettings.taxRate / 100), currentCurrency.code) : `$${(45.49 * (localSettings.taxRate / 100)).toFixed(2)}`}</span>
+                <span>{currentCurrency ? formatCurrency(45.49 * (1 - (localSettings.enableDiscount ? localSettings.discountRate / 100 : 0)) * (localSettings.taxRate / 100), currentCurrency.code) : `$${(45.49 * (1 - (localSettings.enableDiscount ? localSettings.discountRate / 100 : 0)) * (localSettings.taxRate / 100)).toFixed(2)}`}</span>
               </div>
             )}
             <div className="flex justify-between font-bold">
               <span>{translate('common.total')}:</span>
-              <span>{currentCurrency ? formatCurrency(localSettings.enableTax ? 45.49 * (1 + localSettings.taxRate / 100) : 45.49, currentCurrency.code) : `$${(localSettings.enableTax ? 45.49 * (1 + localSettings.taxRate / 100) : 45.49).toFixed(2)}`}</span>
+              <span>{currentCurrency ? formatCurrency(45.49 * (1 - (localSettings.enableDiscount ? localSettings.discountRate / 100 : 0)) * (1 + (localSettings.enableTax ? localSettings.taxRate / 100 : 0)), currentCurrency.code) : `$${(45.49 * (1 - (localSettings.enableDiscount ? localSettings.discountRate / 100 : 0)) * (1 + (localSettings.enableTax ? localSettings.taxRate / 100 : 0))).toFixed(2)}`}</span>
             </div>
           </div>
         </div>
@@ -555,7 +570,7 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
                 </p>
                 <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
                   <li>Receipt header and footer messages</li>
-                  <li>Tax rates and return policies</li>
+                  <li>Default discount rates and return policies</li>
                   <li>Business logo and brand colors</li>
                   <li>Currency and language defaults</li>
                   <li>Business policies and terms</li>
@@ -896,36 +911,39 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Calculator className="w-5 h-5" />
-                        Tax & Returns
+                        Discount & Return Policies
                       </CardTitle>
-                      <CardDescription>Configure tax calculation and return policies</CardDescription>
+                      <CardDescription>Configure discount and return policies for all stores</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                          <Label>Enable Tax Calculation</Label>
+                          <Label>Enable Business-Wide Discount</Label>
                           <p className="text-sm text-muted-foreground">
-                            Enable tax calculation for all stores
+                            Set a default discount rate that applies to all stores
                           </p>
                         </div>
                         <Switch
-                          checked={localSettings.enableTax}
-                          onCheckedChange={(checked) => setLocalSettings({...localSettings, enableTax: checked})}
+                          checked={localSettings.enableDiscount}
+                          onCheckedChange={(checked) => setLocalSettings({...localSettings, enableDiscount: checked})}
                         />
                       </div>
                       
-                      {localSettings.enableTax && (
+                      {localSettings.enableDiscount && (
                         <div>
-                          <Label>Tax Rate (%)</Label>
+                          <Label>Default Discount Rate (%)</Label>
                           <Input
                             type="number"
                             min="0"
                             max="100"
                             step="0.01"
-                            value={localSettings.taxRate}
-                            onChange={(e) => setLocalSettings({...localSettings, taxRate: parseFloat(e.target.value) || 0})}
+                            value={localSettings.discountRate}
+                            onChange={(e) => setLocalSettings({...localSettings, discountRate: parseFloat(e.target.value) || 0})}
                             placeholder="0.00"
                           />
+                          <p className="text-sm text-muted-foreground mt-1">
+                            This discount will be used as the default for all stores. Individual stores can override this setting.
+                          </p>
                         </div>
                       )}
 

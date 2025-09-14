@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
+import { checkDemoRestrictions, createDemoRestrictedResponse } from '@/utils/demoRestrictions';
 
 // GET - Fetch specific product
 export async function GET(
@@ -109,6 +110,17 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+
+    // Get user from request headers (assuming it's passed from middleware)
+    const userHeader = request.headers.get('x-user');
+    const user = userHeader ? JSON.parse(userHeader) : null;
+
+    // Check demo restrictions
+    const restriction = checkDemoRestrictions(user, 'delete');
+    if (!restriction.allowed) {
+      return createDemoRestrictedResponse(restriction.message!);
+    }
+
     const { error } = await supabase
       .from('product')
       .delete()
