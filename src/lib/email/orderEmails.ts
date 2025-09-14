@@ -4,7 +4,7 @@ import nodemailer from 'nodemailer';
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false,
+  secure: parseInt(process.env.SMTP_PORT || '587') === 465, // true for 465, false for other ports
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -42,6 +42,17 @@ interface BusinessOrderData {
 }
 
 export async function sendOrderConfirmationEmail(data: CustomerOrderData) {
+  // Validate required fields
+  if (!data.customerEmail || !data.customerName || !data.businessName) {
+    throw new Error('Missing required email data: customerEmail, customerName, or businessName');
+  }
+
+  // Validate SMTP configuration
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    throw new Error('SMTP configuration missing: SMTP_USER or SMTP_PASS not set');
+  }
+
+
   const orderItemsHtml = data.orderItems.map(item => `
     <tr>
       <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}</td>
@@ -125,7 +136,6 @@ export async function sendOrderConfirmationEmail(data: CustomerOrderData) {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log('Order confirmation email sent to:', data.customerEmail);
   } catch (error) {
     console.error('Failed to send order confirmation email:', error);
     throw error;
@@ -133,6 +143,17 @@ export async function sendOrderConfirmationEmail(data: CustomerOrderData) {
 }
 
 export async function sendBusinessOrderNotification(data: BusinessOrderData) {
+  // Validate required fields
+  if (!data.businessEmail || !data.businessName || !data.customerName) {
+    throw new Error('Missing required email data: businessEmail, businessName, or customerName');
+  }
+
+  // Validate SMTP configuration
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    throw new Error('SMTP configuration missing: SMTP_USER or SMTP_PASS not set');
+  }
+
+
   const orderItemsHtml = data.orderItems.map(item => `
     <tr>
       <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}</td>
@@ -231,7 +252,6 @@ export async function sendBusinessOrderNotification(data: BusinessOrderData) {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log('Business order notification sent to:', data.businessEmail);
   } catch (error) {
     console.error('Failed to send business order notification:', error);
     throw error;
