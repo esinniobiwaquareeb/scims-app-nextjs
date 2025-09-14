@@ -474,7 +474,7 @@ export interface CustomerFormData {
 
 export interface StaffFormData {
   username: string;
-  email: string;
+  email: string; // Required field
   name: string;
   phone?: string;
   role: string;

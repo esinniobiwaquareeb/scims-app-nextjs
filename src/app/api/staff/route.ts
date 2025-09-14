@@ -135,6 +135,29 @@ export async function POST(request: NextRequest) {
   try {
     const staffData = await request.json();
 
+    // Validate required fields
+    if (!staffData.name || !staffData.username || !staffData.email) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Name, username, and email are required' 
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(staffData.email)) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Please provide a valid email address' 
+        },
+        { status: 400 }
+      );
+    }
+
     // Use default password "123456"
     const defaultPassword = "123456";
     const passwordHash = await bcrypt.hash(defaultPassword, 12);
@@ -144,7 +167,7 @@ export async function POST(request: NextRequest) {
       .from('user')
       .insert({
         username: staffData.username,
-        email: staffData.email && staffData.email.trim() !== '' ? staffData.email : null,
+        email: staffData.email.trim(),
         password_hash: passwordHash,
         name: staffData.name,
         phone: staffData.phone && staffData.phone.trim() !== '' ? staffData.phone : null,

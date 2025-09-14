@@ -151,13 +151,14 @@ const StaffForm = ({
 
     <div className="grid grid-cols-2 gap-4">
       <div>
-        <Label htmlFor="email">Email (Optional)</Label>
+        <Label htmlFor="email">Email *</Label>
         <Input
           id="email"
           type="email"
           value={staffMember.email || ""}
           onChange={(e) => onChange({ ...staffMember, email: e.target.value })}
-          placeholder="Enter email address (optional)"
+          placeholder="Enter email address"
+          required
         />
       </div>
       <div>
@@ -428,13 +429,16 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   );
 
   const handleAddStaff = useCallback(async () => {
-    if (!currentBusiness?.id || !newStaff.name || !newStaff.username) return;
+    if (!currentBusiness?.id || !newStaff.name || !newStaff.username || !newStaff.email) {
+      toast.error('Please fill in all required fields (Name, Username, and Email)');
+      return;
+    }
 
     try {
       const staffData = {
         name: newStaff.name!,
         username: newStaff.username!,
-        email: newStaff.email || "",
+        email: newStaff.email!,
         phone: newStaff.phone || "",
         role: newStaff.role || "cashier",
         store_id: newStaff.store_id,

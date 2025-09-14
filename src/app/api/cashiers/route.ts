@@ -158,17 +158,18 @@ export async function POST(request: NextRequest) {
     
     console.log('Creating cashier with data:', { name, username, email, phone, store_id, business_id });
 
-    if (!name || !username || !business_id) {
+    if (!name || !username || !email || !business_id) {
       return NextResponse.json(
-        { error: 'Name, username, and business_id are required' },
+        { error: 'Name, username, email, and business_id are required' },
         { status: 400 }
       );
     }
 
-    // Email is optional, but if provided, it should not be empty
-    if (email && email.trim() === '') {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
       return NextResponse.json(
-        { error: 'Email cannot be empty if provided' },
+        { error: 'Please provide a valid email address' },
         { status: 400 }
       );
     }
@@ -196,7 +197,7 @@ export async function POST(request: NextRequest) {
       .from('user')
       .insert({
         username: username.toLowerCase(),
-        email: email && email.trim() !== '' ? email.trim() : null,
+        email: email.trim(),
         password_hash: passwordHash,
         name,
         phone: phone && phone.trim() !== '' ? phone.trim() : null,
