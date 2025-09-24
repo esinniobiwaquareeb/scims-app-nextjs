@@ -41,8 +41,16 @@ export const generateReceiptHTML = (
   currentStoreSettings: StoreSettings | null,
   currentBusinessSettings: BusinessSettings | null,
   formatDate: (date: Date) => string,
-  formatTime: (date: Date, format?: string) => string
+  formatTime: (date: Date, format?: string) => string,
+  formatCurrency?: (amount: number, currency?: string) => string
 ): string => {
+  // Helper function to format currency
+  const formatAmount = (amount: number) => {
+    if (formatCurrency) {
+      return formatCurrency(amount);
+    }
+    return `${receiptData.currencySymbol || '$'}${amount.toFixed(2)}`;
+  };
   return `
     <!DOCTYPE html>
     <html>
@@ -52,6 +60,10 @@ export const generateReceiptHTML = (
         @page {
           size: 80mm auto;
           margin: 0;
+        }
+        
+        * {
+          box-sizing: border-box;
         }
         
         body {
@@ -83,6 +95,7 @@ export const generateReceiptHTML = (
           font-weight: bold;
           margin-bottom: 4px;
           text-transform: uppercase;
+          line-height: 1.0;
         }
         
         .store-address {
@@ -132,6 +145,8 @@ export const generateReceiptHTML = (
           flex: 1;
           margin-right: 15px;
           font-weight: 500;
+          margin-bottom: 0;
+          display: block;
         }
         
         .item-details {
@@ -205,7 +220,11 @@ export const generateReceiptHTML = (
             font-size: 16px;
           }
           .total-row.final {
-            font-size: 14px;
+            font-size: 9px;
+          }
+          * {
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
           }
         }
       </style>
@@ -229,14 +248,14 @@ export const generateReceiptHTML = (
         
         <!-- Items -->
         <div class="items-section">
-          <div class="item" style="font-weight: bold; border-bottom: 2px solid #000; padding-bottom: 4px; margin-bottom: 6px; background-color: #f5f5f5; padding: 4px;">
-            <span class="item-name">ITEM</span>
-            <span class="item-details">QTY × PRICE = TOTAL</span>
+          <div class="item" style="font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 2px; margin-bottom: 3px; background-color: #f5f5f5; padding: 2px;">
+            <div class="item-name">ITEM</div>
+            <div class="item-details">QTY × PRICE = TOTAL</div>
           </div>
           ${receiptData.items?.map((item: { name: string; quantity: number; price: number; }) => `
             <div class="item" style="border-bottom: 1px dotted #ccc;">
-              <span class="item-name">${item.name}</span>
-              <span class="item-details">${item.quantity} × ${receiptData.currencySymbol || '$'}${item.price.toFixed(2)} = ${receiptData.currencySymbol || '$'}${(item.quantity * item.price).toFixed(2)}</span>
+              <div class="item-name">${item.name}</div>
+              <div class="item-details">${item.quantity} × ${formatAmount(item.price)} = ${formatAmount(item.quantity * item.price)}</div>
             </div>
           `).join('') || ''}
         </div>
@@ -245,17 +264,17 @@ export const generateReceiptHTML = (
         <div class="totals-section">
           <div class="total-row">
             <span>Subtotal:</span>
-            <span>${receiptData.currencySymbol || '$'}${receiptData.subtotal.toFixed(2)}</span>
+            <span>${formatAmount(receiptData.subtotal)}</span>
           </div>
           ${receiptData.tax > 0 ? `
             <div class="total-row">
               <span>Tax:</span>
-              <span>${receiptData.currencySymbol || '$'}${receiptData.tax.toFixed(2)}</span>
+              <span>${formatAmount(receiptData.tax)}</span>
             </div>
           ` : ''}
           <div class="total-row final">
             <span>TOTAL:</span>
-            <span>${receiptData.currencySymbol || '$'}${receiptData.total.toFixed(2)}</span>
+            <span>${formatAmount(receiptData.total)}</span>
           </div>
         </div>
         
@@ -268,11 +287,11 @@ export const generateReceiptHTML = (
             </div>
             <div class="payment-row">
               <span>Cash Received:</span>
-              <span>${receiptData.currencySymbol || '$'}${receiptData.cashAmount.toFixed(2)}</span>
+              <span>${formatAmount(receiptData.cashAmount)}</span>
             </div>
             <div class="payment-row">
               <span>Change:</span>
-              <span>${receiptData.currencySymbol || '$'}${(receiptData.change || 0).toFixed(2)}</span>
+              <span>${formatAmount(receiptData.change || 0)}</span>
             </div>
           </div>
         ` : `
@@ -297,6 +316,44 @@ export const generateReceiptHTML = (
   `;
 };
 
+// Preview receipt function
+export const previewReceipt = (
+  receiptData: ReceiptData,
+  currentStore: any,
+  currentStoreSettings: StoreSettings | null,
+  currentBusinessSettings: BusinessSettings | null,
+  formatDate: (date: Date) => string,
+  formatTime: (date: Date, format?: string) => string,
+  formatCurrency?: (amount: number, currency?: string) => string
+): void => {
+  try {
+    // Create a new window for preview
+    const previewWindow = window.open('', '_blank', 'width=400,height=600,scrollbars=yes');
+    if (!previewWindow) {
+      console.error('Could not open preview window');
+      return;
+    }
+
+    // Generate receipt HTML
+    const receiptHTML = generateReceiptHTML(
+      receiptData,
+      currentStore,
+      currentStoreSettings,
+      currentBusinessSettings,
+      formatDate,
+      formatTime,
+      formatCurrency
+    );
+
+    // Write HTML to preview window
+    previewWindow.document.write(receiptHTML);
+    previewWindow.document.close();
+    previewWindow.document.title = 'Receipt Preview';
+  } catch (error) {
+    console.error('Error previewing receipt:', error);
+  }
+};
+
 // Print receipt function
 export const printReceipt = (
   receiptData: ReceiptData,
@@ -304,7 +361,8 @@ export const printReceipt = (
   currentStoreSettings: StoreSettings | null,
   currentBusinessSettings: BusinessSettings | null,
   formatDate: (date: Date) => string,
-  formatTime: (date: Date, format?: string) => string
+  formatTime: (date: Date, format?: string) => string,
+  formatCurrency?: (amount: number, currency?: string) => string
 ): void => {
   try {
     // Create a new window for printing
@@ -321,7 +379,8 @@ export const printReceipt = (
       currentStoreSettings,
       currentBusinessSettings,
       formatDate,
-      formatTime
+      formatTime,
+      formatCurrency
     );
 
     // Write HTML to print window

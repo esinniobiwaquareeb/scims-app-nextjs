@@ -5,9 +5,9 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 // import { directDB } from '../utils/supabase/direct-client';
 import { useAuth } from './AuthContext';
 import { useStoreSettings, useBusinessSettings, useLanguages, useCurrencies } from '@/utils/hooks/useStoreData';
-import { Business, Store } from '@/types';
+// import { Business, Store } from '@/types';
 import { translate as translateUtil } from '../utils/translations';
-import { printReceipt as printReceiptUtil, ReceiptData } from '../utils/receipt';
+import { printReceipt as printReceiptUtil, previewReceipt as previewReceiptUtil, ReceiptData } from '../utils/receipt';
 import {
   formatDate as formatDateUtil,
   formatTime as formatTimeUtil,
@@ -143,6 +143,7 @@ interface SystemContextType {
   getBusinessCurrencyCode: () => string;
   getBusinessLocale: () => string;
   printReceipt: (receiptData: ReceiptData) => void;
+  previewReceipt: (receiptData: ReceiptData) => void;
   isLoading: boolean;
 }
 
@@ -184,7 +185,7 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     lastHealthCheck: new Date(),
   });
 
-  const [storeSettings, setStoreSettings] = useState<StoreSettings[]>([]);
+  const [storeSettings] = useState<StoreSettings[]>([]);
   const [currentStoreSettings, setCurrentStoreSettings] = useState<StoreSettings | null>(null);
   const [currentBusinessSettings, setCurrentBusinessSettings] = useState<BusinessSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -433,7 +434,7 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
 
 
-  const formatDate = (date: Date, format?: string) => {
+  const formatDate = (date: Date) => {
     if (!date) return '';
     
     // Use centralized utility for consistent formatting with business timezone
@@ -517,7 +518,20 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       currentStoreSettings,
       currentBusinessSettings,
       formatDate,
-      formatTime
+      formatTime,
+      formatCurrency
+    );
+  };
+
+  const previewReceipt = (receiptData: ReceiptData) => {
+        previewReceiptUtil(
+      receiptData,
+      currentStore,
+      currentStoreSettings,
+      currentBusinessSettings,
+      formatDate,
+      formatTime,
+      formatCurrency
     );
   };
 
@@ -562,6 +576,7 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       getBusinessCurrencyCode, 
       getBusinessLocale, 
       printReceipt, 
+      previewReceipt, 
       isLoading 
     }}>
       {children}
