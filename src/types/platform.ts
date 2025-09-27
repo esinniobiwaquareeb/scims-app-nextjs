@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { Business as BaseBusiness } from './database';
-import { BusinessFormData } from './forms';
+// import { BusinessFormData } from './forms';
 
 // Extended business interface for platform management
 export interface PlatformBusiness extends BaseBusiness {

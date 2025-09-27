@@ -1,200 +1,293 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // ============================================================================
 // REPORTING STORE HOOKS
 // ============================================================================
 
 import { useQuery } from '@tanstack/react-query';
-import { ApiResponse, SalesStats, ProductPerformance, CategoryPerformance, PaymentMethodBreakdown, DailyRevenue, FinancialStats, ChartData } from '@/types';
 
 // Hook for fetching sales statistics
-export const useReportingSales = (storeId: string, startDate: string, endDate: string, options?: {
+export const useReportingSales = (businessId: string, storeId: string | null, startDate: string, endDate: string, options?: {
   enabled?: boolean;
 }) => {
   const { enabled = true } = options || {};
   
   return useQuery({
-    queryKey: ['reporting-sales', storeId, startDate, endDate],
+    queryKey: ['reporting-sales', businessId, storeId, startDate, endDate],
     queryFn: async () => {
-      const response = await fetch(`/api/reports?type=sales&business_id=${storeId}&start_date=${startDate}&end_date=${endDate}`);
+      const params = new URLSearchParams({
+        type: 'sales',
+        business_id: businessId,
+        start_date: startDate,
+        end_date: endDate
+      });
+      
+      if (storeId) {
+        params.append('store_id', storeId);
+      }
+      
+      const response = await fetch(`/api/reports?${params}`);
       if (!response.ok) {
         throw new Error('Failed to fetch sales statistics');
       }
       const data = await response.json();
-      return data.data || data;
+      return data;
     },
-    enabled: enabled && !!storeId && !!startDate && !!endDate,
+    enabled: enabled && !!businessId && !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };
 
 // Hook for fetching product performance
-export const useReportingProductPerformance = (storeId: string, startDate: string, endDate: string, options?: {
+export const useReportingProductPerformance = (businessId: string, storeId: string | null, startDate: string, endDate: string, options?: {
   enabled?: boolean;
 }) => {
   const { enabled = true } = options || {};
   
   return useQuery({
-    queryKey: ['reporting-product-performance', storeId, startDate, endDate],
+    queryKey: ['reporting-product-performance', businessId, storeId, startDate, endDate],
     queryFn: async () => {
-      // TODO: Implement product performance report - use inventory report for now
-      const response = await fetch(`/api/reports?type=inventory&business_id=${storeId}`);
+      const params = new URLSearchParams({
+        type: 'inventory',
+        business_id: businessId
+      });
+      
+      if (storeId) {
+        params.append('store_id', storeId);
+      }
+      
+      const response = await fetch(`/api/reports?${params}`);
       if (!response.ok) {
         throw new Error('Failed to fetch product performance');
       }
       const data = await response.json();
-      return data.data || [];
+      return data.products || [];
     },
-    enabled: enabled && !!storeId && !!startDate && !!endDate,
+    enabled: enabled && !!businessId && !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
 };
 
 // Hook for fetching customer analytics
-export const useReportingCustomerAnalytics = (storeId: string, startDate: string, endDate: string, options?: {
+export const useReportingCustomerAnalytics = (businessId: string, storeId: string | null, startDate: string, endDate: string, options?: {
   enabled?: boolean;
 }) => {
   const { enabled = true } = options || {};
   
   return useQuery({
-    queryKey: ['reporting-customer-analytics', storeId, startDate, endDate],
+    queryKey: ['reporting-customer-analytics', businessId, storeId, startDate, endDate],
     queryFn: async () => {
-      const response = await fetch(`/api/reports?type=customers&business_id=${storeId}`);
+      const params = new URLSearchParams({
+        type: 'customers',
+        business_id: businessId,
+        start_date: startDate,
+        end_date: endDate
+      });
+      
+      if (storeId) {
+        params.append('store_id', storeId);
+      }
+      
+      const response = await fetch(`/api/reports?${params}`);
       if (!response.ok) {
         throw new Error('Failed to fetch customer analytics');
       }
       const data = await response.json();
-      return data.data || data;
+      return data;
     },
-    enabled: enabled && !!storeId && !!startDate && !!endDate,
+    enabled: enabled && !!businessId && !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
 };
 
 // Hook for fetching inventory statistics
-export const useReportingInventoryStats = (storeId: string, options?: {
+export const useReportingInventoryStats = (businessId: string, storeId: string | null, options?: {
   enabled?: boolean;
 }) => {
   const { enabled = true } = options || {};
   
   return useQuery({
-    queryKey: ['reporting-inventory-stats', storeId],
+    queryKey: ['reporting-inventory-stats', businessId, storeId],
     queryFn: async () => {
-      const response = await fetch(`/api/reports?type=inventory&business_id=${storeId}`);
+      const params = new URLSearchParams({
+        type: 'inventory',
+        business_id: businessId
+      });
+      
+      if (storeId) {
+        params.append('store_id', storeId);
+      }
+      
+      const response = await fetch(`/api/reports?${params}`);
       if (!response.ok) {
         throw new Error('Failed to fetch inventory statistics');
       }
       const data = await response.json();
-      return data.data || data;
+      return data;
     },
-    enabled: enabled && !!storeId,
+    enabled: enabled && !!businessId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
 };
 
 // Hook for fetching financial metrics
-export const useReportingFinancialMetrics = (storeId: string, startDate: string, endDate: string, options?: {
+export const useReportingFinancialMetrics = (businessId: string, storeId: string | null, startDate: string, endDate: string, options?: {
   enabled?: boolean;
 }) => {
   const { enabled = true } = options || {};
   
   return useQuery({
-    queryKey: ['reporting-financial-metrics', storeId, startDate, endDate],
+    queryKey: ['reporting-financial-metrics', businessId, storeId, startDate, endDate],
     queryFn: async () => {
-      const response = await fetch(`/api/reports/financial-metrics?store_id=${storeId}&start_date=${startDate}&end_date=${endDate}`);
+      const params = new URLSearchParams({
+        business_id: businessId,
+        start_date: startDate,
+        end_date: endDate
+      });
+      
+      if (storeId) {
+        params.append('store_id', storeId);
+      }
+      
+      const response = await fetch(`/api/reports/financial-metrics?${params}`);
       if (!response.ok) {
         throw new Error('Failed to fetch financial metrics');
       }
       const data = await response.json();
-      return data.data || data;
+      return data;
     },
-    enabled: enabled && !!storeId && !!startDate && !!endDate,
+    enabled: enabled && !!businessId && !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
 };
 
 // Hook for fetching chart data
-export const useReportingChartData = (storeId: string, chartType: string, startDate: string, endDate: string, options?: {
+export const useReportingChartData = (businessId: string, storeId: string | null, chartType: string, startDate: string, endDate: string, options?: {
   enabled?: boolean;
 }) => {
   const { enabled = true } = options || {};
   
   return useQuery({
-    queryKey: ['reporting-chart-data', storeId, chartType, startDate, endDate],
+    queryKey: ['reporting-chart-data', businessId, storeId, chartType, startDate, endDate],
     queryFn: async () => {
-      // TODO: Implement chart data report
-      return {
-        labels: [],
-        datasets: []
-      };
+      const params = new URLSearchParams({
+        business_id: businessId,
+        chart_type: chartType,
+        start_date: startDate,
+        end_date: endDate
+      });
+      
+      if (storeId) {
+        params.append('store_id', storeId);
+      }
+      
+      const response = await fetch(`/api/reports/chart-data?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch chart data');
+      }
+      const data = await response.json();
+      return data.data || data;
     },
-    enabled: enabled && !!storeId && !!chartType && !!startDate && !!endDate,
+    enabled: enabled && !!businessId && !!chartType && !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
 };
 
 // Hook for fetching daily revenue
-export const useReportingDailyRevenue = (storeId: string, startDate: string, endDate: string, options?: {
+export const useReportingDailyRevenue = (businessId: string, storeId: string | null, startDate: string, endDate: string, options?: {
   enabled?: boolean;
 }) => {
   const { enabled = true } = options || {};
   
   return useQuery({
-    queryKey: ['reporting-daily-revenue', storeId, startDate, endDate],
+    queryKey: ['reporting-daily-revenue', businessId, storeId, startDate, endDate],
     queryFn: async () => {
-      // TODO: Implement daily revenue report
-      return [];
+      const params = new URLSearchParams({
+        business_id: businessId,
+        start_date: startDate,
+        end_date: endDate
+      });
+      
+      if (storeId) {
+        params.append('store_id', storeId);
+      }
+      
+      const response = await fetch(`/api/reports/daily-revenue?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch daily revenue');
+      }
+      const data = await response.json();
+      return data;
     },
-    enabled: enabled && !!storeId && !!startDate && !!endDate,
+    enabled: enabled && !!businessId && !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
 };
 
 // Hook for fetching payment method breakdown
-export const useReportingPaymentMethodBreakdown = (storeId: string, startDate: string, endDate: string, options?: {
+export const useReportingPaymentMethodBreakdown = (businessId: string, storeId: string | null, startDate: string, endDate: string, options?: {
   enabled?: boolean;
 }) => {
   const { enabled = true } = options || {};
   
   return useQuery({
-    queryKey: ['reporting-payment-method-breakdown', storeId, startDate, endDate],
+    queryKey: ['reporting-payment-method-breakdown', businessId, storeId, startDate, endDate],
     queryFn: async () => {
-      const response = await fetch(`/api/reports/payment-method-breakdown?store_id=${storeId}&start_date=${startDate}&end_date=${endDate}`);
+      const params = new URLSearchParams({
+        business_id: businessId,
+        start_date: startDate,
+        end_date: endDate
+      });
+      
+      if (storeId) {
+        params.append('store_id', storeId);
+      }
+      
+      const response = await fetch(`/api/reports/payment-method-breakdown?${params}`);
       if (!response.ok) {
         throw new Error('Failed to fetch payment method breakdown');
       }
       const data = await response.json();
-      return data.data || data;
+      return data;
     },
-    enabled: enabled && !!storeId && !!startDate && !!endDate,
+    enabled: enabled && !!businessId && !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
 };
 
 // Hook for fetching category performance
-export const useReportingCategoryPerformance = (storeId: string, startDate: string, endDate: string, options?: {
+export const useReportingCategoryPerformance = (businessId: string, storeId: string | null, startDate: string, endDate: string, options?: {
   enabled?: boolean;
 }) => {
   const { enabled = true } = options || {};
   
   return useQuery({
-    queryKey: ['reporting-category-performance', storeId, startDate, endDate],
+    queryKey: ['reporting-category-performance', businessId, storeId, startDate, endDate],
     queryFn: async () => {
-      const response = await fetch(`/api/reports/category-performance?store_id=${storeId}&start_date=${startDate}&end_date=${endDate}`);
+      const params = new URLSearchParams({
+        business_id: businessId,
+        start_date: startDate,
+        end_date: endDate
+      });
+      
+      if (storeId) {
+        params.append('store_id', storeId);
+      }
+      
+      const response = await fetch(`/api/reports/category-performance?${params}`);
       if (!response.ok) {
         throw new Error('Failed to fetch category performance');
       }
       const data = await response.json();
-      return data.data || data;
+      return data;
     },
-    enabled: enabled && !!storeId && !!startDate && !!endDate,
+    enabled: enabled && !!businessId && !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });

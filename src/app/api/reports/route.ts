@@ -27,9 +27,9 @@ export async function GET(request: NextRequest) {
       case 'sales':
         return await getBusinessSalesReport(businessId, searchParams);
       case 'inventory':
-        return await getBusinessInventoryReport(businessId);
+        return await getBusinessInventoryReport(businessId, searchParams);
       case 'customers':
-        return await getBusinessCustomersReport(businessId);
+        return await getBusinessCustomersReport(businessId, searchParams);
       default:
         return NextResponse.json(
           { error: 'Invalid report type' },
@@ -155,35 +155,43 @@ async function getBusinessSalesReport(businessId: string, searchParams: URLSearc
   try {
     const startDate = searchParams.get('start_date');
     const endDate = searchParams.get('end_date');
+    const storeId = searchParams.get('store_id');
 
-    // Get all stores for the business
-    const { data: stores, error: storesError } = await supabase
-      .from('store')
-      .select('id')
-      .eq('business_id', businessId)
-      .eq('is_active', true);
+    let storeIds: string[] = [];
 
-    if (storesError) {
-      console.error('Error fetching stores:', storesError);
-      return NextResponse.json(
-        { error: 'Failed to fetch stores' },
-        { status: 500 }
-      );
+    if (storeId) {
+      // Filter by specific store
+      storeIds = [storeId];
+    } else {
+      // Get all stores for the business
+      const { data: stores, error: storesError } = await supabase
+        .from('store')
+        .select('id')
+        .eq('business_id', businessId)
+        .eq('is_active', true);
+
+      if (storesError) {
+        console.error('Error fetching stores:', storesError);
+        return NextResponse.json(
+          { error: 'Failed to fetch stores' },
+          { status: 500 }
+        );
+      }
+
+      if (!stores || stores.length === 0) {
+        return NextResponse.json({
+          success: true,
+          sales: [],
+          summary: {
+            total_sales: 0,
+            total_transactions: 0,
+            average_order_value: 0
+          }
+        });
+      }
+
+      storeIds = stores.map(store => store.id);
     }
-
-    if (!stores || stores.length === 0) {
-      return NextResponse.json({
-        success: true,
-        sales: [],
-        summary: {
-          total_sales: 0,
-          total_transactions: 0,
-          average_order_value: 0
-        }
-      });
-    }
-
-    const storeIds = stores.map(store => store.id);
 
     // Build sales query
     let salesQuery = supabase
@@ -259,38 +267,46 @@ async function getBusinessSalesReport(businessId: string, searchParams: URLSearc
   }
 }
 
-async function getBusinessInventoryReport(businessId: string) {
+async function getBusinessInventoryReport(businessId: string, searchParams?: URLSearchParams) {
   try {
-    // First get all stores for the business
-    const { data: stores, error: storesError } = await supabase
-      .from('store')
-      .select('id')
-      .eq('business_id', businessId)
-      .eq('is_active', true);
+    const storeId = searchParams?.get('store_id');
+    let storeIds: string[] = [];
 
-    if (storesError) {
-      console.error('Error fetching stores:', storesError);
-      return NextResponse.json(
-        { error: 'Failed to fetch stores' },
-        { status: 500 }
-      );
+    if (storeId) {
+      // Filter by specific store
+      storeIds = [storeId];
+    } else {
+      // First get all stores for the business
+      const { data: stores, error: storesError } = await supabase
+        .from('store')
+        .select('id')
+        .eq('business_id', businessId)
+        .eq('is_active', true);
+
+      if (storesError) {
+        console.error('Error fetching stores:', storesError);
+        return NextResponse.json(
+          { error: 'Failed to fetch stores' },
+          { status: 500 }
+        );
+      }
+
+      if (!stores || stores.length === 0) {
+        return NextResponse.json({
+          success: true,
+          products: [],
+          summary: {
+            total_products: 0,
+            in_stock: 0,
+            low_stock: 0,
+            out_of_stock: 0,
+            total_inventory_value: 0
+          }
+        });
+      }
+
+      storeIds = stores.map(store => store.id);
     }
-
-    if (!stores || stores.length === 0) {
-      return NextResponse.json({
-        success: true,
-        products: [],
-        summary: {
-          total_products: 0,
-          in_stock: 0,
-          low_stock: 0,
-          out_of_stock: 0,
-          total_inventory_value: 0
-        }
-      });
-    }
-
-    const storeIds = stores.map(store => store.id);
 
     // Get all products for all stores in the business
     const { data: products, error: productsError } = await supabase
@@ -331,9 +347,56 @@ async function getBusinessInventoryReport(businessId: string) {
       return sum + stockValue;
     }, 0) || 0;
 
+    // Get sales data for performance calculations
+    const { data: sales, error: salesError } = await supabase
+      .from('sale')
+      .select(`
+        id,
+        sale_item(
+          quantity,
+          unit_price,
+          total_price,
+          product_id
+        )
+      `)
+      .in('store_id', storeIds)
+      .eq('status', 'completed');
+
+    if (salesError) {
+      console.error('Error fetching sales data:', salesError);
+      return NextResponse.json(
+        { error: 'Failed to fetch sales data' },
+        { status: 500 }
+      );
+    }
+
+    // Calculate performance metrics for each product
+    const productPerformance = products?.map(product => {
+      // Find all sale items for this product
+      const productSales = sales?.flatMap(sale => 
+        sale.sale_item?.filter((item: { product_id: string; quantity: number; total_price: number }) => item.product_id === product.id) || []
+      ) || [];
+
+      // Calculate totals
+      const soldQuantity = productSales.reduce((sum, item) => sum + (item.quantity || 0), 0);
+      const revenue = productSales.reduce((sum, item) => sum + (item.total_price || 0), 0);
+      const profit = productSales.reduce((sum, item) => {
+        const itemCost = (item.quantity || 0) * (product.cost || 0);
+        return sum + ((item.total_price || 0) - itemCost);
+      }, 0);
+
+      return {
+        ...product,
+        soldQuantity,
+        revenue,
+        profit,
+        profitMargin: revenue > 0 ? (profit / revenue) * 100 : 0
+      };
+    }) || [];
+
     return NextResponse.json({
       success: true,
-      products: products || [],
+      products: productPerformance,
       summary: {
         total_products: totalProducts,
         in_stock: inStock,
@@ -351,74 +414,128 @@ async function getBusinessInventoryReport(businessId: string) {
   }
 }
 
-async function getBusinessCustomersReport(businessId: string) {
+async function getBusinessCustomersReport(businessId: string, searchParams?: URLSearchParams) {
   try {
-    // First get all stores for the business
-    const { data: stores, error: storesError } = await supabase
-      .from('store')
-      .select('id')
-      .eq('business_id', businessId)
-      .eq('is_active', true);
+    const storeId = searchParams?.get('store_id');
+    let storeIds: string[] = [];
 
-    if (storesError) {
-      console.error('Error fetching stores:', storesError);
-      return NextResponse.json(
-        { error: 'Failed to fetch stores' },
-        { status: 500 }
-      );
+    if (storeId) {
+      // Filter by specific store
+      storeIds = [storeId];
+    } else {
+      // First get all stores for the business
+      const { data: stores, error: storesError } = await supabase
+        .from('store')
+        .select('id')
+        .eq('business_id', businessId)
+        .eq('is_active', true);
+
+      if (storesError) {
+        console.error('Error fetching stores:', storesError);
+        return NextResponse.json(
+          { error: 'Failed to fetch stores' },
+          { status: 500 }
+        );
+      }
+
+      if (!stores || stores.length === 0) {
+        return NextResponse.json({
+          success: true,
+          customers: [],
+          summary: {
+            total_customers: 0,
+            active_customers: 0,
+            new_customers_this_month: 0
+          }
+        });
+      }
+
+      storeIds = stores.map(store => store.id);
     }
 
-    if (!stores || stores.length === 0) {
-      return NextResponse.json({
-        success: true,
-        customers: [],
-        summary: {
-          total_customers: 0,
-          active_customers: 0,
-          new_customers_this_month: 0
-        }
-      });
-    }
-
-    const storeIds = stores.map(store => store.id);
-
-    // Get all customers for all stores in the business
-    const { data: customers, error: customersError } = await supabase
-      .from('customer')
+    // Get sales data to compute customer analytics
+    const { data: sales, error: salesError } = await supabase
+      .from('sale')
       .select(`
         id,
-        name,
-        email,
-        phone,
-        total_purchases,
-        last_purchase_at,
+        total_amount,
         created_at,
-        store_id
+        customer_id,
+        customer:customer_id(
+          id,
+          name,
+          email,
+          phone
+        )
       `)
       .in('store_id', storeIds)
-      .eq('is_active', true);
+      .eq('status', 'completed')
+      .not('customer_id', 'is', null);
 
-    if (customersError) {
-      console.error('Error fetching customers:', customersError);
+    if (salesError) {
+      console.error('Error fetching sales data:', salesError);
       return NextResponse.json(
-        { error: 'Failed to fetch customers' },
+        { error: 'Failed to fetch sales data' },
         { status: 500 }
       );
     }
 
-    // Calculate customer statistics
-    const totalCustomers = customers?.length || 0;
-    const activeCustomers = customers?.filter(c => c.last_purchase_at).length || 0;
-    const newCustomersThisMonth = customers?.filter(c => {
-      const createdDate = new Date(c.created_at);
+    // Group sales by customer and compute metrics
+    const customerMetrics = new Map();
+    
+    sales?.forEach((sale: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      const customerId = sale.customer_id;
+      const customer = Array.isArray(sale.customer) ? sale.customer[0] : sale.customer;
+      
+      if (!customerId || !customer) return;
+      
+      if (!customerMetrics.has(customerId)) {
+        customerMetrics.set(customerId, {
+          id: customer.id,
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone,
+          totalPurchases: 0,
+          totalSpent: 0,
+          lastVisit: null,
+          firstVisit: null
+        });
+      }
+      
+      const metrics = customerMetrics.get(customerId);
+      metrics.totalPurchases += 1;
+      metrics.totalSpent += sale.total_amount || 0;
+      
+      const saleDate = new Date(sale.created_at);
+      if (!metrics.lastVisit || saleDate > new Date(metrics.lastVisit)) {
+        metrics.lastVisit = sale.created_at;
+      }
+      if (!metrics.firstVisit || saleDate < new Date(metrics.firstVisit)) {
+        metrics.firstVisit = sale.created_at;
+      }
+    });
+
+    // Convert to array and calculate average order value
+    const customers = Array.from(customerMetrics.values()).map(customer => ({
+      ...customer,
+      avgOrderValue: customer.totalPurchases > 0 ? customer.totalSpent / customer.totalPurchases : 0,
+      lastVisit: customer.lastVisit ? new Date(customer.lastVisit).toISOString() : null
+    }));
+
+    // Calculate summary statistics
+    const totalCustomers = customers.length;
+    const activeCustomers = customers.filter(c => c.lastVisit).length;
+    const newCustomersThisMonth = customers.filter(c => {
+      if (!c.firstVisit) return false;
+      const createdDate = new Date(c.firstVisit);
       const monthAgo = new Date();
       monthAgo.setMonth(monthAgo.getMonth() - 1);
       return createdDate >= monthAgo;
-    }).length || 0;
+    }).length;
 
     return NextResponse.json({
       success: true,
-      customers: customers || [],
+      customers: customers,
       summary: {
         total_customers: totalCustomers,
         active_customers: activeCustomers,

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // ============================================================================
 // REPORT SPECIFIC TYPES
 // ============================================================================
@@ -23,16 +24,16 @@ export interface TransformedSalesData {
   storeId: string;
 }
 
-// Raw sales data from API
+// Raw sales data from API (updated to match actual API response)
 export interface RawSalesData {
   id: string;
   created_at?: string;
   transaction_date?: string;
-  customers?: { name: string };
-  sale_items?: Array<{ products?: { name: string } }>;
+  customer?: { name: string };
+  sale_item?: Array<{ product?: { name: string } }>;
   total_amount?: string | number;
   payment_method?: string;
-  users?: { username: string };
+  cashier?: { username: string };
   store_id?: string;
 }
 
@@ -54,7 +55,9 @@ export interface CustomerData {
   phone: string;
   totalPurchases: number;
   totalSpent: number;
-  lastVisit: Date;
+  avgOrderValue: number;
+  lastVisit: string | null;
+  firstVisit: string | null;
 }
 
 // Top sale data

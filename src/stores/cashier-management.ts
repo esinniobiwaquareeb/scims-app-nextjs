@@ -15,12 +15,12 @@ export const useBusinessCashiers = (businessId: string, options?: {
   return useQuery<CashierManagement[], Error>({
     queryKey: ['business-cashiers', businessId],
     queryFn: async () => {
-      const response = await fetch(`/api/businesses/${businessId}/cashiers`);
+      const response = await fetch(`/api/cashiers?business_id=${businessId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch business cashiers');
       }
-      const data: ApiResponse<CashierManagement[]> = await response.json();
-      return data.data || [];
+      const data = await response.json();
+      return data.cashiers || [];
     },
     enabled: enabled && !!businessId,
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -38,12 +38,12 @@ export const useBusinessStores = (businessId: string, options?: {
   return useQuery<{ stores: Array<{ id: string; name: string; is_active?: boolean }> }, Error>({
     queryKey: ['business-stores', businessId],
     queryFn: async () => {
-      const response = await fetch(`/api/businesses/${businessId}/stores`);
+      const response = await fetch(`/api/stores?business_id=${businessId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch business stores');
       }
-      const data: ApiResponse<{ stores: Array<{ id: string; name: string; is_active?: boolean }> }> = await response.json();
-      return data.data || { stores: [] };
+      const data = await response.json();
+      return { stores: data.stores || [] };
     },
     enabled: enabled && !!businessId,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -94,12 +94,15 @@ export const useCreateCashier = (businessId: string) => {
 
   return useMutation<ApiResponse<CashierManagement & { credentials?: CashierCredentials }>, Error, CashierFormData>({
     mutationFn: async (cashierData: CashierFormData) => {
-      const response = await fetch(`/api/businesses/${businessId}/cashiers`, {
+      const response = await fetch(`/api/cashiers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(cashierData),
+        body: JSON.stringify({
+          ...cashierData,
+          business_id: businessId,
+        }),
       });
 
       if (!response.ok) {
@@ -126,7 +129,7 @@ export const useUpdateCashier = (businessId: string) => {
 
   return useMutation<ApiResponse<CashierManagement>, Error, { id: string; cashierData: Partial<CashierFormData> }>({
     mutationFn: async ({ id, cashierData }) => {
-      const response = await fetch(`/api/businesses/${businessId}/cashiers/${id}`, {
+      const response = await fetch(`/api/cashiers/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -158,8 +161,8 @@ export const useUpdateCashierStore = (businessId: string) => {
 
   return useMutation<ApiResponse<CashierManagement>, Error, { id: string; storeId: string }>({
     mutationFn: async ({ id, storeId }) => {
-      const response = await fetch(`/api/businesses/${businessId}/cashiers/${id}/store`, {
-        method: 'PATCH',
+      const response = await fetch(`/api/cashiers/${id}/store`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -190,7 +193,7 @@ export const useDeleteCashier = (businessId: string) => {
 
   return useMutation<ApiResponse<null>, Error, string>({
     mutationFn: async (cashierId: string) => {
-      const response = await fetch(`/api/businesses/${businessId}/cashiers/${cashierId}`, {
+      const response = await fetch(`/api/cashiers/${cashierId}`, {
         method: 'DELETE',
       });
 
@@ -242,80 +245,5 @@ export const useResetUserPassword = () => {
   });
 };
 
-// Hook for bulk operations on cashiers
-export const useBulkCashierOperations = (businessId: string) => {
-  const queryClient = useQueryClient();
-
-  return useMutation<ApiResponse<{ success: number; failed: number }>, Error, { 
-    operation: 'activate' | 'deactivate' | 'delete'; 
-    cashierIds: string[] 
-  }>({
-    mutationFn: async ({ operation, cashierIds }) => {
-      const response = await fetch(`/api/businesses/${businessId}/cashiers/bulk`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ operation, cashier_ids: cashierIds }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to perform bulk operation');
-      }
-
-      return response.json();
-    },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['business-cashiers', businessId] });
-      toast.success(`Bulk ${variables.operation} completed: ${data.data?.success} successful, ${data.data?.failed} failed`);
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to perform bulk operation');
-    },
-  });
-};
-
-// Hook for exporting cashier data
-export const useExportCashierData = (businessId: string) => {
-  return useMutation<Blob, Error, { 
-    format: 'csv' | 'json' | 'xlsx';
-    includeSales?: boolean;
-    includeActivity?: boolean;
-    dateRange?: { start: string; end: string };
-  }>({
-    mutationFn: async (exportOptions) => {
-      const params = new URLSearchParams();
-      params.append('format', exportOptions.format);
-      if (exportOptions.includeSales) params.append('include_sales', 'true');
-      if (exportOptions.includeActivity) params.append('include_activity', 'true');
-      if (exportOptions.dateRange) {
-        params.append('start_date', exportOptions.dateRange.start);
-        params.append('end_date', exportOptions.dateRange.end);
-      }
-
-      const response = await fetch(`/api/businesses/${businessId}/cashiers/export?${params}`);
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to export cashier data');
-      }
-
-      const blob = await response.blob();
-      const filename = `cashiers-${businessId}-${new Date().toISOString().split('T')[0]}.${exportOptions.format}`;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast.success('Cashier data exported successfully');
-      return blob;
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to export cashier data');
-    },
-  });
-};
+// Note: Bulk operations and export functionality would require additional API endpoints
+// These hooks are commented out until the corresponding endpoints are implemented

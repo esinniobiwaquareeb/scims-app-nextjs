@@ -72,7 +72,8 @@ export const Reporting: React.FC<ReportProps> = ({ onBack }) => {
     error: salesError,
     refetch: refetchSales
   } = useReportingSales(
-    reportingStoreId || '', 
+    currentBusiness?.id || '',
+    reportingStoreId || null,
     startDate || '',
     endDate || ''
   );
@@ -82,21 +83,34 @@ export const Reporting: React.FC<ReportProps> = ({ onBack }) => {
     isLoading: isLoadingProducts,
     error: productsError,
     refetch: refetchProducts
-  } = useReportingProductPerformance(reportingStoreId || '', startDate || '', endDate || '');
+  } = useReportingProductPerformance(
+    currentBusiness?.id || '',
+    reportingStoreId || null,
+    startDate || '', 
+    endDate || ''
+  );
 
   const {
     data: customerResponse = { customers: [] },
     isLoading: isLoadingCustomers,
     error: customersError,
     refetch: refetchCustomers
-  } = useReportingCustomerAnalytics(reportingStoreId || '', startDate || '', endDate || '');
+  } = useReportingCustomerAnalytics(
+    currentBusiness?.id || '',
+    reportingStoreId || null,
+    startDate || '', 
+    endDate || ''
+  );
 
   const {
     data: inventoryResponse = { summary: { inStock: 0, lowStock: 0, outOfStock: 0 } },
     isLoading: isLoadingInventory,
     error: inventoryError,
     refetch: refetchInventory
-  } = useReportingInventoryStats(reportingStoreId || '');
+  } = useReportingInventoryStats(
+    currentBusiness?.id || '',
+    reportingStoreId || null
+  );
 
   const {
     data: financialResponse = {
@@ -114,29 +128,88 @@ export const Reporting: React.FC<ReportProps> = ({ onBack }) => {
     error: financialError,
     refetch: refetchFinancial
   } = useReportingFinancialMetrics(
-    reportingStoreId || '', 
+    currentBusiness?.id || '',
+    reportingStoreId || null,
+    startDate || '',
+    endDate || ''
+  );
+
+  // Get different chart data types
+  const {
+    data: revenueChartData = [],
+    isLoading: isLoadingRevenue,
+    error: revenueError,
+    refetch: refetchRevenue
+  } = useReportingChartData(
+    currentBusiness?.id || '',
+    reportingStoreId || null,
+    'revenue',
     startDate || '',
     endDate || ''
   );
 
   const {
-    data: chartResponse = { revenueData: [], categoryData: [], paymentData: [] },
-    isLoading: isLoadingCharts,
-    error: chartsError,
-    refetch: refetchCharts
+    data: productsChartData = [],
+    isLoading: isLoadingProductsChart,
+    error: productsChartError,
+    refetch: refetchProductsChart
   } = useReportingChartData(
-    'sales', 
-    reportingStoreId || '', 
+    currentBusiness?.id || '',
+    reportingStoreId || null,
+    'products',
+    startDate || '',
+    endDate || ''
+  );
+
+  const {
+    data: paymentChartData = [],
+    isLoading: isLoadingPayment,
+    error: paymentError,
+    refetch: refetchPayment
+  } = useReportingChartData(
+    currentBusiness?.id || '',
+    reportingStoreId || null,
+    'payment-methods',
     startDate || '',
     endDate || ''
   );
 
   // Extract the actual data from the API responses
-  const salesData = useMemo(() => Array.isArray(salesResponse) ? salesResponse : [], [salesResponse]);
-  const productPerformance = Array.isArray(productResponse) ? productResponse : [];
-  const customerData = Array.isArray(customerResponse) ? customerResponse : [];
-  const inventoryStats = inventoryResponse?.summary || { inStock: 0, lowStock: 0, outOfStock: 0 };
-  const financialStats = financialResponse || {
+  const salesData = useMemo(() => {
+    if (Array.isArray(salesResponse)) {
+      return salesResponse;
+    } else if (salesResponse && Array.isArray(salesResponse.sales)) {
+      return salesResponse.sales;
+    } else if (salesResponse && Array.isArray(salesResponse.data)) {
+      return salesResponse.data;
+    }
+    return [];
+  }, [salesResponse]);
+  
+  const productPerformance = useMemo(() => {
+    if (Array.isArray(productResponse)) {
+      return productResponse;
+    } else if (productResponse && Array.isArray(productResponse.products)) {
+      return productResponse.products;
+    } else if (productResponse && Array.isArray(productResponse.data)) {
+      return productResponse.data;
+    }
+    return [];
+  }, [productResponse]);
+  
+  const customerData = useMemo(() => {
+    if (Array.isArray(customerResponse)) {
+      return customerResponse;
+    } else if (customerResponse && Array.isArray(customerResponse.customers)) {
+      return customerResponse.customers;
+    } else if (customerResponse && Array.isArray(customerResponse.data)) {
+      return customerResponse.data;
+    }
+    return [];
+  }, [customerResponse]);
+  
+  const inventoryStats = inventoryResponse?.summary || inventoryResponse?.data?.summary || { in_stock: 0, low_stock: 0, out_of_stock: 0 };
+  const financialStats = financialResponse?.data || financialResponse || {
     totalProfit: 0,
     operatingExpenses: 0,
     netProfit: 0,
@@ -145,19 +218,48 @@ export const Reporting: React.FC<ReportProps> = ({ onBack }) => {
     customerRetention: 0,
     inventoryTurnover: 0
   };
-  const chartData = chartResponse || { revenueData: [], categoryData: [], paymentData: [] };
 
-  // Ensure chartData properties are always arrays to prevent runtime errors
+  // Process chart data from different API calls
+  
   const safeChartData = {
-    revenueData: Array.isArray(chartData) ? chartData : [],
-    categoryData: Array.isArray(chartData) ? chartData : [],
-    paymentData: Array.isArray(chartData) ? chartData : []
+    revenueData: revenueChartData?.labels && revenueChartData?.datasets?.[0]?.data 
+      ? revenueChartData.labels.map((label: string, index: number) => ({
+          date: label,
+          revenue: revenueChartData.datasets[0].data[index] || 0,
+          profit: revenueChartData.datasets[0].data[index] * 0.8 || 0 // Estimate profit as 80% of revenue
+        }))
+      : [],
+    categoryData: productsChartData?.labels && productsChartData?.datasets?.[0]?.data
+      ? productsChartData.labels.map((label: string, index: number) => ({
+          name: label,
+          value: productsChartData.datasets[0].data[index] || 0,
+          color: productsChartData.datasets[0].backgroundColor?.[index] || `hsl(${index * 137.5}, 70%, 50%)`
+        }))
+      : [],
+    paymentData: paymentChartData?.labels && paymentChartData?.datasets?.[0]?.data
+      ? paymentChartData.labels.map((label: string, index: number) => ({
+          method: label,
+          amount: paymentChartData.datasets[0].data[index] || 0,
+          percentage: 0 // Will be calculated below
+        }))
+      : []
   };
+
+  // Calculate percentages for payment data
+  const totalPaymentAmount = safeChartData.paymentData.reduce((sum: number, item: any) => sum + item.amount, 0);
+  safeChartData.paymentData = safeChartData.paymentData.map((item: any) => ({
+    ...item,
+    percentage: totalPaymentAmount > 0 ? (item.amount / totalPaymentAmount) * 100 : 0
+  }));
+
+  // Combined loading and error states
+  const isLoadingCharts = isLoadingRevenue || isLoadingProductsChart || isLoadingPayment;
+  const chartsError = revenueError || productsChartError || paymentError;
 
   // Ensure financial stats are always numbers to prevent runtime errors
   const safeFinancialStats = {
     totalProfit: typeof (financialStats as any)?.totalProfit === 'number' ? (financialStats as any).totalProfit : 0,
-    operatingExpenses: typeof (financialStats as any)?.operatingExpenses === 'number' ? (financialStats as any).operatingExpenses : 0,
+    operatingExpenses: typeof (financialStats as any)?.totalExpenses === 'number' ? (financialStats as any).totalExpenses : 0,
     netProfit: typeof (financialStats as any)?.netProfit === 'number' ? (financialStats as any).netProfit : 0,
     profitMargin: typeof (financialStats as any)?.profitMargin === 'number' ? (financialStats as any).profitMargin : 0,
     returnRate: typeof (financialStats as any)?.returnRate === 'number' ? (financialStats as any).returnRate : 0,
@@ -180,14 +282,16 @@ export const Reporting: React.FC<ReportProps> = ({ onBack }) => {
         refetchCustomers(),
         refetchInventory(),
         refetchFinancial(),
-        refetchCharts()
+        refetchRevenue(),
+        refetchProductsChart(),
+        refetchPayment()
       ]);
       toast.success('Reports refreshed successfully');
     } catch (error) {
       console.error('Error refreshing reports:', error);
       toast.error('Failed to refresh reports');
     }
-  }, [refetchSales, refetchProducts, refetchCustomers, refetchInventory, refetchFinancial, refetchCharts]);
+  }, [refetchSales, refetchProducts, refetchCustomers, refetchInventory, refetchFinancial, refetchRevenue, refetchProductsChart, refetchPayment]);
 
   const exportToPDF = (reportType: string) => {
     // PDF export functionality not yet implemented
@@ -238,24 +342,24 @@ export const Reporting: React.FC<ReportProps> = ({ onBack }) => {
 
     
     return salesData.map((sale: RawSalesData) => {
-      // Ensure products array is always defined
-      let products: string[] = [];
-      if (sale.sale_items && Array.isArray(sale.sale_items)) {
-        products = sale.sale_items.map((item: { products?: { name: string } }) => 
-          item.products?.name || 'Unknown Product'
-        );
-      }
+        // Ensure products array is always defined
+        let products: string[] = [];
+        if (sale.sale_item && Array.isArray(sale.sale_item)) {
+          products = sale.sale_item.map((item: { product?: { name: string } }) => 
+            item.product?.name || 'Unknown Product'
+          );
+        }
       
 
       
       return {
         id: sale.id,
         date: new Date(sale.created_at || sale.transaction_date || ''),
-        customerName: sale.customers?.name || 'Walk-in Customer',
+        customerName: sale.customer?.name || 'Walk-in Customer',
         products: products,
         total: parseFloat(String(sale.total_amount || 0)),
         payment: sale.payment_method || 'cash',
-        cashier: sale.users?.username || 'Unknown',
+        cashier: sale.cashier?.username || 'Unknown',
         storeId: sale.store_id || ''
       };
     });
@@ -277,9 +381,10 @@ export const Reporting: React.FC<ReportProps> = ({ onBack }) => {
     return matchesSearch && matchesCategory;
   });
 
-  const totalRevenue = filteredSales.reduce((sum: number, sale: TransformedSalesData) => sum + sale.total, 0);
-  const totalTransactions = filteredSales.length;
-  const averageOrderValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
+  // Use API summary data for top cards (not filtered data)
+  const totalRevenue = salesResponse?.summary?.total_sales || 0;
+  const totalTransactions = salesResponse?.summary?.total_transactions || 0;
+  const averageOrderValue = salesResponse?.summary?.average_order_value || 0;
 
   const topSales = useMemo(() => {
     const sales = filteredSales.map((sale: TransformedSalesData) => {
@@ -775,36 +880,38 @@ export const Reporting: React.FC<ReportProps> = ({ onBack }) => {
                         key: 'category',
                         header: 'Category',
                         render: (product: any) => (
-                          <div>{product.category}</div>
+                          <div>{product.category?.name || 'N/A'}</div>
                         )
                       },
                       {
                         key: 'soldQty',
                         header: 'Sold Qty',
                         render: (product: any) => (
-                          <div>{product.soldQuantity}</div>
+                          <div>{product.soldQuantity || 0}</div>
                         )
                       },
                       {
                         key: 'revenue',
                         header: 'Revenue',
                         render: (product: any) => (
-                          <div>{formatCurrency(product.revenue)}</div>
+                          <div>{formatCurrency(product.revenue || 0)}</div>
                         )
                       },
                       {
                         key: 'profit',
                         header: 'Profit',
                         render: (product: any) => (
-                          <div className="text-green-600">{formatCurrency(product.profit)}</div>
+                          <div className={product.profit >= 0 ? 'text-green-600' : 'text-red-600'}>
+                            {formatCurrency(product.profit || 0)}
+                          </div>
                         )
                       },
                       {
                         key: 'profitMargin',
                         header: 'Profit Margin',
                         render: (product: any) => (
-                          <Badge variant="secondary">
-                            {product.revenue > 0 ? ((product.profit / product.revenue) * 100).toFixed(1) : '0.0'}%
+                          <Badge variant={product.profitMargin >= 0 ? 'default' : 'destructive'}>
+                            {(product.profitMargin || 0).toFixed(1)}%
                           </Badge>
                         )
                       }
@@ -925,19 +1032,19 @@ export const Reporting: React.FC<ReportProps> = ({ onBack }) => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="text-center">
                         <p className="text-2xl font-semibold text-green-600">
-                          {isLoadingInventory ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : inventoryStats.inStock}
+                          {isLoadingInventory ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : inventoryStats.in_stock || 0}
                         </p>
                         <p className="text-sm text-muted-foreground">In Stock Items</p>
                       </div>
                       <div className="text-center">
                         <p className="text-2xl font-semibold text-orange-600">
-                          {isLoadingInventory ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : inventoryStats.lowStock}
+                          {isLoadingInventory ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : inventoryStats.low_stock || 0}
                         </p>
                         <p className="text-sm text-muted-foreground">Low Stock Items</p>
                       </div>
                       <div className="text-center">
                         <p className="text-2xl font-semibold text-red-600">
-                          {isLoadingInventory ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : inventoryStats.outOfStock}
+                          {isLoadingInventory ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : inventoryStats.out_of_stock || 0}
                         </p>
                         <p className="text-sm text-muted-foreground">Out of Stock</p>
                       </div>
