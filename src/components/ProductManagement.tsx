@@ -39,60 +39,20 @@ import {
   useDeleteProduct,
   useStoreProducts,
   useBusinessStores
-} from '@/utils/hooks/useStoreData';
+} from '@/stores';
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  cost: number;
-  sku: string;
-  barcode?: string;
-  description?: string;
-  stock_quantity: number;
-  min_stock_level: number;
-  category_id?: string | null;
-  supplier_id?: string | null;
-  brand_id?: string | null;
-  image_url?: string;
-  category?: { id: string; name: string };
-  supplier?: { id: string; name: string };
-  brand?: { id: string; name: string };
-  is_active: boolean;
-  is_public?: boolean;
-  public_description?: string;
-  public_images?: string[];
-  created_at: string;
-  updated_at: string;
-  reorder_level?: number;
-}
+// Import types from centralized location
+import { 
+  Product, 
+  Category, 
+  Supplier, 
+  Brand,
+  ProductProps,
+  ProductDisplay,
+  ProductFormData
+} from '@/types';
 
-interface Category {
-  id: string;
-  name: string;
-  color?: string;
-  is_active: boolean;
-}
-
-interface Supplier {
-  id: string;
-  name: string;
-  contact_person?: string;
-  is_active: boolean;
-}
-
-interface Brand {
-  id: string;
-  name: string;
-  description?: string;
-  is_active: boolean;
-}
-
-interface ProductManagementProps {
-  onBack: () => void;
-}
-
-export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) => {
+export const ProductManagement: React.FC<ProductProps> = ({ onBack }) => {
   const { user, currentStore, currentBusiness } = useAuth();
   const { formatCurrency } = useSystem();
   
@@ -110,9 +70,9 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
     user?.role === 'store_admin' ? currentStore?.id || '' : 'All'
   );
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<ProductDisplay | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<ProductDisplay | null>(null);
   
   // Data states
   const [isSaving, setIsSaving] = useState(false);
@@ -120,7 +80,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
 
 
 
-  const [newProduct, setNewProduct] = useState<Partial<Product>>({
+  const [newProduct, setNewProduct] = useState<Partial<ProductFormData>>({
     name: '',
     price: 0,
     cost: 0,
@@ -129,13 +89,14 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
     description: '',
     stock_quantity: 0,
     min_stock_level: 0,
-    category_id: null,
-    supplier_id: null,
-    brand_id: null,
+    category_id: undefined,
+    supplier_id: undefined,
+    brand_id: undefined,
     image_url: '',
     reorder_level: 0,
     is_public: false,
-    public_description: ''
+    public_description: '',
+    is_active: true
   });
 
   // Image upload state
@@ -154,11 +115,14 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
       description: '',
       stock_quantity: 0,
       min_stock_level: 0,
-      category_id: null,
-      supplier_id: null,
-      brand_id: null,
+      category_id: undefined,
+      supplier_id: undefined,
+      brand_id: undefined,
       image_url: '',
-      reorder_level: 0
+      reorder_level: 0,
+      is_public: false,
+      public_description: '',
+      is_active: true
     });
     setSelectedImageFile(null);
   }, []);
@@ -212,6 +176,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
   const isLoadingProducts = productsLoading;
   const productsErrorCombined = productsError;
 
+
   const {
     data: categories = [],
     isLoading: categoriesLoading
@@ -228,9 +193,13 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
   } = useBusinessBrands(currentBusiness?.id || '', { enabled: !!currentBusiness?.id });
 
   const {
-    data: stores = [],
+    data: businessStoresResponse,
     isLoading: storesLoading
   } = useBusinessStores(currentBusiness?.id || '', { enabled: !!currentBusiness?.id });
+
+  const businessStores = React.useMemo(() => {
+    return businessStoresResponse?.stores || [];
+  }, [businessStoresResponse?.stores]);
 
   // Update store filter when user role or current store changes
   useEffect(() => {
@@ -242,9 +211,9 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
   }, [user?.role, currentStore?.id]);
 
   // Use mutations for CRUD operations
-  const createProductMutation = useCreateProduct(currentStore?.id || '');
-  const updateProductMutation = useUpdateProduct(currentStore?.id || '');
-  const deleteProductMutation = useDeleteProduct(currentStore?.id || '');
+  const createProductMutation = useCreateProduct();
+  const updateProductMutation = useUpdateProduct();
+  const deleteProductMutation = useDeleteProduct();
 
   // Combined loading state
   const isLoading = productsLoading || categoriesLoading || suppliersLoading || brandsLoading || storesLoading;
@@ -287,22 +256,48 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
     }
   }, [createProductMutation.isSuccess, updateProductMutation.isSuccess, deleteProductMutation.isSuccess, createProductMutation, updateProductMutation, deleteProductMutation]);
 
+  // Transform products to ProductDisplay with additional UI fields
+  const transformedProducts = React.useMemo(() => {
+    return allProducts.map((product: Product): ProductDisplay => {
+      const category = categories.find((c: Category) => c.id === product.category_id);
+      const supplier = suppliers.find((s: Supplier) => s.id === product.supplier_id);
+      const brand = brands.find((b: Brand) => b.id === product.brand_id);
+      const store = businessStores.find((s: any) => s.id === product.store_id);
+      
+      const profit_margin = product.price > 0 ? ((product.price - product.cost) / product.price) * 100 : 0;
+      const is_low_stock = product.stock_quantity <= (product.reorder_level || product.min_stock_level || 10);
+      const is_out_of_stock = product.stock_quantity === 0;
+      const stock_status = is_out_of_stock ? 'out_of_stock' : is_low_stock ? 'low_stock' : 'in_stock';
+      
+      return {
+        ...product,
+        category_name: category?.name,
+        supplier_name: supplier?.name,
+        brand_name: brand?.name,
+        store_name: store?.name,
+        profit_margin,
+        stock_status,
+        is_low_stock,
+        is_out_of_stock
+      };
+    });
+  }, [allProducts, categories, suppliers, brands, businessStores]);
+
   const allCategories = ['All', ...categories.filter((c: Category) => c.is_active).map((c: Category) => c.name)];
 
-  const filteredProducts = allProducts.filter((product: Product) => {
+  const filteredProducts = transformedProducts.filter((product: ProductDisplay) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (product.sku && product.sku.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (product.barcode && product.barcode.includes(searchTerm)) ||
-                         (product.supplier?.name && product.supplier.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         (product.supplier_id && suppliers.find((s: Supplier) => s.id === product.supplier_id)?.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+                         (product.supplier_name && product.supplier_name.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCategory = selectedCategory === 'All' || 
-                           product.category?.name === selectedCategory ||
-                           (product.category_id && categories.find((c: Category) => c.id === product.category_id)?.name === selectedCategory);
+                           product.category_name === selectedCategory;
     const isActive = product.is_active;
     return matchesSearch && matchesCategory && isActive;
   });
 
-  const lowStockProducts = allProducts.filter((p: Product) => p.stock_quantity <= (p.reorder_level || p.min_stock_level || 10) && p.is_active);
+
+  const lowStockProducts = transformedProducts.filter((p: ProductDisplay) => p.is_low_stock && p.is_active);
 
   const handleAddProduct = async () => {
     if (!newProduct.name || !currentStore?.id) return;
@@ -347,7 +342,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
       };
 
       // Use the mutation hook - this will automatically invalidate cache on success
-      await createProductMutation.mutateAsync(productData as any);
+      await createProductMutation.mutateAsync(productData as ProductFormData);
       
       // Close dialog and reset form on success
       setIsAddDialogOpen(false);
@@ -426,9 +421,9 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
 
       // Use the mutation hook - this will automatically invalidate cache on success
       await updateProductMutation.mutateAsync({
-        productId: editingProduct.id,
-        productData: productData as any
-      });
+        id: editingProduct.id,
+        ...productData
+      } as ProductFormData & { id: string });
       
       // Close dialog and reset state on success
       setEditingProduct(null);
@@ -563,7 +558,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
 
     import('../utils/export-utils').then(({ exportProducts: exportProductsUtil }) => {
       try {
-        exportProductsUtil(filteredProducts, {
+        exportProductsUtil(filteredProducts as unknown as Record<string, unknown>[], {
           storeName: currentStore?.name
         });
       } catch (error) {
@@ -580,7 +575,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
     {
       key: 'product',
       label: 'Product',
-      render: (product: Product) => (
+      render: (product: ProductDisplay) => (
         <div>
           <p className="font-medium">{product.name}</p>
           <p className="text-sm text-muted-foreground">{product.sku}</p>
@@ -593,7 +588,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
     {
       key: 'image',
       label: 'Image',
-      render: (product: Product) => (
+      render: (product: ProductDisplay) => (
         <div className="w-16 h-16 rounded-lg overflow-hidden border bg-gray-100">
           {product.image_url ? (
             <Image 
@@ -620,26 +615,24 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
     {
       key: 'category',
       label: 'Category',
-      render: (product: Product) => {
-        return product.category?.name || 
-               (product.category_id && categories.find((c: Category) => c.id === product.category_id)?.name) ||
-               'No Category';
+      render: (product: ProductDisplay) => {
+        return product.category_name || 'No Category';
       }
     },
     {
       key: 'price',
       label: 'Selling Price',
-      render: (product: Product) => formatCurrency(product.price)
+      render: (product: ProductDisplay) => formatCurrency(product.price)
     },
     {
       key: 'cost',
       label: 'Cost Price',
-      render: (product: Product) => formatCurrency(product.cost || 0)
+      render: (product: ProductDisplay) => formatCurrency(product.cost || 0)
     },
     {
       key: 'stock',
       label: 'Stock',
-      render: (product: Product) => (
+      render: (product: ProductDisplay) => (
         <div>
           <span className={product.stock_quantity <= (product.reorder_level || product.min_stock_level || 10) ? 'text-orange-600 font-semibold' : ''}>
             {product.stock_quantity}
@@ -653,7 +646,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
     {
       key: 'status',
       label: 'Status',
-      render: (product: Product) => {
+      render: (product: ProductDisplay) => {
         const status = getStockStatus(product);
         return <Badge variant={status.variant}>{status.label}</Badge>;
       }
@@ -661,25 +654,21 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
     {
       key: 'supplier',
       label: 'Supplier',
-      render: (product: Product) => {
-        return product.supplier?.name || 
-               (product.supplier_id && suppliers.find((s: Supplier) => s.id === product.supplier_id)?.name) ||
-               'No Supplier';
+      render: (product: ProductDisplay) => {
+        return product.supplier_name || 'No Supplier';
       }
     },
     {
       key: 'brand',
       label: 'Brand',
-      render: (product: Product) => {
-        return product.brand?.name || 
-               (product.brand_id && brands.find((b: Brand) => b.id === product.brand_id)?.name) ||
-               'No Brand';
+      render: (product: ProductDisplay) => {
+        return product.brand_name || 'No Brand';
       }
     },
     {
       key: 'public',
       label: 'Public',
-      render: (product: Product) => (
+      render: (product: ProductDisplay) => (
         <div className="flex items-center">
           {product.is_public ? (
             <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
@@ -696,7 +685,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
     {
       key: 'actions',
       label: 'Actions',
-      render: (product: Product) => {
+      render: (product: ProductDisplay) => {
         return (
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => {
@@ -928,14 +917,14 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
                     ))}
                   </SelectContent>
                 </Select>
-                {user?.role === 'business_admin' && stores.length > 1 && (
+                {user?.role === 'business_admin' && businessStores.length > 1 && (
                   <Select value={selectedStoreFilter} onValueChange={setSelectedStoreFilter}>
                     <SelectTrigger className="w-48">
                       <SelectValue placeholder="Select store" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="All">All Stores</SelectItem>
-                      {stores
+                      {businessStores
                         .filter((store: any) => store.is_active)
                         .map((store: any) => (
                           <SelectItem key={store.id} value={store.id}>
@@ -951,7 +940,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
         </Card>
 
         {/* Products Table */}
-        <DataTable
+        <DataTable<ProductDisplay>
           title="Products"
           data={filteredProducts}
           columns={columns}

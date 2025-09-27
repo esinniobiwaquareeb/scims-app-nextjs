@@ -30,124 +30,26 @@ import {
   Filter,
   Search,
   BarChart3,
-  PieChart,
   Calendar,
   Eye,
   RefreshCw,
   Loader2,
-  FileText,
   CreditCard,
   Receipt,
-  User,
   Store,
-  Clock,
   Target,
   Award,
   Calculator
 } from 'lucide-react';
-import { Alert, AlertDescription } from './ui/alert';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
-import { RestockItem } from '@/types';
-
-interface SalesReportProps {
-  onBack: () => void;
-}
-
-interface SaleItem {
-  id: string;
-  product_id: string;
-  quantity: number;
-  unit_price: number;
-  total_price: number;
-  discount_amount: number;
-  products: {
-    id: string;
-    name: string;
-    sku: string;
-    image_url?: string;
-    categories?: {
-      name: string;
-    };
-  };
-}
-
-interface Sale {
-  id: string;
-  receipt_number: string;
-  cashier_id: string;
-  store_id: string;
-  customer_id?: string;
-  subtotal: number;
-  tax_amount: number;
-  total_amount: number;
-  discount_amount: number;
-  payment_method: string;
-  cash_received?: number;
-  change_given?: number;
-  status: string;
-  transaction_date: string;
-  created_at: string;
-  sale_items: SaleItem[];
-  customers?: {
-    id: string;
-    name: string;
-    phone: string;
-    email?: string;
-  };
-  customer?: {
-    id: string;
-    name: string;
-    phone: string;
-    email?: string;
-  };
-  users?: {
-    username: string;
-    name?: string;
-  };
-  cashier?: {
-    id: string;
-    name: string;
-    username: string;
-  };
-  stores?: {
-    name: string;
-  };
-}
-
-interface SalesStats {
-  totalSales: number;
-  totalRevenue: number;
-  totalDiscounts: number;
-  totalTax: number;
-  averageOrderValue: number;
-  totalOrders: number;
-  uniqueCustomers: number;
-  topProducts: Array<{
-    name: string;
-    quantity: number;
-    revenue: number;
-    sku: string;
-  }>;
-  topCategories: Array<{
-    name: string;
-    quantity: number;
-    revenue: number;
-  }>;
-  paymentMethodBreakdown: Array<{
-    method: string;
-    count: number;
-    amount: number;
-    percentage: number;
-    cash_received?: number;
-    change_given?: number;
-  }>;
-  dailyRevenue: Array<{
-    date: string;
-    revenue: number;
-    orders: number;
-  }>;
-}
+// Import types from centralized location
+import { 
+  SalesReportProps,
+  SalesReportSale,
+  SalesReportSaleItem,
+  SalesReportStats
+} from '@/types';
 
 interface FilterOptions {
   dateRange: { from: Date | undefined; to: Date | undefined };
@@ -160,13 +62,6 @@ interface FilterOptions {
   maxAmount: number;
 }
 
-interface StoreSalesResponse {
-  sales: Sale[];
-}
-
-interface BusinessStoresResponse {
-  stores: Array<{ id: string; name: string }>;
-}
 
 export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
   const { user, currentStore, currentBusiness } = useAuth();
@@ -174,8 +69,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
   const { logActivity } = useActivityLogger();
   
   // State
-  const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
-  const [salesStats, setSalesStats] = useState<SalesStats | null>(null);
+  const [filteredSales, setFilteredSales] = useState<SalesReportSale[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
   
   // Filter states
@@ -192,9 +86,8 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [availableCashiers, setAvailableCashiers] = useState<string[]>([]);
-  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState<string[]>([]);
-  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [selectedSale, setSelectedSale] = useState<SalesReportSale | null>(null);
   const [showSaleModal, setShowSaleModal] = useState(false);
 
   // Debounced filter values using useMemo to prevent excessive re-renders
@@ -226,7 +119,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
 
   // Memoize store IDs to prevent React Query hook recreation
   const storeIds = useMemo(() => 
-    businessStores.map((store: { id: string; name: string }) => store.id),
+    businessStores.map((store: any) => store.id),
     [businessStores]
   );
 
@@ -319,32 +212,31 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
         // Filter out undefined/null values and ensure uniqueness
         const cashiers = Array.from(new Set(
           stableSales
-            .map((sale: Sale) => sale.cashier?.username || sale.cashier?.name || sale.users?.username)
+            .map((sale: SalesReportSale) => sale.cashier?.username || sale.cashier?.name || sale.users?.username)
             .filter(Boolean) // Remove undefined/null values
         ));
         
         const categories = Array.from(new Set(
           stableSales
-            .flatMap((sale: Sale) => 
-              sale.sale_items?.map((item: SaleItem) => item.products?.categories?.name) || []
+            .flatMap((sale: SalesReportSale) => 
+              sale.sale_items?.map((item: SalesReportSaleItem) => item.products?.categories?.name) || []
             )
             .filter(Boolean) // Remove undefined/null values
         ));
         
         const paymentMethods = Array.from(new Set(
           stableSales
-            .map((sale: Sale) => sale.payment_method)
+            .map((sale: SalesReportSale) => sale.payment_method)
             .filter(Boolean) // Remove undefined/null values
         ));
 
         return { cashiers, categories, paymentMethods };
       };
 
-      const { cashiers, categories, paymentMethods } = extractFilterOptions();
+      const { cashiers, paymentMethods } = extractFilterOptions();
       
       // Ensure we always have valid arrays with fallbacks
       setAvailableCashiers(['All', ...(cashiers.length > 0 ? cashiers as string[] : ['No cashiers found'])]);
-      setAvailableCategories(['All', ...(categories.length > 0 ? categories as string[] : ['No categories found'])]);
       setAvailablePaymentMethods(['All', ...(paymentMethods.length > 0 ? paymentMethods as string[] : ['No payment methods found'])]);
     }
   }, [stableSales]);
@@ -354,7 +246,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
 
   // Calculate filtered sales and stats
   useEffect(() => {
-    const filtered = stableSales.filter((sale: Sale) => {
+    const filtered = stableSales.filter((sale: SalesReportSale) => {
       const saleDate = new Date(sale.transaction_date || sale.created_at);
       
       // Date range filter
@@ -386,7 +278,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
         const matchesCustomer = sale.customer?.name?.toLowerCase().includes(searchLower) ||
                               sale.customer?.phone?.includes(debouncedSearchTerm) ||
                               sale.customer?.email?.toLowerCase().includes(searchLower);
-        const matchesProduct = sale.sale_items?.some((item: SaleItem) => 
+        const matchesProduct = sale.sale_items?.some((item: SalesReportSaleItem) => 
           item.products?.name.toLowerCase().includes(searchLower) ||
           item.products?.sku.toLowerCase().includes(searchLower)
         );
@@ -401,7 +293,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
   }, [stableSales, debouncedFilters, debouncedSearchTerm]);
 
   // Calculate sales statistics
-  const calculatedStats = useMemo((): SalesStats => {
+  const calculatedStats = useMemo((): SalesReportStats => {
     if (filteredSales.length === 0) {
       return {
         totalSales: 0,
@@ -426,7 +318,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     // Top products
     const productStats: { [key: string]: { name: string; quantity: number; revenue: number; sku: string } } = {};
     filteredSales.forEach(sale => {
-      sale.sale_items?.forEach((item: SaleItem) => {
+      sale.sale_items?.forEach((item: SalesReportSaleItem) => {
         const productId = item.product_id;
         if (!productStats[productId]) {
           productStats[productId] = {
@@ -448,7 +340,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     // Top categories
     const categoryStats: { [key: string]: { name: string; quantity: number; revenue: number } } = {};
     filteredSales.forEach(sale => {
-      sale.sale_items?.forEach((item: SaleItem) => {
+      sale.sale_items?.forEach((item: SalesReportSaleItem) => {
         const category = item.products?.categories?.name || 'Uncategorized';
         if (!categoryStats[category]) {
           categoryStats[category] = { name: category, quantity: 0, revenue: 0 };
@@ -500,7 +392,12 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     });
 
     const dailyRevenue = Object.entries(dailyStats)
-      .map(([date, stats]) => ({ date, ...stats }))
+      .map(([date, stats]) => ({ 
+        date, 
+        ...stats,
+        sales: stats.orders,
+        customers: 0 // This would need to be calculated separately if needed
+      }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     return {
@@ -518,19 +415,6 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     };
   }, [filteredSales]);
 
-  // Transform sales data for display
-  const transformedSalesData = useMemo(() => {
-    return filteredSales.map((sale: Sale) => ({
-      id: sale.id,
-      date: new Date(sale.created_at || sale.transaction_date || ''),
-      customerName: sale.customers?.name || 'Walk-in Customer',
-      products: sale.sale_items?.map((item: { products?: { name: string } }) => item.products?.name || 'Unknown Product') || [],
-      total: parseFloat(String(sale.total_amount || 0)),
-      payment: sale.payment_method || 'cash',
-      cashier: sale.users?.username || 'Unknown',
-      storeId: sale.store_id || ''
-    }));
-  }, [filteredSales]);
 
   // Export functions
   const exportToCSV = useCallback(() => {
@@ -568,14 +452,14 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     {
       key: 'receipt',
       label: 'Receipt',
-      render: (sale: Sale) => (
+      render: (sale: SalesReportSale) => (
         <div className="font-mono text-sm font-medium">{sale.receipt_number}</div>
       )
     },
     {
       key: 'date',
       label: 'Date & Time',
-      render: (sale: Sale) => (
+      render: (sale: SalesReportSale) => (
         <div className="text-sm">
           <div className="font-medium">
             {formatDateTime(new Date(sale.transaction_date || sale.created_at))}
@@ -589,7 +473,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     {
       key: 'customer',
       label: 'Customer',
-      render: (sale: Sale) => (
+      render: (sale: SalesReportSale) => (
         <div className="text-sm">
           <div className="font-medium">
             {sale.customer?.name || 'Walk-in Customer'}
@@ -605,7 +489,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     {
       key: 'cashier',
       label: 'Cashier',
-      render: (sale: Sale) => (
+      render: (sale: SalesReportSale) => (
         <div className="text-sm">
           <div className="font-medium">
             {sale.cashier?.name || sale.cashier?.username || sale.users?.name || sale.users?.username || 'Unknown'}
@@ -616,13 +500,13 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     {
       key: 'items',
       label: 'Items',
-      render: (sale: Sale) => (
+      render: (sale: SalesReportSale) => (
         <div className="text-sm">
           <div className="font-medium">
             {sale.sale_items?.length || 0} items
           </div>
           <div className="text-xs text-muted-foreground">
-            {sale.sale_items?.reduce((sum: number, item: SaleItem) => sum + (item.quantity || 0), 0) || 0} total qty
+            {sale.sale_items?.reduce((sum: number, item: SalesReportSaleItem) => sum + (item.quantity || 0), 0) || 0} total qty
           </div>
         </div>
       )
@@ -630,7 +514,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     {
       key: 'amounts',
       label: 'Amounts',
-      render: (sale: Sale) => (
+      render: (sale: SalesReportSale) => (
         <div className="text-sm text-right">
           <div className="font-medium text-primary">
             {formatCurrency(sale.total_amount)}
@@ -651,7 +535,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     {
       key: 'payment',
       label: 'Payment',
-      render: (sale: Sale) => (
+      render: (sale: SalesReportSale) => (
         <div className="text-sm">
           <Badge variant={sale.payment_method === 'cash' ? 'default' : 'secondary'}>
             {sale.payment_method}
@@ -674,7 +558,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     {
       key: 'status',
       label: 'Status',
-      render: (sale: Sale) => (
+      render: (sale: SalesReportSale) => (
         <Badge 
           variant={
             sale.status === 'completed' ? 'default' : 
@@ -689,7 +573,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     {
       key: 'actions',
       label: 'Actions',
-      render: (sale: Sale) => (
+      render: (sale: SalesReportSale) => (
         <Button
           variant="ghost"
           size="sm"
@@ -806,7 +690,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {availablePaymentMethods.filter(Boolean).map(method => (
+                    {availablePaymentMethods.filter(Boolean).map((method: string) => (
                       <SelectItem key={`payment-${method}`} value={method}>
                         {method}
                       </SelectItem>
@@ -840,7 +724,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableCashiers.filter(Boolean).map(cashier => (
+                    {availableCashiers.filter(Boolean).map((cashier: string) => (
                       <SelectItem key={`cashier-${cashier}`} value={cashier}>
                         {cashier}
                       </SelectItem>
@@ -1002,7 +886,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {calculatedStats.topProducts.slice(0, 5).map((product, index) => (
+                    {calculatedStats.topProducts.slice(0, 5).map((product: any, index: number) => (
                       <div key={`product-${product.sku || index}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-6 bg-primary text-white text-xs font-bold rounded flex items-center justify-center">
@@ -1034,7 +918,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {calculatedStats.topCategories.slice(0, 5).map((category, index) => (
+                    {calculatedStats.topCategories.slice(0, 5).map((category: any, index: number) => (
                       <div key={`category-${category.name || index}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-6 bg-secondary text-white text-xs font-bold rounded flex items-center justify-center">
@@ -1070,7 +954,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {calculatedStats.paymentMethodBreakdown.map((method) => (
+                  {calculatedStats.paymentMethodBreakdown.map((method: any) => (
                     <div key={`payment-${method.method || 'unknown'}`} className="text-center p-4 bg-gray-50 rounded-lg">
                       <div className="text-2xl font-bold text-primary">
                         {method.count}
@@ -1114,7 +998,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {calculatedStats.dailyRevenue.map((day) => (
+                  {calculatedStats.dailyRevenue.map((day: any) => (
                     <div key={day.date} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -1218,7 +1102,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {calculatedStats.paymentMethodBreakdown.find(m => m.method === 'cash') && (
+                  {calculatedStats.paymentMethodBreakdown.find((m: any) => m.method === 'cash') && (
                     <>
                       <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                         <div className="flex items-center gap-2">
@@ -1226,7 +1110,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
                           <span className="text-sm font-medium">Cash Transactions</span>
                         </div>
                         <span className="text-lg font-bold text-green-600">
-                          {calculatedStats.paymentMethodBreakdown.find(m => m.method === 'cash')?.count || 0}
+                          {calculatedStats.paymentMethodBreakdown.find((m: any) => m.method === 'cash')?.count || 0}
                         </span>
                       </div>
                       
@@ -1236,7 +1120,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
                           <span className="text-sm font-medium">Cash Received</span>
                         </div>
                         <span className="text-lg font-bold text-blue-600">
-                          {formatCurrency(calculatedStats.paymentMethodBreakdown.find(m => m.method === 'cash')?.cash_received || 0)}
+                          {formatCurrency(calculatedStats.paymentMethodBreakdown.find((m: any) => m.method === 'cash')?.cash_received || 0)}
                         </span>
                       </div>
                       
@@ -1246,7 +1130,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
                           <span className="text-sm font-medium">Change Given</span>
                         </div>
                         <span className="text-lg font-bold text-orange-600">
-                          {formatCurrency(calculatedStats.paymentMethodBreakdown.find(m => m.method === 'cash')?.change_given || 0)}
+                          {formatCurrency(calculatedStats.paymentMethodBreakdown.find((m: any) => m.method === 'cash')?.change_given || 0)}
                         </span>
                       </div>
                       
@@ -1257,15 +1141,15 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
                         </div>
                         <span className="text-lg font-bold text-purple-600">
                           {formatCurrency(
-                            (calculatedStats.paymentMethodBreakdown.find(m => m.method === 'cash')?.cash_received || 0) - 
-                            (calculatedStats.paymentMethodBreakdown.find(m => m.method === 'cash')?.change_given || 0)
+                            (calculatedStats.paymentMethodBreakdown.find((m: any) => m.method === 'cash')?.cash_received || 0) - 
+                            (calculatedStats.paymentMethodBreakdown.find((m: any) => m.method === 'cash')?.change_given || 0)
                           )}
                         </span>
                       </div>
                     </>
                   )}
                   
-                  {!calculatedStats.paymentMethodBreakdown.find(m => m.method === 'cash') && (
+                  {!calculatedStats.paymentMethodBreakdown.find((m: any) => m.method === 'cash') && (
                     <div className="text-center py-8 text-muted-foreground">
                       <DollarSign className="w-12 h-12 mx-auto mb-4 opacity-50" />
                       <p className="text-sm">No cash transactions in this period</p>
@@ -1417,7 +1301,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {selectedSale.sale_items?.map((item, index) => (
+                    {selectedSale.sale_items?.map((item: SalesReportSaleItem, index: number) => (
                       <div key={item.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-6 bg-primary text-white text-xs font-bold rounded flex items-center justify-center">

@@ -23,34 +23,13 @@ import {
   Download
 } from 'lucide-react';
 
-interface Product {
-  id: string;
-  name: string;
-  sku: string;
-  barcode?: string;
-  description?: string;
-  price: number;
-  stock_quantity: number;
-  min_stock_level: number;
-  reorder_level: number;
-  category_id?: string;
-  supplier_id?: string;
-  brand_id?: string;
-  is_active: boolean;
-  categories?: { name: string };
-  suppliers?: { name: string };
-  brands?: { name: string };
-}
-
-interface Store {
-  id: string;
-  name: string;
-  is_active: boolean;
-}
-
-interface ProductSyncProps {
-  onBack: () => void;
-}
+// Import types from centralized location
+import { 
+  Product, 
+  Store,
+  ProductSyncProps,
+  ProductSyncDisplay
+} from '@/types';
 
 export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
   const { user, currentBusiness, currentStore } = useAuth();
@@ -58,7 +37,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
   const { logActivity } = useActivityLogger();
   
   // State
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductSyncDisplay[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -126,7 +105,19 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
       const productsData = await productsResponse.json();
       const storeProducts = productsData.products || [];
       
-      setProducts(storeProducts);
+      // Transform products to ProductSyncDisplay
+      const transformedProducts: ProductSyncDisplay[] = storeProducts.map((product: Product) => ({
+        ...product,
+        category_name: product.category_id ? 'Category Name' : undefined, // This would need to be fetched from categories
+        supplier_name: product.supplier_id ? 'Supplier Name' : undefined, // This would need to be fetched from suppliers
+        brand_name: product.brand_id ? 'Brand Name' : undefined, // This would need to be fetched from brands
+        store_name: stores.find(s => s.id === product.store_id)?.name,
+        is_synced: false,
+        sync_status: 'pending' as const,
+        target_stores: []
+      }));
+      
+      setProducts(transformedProducts);
       
       if (storeProducts.length === 0) {
         const storeName = stores.find(s => s.id === storeId)?.name || 'Unknown';
@@ -163,11 +154,11 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
   }, [currentStore?.id, stores.length, loadProductsForStore]);
 
   // Filter products
-  const filteredProducts = products.filter(product => {
+  const filteredProducts = products.filter((product: ProductSyncDisplay) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (product.sku && product.sku.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (product.barcode && product.barcode.includes(searchTerm));
-    const matchesCategory = categoryFilter === 'all' || product.categories?.name === categoryFilter;
+    const matchesCategory = categoryFilter === 'all' || product.category_name === categoryFilter;
     return matchesSearch && matchesCategory && product.is_active;
   });
 
@@ -214,7 +205,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
   }
 
   // Get unique categories
-  const categories = ['all', ...Array.from(new Set(products.map(p => p.categories?.name).filter(Boolean) as string[]))];
+  const categories = ['all', ...Array.from(new Set(products.map(p => p.category_name).filter(Boolean) as string[]))];
 
   // Handle product selection
   const toggleProductSelection = (productId: string, checked?: boolean) => {
@@ -428,7 +419,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
     {
       key: 'selection',
       header: '',
-      render: (product: Product) => (
+      render: (product: ProductSyncDisplay) => (
         <Checkbox
           checked={selectedProducts.includes(product.id)}
           onCheckedChange={(checked) => toggleProductSelection(product.id, checked)}
@@ -438,7 +429,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
     {
       key: 'name',
       header: 'Product',
-      render: (product: Product) => (
+      render: (product: ProductSyncDisplay) => (
         <div>
           <p className="font-medium">{product.name}</p>
           <p className="text-sm text-muted-foreground">{product.sku}</p>
@@ -448,7 +439,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
     {
       key: 'price',
       header: 'Price & Stock',
-      render: (product: Product) => (
+      render: (product: ProductSyncDisplay) => (
         <div>
           <p className="font-medium">{formatCurrency(product.price)}</p>
           <p className="text-sm text-muted-foreground">Stock: {product.stock_quantity}</p>
@@ -458,13 +449,13 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
     {
       key: 'category',
       header: 'Category & Supplier',
-      render: (product: Product) => (
+      render: (product: ProductSyncDisplay) => (
         <div>
           <p className="text-sm text-muted-foreground">
-            {product.categories?.name || 'No Category'}
+            {product.category_name || 'No Category'}
           </p>
           <p className="text-sm text-muted-foreground">
-            {product.suppliers?.name || 'No Supplier'}
+            {product.supplier_name || 'No Supplier'}
           </p>
         </div>
       )
@@ -472,9 +463,9 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
     {
       key: 'brand',
       header: 'Brand',
-      render: (product: Product) => (
+      render: (product: ProductSyncDisplay) => (
         <p className="text-sm text-muted-foreground">
-          {product.brands?.name || 'No Brand'}
+          {product.brand_name || 'No Brand'}
         </p>
       )
     }
@@ -613,7 +604,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
             </Card>
 
             {/* Products DataTable */}
-            <DataTable
+            <DataTable<ProductSyncDisplay>
               title="Products to Sync"
               data={filteredProducts}
               columns={columns}

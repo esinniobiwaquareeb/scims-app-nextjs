@@ -29,51 +29,16 @@ import { Separator } from '@/components/ui/separator';
 import { useActivityLogger } from '@/contexts/ActivityLogger';
 import { usePermissions } from '@/contexts/PermissionsContext';
 
-interface RolesPermissionsProps {
-  onBack: () => void;
-}
+// Import types from centralized location
+import { 
+  RoleProps,
+  RoleDisplay,
+  UserRoleDisplay,
+  Permission,
+  RoleFormData
+} from '@/types';
 
-interface Role {
-  id: string;
-  name: string;
-  description: string;
-  permissions: string[];
-  is_system_role: boolean;
-  is_active: boolean;
-  created_at: string;
-}
-
-interface Permission {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  business_id?: string;
-}
-
-interface UserRole {
-  id: string;
-  user_id: string;
-  role_id: string;
-  business_id: string;
-  store_id: string | null;
-  assigned_at: string;
-  is_active: boolean;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    username: string;
-    role: string;
-  };
-  role: {
-    id: string;
-    name: string;
-    description: string;
-  };
-}
-
-export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) => {
+export const RolesPermissions: React.FC<RoleProps> = ({ onBack }) => {
   const { user, currentBusiness } = useAuth();
   const { hasPermission } = usePermissions();
   const { logActivity } = useActivityLogger();
@@ -86,25 +51,25 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
   const [isDeleteRoleDialogOpen, setIsDeleteRoleDialogOpen] = useState(false);
   const [isAssignRoleDialogOpen, setIsAssignRoleDialogOpen] = useState(false);
   const [isViewPermissionsDialogOpen, setIsViewPermissionsDialogOpen] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [selectedUser, setSelectedUser] = useState<UserRole | null>(null);
-  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [userRoles, setUserRoles] = useState<UserRole[]>([]);
+  const [selectedRole, setSelectedRole] = useState<RoleDisplay | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserRoleDisplay | null>(null);
+  const [roleToDelete, setRoleToDelete] = useState<RoleDisplay | null>(null);
+  const [roles, setRoles] = useState<RoleDisplay[]>([]);
+  const [userRoles, setUserRoles] = useState<UserRoleDisplay[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [newRole, setNewRole] = useState({
+  const [newRole, setNewRole] = useState<Partial<RoleFormData>>({
     name: '',
     description: '',
-    permissions: [] as string[]
+    permissions: []
   });
   
   // Helper function to check if user can edit a role
-  const canEditRole = useCallback((role: Role) => {
+  const canEditRole = useCallback((role: RoleDisplay) => {
     const isBusinessAdmin = user?.role === 'business_admin' || 
-                           userRoles.some(ur => ur.role.name === 'business_admin' && ur.user_id === user?.id);
+                           userRoles.some(ur => ur.role_name === 'business_admin' && ur.user_id === user?.id);
     
     // Business admins can edit all roles, others can only edit custom roles
     return isBusinessAdmin || !role.is_system_role;
@@ -165,14 +130,14 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
     let filtered = roles;
     
     if (searchTerm) {
-      filtered = filtered.filter(role => 
+      filtered = filtered.filter((role: RoleDisplay) => 
         role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        role.description.toLowerCase().includes(searchTerm.toLowerCase())
+        (role.description && role.description.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
     
     if (selectedCategory !== 'All') {
-      filtered = filtered.filter(role => 
+      filtered = filtered.filter((role: RoleDisplay) => 
         role.permissions.some(perm => {
           const permission = permissions.find(p => p.id === perm);
           return permission?.category === selectedCategory;
@@ -183,7 +148,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
     return filtered;
   }, [roles, searchTerm, selectedCategory, permissions]);
 
-  const openEditDialog = (role: Role) => {
+  const openEditDialog = (role: RoleDisplay) => {
     // Check if user can edit this role
     if (!canEditRole(role)) {
       toast.error('Only business admins can edit system roles');
@@ -199,13 +164,13 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
     setIsEditRoleDialogOpen(true);
   };
 
-  const openViewPermissionsDialog = (role: Role) => {
+  const openViewPermissionsDialog = (role: RoleDisplay) => {
     setSelectedRole(role);
     setIsViewPermissionsDialogOpen(true);
   };
 
   const handleAddRole = async () => {
-    if (!currentBusiness?.id || !newRole.name.trim()) return;
+    if (!currentBusiness?.id || !newRole.name?.trim()) return;
 
     try {
       setIsSaving(true);
@@ -217,7 +182,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
           business_id: currentBusiness.id,
           name: newRole.name,
           description: newRole.description,
-          permissions: newRole.permissions
+          permissions: newRole.permissions ?? []
         })
       });
 
@@ -233,7 +198,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
       
       logActivity('user_create', 'roles', `Role "${newRole.name}" created`, {
         role_name: newRole.name,
-        permissions: newRole.permissions.join(', ')
+        permissions: (newRole.permissions ?? []).join(', ')
       });
     } catch (err: unknown) {
       console.error('Failed to create role:', err);
@@ -244,7 +209,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
   };
 
   const handleUpdateRole = async () => {
-    if (!currentBusiness?.id || !selectedRole || !newRole.name.trim()) return;
+    if (!currentBusiness?.id || !selectedRole || !newRole.name?.trim()) return;
 
     try {
       setIsSaving(true);
@@ -256,7 +221,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
           business_id: currentBusiness.id,
           name: newRole.name,
           description: newRole.description,
-          permissions: newRole.permissions
+          permissions: newRole.permissions ?? []
         })
       });
 
@@ -273,7 +238,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
       
       logActivity('user_update', 'roles', `Role "${selectedRole.name}" updated`, {
         role_name: selectedRole.name,
-        new_permissions: newRole.permissions.join(', ')
+        new_permissions: (newRole.permissions ?? []).join(', ')
       });
     } catch (err: unknown) {
       console.error('Failed to update role:', err);
@@ -295,7 +260,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
     }
   };
 
-  const handleDeleteRole = async (role: Role) => {
+  const handleDeleteRole = async (role: RoleDisplay) => {
     if (!currentBusiness?.id) return;
 
     try {
@@ -353,8 +318,8 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
       setSelectedUser(null);
       loadData();
       
-      logActivity('user_update', 'roles', `Role assigned to user "${selectedUser.user.name}"`, {
-        user_name: selectedUser.user.name,
+      logActivity('user_update', 'roles', `Role assigned to user "${selectedUser.user_name}"`, {
+        user_name: selectedUser.user_name,
         role_name: roles.find(r => r.id === selectedUser.role_id)?.name || 'Unknown'
       });
     } catch (err: unknown) {
@@ -368,9 +333,9 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
   const togglePermission = (permissionId: string) => {
     setNewRole(prev => ({
       ...prev,
-      permissions: prev.permissions.includes(permissionId)
-        ? prev.permissions.filter(p => p !== permissionId)
-        : [...prev.permissions, permissionId]
+      permissions: (prev.permissions ?? []).includes(permissionId)
+        ? (prev.permissions ?? []).filter(p => p !== permissionId)
+        : [...(prev.permissions ?? []), permissionId]
     }));
   };
 
@@ -378,7 +343,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
     const categoryPermissions = permissions.filter(p => p.category === category).map(p => p.id);
     setNewRole(prev => ({
       ...prev,
-      permissions: [...new Set([...prev.permissions, ...categoryPermissions])]
+      permissions: [...new Set([...(prev.permissions ?? []), ...categoryPermissions])]
     }));
   };
 
@@ -386,7 +351,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
     const categoryPermissions = permissions.filter(p => p.category === category).map(p => p.id);
     setNewRole(prev => ({
       ...prev,
-      permissions: prev.permissions.filter(p => !categoryPermissions.includes(p))
+      permissions: (prev.permissions ?? []).filter(p => !categoryPermissions.includes(p))
     }));
   };
 
@@ -566,7 +531,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
               </div>
             ) : (
               <div className="space-y-3">
-                {filteredRoles.map(role => (
+                {filteredRoles.map((role: RoleDisplay) => (
                   <div key={role.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
@@ -654,15 +619,15 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
                   <div key={userRole.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-medium">{userRole.user.name}</h3>
+                        <h3 className="font-medium">{userRole.user_name}</h3>
                         <Badge variant="outline" className="text-xs">
-                          @{userRole.user.username}
+                          @{userRole.user_username}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-2">{userRole.user.email}</p>
+                      <p className="text-sm text-muted-foreground mb-2">{userRole.user_email}</p>
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary" className="text-xs">
-                          {userRole.role.name}
+                          {userRole.role_name}
                         </Badge>
                         {userRole.store_id && (
                           <Badge variant="outline" className="text-xs">
@@ -683,8 +648,8 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
                           setSelectedUser(userRole);
                           setIsAssignRoleDialogOpen(true);
                         }}
-                        disabled={userRole.role.name === 'business_admin' || !hasPermission('roles_assign')}
-                        title={userRole.role.name === 'business_admin' ? 'Business admin role cannot be changed' : 'Change user role'}
+                        disabled={userRole.role_name === 'business_admin' || !hasPermission('roles_assign')}
+                        title={userRole.role_name === 'business_admin' ? 'Business admin role cannot be changed' : 'Change user role'}
                       >
                         <Edit className="w-3 h-3" />
                       </Button>
@@ -759,7 +724,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
                         <div key={permission.id} className="flex items-center space-x-2">
                           <Checkbox
                             id={`edit-${permission.id}`}
-                            checked={newRole.permissions.includes(permission.id)}
+                            checked={(newRole.permissions ?? []).includes(permission.id)}
                             onCheckedChange={() => togglePermission(permission.id)}
                           />
                           <Label htmlFor={`edit-${permission.id}`} className="text-sm">
@@ -779,7 +744,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
             <Button variant="outline" onClick={closeEditDialog} disabled={isSaving}>
               Cancel
             </Button>
-            <Button onClick={handleUpdateRole} disabled={isSaving || !newRole.name.trim()}>
+            <Button onClick={handleUpdateRole} disabled={isSaving || !newRole.name?.trim()}>
               {isSaving ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -876,10 +841,10 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
             <div>
               <Label>User</Label>
               <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                <p className="font-medium">{selectedUser?.user.name}</p>
-                <p className="text-sm text-muted-foreground">{selectedUser?.user.email}</p>
+                <p className="font-medium">{selectedUser?.user_name}</p>
+                <p className="text-sm text-muted-foreground">{selectedUser?.user_email}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Current role: <Badge variant="outline" className="text-xs">{selectedUser?.role.name}</Badge>
+                  Current role: <Badge variant="outline" className="text-xs">{selectedUser?.role_name}</Badge>
                 </p>
               </div>
             </div>
@@ -894,7 +859,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
                   <SelectValue placeholder="Select a new role" />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles.map(role => (
+                  {roles.map((role: RoleDisplay) => (
                     <SelectItem key={role.id} value={role.id}>
                       <div className="flex items-center gap-2">
                         <span>{role.name}</span>
@@ -1053,7 +1018,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
                         <div key={permission.id} className="flex items-center space-x-2">
                           <Checkbox
                             id={permission.id}
-                            checked={newRole.permissions.includes(permission.id)}
+                            checked={(newRole.permissions ?? []).includes(permission.id)}
                             onCheckedChange={() => togglePermission(permission.id)}
                           />
                           <Label htmlFor={permission.id} className="text-sm">
@@ -1073,7 +1038,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
             <Button variant="outline" onClick={closeAddDialog} disabled={isSaving}>
               Cancel
             </Button>
-            <Button onClick={handleAddRole} disabled={isSaving || !newRole.name.trim()}>
+            <Button onClick={handleAddRole} disabled={isSaving || !newRole.name?.trim()}>
               {isSaving ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />

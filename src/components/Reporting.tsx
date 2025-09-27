@@ -1,7 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
-import { Header } from '@/components/common/Header';
 import { DataTable } from '@/components/common/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,20 +17,16 @@ import {
   useReportingInventoryStats,
   useReportingFinancialMetrics,
   useReportingChartData
-} from '@/utils/hooks/useStoreData';
+} from '@/stores';
 import { toast } from 'sonner';
 import { 
   TrendingUp, 
-  TrendingDown, 
   DollarSign, 
   ShoppingCart, 
-  Users, 
   Package,
-  Calendar,
   Download,
   Loader2,
   BarChart3,
-  PieChart,
   ArrowLeft,
   FileText,
   Search,
@@ -38,69 +34,18 @@ import {
   Store,
   Building2
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
-import { Product, Sale, SaleType, CustomerType } from '@/types';
+import { 
+  ReportProps,
+  TransformedSalesData,
+  RawSalesData,
+  CustomerData,
+  TopSaleData
+} from '@/types';
 
-interface ReportingProps {
-  onBack: () => void;
-}
-
-interface TransformedSalesData {
-  id: string;
-  date: Date;
-  customerName: string;
-  products: string[];
-  total: number;
-  payment: string;
-  cashier: string;
-  storeId: string;
-}
-
-interface RawSalesData {
-  id: string;
-  created_at?: string;
-  transaction_date?: string;
-  customers?: { name: string };
-  sale_items?: Array<{ products?: { name: string } }>;
-  total_amount?: string | number;
-  payment_method?: string;
-  users?: { username: string };
-  store_id?: string;
-}
-
-interface ProductPerformance {
-  id: string;
-  name: string;
-  category: string;
-  soldQuantity: number;
-  revenue: number;
-  profit: number;
-}
-
-interface CustomerData {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  totalPurchases: number;
-  totalSpent: number;
-  lastVisit: Date;
-}
-
-interface TopSaleData {
-  id: string;
-  date: Date;
-  customerName: string;
-  amount: number;
-  itemsCount: number;
-  paymentMethod: string;
-  cashier: string;
-  storeId: string;
-}
-
-export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
+export const Reporting: React.FC<ReportProps> = ({ onBack }) => {
   const { user, currentStore, currentBusiness } = useAuth();
   const { formatCurrency } = useSystem();
   const [searchTerm, setSearchTerm] = useState('');
@@ -127,10 +72,9 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
     error: salesError,
     refetch: refetchSales
   } = useReportingSales(
-    currentBusiness?.id || '', 
     reportingStoreId || '', 
-    startDate,
-    endDate
+    startDate || '',
+    endDate || ''
   );
 
   const {
@@ -138,21 +82,21 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
     isLoading: isLoadingProducts,
     error: productsError,
     refetch: refetchProducts
-  } = useReportingProductPerformance(currentBusiness?.id || '', reportingStoreId || '');
+  } = useReportingProductPerformance(reportingStoreId || '', startDate || '', endDate || '');
 
   const {
     data: customerResponse = { customers: [] },
     isLoading: isLoadingCustomers,
     error: customersError,
     refetch: refetchCustomers
-  } = useReportingCustomerAnalytics(currentBusiness?.id || '', reportingStoreId || '');
+  } = useReportingCustomerAnalytics(reportingStoreId || '', startDate || '', endDate || '');
 
   const {
     data: inventoryResponse = { summary: { inStock: 0, lowStock: 0, outOfStock: 0 } },
     isLoading: isLoadingInventory,
     error: inventoryError,
     refetch: refetchInventory
-  } = useReportingInventoryStats(currentBusiness?.id || '', reportingStoreId || '');
+  } = useReportingInventoryStats(reportingStoreId || '');
 
   const {
     data: financialResponse = {
@@ -170,10 +114,9 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
     error: financialError,
     refetch: refetchFinancial
   } = useReportingFinancialMetrics(
-    currentBusiness?.id || '', 
     reportingStoreId || '', 
-    startDate,
-    endDate
+    startDate || '',
+    endDate || ''
   );
 
   const {
@@ -182,19 +125,18 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
     error: chartsError,
     refetch: refetchCharts
   } = useReportingChartData(
-    currentBusiness?.id || '', 
     'sales', 
     reportingStoreId || '', 
-    startDate,
-    endDate
+    startDate || '',
+    endDate || ''
   );
 
   // Extract the actual data from the API responses
-  const salesData = salesResponse?.sales || [];
-  const productPerformance = productResponse?.products || [];
-  const customerData = customerResponse?.customers || [];
+  const salesData = useMemo(() => Array.isArray(salesResponse) ? salesResponse : [], [salesResponse]);
+  const productPerformance = Array.isArray(productResponse) ? productResponse : [];
+  const customerData = Array.isArray(customerResponse) ? customerResponse : [];
   const inventoryStats = inventoryResponse?.summary || { inStock: 0, lowStock: 0, outOfStock: 0 };
-  const financialStats = financialResponse?.summary || {
+  const financialStats = financialResponse || {
     totalProfit: 0,
     operatingExpenses: 0,
     netProfit: 0,
@@ -207,20 +149,20 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
 
   // Ensure chartData properties are always arrays to prevent runtime errors
   const safeChartData = {
-    revenueData: Array.isArray(chartData?.revenueData) ? chartData.revenueData : [],
-    categoryData: Array.isArray(chartData?.categoryData) ? chartData.categoryData : [],
-    paymentData: Array.isArray(chartData?.paymentData) ? chartData.paymentData : []
+    revenueData: Array.isArray(chartData) ? chartData : [],
+    categoryData: Array.isArray(chartData) ? chartData : [],
+    paymentData: Array.isArray(chartData) ? chartData : []
   };
 
   // Ensure financial stats are always numbers to prevent runtime errors
   const safeFinancialStats = {
-    totalProfit: typeof financialStats?.totalProfit === 'number' ? financialStats.totalProfit : 0,
-    operatingExpenses: typeof financialStats?.operatingExpenses === 'number' ? financialStats.operatingExpenses : 0,
-    netProfit: typeof financialStats?.netProfit === 'number' ? financialStats.netProfit : 0,
-    profitMargin: typeof financialStats?.profitMargin === 'number' ? financialStats.profitMargin : 0,
-    returnRate: typeof financialStats?.returnRate === 'number' ? financialStats.returnRate : 0,
-    customerRetention: typeof financialStats?.customerRetention === 'number' ? financialStats.customerRetention : 0,
-    inventoryTurnover: typeof financialStats?.inventoryTurnover === 'number' ? financialStats.inventoryTurnover : 0
+    totalProfit: typeof (financialStats as any)?.totalProfit === 'number' ? (financialStats as any).totalProfit : 0,
+    operatingExpenses: typeof (financialStats as any)?.operatingExpenses === 'number' ? (financialStats as any).operatingExpenses : 0,
+    netProfit: typeof (financialStats as any)?.netProfit === 'number' ? (financialStats as any).netProfit : 0,
+    profitMargin: typeof (financialStats as any)?.profitMargin === 'number' ? (financialStats as any).profitMargin : 0,
+    returnRate: typeof (financialStats as any)?.returnRate === 'number' ? (financialStats as any).returnRate : 0,
+    customerRetention: typeof (financialStats as any)?.customerRetention === 'number' ? (financialStats as any).customerRetention : 0,
+    inventoryTurnover: typeof (financialStats as any)?.inventoryTurnover === 'number' ? (financialStats as any).inventoryTurnover : 0
   };
 
   // Combined loading states
@@ -329,8 +271,8 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
     return matchesSearch && matchesPayment && matchesDate && matchesStore;
   });
 
-  const filteredProducts = productPerformance.filter((product: ProductPerformance) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredProducts = productPerformance.filter((product: any) => {
+    const matchesSearch = product.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
     const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -386,7 +328,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                 <h1 className="text-xl font-semibold text-gray-900">Reports & Analytics</h1>
                 <p className="text-sm text-muted-foreground">
                   {reportingStoreId ? 
-                    `${currentBusiness?.stores?.find(s => s.id === reportingStoreId)?.name || 'Store'} - ` : 
+                    `${(currentBusiness as any)?.stores?.find((s: any) => s.id === reportingStoreId)?.name || 'Store'} - ` : 
                     'All Stores - '
                   }Comprehensive business insights
                 </p>
@@ -394,7 +336,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
             </div>
             <div className="flex gap-2">
               {/* Store Selector */}
-              {currentBusiness && currentBusiness.stores.length > 0 && user?.role !== 'cashier' && user?.role !== 'store_admin' && (
+              {currentBusiness && (currentBusiness as any).stores.length > 0 && user?.role !== 'cashier' && user?.role !== 'store_admin' && (
                 <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2 border border-border">
                   <Store className="w-4 h-4 text-muted-foreground shrink-0" />
                   <Select 
@@ -431,7 +373,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                           </div>
                         </div>
                       </SelectItem>
-                      {currentBusiness.stores.map((store: { id: string; name: string; address?: string }) => (
+                      {(currentBusiness as any).stores?.map((store: { id: string; name: string; address?: string }) => (
                         <SelectItem key={store.id} value={store.id}>
                           <div>
                             <p className="font-medium">{store.name}</p>
@@ -697,7 +639,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                         paddingAngle={5}
                         dataKey="value"
                       >
-                        {safeChartData.categoryData.map((entry: { color: string }, index: number) => (
+                        {safeChartData.categoryData.map((entry: any, index: number) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
@@ -705,7 +647,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                     </RechartsPieChart>
                   </ResponsiveContainer>
                   <div className="flex justify-center flex-wrap gap-4 mt-4">
-                    {safeChartData.categoryData.map((item: { color: string; name: string; value: number }, index: number) => (
+                    {safeChartData.categoryData.map((item: any, index: number) => (
                       <div key={index} className="flex items-center gap-2">
                         <div 
                           className="w-3 h-3 rounded-full" 
@@ -818,49 +760,49 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                     <p className="text-muted-foreground">Loading product performance data...</p>
                   </div>
                 ) : (
-                  <DataTable
+                  <DataTable<any>
                     title=""
                     data={filteredProducts}
                     columns={[
                       {
                         key: 'product',
                         header: 'Product',
-                        render: (product: Product) => (
+                        render: (product: any) => (
                           <div className="font-medium">{product.name}</div>
                         )
                       },
                       {
                         key: 'category',
                         header: 'Category',
-                        render: (product: Product) => (
+                        render: (product: any) => (
                           <div>{product.category}</div>
                         )
                       },
                       {
                         key: 'soldQty',
                         header: 'Sold Qty',
-                        render: (product: Product) => (
+                        render: (product: any) => (
                           <div>{product.soldQuantity}</div>
                         )
                       },
                       {
                         key: 'revenue',
                         header: 'Revenue',
-                        render: (product: Product) => (
+                        render: (product: any) => (
                           <div>{formatCurrency(product.revenue)}</div>
                         )
                       },
                       {
                         key: 'profit',
                         header: 'Profit',
-                        render: (product: Product) => (
+                        render: (product: any) => (
                           <div className="text-green-600">{formatCurrency(product.profit)}</div>
                         )
                       },
                       {
                         key: 'profitMargin',
                         header: 'Profit Margin',
-                        render: (product: Product) => (
+                        render: (product: any) => (
                           <Badge variant="secondary">
                             {product.revenue > 0 ? ((product.profit / product.revenue) * 100).toFixed(1) : '0.0'}%
                           </Badge>
@@ -908,7 +850,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                       {
                         key: 'customer',
                         header: 'Customer',
-                        render: (customer: CustomerType) => (
+                        render: (customer: CustomerData) => (
                           <div>
                             <p className="font-medium">{customer.name}</p>
                             <p className="text-sm text-muted-foreground">{customer.email}</p>
@@ -918,36 +860,36 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                       {
                         key: 'contact',
                         header: 'Contact',
-                        render: (customer: CustomerType) => (
+                        render: (customer: CustomerData) => (
                           <div>{customer.phone}</div>
                         )
                       },
                       {
                         key: 'totalPurchases',
                         header: 'Total Purchases',
-                        render: (customer: CustomerType) => (
-                          <div>{customer.total_purchases}</div>
+                        render: (customer: CustomerData) => (
+                          <div>{customer.totalPurchases}</div>
                         )
                       },
                       {
                         key: 'totalSpent',
                         header: 'Total Spent',
-                        render: (customer: CustomerType) => (
-                          <div className="font-medium">{formatCurrency(customer?.total_purchases || 0)}</div>
+                        render: (customer: CustomerData) => (
+                          <div className="font-medium">{formatCurrency(customer?.totalSpent || 0)}</div>
                         )
                       },
                       {
                         key: 'avgOrderValue',
                         header: 'Avg Order Value',
-                        render: (customer: CustomerType) => (
-                          <div>{formatCurrency((customer?.total_purchases || 0) > 0 ? ((customer?.total_purchases || 0) / (customer?.total_purchases || 1)) : 0)}</div>
+                        render: (customer: CustomerData) => (
+                          <div>{formatCurrency((customer?.totalPurchases || 0) > 0 ? ((customer?.totalSpent || 0) / (customer?.totalPurchases || 1)) : 0)}</div>
                         )
                       },
                       {
                         key: 'lastVisit',
                         header: 'Last Visit',
-                        render: (customer: CustomerType) => (
-                          <div>{customer?.last_purchase_at ? new Date(customer.last_purchase_at).toLocaleDateString() : 'Never'}</div>
+                        render: (customer: CustomerData) => (
+                          <div>{customer?.lastVisit ? new Date(customer.lastVisit).toLocaleDateString() : 'Never'}</div>
                         )
                       }
                     ]}
@@ -1020,7 +962,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {safeChartData.paymentData.map((payment: { method: string; count: number; percentage: number }, index: number) => (
+                      {safeChartData.paymentData.map((payment: any, index: number) => (
                         <div key={index} className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className={`w-4 h-4 rounded-full ${

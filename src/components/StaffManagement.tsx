@@ -47,7 +47,7 @@ import {
   useUpdateStaff,
   useDeleteStaff,
   useResetUserPassword,
-} from "@/utils/hooks/useStoreData";
+} from "@/stores";
 import { toast } from "sonner";
 import {
   Edit,
@@ -63,41 +63,23 @@ import {
   Users,
 } from "lucide-react";
 
-interface StaffManagementProps {
-  onBack: () => void;
-  onNavigate?: (view: string, params?: Record<string, unknown>) => void;
-}
+// Import types from centralized location
+import { Staff, StaffManagementProps, RoleOption, PermissionOption, StaffCredentials, StaffFormData } from '@/types';
 
-interface Staff {
-  id: string;
-  name: string;
-  username: string;
-  email: string;
-  phone?: string;
-  store_id?: string;
-  storeName?: string;
-  is_active: boolean;
-  role: "business_admin" | "store_admin" | "cashier";
-  permissions?: string[];
-  created_at: string;
-  last_login?: string;
-  totalSales?: number;
-  transactionCount?: number;
-}
-
-interface Store {
+// Simplified store interface for API responses
+interface SimpleStore {
   id: string;
   name: string;
   is_active?: boolean;
 }
 
-const ROLE_OPTIONS = [
+const ROLE_OPTIONS: RoleOption[] = [
   { value: "business_admin", label: "Business Admin", color: "bg-red-500" },
   { value: "store_admin", label: "Store Admin", color: "bg-blue-500" },
   { value: "cashier", label: "Cashier", color: "bg-green-500" },
 ];
 
-const PERMISSION_OPTIONS = [
+const PERMISSION_OPTIONS: PermissionOption[] = [
   { value: "pos", label: "Point of Sale" },
   { value: "products", label: "Product Management" },
   { value: "customers", label: "Customer Management" },
@@ -121,7 +103,7 @@ const StaffForm = ({
   onChange: (staffMember: Partial<Staff>) => void;
   onSave: () => void;
   onCancel: () => void;
-  stores: Store[];
+  stores: SimpleStore[];
   isSaving: boolean;
 }) => (
   <div className="space-y-4">
@@ -313,7 +295,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   
   // Credentials modal state
   const [isCredentialsModalOpen, setIsCredentialsModalOpen] = useState(false);
-  const [generatedCredentials, setGeneratedCredentials] = useState<{username: string, password: string} | null>(null);
+  const [generatedCredentials, setGeneratedCredentials] = useState<StaffCredentials | null>(null);
   
   const [newStaff, setNewStaff] = useState<Partial<Staff>>({
     name: "",
@@ -352,12 +334,14 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   const refetchStaff = user?.role === 'business_admin' ? refetchBusinessStaff : refetchStoreStaff;
 
   const {
-    data: stores = [],
+    data: businessStoresData = { stores: [] },
     isLoading: isLoadingStores,
     refetch: refetchStores,
   } = useBusinessStores(currentBusiness?.id || "", {
     enabled: !!currentBusiness?.id,
   });
+
+  const stores: SimpleStore[] = businessStoresData.stores || [];
 
   // React Query mutations
   const createStaffMutation = useCreateStaff(currentBusiness?.id || "", currentStore?.id);
@@ -399,7 +383,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
     return accessibleStaff.filter((staff: Staff) => {
       const matchesSearch =
         staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        staff.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (staff.email && staff.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (staff.username &&
           staff.username.toLowerCase().includes(searchTerm.toLowerCase()));
       
@@ -435,7 +419,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
     }
 
     try {
-      const staffData = {
+      const staffData: StaffFormData = {
         name: newStaff.name!,
         username: newStaff.username!,
         email: newStaff.email!,
@@ -444,6 +428,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
         store_id: newStaff.store_id,
         permissions: newStaff.permissions || ["pos"],
         is_active: newStaff.is_active !== false,
+        business_id: currentBusiness.id,
       };
 
       const result = await createStaffMutation.mutateAsync(staffData);
@@ -481,7 +466,11 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
     }
 
     try {
-      await updateStaffMutation.mutateAsync({ staffId: selectedStaff.id, staffData: selectedStaff });
+      const staffData: Partial<StaffFormData> = {
+        ...selectedStaff,
+        business_id: currentBusiness.id,
+      };
+      await updateStaffMutation.mutateAsync({ staffId: selectedStaff.id, staffData });
 
       setIsEditDialogOpen(false);
       setSelectedStaff(null);
@@ -805,8 +794,8 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                     <SelectContent>
                       <SelectItem value="All">All Stores</SelectItem>
                       {stores
-                        .filter((s: Store) => s.is_active)
-                        .map((store: Store) => (
+                        .filter((s: SimpleStore) => s.is_active)
+                        .map((store: SimpleStore) => (
                           <SelectItem key={store.id} value={store.id}>
                             {store.name}
                           </SelectItem>

@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSystem } from '@/contexts/SystemContext';
 import { Header } from '@/components/common/Header';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-// We'll use the API endpoint instead of direct DB access
 import { toast } from 'sonner';
 import { 
   Plus, 
@@ -23,48 +21,21 @@ import {
   Loader2
 } from 'lucide-react';
 
-interface SubscriptionManagementProps {
-  onBack: () => void;
-}
+// Import types from centralized location
+import { 
+  SubscriptionProps,
+  SubscriptionPlan,
+  SubscriptionPlanFormData
+} from '@/types';
 
-interface SubscriptionPlan {
-  id: string;
-  name: string;
-  description: string;
-  price_monthly: number;
-  price_yearly: number;
-  features: string[];
-  max_stores: number;
-  max_products: number;
-  max_users: number;
-  is_active: boolean;
-  display_order: number;
-  created_at: string;
-  updated_at: string;
-}
-
-// Type for creating/updating plans (without id and timestamps)
-interface SubscriptionPlanInput {
-  name: string;
-  description: string;
-  price_monthly: number;
-  price_yearly: number;
-  features: string[];
-  max_stores: number;
-  max_products: number;
-  max_users: number;
-  is_active: boolean;
-  display_order: number;
-}
-
-interface PlanStats {
-  totalPlans: number;
-  activePlans: number;
-  averageMonthlyPrice: number;
-  averageYearlyPrice: number;
-  highestMonthlyPrice: number;
-  highestYearlyPrice: number;
-}
+// Import stores from centralized location
+import { 
+  useSubscriptionPlans,
+  useCreateSubscriptionPlan,
+  useUpdateSubscriptionPlan,
+  useDeleteSubscriptionPlan,
+  useSubscriptionPlanStats
+} from '@/stores';
 
 // Separate PlanForm component
 const PlanForm = React.memo(({ 
@@ -74,28 +45,28 @@ const PlanForm = React.memo(({
   onCancel,
   submitting = false
 }: {
-  plan: SubscriptionPlanInput;
-  onChange: (plan: SubscriptionPlanInput) => void;
+  plan: SubscriptionPlanFormData;
+  onChange: (plan: SubscriptionPlanFormData) => void;
   onSave: () => void;
   onCancel: () => void;
   submitting?: boolean;
 }) => {
-  const handleInputChange = useCallback((field: keyof SubscriptionPlanInput, value: string | number | boolean) => {
+  const handleInputChange = useCallback((field: keyof SubscriptionPlanFormData, value: string | number | boolean) => {
     onChange({ ...plan, [field]: value });
   }, [plan, onChange]);
 
   const handleFeatureChange = useCallback((index: number, value: string) => {
-    const newFeatures = [...plan.features];
+    const newFeatures = [...(plan.features || [])];
     newFeatures[index] = value;
     onChange({ ...plan, features: newFeatures });
   }, [plan, onChange]);
 
   const addFeature = useCallback(() => {
-    onChange({ ...plan, features: [...plan.features, ''] });
+    onChange({ ...plan, features: [...(plan.features || []), ''] });
   }, [plan, onChange]);
 
   const removeFeature = useCallback((index: number) => {
-    const newFeatures = plan.features.filter((_: string, i: number) => i !== index);
+    const newFeatures = (plan.features || []).filter((_: string, i: number) => i !== index);
     onChange({ ...plan, features: newFeatures });
   }, [plan, onChange]);
 
@@ -207,7 +178,7 @@ const PlanForm = React.memo(({
           </Button>
         </div>
         <div className="space-y-2">
-          {plan.features.map((feature: string, index: number) => (
+          {(plan.features || []).map((feature: string, index: number) => (
             <div key={`feature-${index}`} className="flex items-center gap-2">
               <Input
                 value={feature}
@@ -220,7 +191,7 @@ const PlanForm = React.memo(({
                 variant="destructive"
                 size="sm"
                 onClick={() => removeFeature(index)}
-                disabled={plan.features.length === 1}
+                disabled={(plan.features || []).length === 1}
               >
                 <Trash2 className="w-3 h-3" />
               </Button>
@@ -253,25 +224,15 @@ const PlanForm = React.memo(({
 
 PlanForm.displayName = 'PlanForm';
 
-export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ onBack }) => {
+export const SubscriptionManagement: React.FC<SubscriptionProps> = ({ onBack }) => {
   const { user } = useAuth();
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
-  const [stats, setStats] = useState<PlanStats>({
-    totalPlans: 0,
-    activePlans: 0,
-    averageMonthlyPrice: 0,
-    averageYearlyPrice: 0,
-    highestMonthlyPrice: 0,
-    highestYearlyPrice: 0
-  });
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const [newPlan, setNewPlan] = useState<SubscriptionPlanInput>({
+  const [newPlan, setNewPlan] = useState<SubscriptionPlanFormData>({
     name: '',
     description: '',
     price_monthly: 0,
@@ -281,56 +242,47 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
     max_products: 100,
     max_users: 5,
     is_active: true,
-    display_order: 0
+    display_order: 0,
+    is_popular: false
   });
 
-  // Load subscription plans from API
-  const loadPlans = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/subscription-plans');
-      if (!response.ok) {
-        throw new Error('Failed to fetch subscription plans');
-      }
-      const data = await response.json();
-      const loadedPlans = data.plans || [];
-      setPlans(loadedPlans);
-      
-      // Calculate stats from loaded data
-      setStats({
-        totalPlans: loadedPlans.length,
-        activePlans: loadedPlans.filter((p: SubscriptionPlan) => p.is_active).length,
-        averageMonthlyPrice: loadedPlans.length > 0 
-          ? loadedPlans.reduce((sum: number, p: SubscriptionPlan) => sum + p.price_monthly, 0) / loadedPlans.length
-          : 0,
-        averageYearlyPrice: loadedPlans.length > 0 
-          ? loadedPlans.reduce((sum: number, p: SubscriptionPlan) => sum + p.price_yearly, 0) / loadedPlans.length
-          : 0,
-        highestMonthlyPrice: loadedPlans.length > 0 
-          ? Math.max(...loadedPlans.map((p: SubscriptionPlan) => p.price_monthly))
-          : 0,
-        highestYearlyPrice: loadedPlans.length > 0 
-          ? Math.max(...loadedPlans.map((p: SubscriptionPlan) => p.price_yearly))
-          : 0
-      });
-    } catch (error) {
-      console.error('Error loading subscription plans:', error);
-      toast.error('Failed to load subscription plans');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // React Query hooks
+  const {
+    data: plansResponse,
+    isLoading: isLoadingPlans,
+    error: plansError,
+    refetch: refetchPlans
+  } = useSubscriptionPlans({
+    enabled: user?.role === 'superadmin'
+  });
 
-  useEffect(() => {
-    if (user?.role === 'superadmin') {
-      loadPlans();
-    }
-  }, [loadPlans, user?.role]);
+  const {
+    data: statsResponse,
+    isLoading: isLoadingStats,
+    error: statsError
+  } = useSubscriptionPlanStats({
+    enabled: user?.role === 'superadmin'
+  });
 
-  const filteredPlans = plans.filter(plan =>
+  const plans = plansResponse || [];
+  const stats = statsResponse?.stats || {
+    totalPlans: 0,
+    activePlans: 0,
+    averageMonthlyPrice: 0,
+    averageYearlyPrice: 0,
+    highestMonthlyPrice: 0,
+    highestYearlyPrice: 0
+  };
+
+  const filteredPlans = plans.filter((plan: SubscriptionPlan) =>
     plan.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    plan.description.toLowerCase().includes(searchTerm.toLowerCase())
+    (plan.description || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Mutation hooks
+  const createPlanMutation = useCreateSubscriptionPlan();
+  const updatePlanMutation = useUpdateSubscriptionPlan();
+  const deletePlanMutation = useDeleteSubscriptionPlan();
 
   const handleAddPlan = useCallback(async () => {
     if (!newPlan.name || !newPlan.description) {
@@ -340,24 +292,11 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
 
     try {
       setSubmitting(true);
-      const planData = {
+      await createPlanMutation.mutateAsync({
         ...newPlan,
         features: newPlan.features.filter(f => f.trim() !== '')
-      };
-
-      const response = await fetch('/api/subscription-plans', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(planData),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to create subscription plan');
-      }
-
-      toast.success('Subscription plan created successfully');
+      
       setNewPlan({
         name: '',
         description: '',
@@ -368,17 +307,16 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
         max_products: 100,
         max_users: 5,
         is_active: true,
-        display_order: 0
+        display_order: 0,
+        is_popular: false
       });
       setIsAddDialogOpen(false);
-      loadPlans(); // Reload the list
     } catch (error) {
       console.error('Error creating subscription plan:', error);
-      toast.error('Failed to create subscription plan');
     } finally {
       setSubmitting(false);
     }
-  }, [newPlan, loadPlans]);
+  }, [newPlan, createPlanMutation]);
 
   const handleEditPlan = useCallback((plan: SubscriptionPlan) => {
     setSelectedPlan(plan);
@@ -395,37 +333,28 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
         description: selectedPlan.description,
         price_monthly: selectedPlan.price_monthly,
         price_yearly: selectedPlan.price_yearly,
-        features: selectedPlan.features.filter(f => f.trim() !== ''),
+        features: (selectedPlan.features || []).filter(f => f.trim() !== ''),
         max_stores: selectedPlan.max_stores,
         max_products: selectedPlan.max_products,
         max_users: selectedPlan.max_users,
         is_active: selectedPlan.is_active,
-        display_order: selectedPlan.display_order
+        display_order: selectedPlan.display_order,
+        is_popular: selectedPlan.is_popular || false
       };
 
-      const response = await fetch(`/api/subscription-plans/${selectedPlan.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(planData),
+      await updatePlanMutation.mutateAsync({
+        planId: selectedPlan.id,
+        planData
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to update subscription plan');
-      }
-
-      toast.success('Subscription plan updated successfully');
       setIsEditDialogOpen(false);
       setSelectedPlan(null);
-      loadPlans(); // Reload the list
     } catch (error) {
       console.error('Error updating subscription plan:', error);
-      toast.error('Failed to update subscription plan');
     } finally {
       setSubmitting(false);
     }
-  }, [selectedPlan, loadPlans]);
+  }, [selectedPlan, updatePlanMutation]);
 
   const handleDeletePlan = useCallback(async (planId: string, planName: string) => {
     if (planName.toLowerCase() === 'trial') {
@@ -434,21 +363,11 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
     }
 
     try {
-      const response = await fetch(`/api/subscription-plans/${planId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete subscription plan');
-      }
-
-      toast.success('Subscription plan deleted successfully');
-      loadPlans(); // Reload the list
+      await deletePlanMutation.mutateAsync(planId);
     } catch (error) {
       console.error('Error deleting subscription plan:', error);
-      toast.error('Failed to delete subscription plan');
     }
-  }, [loadPlans]);
+  }, [deletePlanMutation]);
 
   const columns = [
     {
@@ -493,10 +412,10 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
       label: 'Features',
       render: (plan: SubscriptionPlan) => (
         <div className="text-sm">
-          <p>{plan.features.length} features</p>
+          <p>{(plan.features || []).length} features</p>
           <p className="text-muted-foreground truncate max-w-48">
-            {plan.features.slice(0, 2).join(', ')}
-            {plan.features.length > 2 && '...'}
+            {(plan.features || []).slice(0, 2).join(', ')}
+            {(plan.features || []).length > 2 && '...'}
           </p>
         </div>
       )
@@ -551,13 +470,25 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
     }
   ];
 
-  if (loading) {
+  const isLoading = isLoadingPlans || isLoadingStats;
+  const error = plansError || statsError;
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">Loading subscription plans...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full">
+        <p className="text-lg text-red-700 mb-4">Failed to load subscription plans</p>
+        <Button onClick={() => refetchPlans()}>Retry</Button>
       </div>
     );
   }
@@ -669,8 +600,20 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
             </DialogHeader>
             {selectedPlan && (
               <PlanForm
-                plan={selectedPlan}
-                onChange={(planData) => setSelectedPlan({ ...selectedPlan, ...planData })}
+                plan={{
+                  name: selectedPlan.name,
+                  description: selectedPlan.description || '',
+                  price_monthly: selectedPlan.price_monthly || 0,
+                  price_yearly: selectedPlan.price_yearly || 0,
+                  features: selectedPlan.features || [],
+                  max_stores: selectedPlan.max_stores || 1,
+                  max_products: selectedPlan.max_products || 100,
+                  max_users: selectedPlan.max_users || 5,
+                  is_active: selectedPlan.is_active || false,
+                  display_order: selectedPlan.display_order || 0,
+                  is_popular: selectedPlan.is_popular || false
+                }}
+                onChange={(planData) => setSelectedPlan({ ...selectedPlan, ...planData } as SubscriptionPlan)}
                 onSave={handleUpdatePlan}
                 onCancel={() => setIsEditDialogOpen(false)}
                 submitting={submitting}

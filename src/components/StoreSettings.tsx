@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -20,53 +19,37 @@ import {
   Volume2,
   Clock
 } from 'lucide-react';
-import { useLanguages, useCurrencies, useCountries } from '../utils/hooks/useStoreData';
-import { StoreSettings as StoreSettingsType } from '@/types';
-
-interface StoreWithRelations {
-  id: string;
-  name: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  postal_code?: string;
-  phone?: string;
-  email?: string;
-  manager_name?: string;
-  is_active?: boolean;
-  currency_id?: string;
-  language_id?: string;
-  country_id?: string;
-  currency?: {
-    id: string;
-    name: string;
-    symbol: string;
-    code: string;
-  };
-  language?: {
-    id: string;
-    name: string;
-    code: string;
-    native_name: string;
-  };
-  country?: {
-    id: string;
-    name: string;
-    code: string;
-  };
-}
+// Import types from centralized location
+import { 
+  StoreDisplay,
+  StoreSettings as StoreSettingsType,
+  StoreSettingsFormData
+} from '@/types';
+// Import stores from centralized location
+import { 
+  useLanguages,
+  useCurrencies,
+  useCountries
+} from '@/stores';
 
 interface StoreSettingsProps {
   storeId: string;
-  store: StoreWithRelations | null;
+  store: StoreDisplay | null;
   storeSettings: StoreSettingsType | null;
-  onSave?: (settings: Record<string, unknown>) => void;
+  onSave?: (settings: StoreSettingsFormData) => void;
 }
 
-export const StoreSettings: React.FC<StoreSettingsProps> = ({ storeId, store, storeSettings, onSave }) => {
+export const StoreSettings: React.FC<StoreSettingsProps> = ({ store, storeSettings, onSave }) => {
   const [showReceiptPreview, setShowReceiptPreview] = useState(false);
+
+  // Reference data hooks
+  const { data: languages = [], isLoading: isLoadingLanguages } = useLanguages();
+  const { data: currencies = [], isLoading: isLoadingCurrencies } = useCurrencies();
+  const { data: countries = [], isLoading: isLoadingCountries } = useCountries();
+
+
   // Initialize local settings with store data
-  const [localSettings, setLocalSettings] = useState({
+  const [localSettings, setLocalSettings] = useState<StoreSettingsFormData>({
     name: store?.name || '',
     address: store?.address || '',
     city: store?.city || '',
@@ -106,12 +89,6 @@ export const StoreSettings: React.FC<StoreSettingsProps> = ({ storeId, store, st
     enable_sounds: storeSettings?.enable_sounds ?? true
   });
 
-  // Fetch countries, currencies, and languages from API
-  const { data: countries = [], isLoading: isLoadingCountries } = useCountries();
-  const { data: currencies = [], isLoading: isLoadingCurrencies } = useCurrencies({ enabled: true });
-  const { data: languages = [], isLoading: isLoadingLanguages } = useLanguages();
-
-  const isLoadingRefs = isLoadingCountries || isLoadingCurrencies || isLoadingLanguages;
 
   // Update local settings when store or storeSettings change
   useEffect(() => {
@@ -174,21 +151,6 @@ export const StoreSettings: React.FC<StoreSettingsProps> = ({ storeId, store, st
     return translations[key] || key;
   };
 
-  const getCurrentCurrencyInfo = () => {
-    if (localSettings.currency_id) {
-      const currency = currencies.find((c: { id: string; name: string; symbol: string; code: string }) => c.id === localSettings.currency_id);
-      return currency ? { code: currency.code, name: currency.name, symbol: currency.symbol } : null;
-    }
-    return null;
-  };
-
-  const getCurrentLanguageInfo = () => {
-    if (localSettings.language_id) {
-      const language = languages.find((l: { id: string; name: string; code: string; native_name: string }) => l.id === localSettings.language_id);
-      return language ? { code: language.code, name: language.name, nativeName: language.native_name } : null;
-    }
-    return null;
-  };
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -233,21 +195,21 @@ export const StoreSettings: React.FC<StoreSettingsProps> = ({ storeId, store, st
               <span>Subtotal:</span>
               <span>$45.49</span>
             </div>
-            {localSettings.enable_discount && localSettings.discount_rate > 0 && (
+            {localSettings.enable_discount && (localSettings.discount_rate || 0) > 0 && (
               <div className="flex justify-between text-green-600">
-                <span>Discount ({localSettings.discount_rate}%):</span>
-                <span>-${(45.49 * (localSettings.discount_rate / 100)).toFixed(2)}</span>
+                <span>Discount ({localSettings.discount_rate || 0}%):</span>
+                <span>-${(45.49 * ((localSettings.discount_rate || 0) / 100)).toFixed(2)}</span>
               </div>
             )}
             {localSettings.enable_tax && (
               <div className="flex justify-between">
-                <span>Tax ({localSettings.tax_rate}%):</span>
-                <span>${(45.49 * (1 - (localSettings.enable_discount ? localSettings.discount_rate / 100 : 0)) * (localSettings.tax_rate / 100)).toFixed(2)}</span>
+                <span>Tax ({localSettings.tax_rate || 0}%):</span>
+                <span>${(45.49 * (1 - (localSettings.enable_discount ? (localSettings.discount_rate || 0) / 100 : 0)) * ((localSettings.tax_rate || 0) / 100)).toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between font-bold">
               <span>Total:</span>
-              <span>${(45.49 * (1 - (localSettings.enable_discount ? localSettings.discount_rate / 100 : 0)) * (1 + (localSettings.enable_tax ? localSettings.tax_rate / 100 : 0))).toFixed(2)}</span>
+              <span>${(45.49 * (1 - (localSettings.enable_discount ? (localSettings.discount_rate || 0) / 100 : 0)) * (1 + (localSettings.enable_tax ? (localSettings.tax_rate || 0) / 100 : 0))).toFixed(2)}</span>
             </div>
           </div>
         </div>

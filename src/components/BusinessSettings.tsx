@@ -4,12 +4,14 @@ import { useSystem } from '@/contexts/SystemContext';
 import { useActivityLogger } from '@/contexts/ActivityLogger';
 import { 
   useBusinessSettings, 
+  useUpdateBusinessSettings 
+} from '@/stores/business-settings';
+import { 
   useCurrencies, 
   useLanguages, 
   useCountries,
-  useSubscriptionPlans,
-  useUpdateBusinessSettings 
-} from '../utils/hooks/useStoreData';
+  useSubscriptionPlans
+} from '@/stores';
 import { Header } from './common/Header';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -48,104 +50,15 @@ import {
   BUSINESS_TYPE_ICONS 
 } from './common/BusinessTypeConstants';
 
-interface BusinessSettingsProps {
-  onBack: () => void;
-}
-
-interface BusinessSettings {
-  // Business table fields
-  name?: string;
-  description?: string;
-  industry?: string;
-  timezone?: string;
-  subscription_status?: string;
-  subscription_expires_at?: string;
-  is_active?: boolean;
-  address?: string;
-  email?: string;
-  phone?: string;
-  website?: string;
-  subscription_plan_id?: string;
-  currency_id?: string;
-  currency_code?: string;
-  currency_name?: string;
-  currency_symbol?: string;
-  language_id?: string;
-  language_code?: string;
-  language_name?: string;
-  language_native_name?: string;
-  country_id?: string;
-  business_type?: string;
-  username?: string;
-  slug?: string;
-  
-  // Business setting table fields
-  taxRate: number;
-  enableTax: boolean;
-  discountRate: number;
-  enableDiscount: boolean;
-  allowReturns: boolean;
-  returnPeriodDays: number;
-  enableSounds: boolean;
-  logo_url: string;
-  receiptHeader: string;
-  receiptFooter: string;
-  returnPolicy: string;
-  warrantyInfo: string;
-  termsOfService: string;
-  privacyPolicy: string;
-  primaryColor: string;
-  secondaryColor: string;
-  accentColor: string;
-  enable_stock_tracking?: boolean;
-  enable_inventory_alerts?: boolean;
-  enable_restock_management?: boolean;
-  enable_recipe_management?: boolean;
-  enable_service_booking?: boolean;
-  enable_menu_management?: boolean;
-  enable_ingredient_tracking?: boolean;
-  enable_public_store?: boolean;
-  store_theme?: string;
-  store_banner_url?: string;
-  store_description?: string;
-  whatsapp_phone?: string;
-  whatsapp_message_template?: string;
-}
-
-interface Currency {
-  id: string;
-  code: string;
-  name: string;
-  symbol: string;
-  is_active: boolean;
-}
-
-interface Language {
-  id: string;
-  code: string;
-  name: string;
-  native_name: string;
-  is_active: boolean;
-}
-
-interface Country {
-  id: string;
-  code: string;
-  name: string;
-  phone_code: string;
-  is_active: boolean;
-}
-
-interface SubscriptionPlan {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  currency: string;
-  billing_cycle: string;
-  features: string[];
-  is_active: boolean;
-}
+import { 
+  BusinessSettingsProps, 
+  BusinessSettings as BusinessSettingsType
+} from '@/types/business-settings';
+import { 
+  Currency, 
+  Language, 
+  Country
+} from '@/types/database';
 
 export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) => {
   const { currentBusiness, user } = useAuth();
@@ -182,7 +95,6 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
   } = useCountries();
 
   const {
-    data: subscriptionPlans = [],
     isLoading: isLoadingSubscriptionPlans
   } = useSubscriptionPlans();
 
@@ -194,7 +106,7 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
   const isLoadingRefs = isLoadingCurrencies || isLoadingLanguages || isLoadingCountries || isLoadingSubscriptionPlans;
   const isSaving = updateSettingsMutation.isPending;
 
-  const [localSettings, setLocalSettings] = useState<BusinessSettings>({
+  const [localSettings, setLocalSettings] = useState<BusinessSettingsType>({
     // Business table fields
     name: '',
     description: '',
@@ -257,8 +169,8 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
   // Update localSettings when currentSettings changes
   useEffect(() => {
     if (currentSettings) {
-      // The API already returns the data in the correct format, so we can use it directly
-      setLocalSettings(currentSettings as BusinessSettings);
+      // Convert the API response to the expected format
+      setLocalSettings(currentSettings as unknown as BusinessSettingsType);
     }
   }, [currentSettings]);
 

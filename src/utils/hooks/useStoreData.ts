@@ -1,3 +1,9 @@
+// ============================================================================
+// LEGACY STORE DATA HOOKS - DEPRECATED
+// ============================================================================
+// This file is kept for backward compatibility but should be replaced with
+// the new modular stores in /src/stores/
+
 import React from 'react';
 import { BrandFormData } from '@/components/brand/BrandHelpers';
 import { CategoryFormData, SupplierFormData, CustomerFormData, StaffFormData } from '@/types';
@@ -5,46 +11,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { offlineStoreIndexedDB } from '../offline-store-indexeddb';
 
-// Hook for fetching store products
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-export const useStoreProducts = (storeId: string, options?: {
-  enabled?: boolean;
-  forceRefresh?: boolean;
-  businessId?: string;
-}) => {
-  const { enabled = true, forceRefresh = false, businessId } = options || {};
-  
-  return useQuery({
-    queryKey: ['store-products', storeId, businessId],
-    queryFn: async () => {
-      // Handle "All" case by using business_id
-      if (storeId === 'All') {
-        if (!businessId) {
-          throw new Error('business_id is required when store_id is "All"');
-        }
-        const response = await fetch(`/api/products?store_id=All&business_id=${businessId}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch business products');
-        }
-        const data = await response.json();
-        return data.products || [];
-      }
-      
-      const response = await fetch(`/api/products?store_id=${storeId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch products');
-      }
-      const data = await response.json();
-      return data.products || [];
-    },
-    enabled: enabled && !!storeId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: true, // Important for POS
-    refetchOnMount: !forceRefresh, // Don't refetch if forcing refresh
-  });
-};
+// Re-export all new store hooks for backward compatibility
+export * from '@/stores';
+
 
 // Hook for fetching store customers
 export const useStoreCustomers = (storeId: string, options?: {

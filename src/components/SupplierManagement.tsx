@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { toast } from 'sonner';
@@ -13,13 +13,6 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { 
-  useBusinessSuppliers,
-  useCreateBusinessSupplier,
-  useUpdateBusinessSupplier,
-  useDeleteBusinessSupplier
-} from '@/utils/hooks/useStoreData';
-import { 
-
   Building, 
   Phone, 
   Mail, 
@@ -30,26 +23,23 @@ import {
   RefreshCw,
   Plus
 } from 'lucide-react';
-import { SupplierFormData } from '@/types';
 
-interface Supplier {
-  id: string;
-  name: string;
-  contact_person: string | null;
-  email: string | null;
-  phone: string | null;
-  address: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  total_value?: number;
-}
+// Import types from centralized location
+import { 
+  SupplierProps,
+  Supplier,
+  SupplierFormData
+} from '@/types';
 
-interface SupplierManagementProps {
-  onBack: () => void;
-}
+// Import stores from centralized location
+import { 
+  useBusinessSuppliers,
+  useCreateSupplier,
+  useUpdateSupplier,
+  useDeleteSupplier
+} from '@/stores';
 
-export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }) => {
+export const SupplierManagement: React.FC<SupplierProps> = ({ onBack }) => {
   const { user, currentBusiness } = useAuth();
   const { translate, formatCurrency } = useSystem();
   const { logActivity } = useActivityLogger();
@@ -71,9 +61,9 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
   });
 
   // React Query mutations
-  const createSupplierMutation = useCreateBusinessSupplier(currentBusiness?.id || '');
-  const updateSupplierMutation = useUpdateBusinessSupplier(currentBusiness?.id || '');
-  const deleteSupplierMutation = useDeleteBusinessSupplier(currentBusiness?.id || '');
+  const createSupplierMutation = useCreateSupplier();
+  const updateSupplierMutation = useUpdateSupplier();
+  const deleteSupplierMutation = useDeleteSupplier();
 
   // Loading states
   const isSaving = createSupplierMutation.isPending || updateSupplierMutation.isPending || deleteSupplierMutation.isPending;
@@ -83,12 +73,13 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const [newSupplier, setNewSupplier] = useState({
+  const [newSupplier, setNewSupplier] = useState<SupplierFormData>({
     name: '',
     contact_person: '',
     email: '',
     phone: '',
-    address: ''
+    address: '',
+    is_active: true
   });
 
   // Suppliers are already filtered by business from the hook
@@ -99,24 +90,19 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
     supplier.phone?.includes(searchTerm)
   );
 
-  const handleAddSupplier = (updatedSupplier: Supplier) => {
+  const handleAddSupplier = (updatedSupplier: SupplierFormData) => {
     try {
-      if (!updatedSupplier.name.trim() || !updatedSupplier.contact_person?.trim() || !updatedSupplier.email?.trim()) {
+      if (!updatedSupplier.name.trim()) {
         toast.error(translate('validation.requiredFields'));
         return;
       }
 
       const supplierData = {
-        name: updatedSupplier.name,
-        contact_person: updatedSupplier.contact_person,
-        email: updatedSupplier.email,
-        phone: updatedSupplier.phone || '',
-        address: updatedSupplier.address,
-        is_active: true,
+        ...updatedSupplier,
         business_id: currentBusiness?.id || ''
       };
 
-      createSupplierMutation.mutate(supplierData as unknown as SupplierFormData, {
+      createSupplierMutation.mutate(supplierData, {
         onSuccess: () => {
           refetchSuppliers();
           logActivity(
@@ -138,13 +124,14 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
         contact_person: '',
         email: '',
         phone: '',
-        address: ''
+        address: '',
+        is_active: true
       });
 
       setIsAddDialogOpen(false);
     } catch (error) {
       console.error('Error adding supplier:', error);
-      alert('Error adding supplier. Please try again.');
+      toast.error('Error adding supplier. Please try again.');
     }
   };
 
@@ -153,15 +140,7 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
     setIsEditDialogOpen(true);
   };
 
-  const handleUpdateSupplier = (updatedSupplier: {
-    name: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-    contact_person?: string;
-    is_active?: boolean;
-    [key: string]: unknown;
-  }) => {
+  const handleUpdateSupplier = (updatedSupplier: SupplierFormData) => {
     try {
       if (!editingSupplier) {
         console.error('No editing supplier found');
@@ -169,11 +148,10 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
         return;
       }
 
-  
-
       updateSupplierMutation.mutate({
-        supplierId: editingSupplier.id,
-        supplierData: updatedSupplier as unknown as SupplierFormData
+        id: editingSupplier.id,
+        business_id: currentBusiness?.id || '',
+        ...updatedSupplier
       }, {
         onSuccess: () => {
           refetchSuppliers();
@@ -210,14 +188,18 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
     if (!supplier) return;
 
     const updatedSupplier = {
-      ...supplier,
-      is_active: !supplier.is_active,
-      updated_at: new Date().toISOString()
+      name: supplier.name,
+      contact_person: supplier.contact_person || '',
+      email: supplier.email || '',
+      phone: supplier.phone || '',
+      address: supplier.address || '',
+      is_active: !supplier.is_active
     };
 
     updateSupplierMutation.mutate({
-      supplierId: supplier.id,
-      supplierData: updatedSupplier as unknown as SupplierFormData
+      id: supplier.id,
+      business_id: currentBusiness?.id || '',
+      ...updatedSupplier
     }, {
       onSuccess: () => {
         refetchSuppliers();
@@ -366,7 +348,7 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
     total: suppliers.length,
     active: suppliers.filter((s: Supplier) => s.is_active).length,
     inactive: suppliers.filter((s: Supplier) => !s.is_active).length,
-    totalValue: suppliers.reduce((sum: number, s: Supplier) => sum + (Number(s.total_value) || 0), 0)
+    totalValue: suppliers.reduce((sum: number, s: Supplier) => sum + (Number((s as Supplier & { total_value?: number }).total_value) || 0), 0)
   };
 
   const SupplierForm = ({ 
@@ -375,20 +357,20 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
     submitLabel,
     isLoading = false
   }: { 
-    supplier: Supplier; 
-    onSubmit: (updatedSupplier: Supplier) => void;
+    supplier: SupplierFormData; 
+    onSubmit: (updatedSupplier: SupplierFormData) => void;
     submitLabel: string;
     isLoading?: boolean;
   }) => {
     const [localSupplier, setLocalSupplier] = useState(supplier);
 
     // Update local state when supplier prop changes
-    useEffect(() => {
+    React.useEffect(() => {
       setLocalSupplier(supplier);
     }, [supplier]);
 
-    const handleLocalChange = (field: string, value: string) => {
-      setLocalSupplier((prev: Supplier) => ({ ...prev, [field]: value }));
+    const handleLocalChange = (field: string, value: string | boolean) => {
+      setLocalSupplier((prev: SupplierFormData) => ({ ...prev, [field]: value }));
     };
 
     return (
@@ -582,7 +564,7 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
             </DialogDescription>
           </DialogHeader>
           <SupplierForm
-            supplier={newSupplier as unknown as Supplier}
+            supplier={newSupplier}
             onSubmit={handleAddSupplier}
             submitLabel={translate('common.add')}
             isLoading={createSupplierMutation.isPending}
@@ -601,8 +583,15 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
           </DialogHeader>
           {editingSupplier && (
             <SupplierForm
-              supplier={editingSupplier}
-              onSubmit={handleUpdateSupplier as unknown as (updatedSupplier: Supplier) => void}
+              supplier={{
+                name: editingSupplier.name,
+                contact_person: editingSupplier.contact_person || '',
+                email: editingSupplier.email || '',
+                phone: editingSupplier.phone || '',
+                address: editingSupplier.address || '',
+                is_active: editingSupplier.is_active
+              }}
+              onSubmit={handleUpdateSupplier}
               submitLabel={translate('common.save')}
               isLoading={updateSupplierMutation.isPending}
             />
@@ -624,7 +613,10 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
               <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={() => {
                 if (supplierToDelete) {
-                  deleteSupplierMutation.mutate(supplierToDelete.id, {
+                  deleteSupplierMutation.mutate({
+                    supplierId: supplierToDelete.id,
+                    businessId: currentBusiness?.id || ''
+                  }, {
                     onSuccess: () => {
                       refetchSuppliers();
                       logActivity(
@@ -636,12 +628,12 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
                       setIsDeleteDialogOpen(false);
                       setSupplierToDelete(null);
                     },
-                                       onError: (error: unknown) => {
-                       console.error('Error deleting supplier:', error);
-                       toast.error('Error deleting supplier. Please try again.');
-                       setIsDeleteDialogOpen(false);
-                       setSupplierToDelete(null);
-                     }
+                    onError: (error: unknown) => {
+                      console.error('Error deleting supplier:', error);
+                      toast.error('Error deleting supplier. Please try again.');
+                      setIsDeleteDialogOpen(false);
+                      setSupplierToDelete(null);
+                    }
                   });
                 }
               }}>Delete</AlertDialogAction>

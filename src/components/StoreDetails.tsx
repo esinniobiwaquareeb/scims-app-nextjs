@@ -2,13 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystem } from '../contexts/SystemContext';
-import { useActivityLogger } from '../contexts/ActivityLogger';
 import { toast } from 'sonner';
 import { Header } from './common/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Separator } from './ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { 
   Store as StoreIcon, 
@@ -21,38 +19,28 @@ import {
   ShoppingCart, 
   BarChart3, 
   Settings, 
-  Edit,
   AlertTriangle
 } from 'lucide-react';
+// Import types from centralized location
+import { 
+  StoreDisplay
+} from '@/types';
+// Import stores from centralized location
 import { 
   useStoreSettings, 
   useStoreProducts, 
   useStoreSales,
   useStoreCustomers
-} from '../utils/hooks/useStoreData';
+} from '@/stores';
 import { StoreSettings } from './StoreSettings';
-
 
 interface StoreDetailsProps {
   onBack: () => void;
-  store: {
-    id: string;
-    name: string;
-    address?: string;
-    city?: string;
-    state?: string;
-    postal_code?: string;
-    phone?: string;
-    email?: string;
-    website?: string;
-    manager_name?: string;
-    is_active?: boolean;
-  } | null;
+  store: StoreDisplay | null;
 }
 
 export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => {
-  const { translate, formatCurrency, getCurrentCurrency } = useSystem();
-  const { logActivity } = useActivityLogger();
+  const { formatCurrency, getCurrentCurrency } = useSystem();
   const { user, currentStore: authCurrentStore } = useAuth();
   
   const [activeTab, setActiveTab] = useState('overview');
@@ -77,7 +65,6 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
   });
 
   // Store dashboard stats will be calculated from other data
-  const dashboardStats = null;
   const isLoadingStats = false;
   const statsError = null;
 
@@ -184,9 +171,8 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
     );
   }
 
-  // Use store data from settings as primary, then from props as fallback
-  const storeData = storeSettings || store;
-  const stats = dashboardStats || {};
+  // Use store data from props as primary source
+  const storeData = store;
   const storeProducts = products || [];
   const storeSales = sales || [];
   const storeCustomers = customers || [];
@@ -406,28 +392,28 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Language:</span>
-                    <span className="font-medium">{storeData?.language || 'English'}</span>
+                    <span className="font-medium">{storeData?.language?.name || 'English'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tax Rate:</span>
-                    <span className="font-medium">{storeData?.taxRate || 0}%</span>
+                    <span className="font-medium">{storeSettings?.tax_rate || 0}%</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tax Enabled:</span>
-                    <Badge variant={storeData?.enableTax ? "default" : "secondary"}>
-                      {storeData?.enableTax ? "Yes" : "No"}
+                    <Badge variant={storeSettings?.enable_tax ? "default" : "secondary"}>
+                      {storeSettings?.enable_tax ? "Yes" : "No"}
                     </Badge>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Returns Allowed:</span>
-                    <Badge variant={storeData?.allowReturns ? "default" : "secondary"}>
-                      {storeData?.allowReturns ? "Yes" : "No"}
+                    <Badge variant={storeSettings?.allow_returns ? "default" : "secondary"}>
+                      {storeSettings?.allow_returns ? "Yes" : "No"}
                     </Badge>
                   </div>
-                  {storeData?.allowReturns && (
+                  {storeSettings?.allow_returns && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Return Period:</span>
-                      <span className="font-medium">{storeData?.returnPeriodDays || 30} days</span>
+                      <span className="font-medium">{storeSettings?.return_period_days || 30} days</span>
                     </div>
                   )}
                 </CardContent>
@@ -644,15 +630,15 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
                             <span>Header:</span>
-                            <span className="text-gray-600">{storeData.receiptHeader || 'Not set'}</span>
+                            <span className="text-gray-600">{storeSettings?.receipt_header || 'Not set'}</span>
                           </div>
                           <div className="flex justify-between">
                             <span>Footer:</span>
-                            <span className="text-gray-600">{storeData.receiptFooter || 'Not set'}</span>
+                            <span className="text-gray-600">{storeSettings?.receipt_footer || 'Not set'}</span>
                           </div>
                           <div className="flex justify-between">
                             <span>Custom Message:</span>
-                            <span className="text-gray-600">{storeData.customReceiptMessage || 'Not set'}</span>
+                            <span className="text-gray-600">{storeSettings?.custom_receipt_message || 'Not set'}</span>
                           </div>
                         </div>
                       </div>
@@ -665,9 +651,9 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
                             <div className="flex items-center gap-2">
                               <div 
                                 className="w-4 h-4 rounded border"
-                                style={{ backgroundColor: storeData.theme?.primaryColor || '#3B82F6' }}
+                                style={{ backgroundColor: storeSettings?.primary_color || '#3B82F6' }}
                               ></div>
-                              <span className="text-gray-600">{storeData.theme?.primaryColor || '#3B82F6'}</span>
+                              <span className="text-gray-600">{storeSettings?.primary_color || '#3B82F6'}</span>
                             </div>
                           </div>
                           <div className="flex justify-between">
@@ -675,9 +661,9 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
                             <div className="flex items-center gap-2">
                               <div 
                                 className="w-4 h-4 rounded border"
-                                style={{ backgroundColor: storeData.theme?.secondaryColor || '#10B981' }}
+                                style={{ backgroundColor: storeSettings?.secondary_color || '#10B981' }}
                               ></div>
-                              <span className="text-gray-600">{storeData.theme?.secondaryColor || '#10B981'}</span>
+                              <span className="text-gray-600">{storeSettings?.secondary_color || '#10B981'}</span>
                             </div>
                           </div>
                           <div className="flex justify-between">
@@ -685,9 +671,9 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
                             <div className="flex items-center gap-2">
                               <div 
                                 className="w-4 h-4 rounded border"
-                                style={{ backgroundColor: storeData.theme?.accentColor || '#F59E0B' }}
+                                style={{ backgroundColor: storeSettings?.accent_color || '#F59E0B' }}
                               ></div>
-                              <span className="text-gray-600">{storeData.theme?.accentColor || '#F59E0B'}</span>
+                              <span className="text-gray-600">{storeSettings?.accent_color || '#F59E0B'}</span>
                             </div>
                           </div>
                         </div>
@@ -707,23 +693,23 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
           <StoreSettings 
             storeId={storeId || ''} 
             store={store}
-            storeSettings={storeSettings}
-            onSave={async (settings: Record<string, unknown>) => {
+            storeSettings={storeSettings as any}
+            onSave={async (settings: any) => {
               try {
                 // Separate store data from store settings data
                 const storeData = {
-                  name: settings.name as string,
-                  address: settings.address as string,
-                  city: settings.city as string,
-                  state: settings.state as string,
-                  postal_code: settings.postal_code as string,
-                  phone: settings.phone as string,
-                  email: settings.email as string,
-                  manager_name: settings.manager_name as string,
-                  country_id: settings.country_id as string || null,
-                  currency_id: settings.currency_id as string || null,
-                  language_id: settings.language_id as string || null,
-                  is_active: settings.is_active as boolean
+                  name: (settings.name as string) || '',
+                  address: (settings.address as string) || '',
+                  city: (settings.city as string) || '',
+                  state: (settings.state as string) || '',
+                  postal_code: (settings.postal_code as string) || '',
+                  phone: (settings.phone as string) || '',
+                  email: (settings.email as string) || '',
+                  manager_name: (settings.manager_name as string) || '',
+                  country_id: (settings.country_id as string) || null,
+                  currency_id: (settings.currency_id as string) || null,
+                  language_id: (settings.language_id as string) || null,
+                  is_active: (settings.is_active as boolean) || false
                 };
 
                 const storeSettingsData = {

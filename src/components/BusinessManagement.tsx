@@ -32,90 +32,32 @@ import {
   useDeleteBusiness,
   useCountries,
   useCurrencies,
-  useLanguages
-} from '../utils/hooks/useStoreData';
+  useLanguages,
+  useExportBusinesses
+} from '@/stores';
 import { BusinessDetail } from './BusinessDetail';
 import { 
-  BUSINESS_TYPES, 
   BUSINESS_TYPE_LABELS, 
   BUSINESS_TYPE_DESCRIPTIONS,
   BUSINESS_TYPE_ICONS 
 } from './common/BusinessTypeConstants';
+import { PlatformBusiness, BusinessManagementProps, PlatformStats } from '@/types';
+import { BusinessFormData } from '@/types/platform';
 
-interface BusinessManagementProps {
-  onBack: () => void;
-}
-
-interface Business {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  website?: string;
-  description?: string;
-  business_type?: string;
-  country_id?: string;
-  currency_id?: string;
-  language_id?: string;
-  timezone: string;
-  subscription_plan_id?: string;
-  subscription_status: string;
-  is_active: boolean;
-  country?: {
-    id: string;
-    name: string;
-    code: string;
-  };
-  currency?: {
-    id: string;
-    name: string;
-    symbol: string;
-  };
-  language?: {
-    id: string;
-    name: string;
-    code: string;
-  };
-  subscription_plans?: {
-    id: string;
-    name: string;
-    description: string;
-    price_monthly: number;
-    price_yearly: number;
-    max_stores: number;
-    max_products: number;
-    max_users: number;
-  };
-  stores: Array<{
-    id: string;
-    name: string;
-    address: string;
-    city?: string;
-    state?: string;
-    postal_code?: string;
-    phone?: string;
-    email?: string;
-    manager_name?: string;
-    is_active: boolean;
-    created_at: string;
-  }>;
-  created_at: string;
-  updated_at: string;
-}
+// BusinessManagementProps and PlatformBusiness are now imported from types
 
 export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }) => {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  // const [isViewDialogOpen, setIsViewDialogOpen] = useState(false); // Not used in current implementation
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
+  const [selectedBusiness, setSelectedBusiness] = useState<PlatformBusiness | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showBusinessDetail, setShowBusinessDetail] = useState(false);
 
-  const [newBusiness, setNewBusiness] = useState({
+  const [newBusiness, setNewBusiness] = useState<BusinessFormData>({
     name: '',
     email: '',
     username: '',
@@ -170,13 +112,16 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
   const createBusinessMutation = useCreateBusiness();
   const updateBusinessMutation = useUpdateBusiness();
   const deleteBusinessMutation = useDeleteBusiness();
+  const exportBusinessesMutation = useExportBusinesses();
 
   // Calculate stats from loaded data
-  const stats = {
+  const stats: PlatformStats = {
     totalBusinesses: businesses.length,
-    activeSubscriptions: businesses.filter((b: Business) => b.subscription_status === 'active').length,
-    totalStores: businesses.reduce((sum: number, b: Business) => sum + (b.stores?.length || 0), 0),
-    platformUsers: businesses.reduce((sum: number, b: Business) => sum + (b.stores?.length || 0), 0) // Use stores count as proxy for users
+    activeSubscriptions: businesses.filter((b: PlatformBusiness) => b.subscription_status === 'active').length,
+    totalStores: businesses.reduce((sum: number, b: PlatformBusiness) => sum + (b.stores?.length || 0), 0),
+    platformUsers: businesses.reduce((sum: number, b: PlatformBusiness) => sum + (b.stores?.length || 0), 0), // Use stores count as proxy for users
+    totalRevenue: 0, // This would need to be calculated from actual revenue data
+    monthlyRevenue: 0 // This would need to be calculated from actual revenue data
   };
 
   // Combined loading state
@@ -185,32 +130,25 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
   // Combined error state
   const hasError = businessesError || plansError || countriesError || currenciesError || languagesError;
 
-  const filteredBusinesses = businesses.filter((business: Business) =>
+  const filteredBusinesses = businesses.filter((business: PlatformBusiness) =>
     (business.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (business.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Export businesses to CSV
+  // Export businesses using the new hook
   const exportBusinesses = useCallback(() => {
     if (filteredBusinesses.length === 0) {
       toast.error('No businesses to export');
       return;
     }
 
-    import('../utils/export-utils').then(({ exportBusinesses: exportBusinessesUtil }) => {
-      try {
-        exportBusinessesUtil(filteredBusinesses, {
-          businessName: 'SCIMS Platform'
-        });
-      } catch (error) {
-        console.error('Export error:', error);
-        toast.error('Failed to export businesses');
-      }
-    }).catch(error => {
-      console.error('Failed to load export utilities:', error);
-      toast.error('Export functionality not available');
+    exportBusinessesMutation.mutate({
+      includeStores: true,
+      includeUsers: true,
+      includeStats: true,
+      format: 'csv'
     });
-  }, [filteredBusinesses]);
+  }, [filteredBusinesses, exportBusinessesMutation]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -307,7 +245,7 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
       
       // Update the business using the mutation hook
       await updateBusinessMutation.mutateAsync({
-        id: selectedBusiness.id,
+        businessId: selectedBusiness.id,
         businessData: {
           name: selectedBusiness.name,
           email: selectedBusiness.email,
@@ -368,12 +306,12 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
     }
   };
 
-  const handleViewBusiness = useCallback((business: Business) => {
+  const handleViewBusiness = useCallback((business: PlatformBusiness) => {
     setSelectedBusiness(business);
     setShowBusinessDetail(true);
   }, []);
 
-  const handleEditBusiness = useCallback((business: Business) => {
+  const handleEditBusiness = useCallback((business: PlatformBusiness) => {
     setSelectedBusiness(business);
     setIsEditDialogOpen(true);
   }, []);
@@ -382,7 +320,7 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
     {
       key: 'name',
       label: 'Business',
-      render: (business: Business) => (
+      render: (business: PlatformBusiness) => (
         <div>
           <p className="font-medium">{business.name}</p>
           <p className="text-sm text-muted-foreground">{business.email}</p>
@@ -392,8 +330,8 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
     {
       key: 'subscription',
       label: 'Subscription',
-      render: (business: Business) => (
-        <Badge variant={getSubscriptionColor(business.subscription_plans?.name || 'Unknown', business.subscription_status)}>
+      render: (business: PlatformBusiness) => (
+        <Badge variant={getSubscriptionColor(business.subscription_plans?.name || 'Unknown', business.subscription_status || 'active')}>
           {business.subscription_plans?.name || 'Unknown'}
         </Badge>
       )
@@ -401,7 +339,7 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
     {
       key: 'business_type',
       label: 'Business Type',
-      render: (business: Business) => (
+      render: (business: PlatformBusiness) => (
         <div className="flex items-center gap-2">
           <span className="text-lg">{BUSINESS_TYPE_ICONS[business.business_type as keyof typeof BUSINESS_TYPE_ICONS] || '🏢'}</span>
           <Badge variant="outline" className="font-medium">
@@ -413,17 +351,17 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
     {
       key: 'status',
       label: 'Status',
-      render: (business: Business) => (
+      render: (business: PlatformBusiness) => (
         <div className="flex items-center gap-2">
-          {getStatusIcon(business.subscription_status)}
-          <span className="capitalize">{business.subscription_status}</span>
+          {getStatusIcon(business.subscription_status || 'active')}
+          <span className="capitalize">{business.subscription_status || 'active'}</span>
         </div>
       )
     },
     {
       key: 'stores',
       label: 'Stores',
-      render: (business: Business) => (
+      render: (business: PlatformBusiness) => (
         <div>
           <span className="font-medium">{business.stores?.length || 0}</span>
           <span className="text-sm text-muted-foreground ml-1">
@@ -435,7 +373,7 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
     {
       key: 'created',
       label: 'Created',
-      render: (business: Business) => {
+      render: (business: PlatformBusiness) => {
         if (!business.created_at) return 'N/A';
         const date = new Date(business.created_at);
         return date.toLocaleDateString();
@@ -444,7 +382,7 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
     {
       key: 'actions',
       label: 'Actions',
-      render: (business: Business) => (
+      render: (business: PlatformBusiness) => (
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => handleViewBusiness(business)}>
             <Eye className="w-3 h-3" />
@@ -812,9 +750,9 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
                       <SelectValue placeholder="Select subscription" />
                     </SelectTrigger>
                     <SelectContent>
-                      {subscriptionPlans.map((plan: { id: string; name: string; price: number }) => (
+                      {subscriptionPlans.map((plan) => (
                         <SelectItem key={plan.id} value={plan.id}>
-                          {plan.name} - ${plan.price}
+                          {plan.name} - ${plan.price_monthly}/month
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -824,7 +762,7 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
                   <Label htmlFor="add-status">Subscription Status</Label>
                   <Select 
                     value={newBusiness.subscription_status} 
-                    onValueChange={(value) => setNewBusiness({ ...newBusiness, subscription_status: value })}
+                    onValueChange={(value) => setNewBusiness({ ...newBusiness, subscription_status: value as 'active' | 'expired' | 'cancelled' | 'suspended' })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select status" />
@@ -1048,9 +986,9 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
                         <SelectValue placeholder="Select subscription" />
                       </SelectTrigger>
                       <SelectContent>
-                        {subscriptionPlans.map((plan: { id: string; name: string; price: number }) => (
+                        {subscriptionPlans.map((plan) => (
                           <SelectItem key={plan.id} value={plan.id}>
-                            {plan.name} - {plan.price}
+                            {plan.name} - ${plan.price_monthly}/month
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1060,7 +998,7 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
                     <Label htmlFor="edit-status">Subscription Status</Label>
                     <Select 
                       value={selectedBusiness.subscription_status} 
-                      onValueChange={(value) => setSelectedBusiness({ ...selectedBusiness, subscription_status: value })}
+                      onValueChange={(value) => setSelectedBusiness({ ...selectedBusiness, subscription_status: value as 'active' | 'expired' | 'cancelled' | 'suspended' })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select status" />

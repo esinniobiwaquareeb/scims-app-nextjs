@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
-import { useActivityLogs, useClearActivityLogs } from '@/utils/hooks/useStoreData';
+import { useActivityLogs, useClearActivityLogs, useExportActivityLogs } from '@/stores';
 import { Header } from '@/components/common/Header';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from 'sonner';
+// Remove unused toast import
 import { 
   Activity, 
   Search, 
@@ -33,24 +33,8 @@ import {
   BarChart3
 } from 'lucide-react';
 
-interface ActivityLogsProps {
-  onBack: () => void;
-}
-
-interface ActivityLog {
-  id: string;
-  timestamp: Date;
-  userName: string;
-  userRole: string;
-  action: string;
-  module: string;
-  description: string;
-  severity: string;
-  businessName?: string;
-  storeName?: string;
-  ipAddress?: string;
-  metadata?: Record<string, unknown>;
-}
+// Import types from centralized location
+import { ActivityLogsProps, ActivityLogDisplay, SeverityLevel, ActivityLogColumn } from '@/types';
 
 export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
   const { user, currentBusiness, currentStore } = useAuth();
@@ -94,10 +78,13 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
 
   // Clear logs mutation
   const clearLogsMutation = useClearActivityLogs();
+  
+  // Export logs mutation
+  const exportLogsMutation = useExportActivityLogs();
 
   // Apply search filter
   const filteredLogs = useMemo(() => {
-    return logs.filter((log: ActivityLog) =>
+    return logs.filter((log: ActivityLogDisplay) =>
       log.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -107,9 +94,9 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
   }, [logs, searchTerm]);
 
   // Get unique values for filters
-  const uniqueModules = useMemo(() => ['All', ...Array.from(new Set(logs.map((log: ActivityLog) => log.module)))], [logs]);
-  const uniqueActions = useMemo(() => ['All', ...Array.from(new Set(logs.map((log: ActivityLog) => log.action)))], [logs]);
-  const uniqueUsers = useMemo(() => ['All', ...Array.from(new Set(logs.map((log: ActivityLog) => log.userName)))], [logs]);
+  const uniqueModules = useMemo(() => ['All', ...Array.from(new Set(logs.map((log: ActivityLogDisplay) => log.module)))], [logs]);
+  const uniqueActions = useMemo(() => ['All', ...Array.from(new Set(logs.map((log: ActivityLogDisplay) => log.action)))], [logs]);
+  const uniqueUsers = useMemo(() => ['All', ...Array.from(new Set(logs.map((log: ActivityLogDisplay) => log.userName)))], [logs]);
 
   // Refresh data
   const handleRefresh = async () => {
@@ -118,7 +105,7 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
   };
 
   // Get severity styling
-  const getSeverityIcon = (severity: string) => {
+  const getSeverityIcon = (severity: SeverityLevel) => {
     switch (severity) {
       case 'critical': return <XCircle className="w-4 h-4 text-red-600" />;
       case 'high': return <AlertCircle className="w-4 h-4 text-orange-600" />;
@@ -128,7 +115,7 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
     }
   };
 
-  const getSeverityColor = (severity: string) => {
+  const getSeverityColor = (severity: SeverityLevel) => {
     switch (severity) {
       case 'critical': return 'destructive';
       case 'high': return 'secondary';
@@ -139,30 +126,22 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
   };
 
   // Export functionality
-  const exportLogs = () => {
-    const csvContent = [
-      'Timestamp,User,Role,Action,Module,Description,Severity,Business,Store,IP Address',
-      ...filteredLogs.map((log: ActivityLog) => [
-        log.timestamp.toISOString(),
-        log.userName,
-        log.userRole,
-        log.action,
-        log.module,
-        `"${log.description}"`,
-        log.severity,
-        log.businessName || '',
-        log.storeName || '',
-        log.ipAddress || ''
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `activity-logs-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const exportLogs = async () => {
+    if (!currentBusiness?.id) return;
+    
+    try {
+      await exportLogsMutation.mutateAsync({
+        businessId: currentBusiness.id,
+        storeId: currentStore?.id,
+        module: selectedModule === 'All' ? undefined : selectedModule,
+        action: selectedAction === 'All' ? undefined : selectedAction,
+        startDate: dateRange.from,
+        endDate: dateRange.to,
+        format: 'csv'
+      });
+    } catch {
+      // Error is handled by the mutation hook
+    }
   };
 
   // Clear logs (super admin only)
@@ -174,17 +153,17 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
         userRole: user?.role
       });
       setShowClearDialog(false);
-    } catch (error) {
+    } catch {
       // Error is handled by the mutation hook
     }
   };
 
   // Table columns
-  const columns = [
+  const columns: ActivityLogColumn[] = [
     {
       key: 'timestamp',
       label: 'Time',
-      render: (log: ActivityLog) => (
+      render: (log: ActivityLogDisplay) => (
         <div className="text-sm">
           <p className="font-medium">{formatDate(log.timestamp)}</p>
           <p className="text-muted-foreground">
@@ -196,7 +175,7 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
     {
       key: 'user',
       label: 'User',
-      render: (log: ActivityLog) => (
+      render: (log: ActivityLogDisplay) => (
         <div className="flex items-center gap-2">
           <User className="w-4 h-4 text-muted-foreground" />
           <div>
@@ -211,7 +190,7 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
     {
       key: 'action',
       label: 'Action',
-      render: (log: ActivityLog) => (
+      render: (log: ActivityLogDisplay) => (
         <div>
           <p className="font-medium capitalize">{log.action.replace(/_/g, ' ')}</p>
           <p className="text-sm text-muted-foreground">{log.module}</p>
@@ -221,7 +200,7 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
     {
       key: 'description',
       label: 'Description',
-      render: (log: ActivityLog) => (
+      render: (log: ActivityLogDisplay) => (
         <div className="max-w-md">
           <p className="text-sm">{log.description}</p>
           {(log.businessName || log.storeName) && (
@@ -238,7 +217,7 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
     {
       key: 'severity',
       label: 'Severity',
-      render: (log: ActivityLog) => (
+      render: (log: ActivityLogDisplay) => (
         <div className="flex items-center gap-2">
           {getSeverityIcon(log.severity)}
           <Badge variant={getSeverityColor(log.severity) as any}>
@@ -250,7 +229,7 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
     {
       key: 'ip',
       label: 'IP Address',
-      render: (log: ActivityLog) => (
+      render: (log: ActivityLogDisplay) => (
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-muted-foreground" />
           <span className="text-sm font-mono">{log.ipAddress || 'N/A'}</span>
@@ -262,17 +241,17 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
   // Statistics
   const stats = {
     total: filteredLogs.length,
-    critical: filteredLogs.filter((l: ActivityLog) => l.severity === 'critical').length,
-    high: filteredLogs.filter((l: ActivityLog) => l.severity === 'high').length,
-    medium: filteredLogs.filter((l: ActivityLog) => l.severity === 'medium').length,
-    low: filteredLogs.filter((l: ActivityLog) => l.severity === 'low').length
+    critical: filteredLogs.filter((l: ActivityLogDisplay) => l.severity === 'critical').length,
+    high: filteredLogs.filter((l: ActivityLogDisplay) => l.severity === 'high').length,
+    medium: filteredLogs.filter((l: ActivityLogDisplay) => l.severity === 'medium').length,
+    low: filteredLogs.filter((l: ActivityLogDisplay) => l.severity === 'low').length
   };
 
   // Analytics data
   const recentActivities = filteredLogs.slice(0, 10);
   const actionBreakdown = uniqueActions.slice(1).map((action: unknown) => ({
     action: action as string,
-    count: filteredLogs.filter((l: ActivityLog) => l.action === (action as string)).length
+    count: filteredLogs.filter((l: ActivityLogDisplay) => l.action === (action as string)).length
   })).sort((a: { count: number }, b: { count: number }) => b.count - a.count);
 
   // Loading skeleton
@@ -315,9 +294,13 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
             <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button variant="outline" onClick={exportLogs}>
+          <Button 
+            variant="outline" 
+            onClick={exportLogs}
+            disabled={exportLogsMutation.isPending}
+          >
             <Download className="w-4 h-4 mr-2" />
-            Export CSV
+            {exportLogsMutation.isPending ? 'Exporting...' : 'Export CSV'}
           </Button>
           {user?.role === 'superadmin' && (
             <Button variant="destructive" onClick={() => setShowClearDialog(true)}>
@@ -586,7 +569,7 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
                 <CardContent>
                   <div className="space-y-4">
                     {recentActivities.length > 0 ? (
-                      recentActivities.map((log: ActivityLog) => (
+                      recentActivities.map((log: ActivityLogDisplay) => (
                         <div key={log.id} className="flex items-start gap-3 pb-3 border-b last:border-0">
                           {getSeverityIcon(log.severity)}
                           <div className="flex-1 min-w-0">

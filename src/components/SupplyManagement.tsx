@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,8 +23,6 @@ import {
   Trash2,
   CheckCircle
 } from 'lucide-react';
-import { toast } from 'sonner';
-import { SupplyOrderSummary, PendingReturn } from '@/types/supply';
 import { SupplyOrderModal } from './supply/SupplyOrderModal';
 import { SupplyReturnModal } from './supply/SupplyReturnModal';
 import { SupplyPaymentModal } from './supply/SupplyPaymentModal';
@@ -34,20 +32,26 @@ import { usePermissions } from '@/contexts/PermissionsContext';
 import { useActivityLogger } from '@/contexts/ActivityLogger';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-interface SupplyManagementProps {
-  onBack: () => void;
-}
+// Import types from centralized location
+import { 
+  SupplyProps,
+  SupplyOrderSummary
+} from '@/types';
 
-export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) => {
+// Import stores from centralized location
+import { 
+  useSupplyOrders,
+  usePendingReturns,
+  useDeleteSupplyOrder
+} from '@/stores';
+
+export const SupplyManagement: React.FC<SupplyProps> = ({ onBack }) => {
   const { currentStore, user } = useAuth();
   const { formatCurrency } = useSystem();
   const { canDelete } = usePermissions();
   const { logBusinessActivity } = useActivityLogger();
   
   const [activeTab, setActiveTab] = useState('supply-orders');
-  const [supplyOrders, setSupplyOrders] = useState<SupplyOrderSummary[]>([]);
-  const [pendingReturns, setPendingReturns] = useState<PendingReturn[]>([]);
-  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   
@@ -61,58 +65,32 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
   const [selectedSupplyOrder, setSelectedSupplyOrder] = useState<SupplyOrderSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Fetch supply orders
-  const fetchSupplyOrders = useCallback(async () => {
-    if (!currentStore?.id) return;
-    
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        store_id: currentStore.id,
-        ...(statusFilter !== 'all' && { status: statusFilter })
-      });
+  // React Query hooks
+  const {
+    data: supplyOrdersResponse,
+    isLoading: isLoadingOrders,
+    refetch: refetchOrders
+  } = useSupplyOrders(currentStore?.id || '', {
+    status: statusFilter,
+    search: searchTerm
+  }, {
+    enabled: !!currentStore?.id
+  });
 
-      const response = await fetch(`/api/supply-orders?${params}`);
-      const data = await response.json();
+  const {
+    data: pendingReturnsResponse,
+    isLoading: isLoadingReturns,
+    refetch: refetchReturns
+  } = usePendingReturns(currentStore?.id || '', {
+    enabled: !!currentStore?.id
+  });
 
-      if (data.success) {
-        setSupplyOrders(data.supply_orders || []);
-      } else {
-        toast.error(data.error || 'Failed to fetch supply orders');
-      }
-    } catch (error) {
-      console.error('Error fetching supply orders:', error);
-      toast.error('Failed to fetch supply orders');
-    } finally {
-      setLoading(false);
-    }
-  }, [currentStore?.id, statusFilter]);
+  const supplyOrders = supplyOrdersResponse?.supply_orders || [];
+  const pendingReturns = pendingReturnsResponse?.pending_returns || [];
+  const loading = isLoadingOrders || isLoadingReturns;
 
-  // Fetch pending returns
-  const fetchPendingReturns = useCallback(async () => {
-    if (!currentStore?.id) return;
-    
-    try {
-      const response = await fetch(`/api/supply-orders/pending-returns?store_id=${currentStore.id}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setPendingReturns(data.pending_returns || []);
-      } else {
-        toast.error(data.error || 'Failed to fetch pending returns');
-      }
-    } catch (error) {
-      console.error('Error fetching pending returns:', error);
-      toast.error('Failed to fetch pending returns');
-    }
-  }, [currentStore?.id]);
-
-  useEffect(() => {
-    if (currentStore?.id) {
-      fetchSupplyOrders();
-      fetchPendingReturns();
-    }
-  }, [currentStore?.id, statusFilter, fetchSupplyOrders, fetchPendingReturns]);
+  // Mutation hooks
+  const deleteSupplyOrderMutation = useDeleteSupplyOrder();
 
   const handleCreateSupplyOrder = () => {
     setShowSupplyOrderModal(true);
@@ -120,9 +98,8 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
 
   const handleSupplyOrderCreated = () => {
     setShowSupplyOrderModal(false);
-    fetchSupplyOrders();
-    fetchPendingReturns();
-    toast.success('Supply order created successfully');
+    refetchOrders();
+    refetchReturns();
   };
 
   const handleViewDetails = (supplyOrder: SupplyOrderSummary) => {
@@ -147,22 +124,19 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
 
   const handleReturnCreated = () => {
     setShowReturnModal(false);
-    fetchSupplyOrders();
-    fetchPendingReturns();
-    toast.success('Return processed successfully');
+    refetchOrders();
+    refetchReturns();
   };
 
   const handlePaymentCreated = () => {
     setShowPaymentModal(false);
-    fetchSupplyOrders();
-    toast.success('Payment processed successfully');
+    refetchOrders();
   };
 
   const handleAcceptReturnCreated = () => {
     setShowAcceptReturnModal(false);
-    fetchSupplyOrders();
-    fetchPendingReturns();
-    toast.success('Returned items accepted successfully');
+    refetchOrders();
+    refetchReturns();
   };
 
   const handleDeleteSupplyOrder = (supplyOrder: SupplyOrderSummary) => {
@@ -175,41 +149,26 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/supply-orders/${selectedSupplyOrder.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      await deleteSupplyOrderMutation.mutateAsync(selectedSupplyOrder.id);
+      
+      // Log the deletion activity
+      await logBusinessActivity(
+        'supply_order_deleted',
+        'supply_management',
+        `Deleted supply order ${selectedSupplyOrder.supply_number}`,
+        {
+          supply_order_id: selectedSupplyOrder.id,
+          supply_number: selectedSupplyOrder.supply_number,
+          customer_name: selectedSupplyOrder.customer_name,
+          total_amount: selectedSupplyOrder.total_amount,
+          status: selectedSupplyOrder.status
+        }
+      );
 
-      const data = await response.json();
-
-      if (data.success) {
-        // Log the deletion activity
-        await logBusinessActivity(
-          'supply_order_deleted',
-          'supply_management',
-          `Deleted supply order ${selectedSupplyOrder.supply_number}`,
-          {
-            supply_order_id: selectedSupplyOrder.id,
-            supply_number: selectedSupplyOrder.supply_number,
-            customer_name: selectedSupplyOrder.customer_name,
-            total_amount: selectedSupplyOrder.total_amount,
-            status: selectedSupplyOrder.status
-          }
-        );
-
-        toast.success('Supply order deleted successfully');
-        setShowDeleteDialog(false);
-        setSelectedSupplyOrder(null);
-        fetchSupplyOrders();
-        fetchPendingReturns();
-      } else {
-        toast.error(data.error || 'Failed to delete supply order');
-      }
+      setShowDeleteDialog(false);
+      setSelectedSupplyOrder(null);
     } catch (error) {
       console.error('Error deleting supply order:', error);
-      toast.error('Failed to delete supply order');
     } finally {
       setDeleting(false);
     }
@@ -229,13 +188,13 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
   const filteredSupplyOrders = supplyOrders.filter(order =>
     order.supply_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.customer_phone.includes(searchTerm)
+    (order.customer_phone || '').includes(searchTerm)
   );
 
   const filteredPendingReturns = pendingReturns.filter(returnItem =>
     returnItem.supply_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     returnItem.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    returnItem.customer_phone.includes(searchTerm)
+    (returnItem.customer_phone || '').includes(searchTerm)
   );
 
   return (
@@ -349,7 +308,7 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Phone className="h-4 w-4" />
-                                <span>{order.customer_phone}</span>
+                                <span>{order.customer_phone || 'N/A'}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4" />
@@ -448,7 +407,7 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Phone className="h-4 w-4" />
-                                <span>{returnItem.customer_phone}</span>
+                                <span>{returnItem.customer_phone || 'N/A'}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4" />

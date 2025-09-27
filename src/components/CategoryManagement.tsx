@@ -1,64 +1,46 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSystem } from '@/contexts/SystemContext';
 import { Header } from '@/components/common/Header';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card, CardContent } from '@/components/ui/card';
 import { 
   useBusinessCategories,
-  useCreateBusinessCategory,
-  useUpdateBusinessCategory,
-  useDeleteBusinessCategory
-} from '@/utils/hooks/useStoreData';
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory
+} from '@/stores/categories';
 import { toast } from 'sonner';
 import { 
   Package, 
   Plus, 
   Edit, 
   Trash2,
-  Search,
   TrendingUp,
   Loader2,
-  ArrowLeft,
   RefreshCw
 } from 'lucide-react';
-import { CategoryFormData } from '@/types';
-
-interface Category {
-  id: string;
-  name: string;
-  description: string;
-  color: string;
-  is_active: boolean;
-  product_count?: number;
-  created_at: string;
-  updated_at: string;
-}
-
-interface CategoryManagementProps {
-  onBack: () => void;
-}
+import { 
+  CategoryProps, 
+  Category as CategoryType
+} from '@/types/category';
 
 const colorOptions = [
   '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
   '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
 ];
 
-export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }) => {
+export const CategoryManagement: React.FC<CategoryProps> = ({ onBack }) => {
   const { user, currentBusiness } = useAuth();
-  const { translate } = useSystem();
   
   // Simple permission check - replace with proper permission system later
-  const hasPermission = (permission: string) => {
+  const hasPermission = (_permission: string) => {
     if (user?.role === 'superadmin') return true;
     if (user?.role === 'business_admin') return true;
     if (user?.role === 'store_admin') return true;
@@ -72,9 +54,9 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingCategory, setEditingCategory] = useState<CategoryType | null>(null);
 
-  const [newCategory, setNewCategory] = useState<Partial<Category>>({
+  const [newCategory, setNewCategory] = useState<Partial<CategoryType>>({
     name: '',
     description: '',
     color: '#3B82F6',
@@ -92,9 +74,9 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
   });
 
   // React Query mutations
-  const createCategoryMutation = useCreateBusinessCategory(currentBusiness?.id || '');
-  const updateCategoryMutation = useUpdateBusinessCategory(currentBusiness?.id || '');
-  const deleteCategoryMutation = useDeleteBusinessCategory(currentBusiness?.id || '');
+  const createCategoryMutation = useCreateCategory();
+  const updateCategoryMutation = useUpdateCategory();
+  const deleteCategoryMutation = useDeleteCategory();
 
   // Loading states
   const isLoading = isLoadingCategories;
@@ -102,20 +84,20 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
 
   // Filtered categories based on search
   const filteredCategories = useMemo(() => {
-    return dbCategories.filter((category: Category) =>
+    return dbCategories.filter((category: CategoryType) =>
       category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      category.description.toLowerCase().includes(searchTerm.toLowerCase())
+      (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [dbCategories, searchTerm]);
 
   // Statistics
   const totalProducts = useMemo(() => 
-    dbCategories.reduce((sum: number, cat: Category) => sum + (cat.product_count || 0), 0), 
+    dbCategories.reduce((sum: number, cat: CategoryType) => sum + (cat.product_count || 0), 0), 
     [dbCategories]
   );
   
   const activeCategories = useMemo(() => 
-    dbCategories.filter((cat: Category) => cat.is_active).length, 
+    dbCategories.filter((cat: CategoryType) => cat.is_active).length, 
     [dbCategories]
   );
 
@@ -162,8 +144,8 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
       };
       
       await updateCategoryMutation.mutateAsync({
-        categoryId: editingCategory.id,
-        categoryData: updateData
+        id: editingCategory.id,
+        ...updateData
       });
       
       // Close dialog and reset editing state
@@ -176,11 +158,14 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
     }
   }, [editingCategory, currentBusiness, updateCategoryMutation]);
 
-  const handleDeleteCategory = useCallback(async (category: Category) => {
+  const handleDeleteCategory = useCallback(async (category: CategoryType) => {
     if (!currentBusiness?.id) return;
 
     try {
-      await deleteCategoryMutation.mutateAsync(category.id);
+      await deleteCategoryMutation.mutateAsync({
+        categoryId: category.id,
+        businessId: currentBusiness?.id || ''
+      });
       // Success handling is done in the mutation
     } catch (error: unknown) {
       console.error('Error deleting category:', error);
@@ -200,7 +185,7 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
   }, [refetchCategories]);
 
   const toggleCategoryStatus = useCallback(async (id: string) => {
-    const category = dbCategories.find((c: Category) => c.id === id);
+    const category = dbCategories.find((c: CategoryType) => c.id === id);
     if (!category || !currentBusiness?.id) return;
 
     try {
@@ -214,8 +199,8 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
       };
       
       await updateCategoryMutation.mutateAsync({
-        categoryId: id,
-        categoryData: categoryData as unknown as CategoryFormData
+        id: id,
+        ...categoryData
       });
       
       // The categories will be automatically refreshed via React Query
@@ -225,7 +210,7 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
     }
   }, [dbCategories, currentBusiness, updateCategoryMutation]);
 
-  const openEditDialog = useCallback((category: Category) => {
+  const openEditDialog = useCallback((category: CategoryType) => {
     setEditingCategory({ ...category });
     setIsEditDialogOpen(true);
   }, []);
@@ -255,129 +240,6 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
     setEditingCategory(null);
   }, []);
 
-  // DataTable columns configuration
-  const columns = [
-    {
-      key: 'category',
-      header: 'Category',
-      render: (category: Category) => (
-        <div className="flex items-center gap-3">
-          <div 
-            className="w-4 h-4 rounded-lg"
-            style={{ backgroundColor: category.color }}
-          />
-          <div>
-            <p className="font-medium">{category.name}</p>
-            <p className="text-sm text-muted-foreground">ID: {category.id}</p>
-          </div>
-        </div>
-      )
-    },
-    {
-      key: 'description',
-      header: 'Description',
-      render: (category: Category) => (
-        <p className="max-w-xs truncate">{category.description}</p>
-      )
-    },
-    {
-      key: 'products',
-      header: 'Products',
-      render: (category: Category) => (
-        <Badge variant="secondary">
-          {category.product_count || 0} products
-        </Badge>
-      )
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (category: Category) => (
-        <div className="flex items-center gap-2">
-          <Switch
-            checked={category.is_active}
-            onCheckedChange={() => toggleCategoryStatus(category.id)}
-            disabled={isSaving || !hasPermission('categories_edit')}
-          />
-          <Badge variant={category.is_active ? "default" : "secondary"}>
-            {category.is_active ? 'Active' : 'Inactive'}
-          </Badge>
-        </div>
-      )
-    },
-    {
-      key: 'created',
-      header: 'Created',
-      render: (category: Category) => (
-        <div>
-          <p className="text-sm">
-            {new Date(category.created_at).toLocaleDateString()}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Updated: {new Date(category.updated_at).toLocaleDateString()}
-          </p>
-        </div>
-      )
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      render: (category: Category) => (
-        <div className="flex gap-2">
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={() => openEditDialog(category)}
-            disabled={isSaving || !hasPermission('categories_edit')}
-          >
-            <Edit className="w-3 h-3" />
-          </Button>
-          {/* Only show delete button for non-store-admin users */}
-          {!isStoreAdmin && (
-            <AlertDialog>
-              <Button 
-                size="sm" 
-                variant="destructive"
-                disabled={(category.product_count || 0) > 0 || isSaving || !hasPermission('categories_delete')}
-                onClick={() => {
-                  // Handle delete action directly
-                  if (category.product_count && category.product_count > 0) {
-                    alert(`Cannot delete category with ${category.product_count} products`);
-                    return;
-                  }
-                  handleDeleteCategory(category);
-                }}
-              >
-                <Trash2 className="w-3 h-3" />
-              </Button>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Category</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete &quot;{category.name}&quot;? This action cannot be undone.
-                    {(category.product_count || 0) > 0 && (
-                      <span className="block mt-2 text-red-600 font-medium">
-                        Warning: This category contains {category.product_count || 0} products and cannot be deleted.
-                      </span>
-                    )}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={() => handleDeleteCategory(category)}
-                    disabled={(category.product_count || 0) > 0 || !hasPermission('categories_delete')}
-                  >
-                    Delete Category
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-        </div>
-      )
-    }
-  ];
 
   // Loading state
   if (isLoading) {
@@ -485,7 +347,7 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
                 {
                   key: 'name',
                   label: 'Category',
-                  render: (category: Category) => (
+                  render: (category: CategoryType) => (
                     <div className="flex items-center gap-3">
                       <div 
                         className="w-4 h-4 rounded-full border border-gray-200"
@@ -501,7 +363,7 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
                 {
                   key: 'products',
                   label: 'Products',
-                  render: (category: Category) => (
+                  render: (category: CategoryType) => (
                     <div className="text-center">
                       <p className="font-semibold">{category.product_count || 0}</p>
                       <p className="text-xs text-muted-foreground">products</p>
@@ -511,7 +373,7 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
                 {
                   key: 'status',
                   label: 'Status',
-                  render: (category: Category) => (
+                  render: (category: CategoryType) => (
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={category.is_active}
@@ -527,7 +389,7 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
                 {
                   key: 'actions',
                   label: 'Actions',
-                  render: (category: Category) => (
+                  render: (category: CategoryType) => (
                     <div className="flex gap-2">
                       <Button 
                         size="sm" 

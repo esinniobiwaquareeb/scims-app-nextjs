@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { Header } from './common/Header';
 import { useSystem } from '../contexts/SystemContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,144 +12,93 @@ import { toast } from 'sonner';
 import { Loader2, Search, Download, Clock, ListChecks } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-
-interface CashierSale {
-  id: string;
-  receipt_number: string;
-  total_amount: number;
-  payment_method: string;
-  status: string;
-  transaction_date: string;
-  customer_name?: string;
-  items_count: number;
-}
-
-interface ActivityLog {
-  id: string;
-  description: string;
-  action: string;
-  module: string;
-  timestamp: Date | string;
-  userName: string;
-  userRole: string;
-  metadata?: Record<string, any>;
-}
-
-interface CashierDetailProps {
-  onBack: () => void;
-  cashier: {
-    id: string;
-    name: string;
-    username: string;
-    email?: string;
-    store_id?: string;
-    storeName?: string;
-  } | null;
-}
+import { 
+  useCashierSales, 
+  useCashierActivity, 
+  useExportCashierData 
+} from '@/stores/cashier';
+import { 
+  CashierDetailProps, 
+  CashierSale, 
+  CashierActivityLog, 
+  CashierFilters 
+} from '@/types/cashier';
 
 export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier }) => {
   const { formatCurrency } = useSystem();
   const { currentBusiness } = useAuth();
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [sales, setSales] = useState<CashierSale[]>([]);
-  const [activity, setActivity] = useState<ActivityLog[]>([]);
-
   // Filters
-  const [search, setSearch] = useState('');
-  const [dateFilter, setDateFilter] = useState('all');
-  const [paymentFilter, setPaymentFilter] = useState('all');
-  const [activitySearch, setActivitySearch] = useState('');
-  const [activityType, setActivityType] = useState('all');
+  const [filters, setFilters] = useState<CashierFilters>({
+    search: '',
+    dateFilter: 'all',
+    paymentFilter: 'all',
+    activitySearch: '',
+    activityType: 'all'
+  });
 
-  useEffect(() => {
-    const load = async () => {
-      if (!cashier) return;
-      if (!cashier.store_id) {
-        toast.error('Cashier is not assigned to a store');
-        return;
-      }
+  // React Query hooks
+  const {
+    data: sales = [],
+    isLoading: isLoadingSales,
+    error: salesError
+  } = useCashierSales(
+    cashier?.id || '', 
+    cashier?.store_id || '', 
+    { enabled: !!cashier?.id && !!cashier?.store_id }
+  );
 
-      try {
-        setIsLoading(true);
+  const {
+    data: activity = [],
+    isLoading: isLoadingActivity,
+    error: activityError
+  } = useCashierActivity(
+    cashier?.id || '', 
+    currentBusiness?.id || '', 
+    cashier?.store_id || '', 
+    { enabled: !!cashier?.id && !!currentBusiness?.id && !!cashier?.store_id }
+  );
 
-        // Check if we have the required parameters
-        if (!currentBusiness?.id) {
-          console.error('No business ID available for activity logs');
-          toast.error('Business context not available');
-          return;
-        }
+  const exportCashierDataMutation = useExportCashierData();
 
-        const [salesResponse, activityResponse] = await Promise.all([
-          fetch(`/api/sales?cashier_id=${cashier.id}&store_id=${cashier.store_id}`),
-          fetch(`/api/activity-logs?user_id=${cashier.id}&business_id=${currentBusiness.id}&store_id=${cashier.store_id}`)
-        ]);
+  const isLoading = isLoadingSales || isLoadingActivity;
 
-        const salesData = salesResponse.ok ? (await salesResponse.json()).sales || [] : [];
-        const activityData = activityResponse.ok ? (await activityResponse.json()).logs || [] : [];
-        
-        
-        
-        if (!activityResponse.ok) {
-          console.error('Activity logs API error:', activityResponse.status, await activityResponse.text());
-        }
-
-        const mappedSales = salesData.map((s: any) => ({
-          id: s.id,
-          receipt_number: s.receipt_number,
-          total_amount: Number(s.total_amount || 0),
-          payment_method: s.payment_method,
-          status: s.status,
-          transaction_date: s.transaction_date,
-          customer_name: s.customers?.name || 'Walk-in',
-          items_count: s.sale_items?.length || 0
-        }));
-
-        setSales(mappedSales);
-        setActivity(activityData);
-        
-        if (activityData.length === 0) {
-  
-        }
-      } catch (e: unknown) {
-        console.error(e);
-        toast.error('Failed to load cashier details');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    load();
-  }, [cashier, currentBusiness?.id]);
+  // Handle errors
+  if (salesError) {
+    toast.error('Failed to load sales data');
+  }
+  if (activityError) {
+    toast.error('Failed to load activity data');
+  }
 
   const filteredSales = useMemo(() => {
     return sales.filter((s) => {
-      const q = search.toLowerCase();
+      const q = filters.search.toLowerCase();
       const matchesSearch = s.receipt_number.toLowerCase().includes(q) || (s.customer_name || '').toLowerCase().includes(q);
       const now = new Date();
       const date = new Date(s.transaction_date);
       const matchesDate =
-        dateFilter === 'all' ||
-        (dateFilter === 'today' && date.toDateString() === now.toDateString()) ||
-        (dateFilter === 'week' && date >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)) ||
-        (dateFilter === 'month' && date >= new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000));
-      const matchesPayment = paymentFilter === 'all' || s.payment_method === paymentFilter;
+        filters.dateFilter === 'all' ||
+        (filters.dateFilter === 'today' && date.toDateString() === now.toDateString()) ||
+        (filters.dateFilter === 'week' && date >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)) ||
+        (filters.dateFilter === 'month' && date >= new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000));
+      const matchesPayment = filters.paymentFilter === 'all' || s.payment_method === filters.paymentFilter;
       return matchesSearch && matchesDate && matchesPayment;
     });
-  }, [sales, search, dateFilter, paymentFilter]);
+  }, [sales, filters.search, filters.dateFilter, filters.paymentFilter]);
 
   const filteredActivity = useMemo(() => {
-    const q = activitySearch.toLowerCase();
-    return (activity || []).filter((log: ActivityLog) => {
+    const q = filters.activitySearch.toLowerCase();
+    return (activity || []).filter((log: CashierActivityLog) => {
       const matchesText = (
         (log.description || '').toLowerCase().includes(q) ||
         (log.module || '').toLowerCase().includes(q) ||
         (log.action || '').toLowerCase().includes(q)
       );
-      const matchesType = activityType === 'all' || log.action === activityType;
+      const matchesType = filters.activityType === 'all' || log.action === filters.activityType;
       return matchesText && matchesType;
     });
-  }, [activity, activitySearch, activityType]);
+  }, [activity, filters.activitySearch, filters.activityType]);
 
   const totalSalesAmount = filteredSales.reduce((sum, s) => sum + (s.total_amount || 0), 0);
   const totalTransactions = filteredSales.length;
@@ -161,28 +109,17 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
       toast.error('No sales to export');
       return;
     }
-    const headers = ['Receipt', 'Date', 'Customer', 'Amount', 'Payment', 'Status', 'Items'];
-    const rows = filteredSales.map((s) => [
-      s.receipt_number,
-      new Date(s.transaction_date).toLocaleString(),
-      s.customer_name,
-      s.total_amount,
-      s.payment_method,
-      s.status,
-      s.items_count
-    ]);
-    const csv = [headers, ...rows].map((r) => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${cashier?.name || 'cashier'}_sales.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success('Sales exported');
-  }, [filteredSales, cashier?.name]);
+    if (!cashier?.id) {
+      toast.error('Cashier information not available');
+      return;
+    }
+    
+    exportCashierDataMutation.mutate({
+      cashierId: cashier.id,
+      storeId: cashier.store_id,
+      format: 'csv'
+    });
+  }, [filteredSales, cashier, exportCashierDataMutation]);
 
   if (!cashier) {
     return null;
@@ -292,9 +229,14 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
             <div className="flex flex-wrap gap-4 items-center">
               <div className="relative flex-1 min-w-[220px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input className="pl-10" placeholder="Search receipt or customer..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                <Input 
+                  className="pl-10" 
+                  placeholder="Search receipt or customer..." 
+                  value={filters.search} 
+                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))} 
+                />
               </div>
-              <Select value={dateFilter} onValueChange={setDateFilter}>
+              <Select value={filters.dateFilter} onValueChange={(value) => setFilters(prev => ({ ...prev, dateFilter: value as 'all' | 'today' | 'week' | 'month' }))}>
                 <SelectTrigger className="w-36"><SelectValue placeholder="Date" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Time</SelectItem>
@@ -304,7 +246,7 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
                 </SelectContent>
               </Select>
 
-              <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+              <Select value={filters.paymentFilter} onValueChange={(value) => setFilters(prev => ({ ...prev, paymentFilter: value as 'all' | 'cash' | 'card' | 'mobile' }))}>
                 <SelectTrigger className="w-36"><SelectValue placeholder="Payment" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Payment</SelectItem>
@@ -354,9 +296,14 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
             <div className="flex gap-4 items-center mb-4">
               <div className="relative flex-1 min-w-[220px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input className="pl-10" placeholder="Search activity..." value={activitySearch} onChange={(e) => setActivitySearch(e.target.value)} />
+                <Input 
+                  className="pl-10" 
+                  placeholder="Search activity..." 
+                  value={filters.activitySearch} 
+                  onChange={(e) => setFilters(prev => ({ ...prev, activitySearch: e.target.value }))} 
+                />
               </div>
-              <Select value={activityType} onValueChange={setActivityType}>
+              <Select value={filters.activityType} onValueChange={(value) => setFilters(prev => ({ ...prev, activityType: value as 'all' | 'login' | 'create' | 'update' | 'delete' }))}>
                 <SelectTrigger className="w-40"><SelectValue placeholder="Type" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
@@ -378,7 +325,7 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredActivity.map((log: ActivityLog) => {
+                  {filteredActivity.map((log: CashierActivityLog) => {
                     // Ensure timestamp is a Date object with error handling
                     let timestamp: Date;
                     try {

@@ -1,38 +1,8 @@
-export interface User {
-  id: string;
-  username: string;
-  email?: string;
-  name?: string;
-  role: string;
-  businessId?: string;
-  storeId?: string | undefined;
-  isActive: boolean;
-  isDemo: boolean;
-  createdAt: string;
-}
+// Import base types from database
+import { User, Business, Store } from './database';
 
-export interface Business {
-  id: string;
-  name: string;
-  business_type?: string;
-  subscription_plan_id?: string;
-  subscription_status: string;
-  subscription_plans?: {
-    id: string;
-    name: string;
-    description: string;
-    price: number;
-  };
-  stores: Store[];
-  createdAt: string;
-  timezone?: string;
-}
-
-export interface Store {
-  id: string;
-  name: string;
-  address?: string;
-}
+// Re-export base types with auth-specific extensions
+export type { User, Business, Store };
 
 export interface DemoUser {
   username: string;

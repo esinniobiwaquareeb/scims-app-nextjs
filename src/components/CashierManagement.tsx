@@ -26,7 +26,7 @@ import {
   useUpdateCashierStore,
   useDeleteCashier,
   useResetUserPassword
-} from '@/utils/hooks/useStoreData';
+} from '@/stores/cashier-management';
 import { toast } from 'sonner';
 import { 
   Users, 
@@ -42,62 +42,21 @@ import {
   Key
 } from 'lucide-react';
 
-interface CashierManagementProps {
-  onBack: () => void;
-  onNavigate?: (view: string, params?: Record<string, unknown>) => void;
-}
-
-interface Cashier {
-  id: string;
-  name: string;
-  username: string;
-  email: string;
-  phone?: string;
-  store_id?: string;
-  storeName?: string;
-  is_active: boolean;
-  role: 'cashier';
-  permissions?: string[];
-  created_at: string;
-  last_login?: string;
-  totalSales?: number;
-  transactionCount?: number;
-}
-
-interface Store {
-  id: string;
-  name: string;
-  is_active?: boolean;
-}
-
-interface CashierSale {
-  id: string;
-  receipt_number: string;
-  total_amount: number;
-  payment_method: string;
-  status: string;
-  transaction_date: string;
-  created_at: string;
-  customer_id?: string;
-  customer_name?: string;
-  items_count: number;
-}
+import { 
+  CashierManagementProps, 
+  CashierManagement as CashierManagementType, 
+  CashierManagementSale,
+  CashierFormProps
+} from '@/types/cashier-management';
 
 // Move CashierForm outside to prevent recreation on every render
-const CashierForm = ({ 
+const CashierForm: React.FC<CashierFormProps> = ({ 
   cashier, 
   onChange, 
   onSave, 
   onCancel,
   stores,
   isSaving
-}: {
-  cashier: Partial<Cashier> | Cashier;
-  onChange: (cashier: Partial<Cashier>) => void;
-  onSave: () => void;
-  onCancel: () => void;
-  stores: Store[];
-  isSaving: boolean;
 }) => (
   <div className="space-y-4">
     <div className="grid grid-cols-2 gap-4">
@@ -238,14 +197,14 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
   const [isCredentialsModalOpen, setIsCredentialsModalOpen] = useState(false);
   const [generatedCredentials, setGeneratedCredentials] = useState<{username: string, password: string} | null>(null);
   const [isSalesViewOpen, setIsSalesViewOpen] = useState(false);
-  const [selectedCashier, setSelectedCashier] = useState<Cashier | null>(null);
-  const [originalCashier, setOriginalCashier] = useState<Cashier | null>(null);
-  const [selectedCashierForSales] = useState<Cashier | null>(null);
-  const [cashierToDelete, setCashierToDelete] = useState<Cashier | null>(null);
+  const [selectedCashier, setSelectedCashier] = useState<CashierManagementType | null>(null);
+  const [originalCashier, setOriginalCashier] = useState<CashierManagementType | null>(null);
+  const [selectedCashierForSales] = useState<CashierManagementType | null>(null);
+  const [cashierToDelete, setCashierToDelete] = useState<CashierManagementType | null>(null);
   
   // Password reset state
   const [isPasswordResetDialogOpen, setIsPasswordResetDialogOpen] = useState(false);
-  const [cashierForPasswordReset, setCashierForPasswordReset] = useState<Cashier | null>(null);
+  const [cashierForPasswordReset, setCashierForPasswordReset] = useState<CashierManagementType | null>(null);
   
   // Sales filtering
   const [salesSearchTerm, setSalesSearchTerm] = useState('');
@@ -253,7 +212,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
   const [salesStatusFilter, setSalesStatusFilter] = useState('all');
   const [salesPaymentFilter, setSalesPaymentFilter] = useState('all');
 
-  const [newCashier, setNewCashier] = useState<Partial<Cashier>>({
+  const [newCashier, setNewCashier] = useState<Partial<CashierManagementType>>({
     name: '',
     username: '',
     email: '',
@@ -315,7 +274,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
   }, [currentStore?.id]);
 
   // Filter cashiers based on user role
-  const accessibleCashiers = cashiers.filter((cashier: Cashier) => {
+  const accessibleCashiers = cashiers.filter((cashier: CashierManagementType) => {
     if (user?.role === 'business_admin') {
       return true; // Business admin can see all cashiers
     }
@@ -325,7 +284,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
     return false;
   });
 
-  const filteredCashiers = accessibleCashiers.filter((cashier: Cashier) => {
+  const filteredCashiers = accessibleCashiers.filter((cashier: CashierManagementType) => {
     const matchesSearch = cashier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (cashier.email && cashier.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (cashier.username && cashier.username.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -335,7 +294,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
 
 
   // Transform sales data for display (since React Query returns raw data)
-  const transformedCashierSales = cashierSales.map((sale: CashierSale) => ({
+  const transformedCashierSales = cashierSales.map((sale: CashierManagementSale) => ({
     id: sale.id,
     receipt_number: sale.receipt_number,
     total_amount: sale.total_amount,
@@ -349,7 +308,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
   }));
 
   // Filter cashier sales
-  const filteredCashierSales = transformedCashierSales.filter((sale: CashierSale) => {
+  const filteredCashierSales = transformedCashierSales.filter((sale: CashierManagementSale) => {
     const matchesSearch = sale.receipt_number.toLowerCase().includes(salesSearchTerm.toLowerCase()) ||
                          (sale.customer_name && sale.customer_name.toLowerCase().includes(salesSearchTerm.toLowerCase()));
     
@@ -366,12 +325,12 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
 
   // Statistics
   const totalCashiers = filteredCashiers.length;
-  const activeCashiers = filteredCashiers.filter((c: Cashier) => c.is_active).length;
-  const totalSales = filteredCashiers.reduce((sum: number, c: Cashier) => sum + (c.totalSales || 0), 0);
+  const activeCashiers = filteredCashiers.filter((c: CashierManagementType) => c.is_active).length;
+  const totalSales = filteredCashiers.reduce((sum: number, c: CashierManagementType) => sum + (c.totalSales || 0), 0);
   const avgPerformance = totalCashiers > 0 ? totalSales / totalCashiers : 0;
 
   // Sales statistics
-  const totalSalesAmount = filteredCashierSales.reduce((sum: number, sale: CashierSale) => sum + sale.total_amount, 0);
+  const totalSalesAmount = filteredCashierSales.reduce((sum: number, sale: CashierManagementSale) => sum + sale.total_amount, 0);
   const totalTransactions = filteredCashierSales.length;
   const avgTransactionValue = totalTransactions > 0 ? totalSalesAmount / totalTransactions : 0;
 
@@ -379,19 +338,23 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
     if (!currentBusiness?.id || !newCashier.username) return;
 
     try {
-      const cashierData = {
-        ...newCashier,
-        // Remove password_hash as it will be generated by the backend
-      };
-
-      const result = await createCashierMutation.mutateAsync(cashierData as { name: string; username: string; email: string; phone?: string | undefined; store_id?: string | undefined });
+      const result = await createCashierMutation.mutateAsync({
+        name: newCashier.name || '',
+        username: newCashier.username || '',
+        email: newCashier.email || '',
+        phone: newCashier.phone,
+        store_id: newCashier.store_id,
+        is_active: newCashier.is_active || true,
+        role: 'cashier' as const,
+        permissions: newCashier.permissions || ['pos']
+      });
       
       console.log('Cashier creation result:', result);
       
       // Show credentials modal with the returned default password
       setGeneratedCredentials({
-        username: newCashier.username,
-        password: result.user?.default_password || 'Password not generated' // Fallback if not returned
+        username: newCashier.username || '',
+        password: result.data?.credentials?.password || 'Password not generated' // Fallback if not returned
       });
       setIsCredentialsModalOpen(true);
       
@@ -415,7 +378,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
     }
   }, [newCashier, currentBusiness, currentStore, createCashierMutation, refetchCashiers, refetchStores]);
 
-  const handleEditCashier = useCallback((cashier: Cashier) => {
+  const handleEditCashier = useCallback((cashier: CashierManagementType) => {
     setSelectedCashier({ ...cashier }); // Create a copy to avoid reference issues
     setOriginalCashier({ ...cashier }); // Store original data for comparison
     setIsEditDialogOpen(true);
@@ -427,15 +390,23 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
     try {
       // First update the cashier basic info
       await updateCashierMutation.mutateAsync({
-        cashierId: selectedCashier.id,
-        cashierData: selectedCashier
+        id: selectedCashier.id,
+        cashierData: {
+          name: selectedCashier.name,
+          username: selectedCashier.username,
+          email: selectedCashier.email,
+          phone: selectedCashier.phone,
+          is_active: selectedCashier.is_active,
+          role: selectedCashier.role,
+          permissions: selectedCashier.permissions
+        }
       });
 
       // Check if store assignment has changed
       if (selectedCashier.store_id !== originalCashier.store_id) {
         await updateCashierStoreMutation.mutateAsync({
-          cashierId: selectedCashier.id,
-          storeId: selectedCashier.store_id || null
+          id: selectedCashier.id,
+          storeId: selectedCashier.store_id || ''
         });
       }
       
@@ -450,7 +421,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
     }
   }, [selectedCashier, originalCashier, currentBusiness, updateCashierMutation, updateCashierStoreMutation, refetchCashiers, refetchStores]);
 
-  const handleDeleteCashier = useCallback(async (cashier: Cashier) => {
+  const handleDeleteCashier = useCallback(async (cashier: CashierManagementType) => {
     if (!currentBusiness?.id) return;
 
     try {
@@ -464,22 +435,19 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
   }, [currentBusiness, deleteCashierMutation, refetchCashiers, refetchStores]);
 
   // Password reset functions
-  const handlePasswordReset = useCallback((cashier: Cashier) => {
+  const handlePasswordReset = useCallback((cashier: CashierManagementType) => {
     setCashierForPasswordReset(cashier);
     setIsPasswordResetDialogOpen(true);
   }, []);
 
-  const resetCashierPassword = useCallback(async (newPassword: string) => {
+  const resetCashierPassword = useCallback(async () => {
     if (!cashierForPasswordReset) {
       throw new Error('No cashier selected for password reset');
     }
 
     try {
       // Use the password reset mutation hook
-      await resetUserPasswordMutation.mutateAsync({
-        userId: cashierForPasswordReset.id,
-        newPassword: newPassword
-      });
+      await resetUserPasswordMutation.mutateAsync(cashierForPasswordReset.id);
       
       // Log the activity
       logActivity('user_update', 'cashiers', `Password reset for cashier "${cashierForPasswordReset.name}"`, {
@@ -501,15 +469,23 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
   }, []);
 
   const toggleCashierStatus = useCallback(async (id: string) => {
-    const cashier = cashiers.find((c: Cashier) => c.id === id);
+    const cashier = cashiers.find((c: CashierManagementType) => c.id === id);
     if (!cashier || !currentBusiness?.id) return;
 
     try {
       const updatedCashier = { ...cashier, is_active: !cashier.is_active };
       
       await updateCashierMutation.mutateAsync({
-        cashierId: id,
-        cashierData: updatedCashier
+        id: id,
+        cashierData: {
+          name: updatedCashier.name,
+          username: updatedCashier.username,
+          email: updatedCashier.email,
+          phone: updatedCashier.phone,
+          is_active: updatedCashier.is_active,
+          role: updatedCashier.role,
+          permissions: updatedCashier.permissions
+        }
       });
       await refetchCashiers(); // Refresh cashiers list
       await refetchStores(); // Refresh stores list
@@ -548,11 +524,11 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
   };
 
   // Memoized change handlers to prevent unnecessary re-renders
-  const handleNewCashierChange = useCallback((updatedCashier: Partial<Cashier>) => {
+  const handleNewCashierChange = useCallback((updatedCashier: Partial<CashierManagementType>) => {
     setNewCashier(updatedCashier);
   }, []);
 
-  const handleSelectedCashierChange = useCallback((updatedCashier: Cashier) => {
+  const handleSelectedCashierChange = useCallback((updatedCashier: CashierManagementType) => {
     setSelectedCashier(updatedCashier);
   }, []);
 
@@ -586,7 +562,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
     {
       key: 'cashier',
       header: 'Cashier',
-      render: (cashier: Cashier) => (
+      render: (cashier: CashierManagementType) => (
         <div className="flex items-center gap-3">
           <Avatar>
             <AvatarFallback>{getInitials(cashier.name)}</AvatarFallback>
@@ -602,7 +578,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
     {
       key: 'store',
       header: 'Store',
-      render: (cashier: Cashier) => (
+      render: (cashier: CashierManagementType) => (
         <div>
           <p className="font-medium">{cashier.storeName || 'Not assigned'}</p>
           <p className="text-sm text-muted-foreground">{cashier.phone || 'No phone'}</p>
@@ -612,7 +588,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
     {
       key: 'performance',
       header: 'Performance',
-      render: (cashier: Cashier) => (
+      render: (cashier: CashierManagementType) => (
         <div className="text-sm">
           <p className="font-medium">{formatCurrency(cashier.totalSales || 0)}</p>
           <p className="text-muted-foreground">{cashier.transactionCount || 0} transactions</p>
@@ -622,7 +598,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
     {
       key: 'permissions',
       header: 'Permissions',
-      render: (cashier: Cashier) => (
+      render: (cashier: CashierManagementType) => (
         <div className="flex flex-wrap gap-1">
           {(cashier.permissions || ['pos']).map(permission => (
             <Badge key={permission} variant="secondary" className="text-xs">
@@ -635,7 +611,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
     {
       key: 'status',
       header: 'Status',
-      render: (cashier: Cashier) => (
+      render: (cashier: CashierManagementType) => (
         <div className="flex items-center gap-2">
           <Switch
             checked={cashier.is_active}
@@ -651,7 +627,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
     {
       key: 'created',
       header: 'Created',
-      render: (cashier: Cashier) => (
+      render: (cashier: CashierManagementType) => (
         <div>
           <p className="text-sm">
             {new Date(cashier.created_at).toLocaleDateString()}
@@ -667,7 +643,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
     {
       key: 'actions',
       header: 'Actions',
-      render: (cashier: Cashier) => (
+      render: (cashier: CashierManagementType) => (
         <div className="flex gap-2">
           <Button 
             size="sm" 
@@ -854,7 +830,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="All">All Stores</SelectItem>
-                    {stores.filter((s: Store) => s.is_active).map((store: Store) => (
+                    {stores.filter((s: { is_active?: boolean }) => s.is_active).map((store: { id: string; name: string }) => (
                       <SelectItem key={store.id} value={store.id}>
                         {store.name}
                       </SelectItem>
@@ -921,7 +897,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
             {selectedCashier && (
               <CashierForm
                 cashier={selectedCashier}
-                onChange={handleSelectedCashierChange as (cashier: Partial<Cashier>) => void}
+                onChange={handleSelectedCashierChange as (cashier: Partial<CashierManagementType>) => void}
                 onSave={handleUpdateCashier}
                 onCancel={() => setIsEditDialogOpen(false)}
                 stores={stores}
@@ -1046,14 +1022,14 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
                           {
                             key: 'receipt',
                             header: 'Receipt',
-                            render: (sale: CashierSale) => (
+                            render: (sale: CashierManagementSale) => (
                               <div className="font-mono text-sm">{sale.receipt_number}</div>
                             )
                           },
                           {
                             key: 'date',
                             header: 'Date',
-                            render: (sale: CashierSale) => (
+                            render: (sale: CashierManagementSale) => (
                               <div>
                                 <p className="text-sm">
                                   {new Date(sale.transaction_date).toLocaleDateString()}
@@ -1067,21 +1043,21 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
                           {
                             key: 'customer',
                             header: 'Customer',
-                            render: (sale: CashierSale) => (
+                            render: (sale: CashierManagementSale) => (
                               <p className="text-sm">{sale.customer_name}</p>
                             )
                           },
                           {
                             key: 'amount',
                             header: 'Amount',
-                            render: (sale: CashierSale) => (
+                            render: (sale: CashierManagementSale) => (
                               <p className="font-medium">{formatCurrency(sale.total_amount)}</p>
                             )
                           },
                           {
                             key: 'payment',
                             header: 'Payment',
-                            render: (sale: CashierSale) => (
+                            render: (sale: CashierManagementSale) => (
                               <Badge variant="secondary" className="text-xs">
                                 {sale.payment_method}
                               </Badge>
@@ -1090,7 +1066,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
                           {
                             key: 'status',
                             header: 'Status',
-                            render: (sale: CashierSale) => (
+                            render: (sale: CashierManagementSale) => (
                               <Badge 
                                 variant={sale.status === 'completed' ? 'default' : 'secondary'}
                                 className="text-xs"
@@ -1102,7 +1078,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
                           {
                             key: 'items',
                             header: 'Items',
-                            render: (sale: CashierSale) => (
+                            render: (sale: CashierManagementSale) => (
                               <Badge variant="outline" className="text-xs">
                                 {sale.items_count} items
                               </Badge>

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useCallback, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystem } from '../contexts/SystemContext';
@@ -22,39 +21,13 @@ import {
   Loader2,
   RefreshCw
 } from 'lucide-react';
+// Import types from centralized location
+import type { 
+  StaffDetailProps,
+  StaffDetail,
+  StaffSale
+} from '@/types';
 
-interface StaffDetailProps {
-  onBack: () => void;
-  staffMember: {
-    id: string;
-    name: string;
-    username: string;
-    email: string;
-    phone?: string;
-    store_id?: string;
-    storeName?: string;
-    is_active: boolean;
-    role: 'business_admin' | 'store_admin' | 'cashier';
-    permissions?: string[];
-    created_at: string;
-    last_login?: string;
-    totalSales?: number;
-    transactionCount?: number;
-  } | null;
-}
-
-interface StaffSale {
-  id: string;
-  receipt_number: string;
-  total_amount: number;
-  payment_method: string;
-  status: string;
-  transaction_date: string;
-  created_at: string;
-  customer_id?: string;
-  customer_name?: string;
-  items_count: number;
-}
 
 const ROLE_OPTIONS = [
   { value: 'business_admin', label: 'Business Admin', color: 'bg-red-500' },
@@ -62,7 +35,7 @@ const ROLE_OPTIONS = [
   { value: 'cashier', label: 'Cashier', color: 'bg-green-500' }
 ];
 
-export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember }) => {
+export const StaffDetailComponent: React.FC<StaffDetailProps> = ({ onBack, staffMember }) => {
   const { currentBusiness, currentStore } = useAuth();
   const { formatCurrency } = useSystem();
   
@@ -89,7 +62,7 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
   const filteredStaffSales = useMemo(() => {
     if (!staffSales) return [];
 
-    return staffSales.filter((sale: any) => {
+    return staffSales.filter((sale: StaffSale) => {
       const matchesSearch = sale.receipt_number.toLowerCase().includes(salesSearchTerm.toLowerCase()) ||
                            (sale.customer_name && sale.customer_name.toLowerCase().includes(salesSearchTerm.toLowerCase()));
       
@@ -107,7 +80,7 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
 
   // Sales statistics
   const totalSalesAmount = useMemo(() => 
-    filteredStaffSales.reduce((sum: number, sale: any) => sum + sale.total_amount, 0), 
+    filteredStaffSales.reduce((sum: number, sale: StaffSale) => sum + sale.total_amount, 0), 
     [filteredStaffSales]
   );
   

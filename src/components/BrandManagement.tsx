@@ -14,18 +14,17 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Trash2, Edit, Plus, RefreshCw, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { Brand, BrandFormData, validateBrandForm } from '@/components/brand/BrandHelpers';
+import { Brand, BrandFormData, BrandManagementProps, BrandFormDataWithBusiness } from '@/types';
+import { validateBrandForm } from '@/components/brand/BrandHelpers';
 import { BRAND_TABLE_COLUMNS, INITIAL_BRAND_FORM_DATA, BRAND_FORM_FIELDS } from '@/components/brand/BrandConstants';
 import { 
   useBusinessBrands,
   useCreateBusinessBrand,
   useUpdateBusinessBrand,
   useDeleteBusinessBrand
-} from '@/utils/hooks/useStoreData';
+} from '@/stores';
 
-interface BrandManagementProps {
-  onBack: () => void;
-}
+// BrandManagementProps is now imported from types
 
 export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
   const { user, currentBusiness } = useAuth();
@@ -44,7 +43,10 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
   const [brandToDelete, setBrandToDelete] = useState<Brand | null>(null);
-  const [formData, setFormData] = useState<BrandFormData>(INITIAL_BRAND_FORM_DATA);
+  const [formData, setFormData] = useState<BrandFormDataWithBusiness>({
+    ...INITIAL_BRAND_FORM_DATA,
+    business_id: currentBusiness?.id || ''
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [logoFilter, setLogoFilter] = useState<'all' | 'with-logo' | 'without-logo'>('all');
   
@@ -136,8 +138,11 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
     setShowDeleteDialog(true);
   };
 
-  const handleFormChange = (field: keyof BrandFormData, value: string) => {
-    setFormData((prev: BrandFormData) => ({ ...prev, [field]: value }));
+  const handleFormChange = (field: keyof BrandFormDataWithBusiness, value: string | boolean) => {
+    setFormData((prev: BrandFormDataWithBusiness) => ({ 
+      ...prev, 
+      [field]: field === 'is_active' ? (value === 'true' || value === true) : value 
+    }));
   };
 
   const handleCreate = async () => {
@@ -202,12 +207,13 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
       contact_person: brand.contact_person || '',
       contact_email: brand.contact_email || '',
       contact_phone: brand.contact_phone || '',
+      is_active: brand.is_active ?? true,
       business_id: currentBusiness?.id || ''
     });
     setShowEditDialog(true);
     // Reset editing logo state
     setEditingLogoFile(null);
-    setEditingLogoPreview(null);
+    setEditingLogoPreview(brand.logo_url || null);
   };
 
   const handleUpdate = async () => {
@@ -242,8 +248,8 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
 
       // Use the mutation hook - this will automatically invalidate cache on success
       const brand = await updateBrandMutation.mutateAsync({
-        brandId: selectedBrand.id,
-        brandData: brandData
+        id: selectedBrand.id,
+        ...brandData
       });
       
       // Close dialog and reset form on success
@@ -553,17 +559,27 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
                         {field === 'description' ? (
                           <Textarea
                             id={field}
-                            value={formData[field as keyof BrandFormData]}
-                            onChange={(e) => handleFormChange(field as keyof BrandFormData, e.target.value)}
+                            value={formData[field as keyof BrandFormDataWithBusiness] as string || ''}
+                            onChange={(e) => handleFormChange(field as keyof BrandFormDataWithBusiness, e.target.value)}
                             placeholder={config.placeholder}
                             rows={3}
                           />
+                        ) : field === 'is_active' ? (
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id={field}
+                              checked={formData.is_active}
+                              onChange={(e) => handleFormChange('is_active', e.target.checked.toString())}
+                            />
+                            <Label htmlFor={field}>Active</Label>
+                          </div>
                         ) : (
                           <Input
                             id={field}
                             type={field.includes('email') ? 'email' : field.includes('website') ? 'url' : 'text'}
-                            value={formData[field as keyof BrandFormData]}
-                            onChange={(e) => handleFormChange(field as keyof BrandFormData, e.target.value)}
+                            value={formData[field as keyof BrandFormDataWithBusiness] as string || ''}
+                            onChange={(e) => handleFormChange(field as keyof BrandFormDataWithBusiness, e.target.value)}
                             placeholder={config.placeholder}
                             required={config.required}
                           />
@@ -762,17 +778,27 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
                   {field === 'description' ? (
                     <Textarea
                       id={field}
-                      value={formData[field as keyof BrandFormData]}
-                      onChange={(e) => handleFormChange(field as keyof BrandFormData, e.target.value)}
+                      value={formData[field as keyof BrandFormDataWithBusiness] as string || ''}
+                      onChange={(e) => handleFormChange(field as keyof BrandFormDataWithBusiness, e.target.value)}
                       placeholder={config.placeholder}
                       rows={3}
                     />
+                  ) : field === 'is_active' ? (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={field}
+                        checked={formData.is_active}
+                        onChange={(e) => handleFormChange('is_active', e.target.checked.toString())}
+                      />
+                      <Label htmlFor={field}>Active</Label>
+                    </div>
                   ) : (
                     <Input
                       id={field}
                       type={field.includes('email') ? 'email' : field.includes('website') ? 'url' : 'text'}
-                      value={formData[field as keyof BrandFormData]}
-                      onChange={(e) => handleFormChange(field as keyof BrandFormData, e.target.value)}
+                      value={formData[field as keyof BrandFormDataWithBusiness] as string || ''}
+                      onChange={(e) => handleFormChange(field as keyof BrandFormDataWithBusiness, e.target.value)}
                       placeholder={config.placeholder}
                       required={config.required}
                     />

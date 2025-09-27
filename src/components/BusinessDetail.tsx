@@ -1,178 +1,101 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { Header } from './common/Header';
 import { useSystem } from '../contexts/SystemContext';
-import { useAuth } from '../contexts/AuthContext';
+// useAuth removed as it's not used
 import { DataTable } from './common/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { toast } from 'sonner';
-import { Loader2, Search, Download, Building2, Store, Users, CreditCard, Globe, MapPin, Phone, Mail, Globe2, Calendar, Activity, TrendingUp, Package, Truck, AlertCircle, CheckCircle, XCircle, Building } from 'lucide-react';
+// toast is now handled by the store hooks
+import { Loader2, Search, Download, Building2, Store, Users, CreditCard, Globe, MapPin, Phone, Mail, Globe2, Calendar, Activity, TrendingUp, Package, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { 
   BUSINESS_TYPE_LABELS, 
   BUSINESS_TYPE_DESCRIPTIONS,
-  BUSINESS_TYPE_ICONS,
-  getBusinessTypeConfig
+  BUSINESS_TYPE_ICONS
 } from './common/BusinessTypeConstants';
+import { BusinessDetailProps, BusinessStats, BusinessFilters } from '@/types';
+import { useBusinessDetailData, useExportBusinessData } from '@/stores';
 
-interface Business {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  website?: string;
-  description?: string;
-  business_type?: string;
-  country_id?: string;
-  currency_id?: string;
-  language_id?: string;
-  timezone: string;
-  subscription_plan_id?: string;
-  subscription_status: string;
-  is_active: boolean;
-  country?: {
-    id: string;
-    name: string;
-    code: string;
-  };
-  currency?: {
-    id: string;
-    name: string;
-    symbol: string;
-  };
-  language?: {
-    id: string;
-    name: string;
-    code: string;
-  };
-  subscription_plans?: {
-    id: string;
-    name: string;
-    description: string;
-    price_monthly: number;
-    price_yearly: number;
-    max_stores: number;
-    max_products: number;
-    max_users: number;
-  };
-  stores: Array<{
-    id: string;
-    name: string;
-    address: string;
-    city?: string;
-    state?: string;
-    postal_code?: string;
-    phone?: string;
-    email?: string;
-    manager_name?: string;
-    is_active: boolean;
-    created_at: string;
-  }>;
-  created_at: string;
-  updated_at: string;
-}
-
-interface BusinessDetailProps {
-  onBack: () => void;
-  business: Business | null;
-}
+// Business and BusinessDetailProps are now imported from types
 
 export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business }) => {
   const { formatCurrency } = useSystem();
-  const { user } = useAuth();
-
-  const [isLoading, setIsLoading] = useState(true);
-  const [products, setProducts] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
-  const [activity, setActivity] = useState<any[]>([]);
-  const [sales, setSales] = useState<any[]>([]);
 
   // Filters
-  const [productSearch, setProductSearch] = useState('');
-  const [userSearch, setUserSearch] = useState('');
-  const [activitySearch, setActivitySearch] = useState('');
-  const [activityType, setActivityType] = useState('all');
-  const [salesSearch, setSalesSearch] = useState('');
-  const [salesDateFilter, setSalesDateFilter] = useState('all');
+  const [filters, setFilters] = useState<BusinessFilters>({
+    productSearch: '',
+    userSearch: '',
+    activitySearch: '',
+    activityType: 'all',
+    salesSearch: '',
+    salesDateFilter: 'all'
+  });
 
-  useEffect(() => {
-    const load = async () => {
-      if (!business) return;
+  // Use the new business detail data hook
+  const {
+    data: businessData,
+    isLoading
+  } = useBusinessDetailData(business?.id || '', {
+    enabled: !!business?.id
+  });
 
-      try {
-        setIsLoading(true);
+  // Export business data hook
+  const exportBusinessDataMutation = useExportBusinessData();
 
-        const [productsResponse, usersResponse, activityResponse, salesResponse] = await Promise.all([
-          fetch(`/api/products?business_id=${business.id}`),
-          fetch(`/api/staff?business_id=${business.id}`),
-          fetch(`/api/activity-logs?business_id=${business.id}`),
-          fetch(`/api/sales?business_id=${business.id}`)
-        ]);
+  // Extract data from the hook
+  const products = useMemo(() => businessData?.products || [], [businessData?.products]);
+  const users = useMemo(() => businessData?.users || [], [businessData?.users]);
+  const activity = useMemo(() => businessData?.activity || [], [businessData?.activity]);
+  const sales = useMemo(() => businessData?.sales || [], [businessData?.sales]);
 
-        const productsData = productsResponse.ok ? (await productsResponse.json()).products || [] : [];
-        const usersData = usersResponse.ok ? (await usersResponse.json()).staff || [] : [];
-        const activityLogs = activityResponse.ok ? (await activityResponse.json()).logs || [] : [];
-        const salesData = salesResponse.ok ? (await salesResponse.json()).sales || [] : [];
-
-        setProducts(productsData || []);
-        setUsers(usersData || []);
-        setActivity(activityLogs || []);
-        setSales(salesData || []);
-      } catch (e: any) {
-        console.error(e);
-        toast.error('Failed to load business details');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    load();
-  }, [business]);
+  // Filter update functions
+  const updateFilter = (key: keyof BusinessFilters, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
 
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const q = productSearch.toLowerCase();
+    return products.filter((product: any) => {
+      const q = filters.productSearch.toLowerCase();
       return (
         product.name.toLowerCase().includes(q) ||
         (product.sku || '').toLowerCase().includes(q) ||
         (product.description || '').toLowerCase().includes(q)
       );
     });
-  }, [products, productSearch]);
+  }, [products, filters.productSearch]);
 
   const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      const q = userSearch.toLowerCase();
+    return users.filter((user: any) => {
+      const q = filters.userSearch.toLowerCase();
       return (
         user.name.toLowerCase().includes(q) ||
         (user.username || '').toLowerCase().includes(q) ||
         (user.email || '').toLowerCase().includes(q)
       );
     });
-  }, [users, userSearch]);
+  }, [users, filters.userSearch]);
 
   const filteredActivity = useMemo(() => {
-    const q = activitySearch.toLowerCase();
+    const q = filters.activitySearch.toLowerCase();
     return (activity || []).filter((log: any) => {
       const matchesText = (
         (log.description || '').toLowerCase().includes(q) ||
         (log.category || '').toLowerCase().includes(q) ||
         (log.activity_type || '').toLowerCase().includes(q)
       );
-      const matchesType = activityType === 'all' || log.activity_type === activityType;
+      const matchesType = filters.activityType === 'all' || log.activity_type === filters.activityType;
       return matchesText && matchesType;
     });
-  }, [activity, activitySearch, activityType]);
+  }, [activity, filters.activitySearch, filters.activityType]);
 
   const filteredSales = useMemo(() => {
-    return sales.filter((sale) => {
-      const q = salesSearch.toLowerCase();
+    return sales.filter((sale: any) => {
+      const q = filters.salesSearch.toLowerCase();
       const matchesSearch = (
         sale.receipt_number.toLowerCase().includes(q) ||
         (sale.customer_name || '').toLowerCase().includes(q)
@@ -181,25 +104,27 @@ export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business
       const now = new Date();
       const date = new Date(sale.transaction_date);
       const matchesDate =
-        salesDateFilter === 'all' ||
-        (salesDateFilter === 'today' && date.toDateString() === now.toDateString()) ||
-        (salesDateFilter === 'week' && date >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)) ||
-        (salesDateFilter === 'month' && date >= new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000));
+        filters.salesDateFilter === 'all' ||
+        (filters.salesDateFilter === 'today' && date.toDateString() === now.toDateString()) ||
+        (filters.salesDateFilter === 'week' && date >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)) ||
+        (filters.salesDateFilter === 'month' && date >= new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000));
       
       return matchesSearch && matchesDate;
     });
-  }, [sales, salesSearch, salesDateFilter]);
+  }, [sales, filters.salesSearch, filters.salesDateFilter]);
 
   // Calculate stats
-  const stats = {
+  const stats: BusinessStats = {
     totalProducts: products.length,
-    activeProducts: products.filter(p => p.is_active).length,
+    activeProducts: products.filter((p: any) => p.is_active).length,
     totalUsers: users.length,
-    activeUsers: users.filter(u => u.is_active).length,
+    activeUsers: users.filter((u: any) => u.is_active).length,
     totalStores: business?.stores?.length || 0,
-    activeStores: business?.stores?.filter(s => s.is_active).length || 0,
+    activeStores: business?.stores?.filter((s: any) => s.is_active).length || 0,
     totalSales: sales.length,
-    totalRevenue: sales.reduce((sum, s) => sum + Number(s.total_amount || 0), 0)
+    totalRevenue: sales.reduce((sum: number, sale: any) => sum + (sale.total_amount || 0), 0),
+    recentActivity: activity.length,
+    subscriptionStatus: business?.subscription_status as 'active' | 'expired' | 'cancelled' | 'suspended' || 'active'
   };
 
   const getStatusIcon = (status: string) => {
@@ -224,43 +149,15 @@ export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business
   const exportBusinessData = useCallback(() => {
     if (!business) return;
     
-    // Export business overview
-    const businessData = {
-      business: {
-        name: business.name,
-        email: business.email,
-        phone: business.phone,
-        address: business.address,
-        website: business.website,
-        description: business.description,
-        business_type: business.business_type,
-        timezone: business.timezone,
-        subscription_status: business.subscription_status,
-        subscription_plan: business.subscription_plans?.name,
-        country: business.country?.name,
-        currency: business.currency?.name,
-        language: business.language?.name,
-        created_at: business.created_at,
-        updated_at: business.updated_at
-      },
-      stores: business.stores,
-      products: products,
-      users: users,
-      sales: sales
-    };
-
-    const dataStr = JSON.stringify(businessData, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${business.name.replace(/\s+/g, '_')}_business_data.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success('Business data exported');
-  }, [business, products, users, sales]);
+    exportBusinessDataMutation.mutate({
+      businessId: business.id,
+      includeProducts: true,
+      includeUsers: true,
+      includeActivity: true,
+      includeSales: true,
+      format: 'csv'
+    });
+  }, [business, exportBusinessDataMutation]);
 
   if (!business) {
     return null;
@@ -556,10 +453,10 @@ export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business
                   Subscription
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={getSubscriptionColor(business.subscription_plans?.name || 'Unknown', business.subscription_status)}>
+                  <Badge variant={getSubscriptionColor(business.subscription_plans?.name || 'Unknown', business.subscription_status || 'active')}>
                     {business.subscription_plans?.name || 'Unknown'}
                   </Badge>
-                  {getStatusIcon(business.subscription_status)}
+                  {getStatusIcon(business.subscription_status || 'active')}
                 </div>
               </div>
             </div>
@@ -706,8 +603,8 @@ export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business
                 <Input 
                   className="pl-10" 
                   placeholder="Search products..." 
-                  value={productSearch} 
-                  onChange={(e) => setProductSearch(e.target.value)} 
+                  value={filters.productSearch} 
+                  onChange={(e) => updateFilter('productSearch', e.target.value)} 
                 />
               </div>
             </div>
@@ -747,8 +644,8 @@ export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business
                 <Input 
                   className="pl-10" 
                   placeholder="Search users..." 
-                  value={userSearch} 
-                  onChange={(e) => setUserSearch(e.target.value)} 
+                  value={filters.userSearch} 
+                  onChange={(e) => updateFilter('userSearch', e.target.value)} 
                 />
               </div>
             </div>
@@ -788,11 +685,11 @@ export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business
                 <Input 
                   className="pl-10" 
                   placeholder="Search sales..." 
-                  value={salesSearch} 
-                  onChange={(e) => setSalesSearch(e.target.value)} 
+                  value={filters.salesSearch} 
+                  onChange={(e) => updateFilter('salesSearch', e.target.value)} 
                 />
               </div>
-              <Select value={salesDateFilter} onValueChange={setSalesDateFilter}>
+              <Select value={filters.salesDateFilter} onValueChange={(value) => updateFilter('salesDateFilter', value)}>
                 <SelectTrigger className="w-36">
                   <SelectValue placeholder="Date" />
                 </SelectTrigger>
@@ -840,11 +737,11 @@ export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business
                 <Input 
                   className="pl-10" 
                   placeholder="Search activity..." 
-                  value={activitySearch} 
-                  onChange={(e) => setActivitySearch(e.target.value)} 
+                  value={filters.activitySearch} 
+                  onChange={(e) => updateFilter('activitySearch', e.target.value)} 
                 />
               </div>
-              <Select value={activityType} onValueChange={setActivityType}>
+              <Select value={filters.activityType} onValueChange={(value) => updateFilter('activityType', value)}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>

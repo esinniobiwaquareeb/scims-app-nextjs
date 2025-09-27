@@ -21,7 +21,7 @@ import {
   useDeleteCustomer,
   useCustomerSales,
   useBusinessStoresReport
-} from '@/utils/hooks/useStoreData';
+} from '@/stores';
 import { toast } from 'sonner';
 import { 
   Plus, 
@@ -43,62 +43,14 @@ import {
   Info,
   Users
 } from 'lucide-react';
-import { Store } from '@/types/auth';
-import { Customer as DBCustomer } from '@/types/index';
-
-interface Customer {
-  id: string;
-  name: string;
-  phone: string;
-  email?: string;
-  address?: string;
-  notes?: string;
-  totalPurchases: number;
-  totalSpent: number;
-  lastPurchase?: Date;
-  createdAt: Date;
-  storeId: string;
-  storeName?: string;
-}
+import { 
+  CustomerProps, 
+  CustomerDisplay, 
+  CustomerSale 
+} from '@/types/customer';
 
 
-interface DBSale {
-  id: string;
-  customer_id: string;
-  total_amount: number;
-  transaction_date: string;
-  created_at: string;
-  [key: string]: unknown;
-}
-
-interface CustomerSale {
-  id: string;
-  customer_id: string;
-  total_amount: number;
-  transaction_date: string;
-  created_at: string;
-  receipt_number: string;
-  payment_method: string;
-  status: string;
-  sale_items: Array<{
-    id: string;
-    quantity: number;
-    unit_price: number;
-    total_price: number;
-    product: {
-      id: string;
-      name: string;
-      price: number;
-    };
-  }>;
-  [key: string]: unknown;
-}
-
-interface CustomerManagementProps {
-  onBack: () => void;
-}
-
-export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }) => {
+export const CustomerManagement: React.FC<CustomerProps> = ({ onBack }) => {
   const { user, currentStore, currentBusiness } = useAuth();
   const { 
     formatCurrency, 
@@ -120,7 +72,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [filterStore, setFilterStore] = useState<string>('all');
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerDisplay | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showCustomerDetail, setShowCustomerDetail] = useState(false);
@@ -145,7 +97,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
     enabled: user?.role === 'business_admin' && !!currentBusiness?.id
   });
 
-  const businessStores = businessStoresResponse?.stores || [];
+  const businessStores = businessStoresResponse || [];
 
   const {
     data: storeSales = [],
@@ -157,9 +109,9 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   });
 
   // React Query mutations
-  const createCustomerMutation = useCreateCustomer(currentStore?.id || '');
-  const updateCustomerMutation = useUpdateCustomer(currentStore?.id || '');
-  const deleteCustomerMutation = useDeleteCustomer(currentStore?.id || '');
+  const createCustomerMutation = useCreateCustomer();
+  const updateCustomerMutation = useUpdateCustomer();
+  const deleteCustomerMutation = useDeleteCustomer();
 
   // Customer sales query (only when needed)
   const {
@@ -168,7 +120,6 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   } = useCustomerSales(
     selectedCustomer?.id || '', 
     currentStore?.id || '',
-    currentBusiness?.id || '',
     {
       enabled: !!selectedCustomer?.id && !!currentStore?.id
     }
@@ -181,27 +132,32 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   const customers = useMemo(() => {
     if (!dbCustomers || !storeSales) return [];
     
-    return dbCustomers.map((customer: DBCustomer) => {
+    return dbCustomers.map((customer: Record<string, unknown>) => {
       // Calculate customer statistics from sales data
-      const customerSales = storeSales.filter((sale: DBSale) => sale.customer_id === customer.id);
+      const customerSales = storeSales.filter((sale: Record<string, unknown>) => sale.customer_id === customer.id);
       const totalPurchases = customerSales.length;
-      const totalSpent = customerSales.reduce((sum: number, sale: DBSale) => sum + (sale.total_amount || 0), 0);
+      const totalSpent = customerSales.reduce((sum: number, sale: Record<string, unknown>) => sum + (Number(sale.total_amount) || 0), 0);
       const lastPurchase = customerSales.length > 0 
-        ? new Date(Math.max(...customerSales.map((s: DBSale) => new Date(s.transaction_date || s.created_at).getTime())))
+        ? new Date(Math.max(...customerSales.map((s: Record<string, unknown>) => new Date(String(s.transaction_date || s.created_at)).getTime())))
         : undefined;
       
       return {
-        id: customer.id,
-        name: customer.name,
-        phone: customer.phone,
-        email: customer.email,
-        address: customer.address,
+        id: String(customer.id),
+        store_id: String(customer.store_id || currentStore?.id || ''),
+        name: String(customer.name),
+        email: customer.email ? String(customer.email) : undefined,
+        phone: customer.phone ? String(customer.phone) : undefined,
+        address: customer.address ? String(customer.address) : undefined,
+        total_purchases: Number(customer.total_purchases) || 0,
+        last_purchase_at: customer.last_purchase_at ? String(customer.last_purchase_at) : undefined,
+        is_active: customer.is_active !== false,
+        created_at: String(customer.created_at || ''),
+        updated_at: String(customer.updated_at || ''),
         notes: '', // Notes field not available in database schema
         totalPurchases,
         totalSpent,
-        createdAt: new Date(customer.created_at || ''),
+        createdAt: new Date(String(customer.created_at || '')),
         lastPurchase,
-        storeId: currentStore?.id || '',
         storeName: currentStore?.name || ''
       };
     });
@@ -209,22 +165,22 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
 
   // Check if phone number already exists (for validation)
   const isPhoneNumberExists = useCallback((phone: string, excludeCustomerId?: string) => {
-    return customers.some((customer: Customer) => 
+    return customers.some((customer: CustomerDisplay) => 
       customer.phone === phone && customer.id !== excludeCustomerId
     );
   }, [customers]);
 
   // Filter customers
-  const filteredCustomers = customers.filter((customer: Customer) => {
+  const filteredCustomers = customers.filter((customer: CustomerDisplay) => {
     const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.phone.includes(searchTerm) ||
+                         (customer.phone && customer.phone.includes(searchTerm)) ||
                          (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesFilter = filterStatus === 'all' ||
                          (filterStatus === 'active' && customer.totalPurchases > 0) ||
                          (filterStatus === 'inactive' && customer.totalPurchases === 0);
     
-    const matchesStore = filterStore === 'all' || customer.storeId === filterStore;
+    const matchesStore = filterStore === 'all' || customer.store_id === filterStore;
     
     return matchesSearch && matchesFilter && matchesStore;
   });
@@ -232,9 +188,9 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   // Customer stats
   const customerStats = {
     total: customers.length,
-    active: customers.filter((c: Customer) => c.totalPurchases > 0).length,
-    totalSpent: customers.reduce((sum: number, c: Customer) => sum + c.totalSpent, 0),
-    averageSpent: customers.length > 0 ? customers.reduce((sum: number, c: Customer) => sum + c.totalSpent, 0) / customers.length : 0
+    active: customers.filter((c: CustomerDisplay) => c.totalPurchases > 0).length,
+    totalSpent: customers.reduce((sum: number, c: CustomerDisplay) => sum + c.totalSpent, 0),
+    averageSpent: customers.length > 0 ? customers.reduce((sum: number, c: CustomerDisplay) => sum + c.totalSpent, 0) / customers.length : 0
   };
 
   const resetForm = () => {
@@ -271,6 +227,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
         phone: formData.phone.trim(),
         email: formData.email.trim() || undefined,
         address: formData.address.trim() || undefined,
+        is_active: true,
         store_id: currentStore.id,
       };
 
@@ -311,7 +268,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
     }
 
     try {
-      const updatedCustomer: Customer = {
+      const updatedCustomer: CustomerDisplay = {
         ...selectedCustomer,
         name: formData.name.trim(),
         phone: formData.phone.trim(),
@@ -322,14 +279,13 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
 
       // Update customer in database
       await updateCustomerMutation.mutateAsync({
-        customerId: selectedCustomer.id,
-        customerData: {
-          name: formData.name.trim(),
-          phone: formData.phone.trim(),
-          email: formData.email.trim() || undefined,
-          address: formData.address.trim() || undefined,
-          store_id: currentStore?.id || ''
-        }
+        id: selectedCustomer.id,
+        name: formData.name.trim(),
+        phone: formData.phone.trim(),
+        email: formData.email.trim() || undefined,
+        address: formData.address.trim() || undefined,
+        is_active: selectedCustomer.is_active,
+        store_id: currentStore?.id || ''
       });
       
       // Refresh customers from database
@@ -350,13 +306,16 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
     }
   };
 
-  const handleDeleteCustomer = async (customer: Customer) => {
+  const handleDeleteCustomer = async (customer: CustomerDisplay) => {
     if (!currentStore?.id) return;
     
     // setIsLoading(true); // This line is removed
     try {
       // Delete customer from database
-      await deleteCustomerMutation.mutateAsync(customer.id);
+      await deleteCustomerMutation.mutateAsync({
+        customerId: customer.id,
+        storeId: currentStore.id
+      });
       
       // Refresh customers from database
       await refetchCustomers();
@@ -400,7 +359,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   }, [user?.role, refetchCustomers, refetchSales, refetchBusinessStores]);
 
   // Handle view customer
-  const handleViewCustomer = useCallback((customer: Customer) => {
+  const handleViewCustomer = useCallback((customer: CustomerDisplay) => {
     if (!currentStore?.id) return;
     
     setSelectedCustomer(customer);
@@ -409,11 +368,11 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
     // The customer sales will be automatically fetched by the useCustomerSales hook
   }, [currentStore?.id]);
 
-  const openEditDialog = (customer: Customer) => {
+  const openEditDialog = (customer: CustomerDisplay) => {
     setSelectedCustomer(customer);
     setFormData({
       name: customer.name,
-      phone: customer.phone,
+      phone: customer.phone || '',
       email: customer.email || '',
       address: customer.address || '',
       notes: customer.notes || ''
@@ -457,7 +416,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
     {
       key: 'name',
       label: 'Customer',
-      render: (customer: Customer) => (
+      render: (customer: CustomerDisplay) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
             <User className="w-4 h-4 text-blue-600" />
@@ -475,7 +434,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
     {
       key: 'email',
       label: 'Contact',
-      render: (customer: Customer) => (
+      render: (customer: CustomerDisplay) => (
         <div className="space-y-1">
           {customer.email && (
             <p className="text-sm flex items-center gap-1">
@@ -495,7 +454,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
     {
       key: 'store',
       label: 'Store',
-      render: (customer: Customer) => (
+      render: (customer: CustomerDisplay) => (
         <div className="text-sm">
           <div className="font-medium">
             {customer.storeName || currentStore?.name || 'Unknown Store'}
@@ -506,7 +465,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
     {
       key: 'stats',
       label: 'Purchase History',
-      render: (customer: Customer) => (
+      render: (customer: CustomerDisplay) => (
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Badge variant={customer.totalPurchases > 0 ? 'default' : 'secondary'}>
@@ -525,7 +484,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
     {
       key: 'created',
       label: 'Member Since',
-      render: (customer: Customer) => (
+      render: (customer: CustomerDisplay) => (
         <div className="text-sm">
           <p>{formatDate(customer.createdAt)}</p>
           <p className="text-muted-foreground">
@@ -537,7 +496,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
     {
       key: 'actions',
       label: 'Actions',
-      render: (customer: Customer) => (
+      render: (customer: CustomerDisplay) => (
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => handleViewCustomer(customer)}>
             <Eye className="w-4 h-4" />
@@ -719,9 +678,10 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Stores</SelectItem>
-                      {businessStores.map((store: Store) => (
-                        <SelectItem key={store.id} value={store.id}>
-                          {store.name}
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {businessStores.map((store: any) => (
+                        <SelectItem key={String(store.id)} value={String(store.id)}>
+                          {String(store.name)}
                         </SelectItem>
                       ))}
                     </SelectContent>

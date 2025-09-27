@@ -1,48 +1,27 @@
-export interface Product {
-  id: string;
-  name: string;
-  price: number;
-  sku: string;
-  barcode?: string;
-  description?: string;
-  stock_quantity: number;
-  category_id?: string;
+// ============================================================================
+// POS COMPONENT TYPES
+// ============================================================================
+// This file re-exports types from the centralized types location
+// to maintain backward compatibility with existing POS components
+
+import { Product, CartItem, Customer, Sale } from '@/types';
+
+// Re-export core types from centralized location
+export type { Product, CartItem, Customer, Sale };
+
+// POS-specific extended types
+export interface POSProduct extends Product {
   categories?: { id: string; name: string };
-  is_active: boolean;
-  image_url?: string;
 }
 
-export interface CartItem {
-  product: Product;
-  quantity: number;
+export interface POSCartItem extends CartItem {
+  product: POSProduct;
   discount_amount?: number;
 }
 
-export interface Customer {
-  id: string;
-  name: string;
-  phone: string;
-  email?: string;
-  created_at: string;
-}
-
-export interface Sale {
-  id: string;
-  cashier_id: string;
-  store_id: string;
-  customer_id?: string;
+export interface POSSale extends Sale {
   customer_name?: string;
   customer_phone?: string;
-  items: CartItem[];
-  subtotal: number;
-  tax_amount: number;
-  total_amount: number;
-  payment_method: 'cash' | 'card' | 'mixed';
-  cash_received?: number;
-  change_given?: number;
-  transaction_date: string;
-  receipt_number?: string;
-  status: string;
   sale_items?: Array<{
     quantity: number;
     unit_price: number;
@@ -51,7 +30,6 @@ export interface Sale {
       name: string;
     };
   }>;
-  discount_amount?: number;
   customers?: {
     name: string;
     phone: string;

@@ -34,68 +34,18 @@ import {
   useRestockOrders
 } from '../utils/hooks/useStoreData';
 
-interface RestockOrder {
-  id: string;
-  store_id: string;
-  supplier_id: string;
-  status: 'pending' | 'ordered' | 'received' | 'cancelled';
-  total_amount: number;
-  notes?: string;
-  expected_delivery?: string;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-  supplier?: {
-    name: string;
-    contact_person: string;
-    phone: string;
-  };
-  items?: RestockItem[];
-}
+// Import types from centralized location
+import { 
+  RestockProps,
+  RestockOrderDisplay,
+  RestockFormData,
+  RestockProduct,
+  RestockSupplier,
+  RestockItemDisplay,
+  RestockItemFormData
+} from '@/types';
 
-interface RestockItem {
-  id: string;
-  restock_order_id: string;
-  product_id: string;
-  quantity: number;
-  unit_cost: number;
-  total_cost: number;
-  received_quantity?: number;
-  product?: {
-    name: string;
-    sku: string;
-    current_stock: number;
-    reorder_level: number;
-  };
-}
-
-interface Product {
-  id: string;
-  name: string;
-  sku: string;
-  stock_quantity: number;
-  reorder_level: number;
-  min_stock_level: number;
-  supplier_id?: string;
-  suppliers?: {
-    name: string;
-  };
-}
-
-interface Supplier {
-  id: string;
-  name: string;
-  contact_person: string;
-  phone: string;
-  email: string;
-  is_active: boolean;
-}
-
-interface RestockManagementProps {
-  onBack: () => void;
-}
-
-export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) => {
+export const RestockManagement: React.FC<RestockProps> = ({ onBack }) => {
   const { user, currentStore, currentBusiness } = useAuth();
   const { formatCurrency } = useSystem();
   const { logActivity } = useActivityLogger();
@@ -104,20 +54,16 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showReceiveDialog, setShowReceiveDialog] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<RestockOrder | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<RestockOrderDisplay | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   
   // Form State
-  const [newOrder, setNewOrder] = useState({
+  const [newOrder, setNewOrder] = useState<RestockFormData>({
     supplier_id: '',
     notes: '',
     expected_delivery: '',
-    items: [] as Array<{
-      product_id: string;
-      quantity: number;
-      unit_cost: number;
-    }>
+    items: []
   });
 
   // Use React Query hooks for data fetching
@@ -300,7 +246,7 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
   const updateOrderItem = (index: number, field: string, value: string | number) => {
     setNewOrder(prev => ({
       ...prev,
-      items: prev.items.map((item, i) => 
+      items: prev.items.map((item: RestockItemFormData, i: number) => 
         i === index ? { ...item, [field]: value } : item
       )
     }));
@@ -317,7 +263,7 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
   };
 
   // Filter orders
-  const filteredOrders = restockOrders.filter((order: RestockOrder) => {
+  const filteredOrders = restockOrders.filter((order: RestockOrderDisplay) => {
     if (!searchTerm) {
       const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
       return matchesStatus;
@@ -352,7 +298,7 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
   // Export orders
   const exportOrders = () => {
     const headers = ['Order ID', 'Supplier', 'Status', 'Total Amount', 'Created Date', 'Expected Delivery'];
-    const rows = filteredOrders.map((order: RestockOrder) => [
+    const rows = filteredOrders.map((order: RestockOrderDisplay) => [
       order.id,
       order.supplier?.name || 'Unknown',
       order.status,
@@ -483,7 +429,7 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
                   )}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {getLowStockProducts().slice(0, 10).map((product: Product) => (
+                  {getLowStockProducts().slice(0, 10).map((product: RestockProduct) => (
                     <Badge key={product.id} variant="outline" className="text-orange-700 border-orange-300">
                       {product.name} ({product.stock_quantity} left)
                     </Badge>
@@ -582,7 +528,7 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {filteredOrders.map((order: RestockOrder) => (
+                  {filteredOrders.map((order: RestockOrderDisplay) => (
                     <div key={order.id} className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
@@ -696,7 +642,7 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
                     <SelectValue placeholder="Select supplier" />
                   </SelectTrigger>
                   <SelectContent>
-                    {suppliers.filter((s: Supplier) => s.is_active).map((supplier: Supplier) => (
+                    {suppliers.filter((s: RestockSupplier) => s.is_active).map((supplier: RestockSupplier) => (
                       <SelectItem key={supplier.id} value={supplier.id}>
                         {supplier.name}
                       </SelectItem>
@@ -748,7 +694,7 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
                           <SelectValue placeholder="Select product" />
                         </SelectTrigger>
                         <SelectContent>
-                          {getAllProducts().map((product: Product) => (
+                          {getAllProducts().map((product: RestockProduct) => (
                             <SelectItem key={product.id} value={product.id}>
                               {product.name} (Current: {product.stock_quantity})
                             </SelectItem>
@@ -825,7 +771,7 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {suppliers.filter((s: Supplier) => s.is_active).map((supplier: Supplier) => (
+                      {suppliers.filter((s: RestockSupplier) => s.is_active).map((supplier: RestockSupplier) => (
                         <SelectItem key={supplier.id} value={supplier.id}>
                           {supplier.name}
                         </SelectItem>
@@ -879,7 +825,7 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {getAllProducts().map((product: Product) => (
+                            {getAllProducts().map((product: RestockProduct) => (
                               <SelectItem key={product.id} value={product.id}>
                                 {product.name}
                               </SelectItem>
@@ -1002,7 +948,7 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
                 <Button 
                   onClick={() => {
                     if (selectedOrder.items) {
-                      const receivedItems = selectedOrder.items.map((item: RestockItem) => ({
+                      const receivedItems = selectedOrder.items.map((item: RestockItemDisplay) => ({
                         product_id: item.product_id,
                         received_quantity: item.received_quantity || item.quantity
                       }));
