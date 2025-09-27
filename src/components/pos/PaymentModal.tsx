@@ -126,6 +126,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 {selectedCustomer?.phone && selectedCustomer.id !== 'walk-in' && (
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{selectedCustomer.phone}</p>
                 )}
+                {/* Supply Mode Warning */}
+                {isSupplyMode && selectedCustomer?.id === 'walk-in' && (
+                  <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+                    ⚠️ Supply orders require a registered customer
+                  </p>
+                )}
               </div>
               {selectedCustomer?.id !== 'walk-in' && (
                 <Button size="sm" variant="ghost" onClick={onClearCustomer} className="h-6 w-6 p-0 ml-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">

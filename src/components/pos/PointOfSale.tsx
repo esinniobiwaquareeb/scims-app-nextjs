@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { useActivityLogging } from '@/hooks/useActivityLogging';
-import { Card, CardContent } from '@/components/ui/card';
+// import { Card, CardContent } from '@/components/ui/card';
 import { 
   useStoreProducts, 
   useStoreCustomers, 
@@ -18,15 +18,12 @@ import {
   useCategories
 } from '@/utils/hooks/useStoreData';
 import { 
-  useOfflineCreateSale,
-  useNetworkStatus
+  useOfflineCreateSale
 } from '@/utils/hooks/useOfflineData';
 import { 
   ShoppingCart, 
   Activity,
   Loader2,
-  Wifi,
-  WifiOff,
   Package
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -137,52 +134,52 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
   
   // Derive business type and features from settings
   const businessType = businessSettings?.business_type || 'retail';
-  const isFeatureEnabled = (feature: string) => {
-    if (!businessSettings) return false;
+  // const isFeatureEnabled = (feature: string) => {
+  //   if (!businessSettings) return false;
     
-    switch (feature) {
-      case 'stockTracking':
-        return businessSettings.enable_stock_tracking || false;
-      case 'inventoryAlerts':
-        return businessSettings.enable_inventory_alerts || false;
-      case 'restockManagement':
-        return businessSettings.enable_restock_management || false;
-      case 'recipeManagement':
-        return businessSettings.enable_recipe_management || false;
-      case 'serviceBooking':
-        return businessSettings.enable_service_booking || false;
-      case 'menuManagement':
-        return businessSettings.enable_menu_management || false;
-      case 'ingredientTracking':
-        return businessSettings.enable_ingredient_tracking || false;
-      default:
-        return false;
-    }
-  };
+  //   switch (feature) {
+  //     case 'stockTracking':
+  //       return businessSettings.enable_stock_tracking || false;
+  //     case 'inventoryAlerts':
+  //       return businessSettings.enable_inventory_alerts || false;
+  //     case 'restockManagement':
+  //       return businessSettings.enable_restock_management || false;
+  //     case 'recipeManagement':
+  //       return businessSettings.enable_recipe_management || false;
+  //     case 'serviceBooking':
+  //       return businessSettings.enable_service_booking || false;
+  //     case 'menuManagement':
+  //       return businessSettings.enable_menu_management || false;
+  //     case 'ingredientTracking':
+  //       return businessSettings.enable_ingredient_tracking || false;
+  //     default:
+  //       return false;
+  //   }
+  // };
   
   // Get POS features based on business type and enabled features
-  const posFeatures = useMemo(() => {
-    const features = [];
+  // const posFeatures = useMemo(() => {
+  //   const features = [];
     
-    if (isFeatureEnabled('stockTracking')) {
-      features.push('stockTracking', 'inventoryAlerts', 'restockManagement');
-    }
+  //   if (isFeatureEnabled('stockTracking')) {
+  //     features.push('stockTracking', 'inventoryAlerts', 'restockManagement');
+  //   }
     
-    if (isFeatureEnabled('recipeManagement')) {
-      features.push('recipeManagement', 'menuManagement', 'ingredientTracking');
-    }
+  //   if (isFeatureEnabled('recipeManagement')) {
+  //     features.push('recipeManagement', 'menuManagement', 'ingredientTracking');
+  //   }
     
-    if (isFeatureEnabled('serviceBooking')) {
-      features.push('serviceBooking');
-    }
+  //   if (isFeatureEnabled('serviceBooking')) {
+  //     features.push('serviceBooking');
+  //   }
     
-    return features;
-  }, [businessSettings]);
+  //   return features;
+  // }, [businessSettings]);
   
   const { logSaleCreated, logCustomActivity } = useActivityLogging();
   
   // Network status for offline awareness
-  const { isOnline } = useNetworkStatus();
+  // const { isOnline } = useNetworkStatus();
   
   // Create a translate wrapper that matches the expected signature
   const translateWrapper = useCallback((key: string, fallback?: string) => {
@@ -193,7 +190,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [activeTab, setActiveTab] = useState('pos');
-  const [error, setError] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null);
   
   // Cart state
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -239,7 +236,6 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
   const {
     data: storeProducts = [],
     isLoading: productsLoading,
-    error: productsError,
     refetch: refetchProducts
   } = useStoreProducts(currentStore?.id || '', { enabled: !!currentStore?.id });
 
@@ -261,8 +257,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
 
   const {
     data: savedCarts = [],
-    isLoading: savedCartsLoading,
-    refetch: refetchSavedCarts
+    isLoading: savedCartsLoading
   } = useSavedCarts(currentStore?.id || '', user?.id || '', {
     enabled: !!currentStore?.id && !!user?.id
   });
@@ -282,11 +277,11 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
       return ['All'];
     }
     return ['All', ...businessCategories.map((cat: { name: any; }) => cat.name)];
-  }, [businessCategories, currentStore?.id]);
+  }, [businessCategories]);
 
   const customers = useMemo(() => {
     return [WALK_IN_CUSTOMER, ...(storeCustomers || [])];
-  }, [storeCustomers, currentStore?.id]);
+  }, [storeCustomers]);
 
   // Process today's sales for the cashier
   const todaySales = useMemo(() => {
@@ -324,22 +319,36 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
     if (!selectedCustomer || selectedCustomer.id !== 'walk-in') {
       setSelectedCustomer(WALK_IN_CUSTOMER);
     }
-  }, []);
+  }, [selectedCustomer]);
 
   // Memoized calculations
   const calculateSubtotal = useCallback(() => {
     return cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
   }, [cart]);
 
-  const calculateTax = useCallback(() => {
+  const calculateDiscount = useCallback(() => {
     const subtotal = calculateSubtotal();
     const config = storeConfig as any;
-    return config?.enable_tax ? subtotal * ((config?.tax_rate || 0) / 100) : 0;
+    if (config?.enable_discount && config?.discount_rate > 0) {
+      return subtotal * (config.discount_rate / 100);
+    }
+    return 0;
   }, [calculateSubtotal, storeConfig]);
 
+  const calculateTax = useCallback(() => {
+    const subtotal = calculateSubtotal();
+    const discount = calculateDiscount();
+    const config = storeConfig as any;
+    const taxableAmount = subtotal - discount;
+    return config?.enable_tax ? taxableAmount * ((config?.tax_rate || 0) / 100) : 0;
+  }, [calculateSubtotal, calculateDiscount, storeConfig]);
+
   const calculateTotal = useCallback(() => {
-    return calculateSubtotal() + calculateTax();
-  }, [calculateSubtotal, calculateTax]);
+    const subtotal = calculateSubtotal();
+    const discount = calculateDiscount();
+    const tax = calculateTax();
+    return subtotal - discount + tax;
+  }, [calculateSubtotal, calculateDiscount, calculateTax]);
 
   const getChange = useCallback(() => {
     if (paymentMethod === 'cash' && cashAmount) {
@@ -405,6 +414,13 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
   const processSupplyOrder = useCallback(async (onPaymentComplete?: () => void) => {
     if (!currentStore?.id || !user?.id || !selectedCustomer) {
       toast.error('Missing required information for supply order');
+      setIsProcessing(false);
+      return;
+    }
+
+    // Check if walk-in customer is selected for supply order
+    if (selectedCustomer.id === 'walk-in') {
+      toast.error('Supply orders can only be created for registered customers. Please select a customer or add a new customer.');
       setIsProcessing(false);
       return;
     }
@@ -487,7 +503,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
         receipt_number: `R${Date.now().toString().slice(-6)}`,
         subtotal: calculateSubtotal(),
         tax_amount: calculateTax(),
-        discount_amount: 0,
+        discount_amount: calculateDiscount(),
         total_amount: calculateTotal(),
         payment_method: paymentMethod === 'mixed' ? 
           (parseFloat(cashAmount) > parseFloat(cardAmount) ? 'cash' : 'card') : 
@@ -645,7 +661,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
     } finally {
       setIsProcessing(false);
     }
-  }, [currentStore?.id, cart, calculateSubtotal, calculateTax, calculateTotal, paymentMethod, cashAmount, cardAmount, selectedCustomer, storeConfig, user?.name, translateWrapper, formatCurrency, playSound, logSaleCreated, printReceipt, onSaleCompleted, processSaleMutation, refetchProducts]);
+  }, [currentStore?.id, currentStore?.name, cart, calculateSubtotal, calculateDiscount, calculateTax, calculateTotal, paymentMethod, cashAmount, cardAmount, selectedCustomer, storeConfig, user?.name, user?.id, translateWrapper, playSound, logSaleCreated, printReceipt, onSaleCompleted, processSaleMutation, refetchProducts, isSupplyMode, processSupplyOrder, getCurrentCurrency]);
 
   // Customer operations
   const handleAddCustomer = useCallback(async () => {
@@ -876,14 +892,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
       <main className={`w-full ${isFullscreen ? 'h-screen' : 'h-screen'}`}>
         {/* Main POS Content */}
         <div className={`h-full w-full flex flex-col lg:flex-row gap-3 lg:gap-6 p-3 lg:p-6 pb-20 ${isFullscreen ? 'h-[calc(100vh-20px)]' : 'h-[calc(100vh-20px)]'}`}>
-          {/* Error Display */}
-          {error && (
-            <Card className="mb-4 border-red-200 dark:border-red-800 bg-red-50/80 dark:bg-red-900/20 backdrop-blur-sm shadow-sm">
-              <CardContent className="p-3">
-                <p className="text-red-800 dark:text-red-200 text-sm">{error}</p>
-              </CardContent>
-            </Card>
-          )}
+          {/* Error Display - Removed as error state is commented out */}
 
           {/* Products Section - Left Side */}
           <ProductGrid
@@ -922,6 +931,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
             onSelectCustomer={() => setShowCustomerDialog(true)}
             onClearCustomer={clearCustomer}
             calculateSubtotal={calculateSubtotal}
+            calculateDiscount={calculateDiscount}
             calculateTax={calculateTax}
             calculateTotal={calculateTotal}
             getChange={getChange}

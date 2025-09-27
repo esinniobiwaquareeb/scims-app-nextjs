@@ -1,15 +1,27 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Sale } from '@/types';
 
 // Network status hook
 export const useNetworkStatus = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [syncInProgress, setSyncInProgress] = useState(false);
+  const [pendingItems, setPendingItems] = useState(0);
+
+  // Check for pending offline sales
+  useEffect(() => {
+    const offlineSales = JSON.parse(localStorage.getItem('offline_sales') || '[]');
+    setPendingItems(offlineSales.length);
+  }, []);
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
+    const handleOnline = () => {
+      setIsOnline(true);
+      // Trigger sync when coming back online
+      syncOfflineSales();
+    };
     const handleOffline = () => setIsOnline(false);
 
     window.addEventListener('online', handleOnline);
@@ -21,11 +33,43 @@ export const useNetworkStatus = () => {
     };
   }, []);
 
+  const syncOfflineSales = async () => {
+    const offlineSales = JSON.parse(localStorage.getItem('offline_sales') || '[]');
+    if (offlineSales.length === 0) return;
+
+    setSyncInProgress(true);
+    try {
+      for (const sale of offlineSales) {
+        try {
+          const response = await fetch('/api/sales', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(sale),
+          });
+          
+          if (response.ok) {
+            // Remove synced sale from localStorage
+            const updatedSales = offlineSales.filter((s: Sale & { id: string }) => s.id !== sale.id);
+            localStorage.setItem('offline_sales', JSON.stringify(updatedSales));
+            setPendingItems(updatedSales.length);
+          }
+        } catch (error) {
+          console.error('Failed to sync offline sale:', error);
+        }
+      }
+    } finally {
+      setSyncInProgress(false);
+    }
+  };
+
   return {
     isOnline,
-    syncInProgress: false, // Offline sync not yet implemented
-    pendingItems: 0, // Offline queue not yet implemented
-    lastSync: 0 // Offline sync not yet implemented
+    syncInProgress,
+    pendingItems,
+    lastSync: 0,
+    syncOfflineSales
   };
 };
 
@@ -65,7 +109,6 @@ export const useOfflineMutation = <TData, TVariables>(
   } = {}
 ) => {
   const { isOnline } = useNetworkStatus();
-  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (variables: TVariables) => {
@@ -110,14 +153,32 @@ export const useOfflineCreateSale = () => {
         
         return response.json();
       } else {
-        // Offline sale storage not yet implemented
-        throw new Error('Offline mode not yet implemented');
+        // Store sale in localStorage for offline mode
+        const offlineSales = JSON.parse(localStorage.getItem('offline_sales') || '[]');
+        const offlineSale = {
+          ...saleData,
+          id: `offline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          isOffline: true,
+          created_at: new Date().toISOString(),
+          status: 'pending_sync'
+        };
+        
+        offlineSales.push(offlineSale);
+        localStorage.setItem('offline_sales', JSON.stringify(offlineSales));
+        
+        // Return the offline sale data
+        return { data: offlineSale, success: true, offline: true };
       }
     },
     onSuccess: (data, variables) => {
-      // Invalidate and refetch sales for the store
-      queryClient.invalidateQueries({ queryKey: ['store-sales', variables.store_id] });
-      queryClient.invalidateQueries({ queryKey: ['cashier-sales', variables.cashier_id, variables.store_id] });
+      if (data.offline) {
+        // For offline sales, just show success message
+        console.log('Sale saved offline, will sync when online');
+      } else {
+        // Invalidate and refetch sales for the store when online
+        queryClient.invalidateQueries({ queryKey: ['store-sales', variables.store_id] });
+        queryClient.invalidateQueries({ queryKey: ['cashier-sales', variables.cashier_id, variables.store_id] });
+      }
     },
     onError: (error) => {
       console.error('Create sale error:', error);

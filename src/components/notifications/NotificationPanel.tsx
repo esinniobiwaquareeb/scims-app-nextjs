@@ -21,10 +21,12 @@ import {
   Phone,
   DollarSign,
   Package,
-  X
+  X,
+  ExternalLink
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Notification } from '@/types/notification';
+import { useRouter } from 'next/navigation';
 
 // Helper function to safely format dates
 const formatNotificationTime = (dateString: string): string => {
@@ -45,6 +47,7 @@ interface NotificationPanelProps {
 }
 
 export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
+  const router = useRouter();
   const {
     notifications,
     stats,
@@ -109,11 +112,9 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
 
   const handleProcessOrder = async (notification: Notification) => {
     if (notification.type === 'order' && notification.data?.orderId) {
-      // Add to processing set
       setProcessingNotifications(prev => new Set(prev).add(notification.id));
       
       try {
-        // Process the order by updating its status to confirmed
         const response = await fetch(`/api/orders/${notification.data.orderId}/process`, {
           method: 'POST',
           headers: {
@@ -123,9 +124,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
         });
 
         if (response.ok) {
-          // Mark notification as read after successful processing
           await markAsRead(notification.id);
-          // Refresh notifications to get updated data
           await refreshNotifications();
         } else {
           console.error('Failed to process order:', await response.text());
@@ -133,7 +132,6 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
       } catch (error) {
         console.error('Error processing order:', error);
       } finally {
-        // Remove from processing set
         setProcessingNotifications(prev => {
           const newSet = new Set(prev);
           newSet.delete(notification.id);
@@ -147,13 +145,16 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
     await deleteNotification(notificationId);
   };
 
-
+  const handleViewAll = () => {
+    onClose();
+    router.push('/notifications');
+  };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50" onClick={onClose}>
-      <div className="fixed right-0 top-0 h-full w-96 bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="fixed right-0 top-0 h-full w-96 bg-white dark:bg-gray-800 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <Card className="h-full rounded-none border-0 flex flex-col">
           <CardHeader className="border-b flex-shrink-0">
             <div className="flex items-center justify-between">
@@ -231,7 +232,18 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
               </Button>
             </div>
 
-
+            {/* View All Button */}
+            <div className="mt-3">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleViewAll}
+                className="w-full flex items-center gap-2"
+              >
+                <ExternalLink className="w-4 h-4" />
+                View All Notifications
+              </Button>
+            </div>
           </CardHeader>
 
           <CardContent className="p-0 flex-1 overflow-hidden">
@@ -258,159 +270,163 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                   </p>
                 </div>
               ) : (
-                <div className="p-4 space-y-3">
-                  {filteredNotifications.map((notification) => (
+                <div className="p-3 space-y-2">
+                  {filteredNotifications.slice(0, 10).map((notification) => (
                     <div
                       key={notification.id}
-                      className={`p-4 rounded-lg border transition-all hover:shadow-md ${
+                      className={`p-3 rounded-lg border transition-all hover:shadow-sm ${
                         notification.isRead 
                           ? 'bg-gray-50 border-gray-200' 
                           : 'bg-white border-blue-200 shadow-sm'
                       }`}
                     >
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 mt-1">
-                          {getNotificationIcon(notification.type)}
+                      <div className="space-y-2">
+                        {/* Header with icon, title, and badge */}
+                        <div className="flex items-start gap-2">
+                          <div className="flex-shrink-0 mt-0.5">
+                            {getNotificationIcon(notification.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className={`font-medium text-sm ${
+                                notification.isRead ? 'text-gray-700' : 'text-gray-900'
+                              } truncate`}>
+                                {notification.title}
+                              </h4>
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs ${getNotificationBadgeColor(notification.type)}`}
+                              >
+                                {notification.type}
+                              </Badge>
+                            </div>
+                            <p className={`text-xs ${
+                              notification.isRead ? 'text-gray-600' : 'text-gray-700'
+                            } overflow-hidden`} style={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical'
+                            }}>
+                              {notification.message}
+                            </p>
+                          </div>
                         </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className={`font-medium text-sm ${
-                                  notification.isRead ? 'text-gray-700' : 'text-gray-900'
-                                }`}>
-                                  {notification.title}
-                                </h4>
-                                <Badge 
-                                  variant="outline" 
-                                  className={`text-xs ${getNotificationBadgeColor(notification.type)}`}
-                                >
-                                  {notification.type}
-                                </Badge>
+
+                        {/* Order details - simplified for overlay */}
+                        {notification.type === 'order' && notification.data && (
+                          <div className="bg-green-50 border border-green-200 rounded p-2 text-xs">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1">
+                                <User className="w-3 h-3 text-green-600" />
+                                <span className="font-medium text-green-800">Customer:</span>
+                                <span className="text-green-700 truncate">{notification.data.customerName}</span>
                               </div>
                               
-                              <p className={`text-sm mb-2 ${
-                                notification.isRead ? 'text-gray-600' : 'text-gray-700'
-                              }`}>
-                                {notification.message}
-                              </p>
-
-                              {/* Order details for order notifications */}
-                              {notification.type === 'order' && notification.data && (
-                                <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-2">
-                                  <div className="grid grid-cols-1 gap-2 text-xs">
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-1">
-                                        <User className="w-3 h-3 text-green-600" />
-                                        <span className="font-medium text-green-800">Customer:</span>
-                                        <span className="text-green-700">{notification.data.customerName}</span>
-                                      </div>
-                                      {notification.data.totalAmount && (
-                                        <div className="flex items-center gap-1">
-                                          <DollarSign className="w-3 h-3 text-green-600" />
-                                          <span className="font-bold text-green-800">${notification.data.totalAmount.toFixed(2)}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                    
-                                    {notification.data.customerPhone && (
-                                      <div className="flex items-center gap-1">
-                                        <Phone className="w-3 h-3 text-green-600" />
-                                        <span className="font-medium text-green-800">Phone:</span>
-                                        <span className="text-green-700">{notification.data.customerPhone}</span>
-                                      </div>
-                                    )}
-                                    
-                                    {notification.data.orderItems && notification.data.orderItems.length > 0 && (
-                                      <div className="mt-2">
-                                        <div className="flex items-center gap-1 mb-1">
-                                          <Package className="w-3 h-3 text-green-600" />
-                                          <span className="font-medium text-green-800">Order Items:</span>
-                                        </div>
-                                        <div className="space-y-1">
-                                          {notification.data.orderItems.slice(0, 3).map((item: { name: string; quantity: number; price: number }, index: number) => (
-                                            <div key={index} className="flex justify-between text-xs text-green-700">
-                                              <span>{item.name}</span>
-                                              <span>Qty: {item.quantity} × ${item.price?.toFixed(2) || '0.00'}</span>
-                                            </div>
-                                          ))}
-                                          {notification.data.orderItems.length > 3 && (
-                                            <div className="text-xs text-green-600 font-medium">
-                                              +{notification.data.orderItems.length - 3} more items
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                    
-                                    <div className="mt-2 pt-2 border-t border-green-200">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-xs text-green-600 font-medium">Order ID: {notification.data.orderId}</span>
-                                        <span className="text-xs text-green-600">Status: Pending</span>
-                                      </div>
-                                    </div>
-                                  </div>
+                              {notification.data.totalAmount && (
+                                <div className="flex items-center gap-1">
+                                  <DollarSign className="w-3 h-3 text-green-600" />
+                                  <span className="font-medium text-green-800">Amount:</span>
+                                  <span className="font-bold text-green-800">${notification.data.totalAmount.toFixed(2)}</span>
                                 </div>
                               )}
-
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <Clock className="w-3 h-3" />
-                                <span>
-                                  {formatNotificationTime(notification.createdAt)}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1 ml-2">
-                              {/* Quick action for order notifications */}
-                              {notification.type === 'order' && !notification.isRead && (
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  onClick={() => handleProcessOrder(notification)}
-                                  disabled={processingNotifications.has(notification.id)}
-                                  className="h-8 px-3 text-xs bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
-                                >
-                                  {processingNotifications.has(notification.id) ? (
-                                    <>
-                                      <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
-                                      Processing...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Check className="w-3 h-3 mr-1" />
-                                      Process
-                                    </>
+                              
+                              {notification.data.customerPhone && (
+                                <div className="flex items-center gap-1">
+                                  <Phone className="w-3 h-3 text-green-600" />
+                                  <span className="font-medium text-green-800">Phone:</span>
+                                  <span className="text-green-700">{notification.data.customerPhone}</span>
+                                </div>
+                              )}
+                              
+                              {notification.data.orderItems && notification.data.orderItems.length > 0 && (
+                                <div className="pt-1 border-t border-green-200">
+                                  <div className="flex items-center gap-1 mb-1">
+                                    <Package className="w-3 h-3 text-green-600" />
+                                    <span className="font-medium text-green-800">Items:</span>
+                                    <span className="text-green-700">{notification.data.orderItems.length} item(s)</span>
+                                  </div>
+                                  {notification.data.orderItems.slice(0, 2).map((item: { name: string; quantity: number; price: number }, index: number) => (
+                                    <div key={index} className="text-green-700 truncate">
+                                      • {item.name} (Qty: {item.quantity})
+                                    </div>
+                                  ))}
+                                  {notification.data.orderItems.length > 2 && (
+                                    <div className="text-green-600 text-xs">
+                                      +{notification.data.orderItems.length - 2} more items
+                                    </div>
                                   )}
-                                </Button>
+                                </div>
                               )}
-                              
-                              {!notification.isRead && notification.type !== 'order' && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleMarkAsRead(notification)}
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <Check className="w-4 h-4" />
-                                </Button>
-                              )}
-                              
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Time and actions */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1 text-xs text-gray-500">
+                            <Clock className="w-3 h-3" />
+                            <span>{formatNotificationTime(notification.createdAt)}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-1">
+                            {/* Quick action for order notifications */}
+                            {notification.type === 'order' && !notification.isRead && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => handleProcessOrder(notification)}
+                                disabled={processingNotifications.has(notification.id)}
+                                className="h-6 px-2 text-xs bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                {processingNotifications.has(notification.id) ? (
+                                  <RefreshCw className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Check className="w-3 h-3" />
+                                )}
+                              </Button>
+                            )}
+                            
+                            {!notification.isRead && notification.type !== 'order' && (
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleDeleteNotification(notification.id)}
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                onClick={() => handleMarkAsRead(notification)}
+                                className="h-6 w-6 p-0"
+                                title="Mark as read"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Check className="w-3 h-3" />
                               </Button>
-                            </div>
+                            )}
+                            
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteNotification(notification.id)}
+                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                              title="Delete notification"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
                           </div>
                         </div>
                       </div>
                     </div>
                   ))}
+                  
+                  {/* Show more indicator if there are more notifications */}
+                  {filteredNotifications.length > 10 && (
+                    <div className="text-center py-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleViewAll}
+                        className="flex items-center gap-2"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        View {filteredNotifications.length - 10} more notifications
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </ScrollArea>

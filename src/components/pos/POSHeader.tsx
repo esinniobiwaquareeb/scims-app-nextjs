@@ -20,7 +20,7 @@ export const POSHeader: React.FC<POSHeaderProps> = ({
 }) => {
   const { user, logout, currentBusiness, currentStore } = useAuth();
   const { translate } = useSystem();
-  const { isOnline } = useNetworkStatus();
+  const { isOnline, pendingItems } = useNetworkStatus();
 
   return (
     <header className="bg-background shadow-sm border-b border-border sticky top-0 z-40 w-full">
@@ -182,12 +182,12 @@ export const POSHeader: React.FC<POSHeaderProps> = ({
               {isOnline ? (
                 <>
                   <Wifi className="w-3 h-3 mr-1" />
-                  Online Mode
+                  {pendingItems > 0 ? `Syncing ${pendingItems} sales...` : 'Online Mode'}
                 </>
               ) : (
                 <>
                   <WifiOff className="w-3 h-3 mr-1" />
-                  Offline Mode - Sales will sync when online
+                  Offline Mode - {pendingItems} sales pending sync
                 </>
               )}
             </Badge>

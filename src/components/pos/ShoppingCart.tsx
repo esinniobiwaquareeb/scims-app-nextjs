@@ -2,12 +2,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useSystem } from '@/contexts/SystemContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
@@ -17,12 +14,10 @@ import {
   Plus, 
   Trash2, 
   CreditCard,
-  DollarSign,
   Search,
   Receipt,
   Save,
   Clock,
-  Loader2,
   ShoppingCart as ShoppingCartIcon
 } from 'lucide-react';
 
@@ -78,6 +73,7 @@ interface ShoppingCartProps {
   onSelectCustomer: () => void;
   onClearCustomer: () => void;
   calculateSubtotal: () => number;
+  calculateDiscount: () => number;
   calculateTax: () => number;
   calculateTotal: () => number;
   getChange: () => number;
@@ -116,6 +112,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   onSelectCustomer,
   onClearCustomer,
   calculateSubtotal,
+  calculateDiscount,
   calculateTax,
   calculateTotal,
   getChange,
@@ -342,6 +339,12 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
                   <span className="text-muted-foreground">Subtotal:</span>
                   <span>{formatCurrency(calculateSubtotal())}</span>
                 </div>
+                {calculateDiscount() > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span className="text-muted-foreground">Discount:</span>
+                    <span>-{formatCurrency(calculateDiscount())}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Tax:</span>
                   <span>{formatCurrency(calculateTax())}</span>
@@ -364,6 +367,12 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
                   <CreditCard className="w-3 h-3 mr-1" />
                   {isSupplyMode ? 'Process Supply Order' : (translate('pos.processPayment') || 'Process Payment')}
                 </Button>
+                {/* Supply Mode Warning */}
+                {isSupplyMode && selectedCustomer?.id === 'walk-in' && (cart || []).length > 0 && (
+                  <p className="text-xs text-orange-600 text-center mt-2 font-medium">
+                    Please select a registered customer to process supply order
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>
