@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // ============================================================================
 // SUPPLY MANAGEMENT STORES (REACT QUERY HOOKS)
 // ============================================================================

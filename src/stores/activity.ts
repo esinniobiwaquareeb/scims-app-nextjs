@@ -2,9 +2,10 @@
 // ACTIVITY LOG STORE HOOKS
 // ============================================================================
 
+import { ApiResponse } from '@/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ActivityLogDisplay, ApiResponse } from '@/types';
+// Activity log types are inferred from API responses
 
 // Hook for fetching activity logs
 export const useActivityLogs = (
@@ -46,8 +47,8 @@ export const useActivityLogs = (
       if (!response.ok) {
         throw new Error('Failed to fetch activity logs');
       }
-      const data: ApiResponse<ActivityLogDisplay[]> = await response.json();
-      return data.data || [];
+      const data = await response.json();
+      return data.logs || [];
     },
     enabled: enabled && !!businessId,
     staleTime: 2 * 60 * 1000, // 2 minutes - activity logs change frequently

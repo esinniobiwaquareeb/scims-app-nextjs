@@ -15,12 +15,12 @@ export const useReportingSales = (storeId: string, startDate: string, endDate: s
   return useQuery({
     queryKey: ['reporting-sales', storeId, startDate, endDate],
     queryFn: async () => {
-      const response = await fetch(`/api/reports/sales?store_id=${storeId}&start_date=${startDate}&end_date=${endDate}`);
+      const response = await fetch(`/api/reports?type=sales&business_id=${storeId}&start_date=${startDate}&end_date=${endDate}`);
       if (!response.ok) {
         throw new Error('Failed to fetch sales statistics');
       }
-      const data: ApiResponse<SalesStats> = await response.json();
-      return data.data;
+      const data = await response.json();
+      return data.data || data;
     },
     enabled: enabled && !!storeId && !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -37,11 +37,12 @@ export const useReportingProductPerformance = (storeId: string, startDate: strin
   return useQuery({
     queryKey: ['reporting-product-performance', storeId, startDate, endDate],
     queryFn: async () => {
-      const response = await fetch(`/api/reports/product-performance?store_id=${storeId}&start_date=${startDate}&end_date=${endDate}`);
+      // TODO: Implement product performance report - use inventory report for now
+      const response = await fetch(`/api/reports?type=inventory&business_id=${storeId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch product performance');
       }
-      const data: ApiResponse<ProductPerformance[]> = await response.json();
+      const data = await response.json();
       return data.data || [];
     },
     enabled: enabled && !!storeId && !!startDate && !!endDate,
@@ -59,12 +60,12 @@ export const useReportingCustomerAnalytics = (storeId: string, startDate: string
   return useQuery({
     queryKey: ['reporting-customer-analytics', storeId, startDate, endDate],
     queryFn: async () => {
-      const response = await fetch(`/api/reports/customer-analytics?store_id=${storeId}&start_date=${startDate}&end_date=${endDate}`);
+      const response = await fetch(`/api/reports?type=customers&business_id=${storeId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch customer analytics');
       }
-      const data: ApiResponse<Record<string, any>> = await response.json();
-      return data.data;
+      const data = await response.json();
+      return data.data || data;
     },
     enabled: enabled && !!storeId && !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000,
@@ -81,12 +82,12 @@ export const useReportingInventoryStats = (storeId: string, options?: {
   return useQuery({
     queryKey: ['reporting-inventory-stats', storeId],
     queryFn: async () => {
-      const response = await fetch(`/api/reports/inventory-stats?store_id=${storeId}`);
+      const response = await fetch(`/api/reports?type=inventory&business_id=${storeId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch inventory statistics');
       }
-      const data: ApiResponse<Record<string, any>> = await response.json();
-      return data.data;
+      const data = await response.json();
+      return data.data || data;
     },
     enabled: enabled && !!storeId,
     staleTime: 5 * 60 * 1000,
@@ -107,8 +108,8 @@ export const useReportingFinancialMetrics = (storeId: string, startDate: string,
       if (!response.ok) {
         throw new Error('Failed to fetch financial metrics');
       }
-      const data: ApiResponse<FinancialStats> = await response.json();
-      return data.data;
+      const data = await response.json();
+      return data.data || data;
     },
     enabled: enabled && !!storeId && !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000,
@@ -125,12 +126,11 @@ export const useReportingChartData = (storeId: string, chartType: string, startD
   return useQuery({
     queryKey: ['reporting-chart-data', storeId, chartType, startDate, endDate],
     queryFn: async () => {
-      const response = await fetch(`/api/reports/chart-data?store_id=${storeId}&chart_type=${chartType}&start_date=${startDate}&end_date=${endDate}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch chart data');
-      }
-      const data: ApiResponse<ChartData[]> = await response.json();
-      return data.data || [];
+      // TODO: Implement chart data report
+      return {
+        labels: [],
+        datasets: []
+      };
     },
     enabled: enabled && !!storeId && !!chartType && !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000,
@@ -147,12 +147,8 @@ export const useReportingDailyRevenue = (storeId: string, startDate: string, end
   return useQuery({
     queryKey: ['reporting-daily-revenue', storeId, startDate, endDate],
     queryFn: async () => {
-      const response = await fetch(`/api/reports/daily-revenue?store_id=${storeId}&start_date=${startDate}&end_date=${endDate}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch daily revenue');
-      }
-      const data: ApiResponse<DailyRevenue[]> = await response.json();
-      return data.data || [];
+      // TODO: Implement daily revenue report
+      return [];
     },
     enabled: enabled && !!storeId && !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000,
@@ -173,8 +169,8 @@ export const useReportingPaymentMethodBreakdown = (storeId: string, startDate: s
       if (!response.ok) {
         throw new Error('Failed to fetch payment method breakdown');
       }
-      const data: ApiResponse<PaymentMethodBreakdown[]> = await response.json();
-      return data.data || [];
+      const data = await response.json();
+      return data.data || data;
     },
     enabled: enabled && !!storeId && !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000,
@@ -195,8 +191,8 @@ export const useReportingCategoryPerformance = (storeId: string, startDate: stri
       if (!response.ok) {
         throw new Error('Failed to fetch category performance');
       }
-      const data: ApiResponse<CategoryPerformance[]> = await response.json();
-      return data.data || [];
+      const data = await response.json();
+      return data.data || data;
     },
     enabled: enabled && !!storeId && !!startDate && !!endDate,
     staleTime: 5 * 60 * 1000,
