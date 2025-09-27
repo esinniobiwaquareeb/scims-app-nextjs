@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LogOut, Store, Building2, Maximize2, Minimize2, X, Wifi, WifiOff } from 'lucide-react';
-import { useNetworkStatus } from '@/utils/hooks/useOfflineData';
+import { useNetworkStatus } from '@/utils/hooks/useStoreData';
 
 interface POSHeaderProps {
   isFullscreen: boolean;
@@ -20,7 +20,7 @@ export const POSHeader: React.FC<POSHeaderProps> = ({
 }) => {
   const { user, logout, currentBusiness, currentStore } = useAuth();
   const { translate } = useSystem();
-  const { isOnline, pendingItems } = useNetworkStatus();
+  const { isOnline, syncInProgress, pendingItems, syncAllOfflineData } = useNetworkStatus();
 
   return (
     <header className="bg-background shadow-sm border-b border-border sticky top-0 z-40 w-full">
@@ -112,15 +112,27 @@ export const POSHeader: React.FC<POSHeaderProps> = ({
               {isOnline ? (
                 <>
                   <Wifi className="w-3 h-3 mr-1" />
-                  Online
+                  {syncInProgress ? 'Syncing...' : pendingItems > 0 ? `${pendingItems} pending` : 'Online'}
                 </>
               ) : (
                 <>
                   <WifiOff className="w-3 h-3 mr-1" />
-                  Offline
+                  Offline - {pendingItems} pending
                 </>
               )}
             </Badge>
+
+            {/* Sync Button - Show when online and has pending items */}
+            {isOnline && pendingItems > 0 && !syncInProgress && (
+              <Button
+                onClick={syncAllOfflineData}
+                size="sm"
+                variant="outline"
+                className="hidden sm:inline-flex"
+              >
+                Sync Now
+              </Button>
+            )}
 
             {/* User Role Badge */}
             <Badge variant="secondary" className="hidden sm:inline-flex">
@@ -182,12 +194,12 @@ export const POSHeader: React.FC<POSHeaderProps> = ({
               {isOnline ? (
                 <>
                   <Wifi className="w-3 h-3 mr-1" />
-                  {pendingItems > 0 ? `Syncing ${pendingItems} sales...` : 'Online Mode'}
+                  {syncInProgress ? 'Syncing...' : pendingItems > 0 ? `${pendingItems} pending` : 'Online Mode'}
                 </>
               ) : (
                 <>
                   <WifiOff className="w-3 h-3 mr-1" />
-                  Offline Mode - {pendingItems} sales pending sync
+                  Offline Mode - {pendingItems} pending
                 </>
               )}
             </Badge>

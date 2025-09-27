@@ -114,6 +114,15 @@ export interface Supplier {
   updated_at: string;
 }
 
+export interface Country {
+  id: string;
+  name: string;
+  code: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 // ============================================================================
 // SALES & TRANSACTION TYPES
 // ============================================================================

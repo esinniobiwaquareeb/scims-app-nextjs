@@ -1,7 +1,9 @@
+import React from 'react';
 import { BrandFormData } from '@/components/brand/BrandHelpers';
 import { CategoryFormData, SupplierFormData, CustomerFormData, StaffFormData } from '@/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { offlineStoreIndexedDB } from '../offline-store-indexeddb';
 
 // Hook for fetching store products
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -1753,12 +1755,29 @@ export const useLanguages = (options?: {
   return useQuery({
     queryKey: ['languages'],
     queryFn: async () => {
-      const response = await fetch('/api/languages');
-      if (!response.ok) {
-        throw new Error('Failed to fetch languages');
+      try {
+        const response = await fetch('/api/languages');
+        if (!response.ok) {
+          throw new Error('Failed to fetch languages');
+        }
+        const data = await response.json();
+        const languages = data.languages || [];
+        
+        // Cache languages for offline use
+        await offlineStoreIndexedDB.cacheLanguages(languages);
+        
+        return languages;
+      } catch (error) {
+        console.warn('Failed to fetch languages online, trying offline cache:', error);
+        
+        // Try to get from offline cache
+        const cachedLanguages = await offlineStoreIndexedDB.getAllLanguages();
+        if (cachedLanguages.length > 0) {
+          return cachedLanguages;
+        }
+        
+        throw error;
       }
-      const data = await response.json();
-      return data.languages || [];
     },
     enabled,
     staleTime: 10 * 60 * 1000, // 10 minutes (languages don't change often)
@@ -1778,16 +1797,101 @@ export const useCurrencies = (options?: {
   return useQuery({
     queryKey: ['currencies'],
     queryFn: async () => {
-      const response = await fetch('/api/currencies');
-      if (!response.ok) {
-        throw new Error('Failed to fetch currencies');
+      try {
+        const response = await fetch('/api/currencies');
+        if (!response.ok) {
+          throw new Error('Failed to fetch currencies');
+        }
+        const data = await response.json();
+        const currencies = data.currencies || [];
+        
+        // Cache currencies for offline use
+        await offlineStoreIndexedDB.cacheCurrencies(currencies);
+        
+        return currencies;
+      } catch (error) {
+        console.warn('Failed to fetch currencies online, trying offline cache:', error);
+        
+        // Try to get from offline cache
+        const cachedCurrencies = await offlineStoreIndexedDB.getAllCurrencies();
+        if (cachedCurrencies.length > 0) {
+          return cachedCurrencies;
+        }
+        
+        throw error;
       }
-      const data = await response.json();
-      return data.currencies || [];
     },
     enabled,
     staleTime: 10 * 60 * 1000, // 10 minutes (currencies don't change often)
     gcTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Hook for fetching user business data
+export const useUserBusiness = (userId: string, options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['user-business', userId],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/auth/user-business?user_id=${userId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch user business data');
+        }
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+          const { business, store, allStores } = data.data;
+          
+          // Cache business and store data for offline use
+          if (business) {
+            await offlineStoreIndexedDB.put('businesses', business);
+          }
+          if (store) {
+            await offlineStoreIndexedDB.put('stores', store);
+          }
+          if (allStores && allStores.length > 0) {
+            await offlineStoreIndexedDB.putMany('stores', allStores);
+          }
+          
+          return data.data;
+        }
+        
+        throw new Error('Invalid response format');
+      } catch (error) {
+        console.warn('Failed to fetch user business data online, trying offline cache:', error);
+        
+        // Try to get from offline cache
+        try {
+          const cachedBusinesses = await offlineStoreIndexedDB.getAll('businesses');
+          const cachedStores = await offlineStoreIndexedDB.getAll('stores');
+          
+          if (cachedBusinesses.length > 0) {
+            const business = cachedBusinesses[0] as any; // Use first business as fallback
+            const userStores = cachedStores.filter((store: any) => store.business_id === business.id);
+            
+            return {
+              business,
+              store: userStores[0] || null,
+              allStores: userStores
+            };
+          }
+        } catch (cacheError) {
+          console.warn('Failed to load from offline cache:', cacheError);
+        }
+        
+        throw error;
+      }
+    },
+    enabled: enabled && !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
     refetchOnWindowFocus: false,
     refetchOnMount: !forceRefresh,
   });
@@ -2123,6 +2227,632 @@ export const useUpdatePlatformSettings = () => {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to update platform settings');
+    },
+  });
+};
+
+// ======================
+// OFFLINE-AWARE HOOKS
+// ======================
+
+// Network status hook
+export const useNetworkStatus = () => {
+  const [isOnline, setIsOnline] = React.useState(navigator.onLine);
+  const [syncInProgress, setSyncInProgress] = React.useState(false);
+  const [pendingItems, setPendingItems] = React.useState(0);
+  const [lastSync, setLastSync] = React.useState<number | null>(null);
+
+  const syncAllOfflineData = React.useCallback(async () => {
+    setSyncInProgress(true);
+    try {
+      await offlineStoreIndexedDB.init();
+      const syncQueue = await offlineStoreIndexedDB.getSyncQueueItems();
+
+      for (const item of syncQueue) {
+        try {
+          let response;
+          let url = '';
+          let method = 'POST';
+
+          switch (item.table) {
+            case 'customers':
+              url = '/api/customers';
+              method = item.operation === 'create' ? 'POST' : 'PUT';
+              break;
+            case 'sales':
+              url = '/api/sales';
+              method = 'POST';
+              break;
+            case 'saved_carts':
+              url = '/api/saved-carts';
+              method = item.operation === 'create' ? 'POST' : (item.operation === 'delete' ? 'DELETE' : 'PUT');
+              if (item.operation === 'delete') url = `/api/saved-carts/${(item.data as any).id}`;
+              break;
+            default:
+              continue;
+          }
+
+          if (item.operation === 'delete' && method === 'DELETE') {
+            response = await fetch(url, { method });
+          } else {
+            response = await fetch(url, {
+              method,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(item.data),
+            });
+          }
+
+          if (response.ok) {
+            await offlineStoreIndexedDB.removeFromSyncQueue(item.id);
+          } else {
+            await offlineStoreIndexedDB.updateSyncQueueRetry(item.id, item.retry_count + 1);
+          }
+        } catch (error) {
+          console.error(`Failed to sync ${item.table}:`, error);
+          await offlineStoreIndexedDB.updateSyncQueueRetry(item.id, item.retry_count + 1);
+        }
+      }
+      
+      const updatedQueue = await offlineStoreIndexedDB.getSyncQueueItems();
+      setPendingItems(updatedQueue.length);
+      setLastSync(Date.now());
+    } catch (error) {
+      console.error('Error syncing offline data:', error);
+    } finally {
+      setSyncInProgress(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    const checkPendingItems = async () => {
+      try {
+        await offlineStoreIndexedDB.init();
+        const syncQueue = await offlineStoreIndexedDB.getSyncQueueItems();
+        setPendingItems(syncQueue.length);
+      } catch (error) {
+        console.error('Error checking pending items:', error);
+      }
+    };
+
+    checkPendingItems();
+  }, []);
+
+  React.useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      syncAllOfflineData();
+    };
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [syncAllOfflineData]);
+
+  return {
+    isOnline,
+    syncInProgress,
+    pendingItems,
+    lastSync,
+    syncAllOfflineData
+  };
+};
+
+// Enhanced store products hook with offline support
+export const useOfflineStoreProducts = (storeId: string, options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+  businessId?: string;
+}) => {
+  const { enabled = true, forceRefresh = false, businessId } = options || {};
+  
+  return useQuery({
+    queryKey: ['store-products', storeId, businessId],
+    queryFn: async () => {
+      try {
+        // Try online first
+        if (storeId === 'All') {
+          if (!businessId) {
+            throw new Error('business_id is required when store_id is "All"');
+          }
+          const response = await fetch(`/api/products?store_id=All&business_id=${businessId}`);
+          if (!response.ok) {
+            throw new Error('Failed to fetch business products');
+          }
+          const data = await response.json();
+          const products = data.products || [];
+          
+          // Cache the data for offline use
+          await offlineStoreIndexedDB.init();
+          for (const product of products) {
+            await offlineStoreIndexedDB.put('products', product);
+          }
+          
+          return products;
+        }
+        
+        const response = await fetch(`/api/products?store_id=${storeId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
+        const data = await response.json();
+        const products = data.products || [];
+        
+        // Cache the data for offline use
+        await offlineStoreIndexedDB.init();
+        for (const product of products) {
+          await offlineStoreIndexedDB.put('products', product);
+        }
+        
+        return products;
+      } catch (error) {
+        // Fallback to offline data
+        console.log('Falling back to offline data for products');
+        await offlineStoreIndexedDB.init();
+        return await offlineStoreIndexedDB.getProductsByStore(storeId);
+      }
+    },
+    enabled: enabled && !!storeId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Enhanced store customers hook with offline support
+export const useOfflineStoreCustomers = (storeId: string, options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['store-customers', storeId],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/customers?store_id=${storeId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch customers');
+        }
+        const data = await response.json();
+        const customers = data.customers || [];
+        
+        // Cache the data for offline use
+        await offlineStoreIndexedDB.init();
+        for (const customer of customers) {
+          await offlineStoreIndexedDB.put('customers', customer);
+        }
+        
+        return customers;
+      } catch (error) {
+        // Fallback to offline data
+        console.log('Falling back to offline data for customers');
+        await offlineStoreIndexedDB.init();
+        return await offlineStoreIndexedDB.getCustomersByStore(storeId);
+      }
+    },
+    enabled: enabled && !!storeId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Enhanced store sales hook with offline support
+export const useOfflineStoreSales = (storeId: string, options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['store-sales', storeId],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/sales?store_id=${storeId}&status=completed`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch sales');
+        }
+        const data = await response.json();
+        const sales = data.sales || [];
+        
+        // Cache the data for offline use
+        await offlineStoreIndexedDB.init();
+        for (const sale of sales) {
+          await offlineStoreIndexedDB.put('sales', sale);
+        }
+        
+        return sales;
+      } catch (error) {
+        // Fallback to offline data
+        console.log('Falling back to offline data for sales');
+        await offlineStoreIndexedDB.init();
+        return await offlineStoreIndexedDB.getSalesByStore(storeId);
+      }
+    },
+    enabled: enabled && !!storeId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Enhanced create customer hook with offline support
+export const useOfflineCreateCustomer = (storeId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (customerData: {
+      store_id: string;
+      name: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+      [key: string]: unknown;
+    }) => {
+      try {
+        const response = await fetch('/api/customers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(customerData),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to create customer');
+        }
+        
+        const result = await response.json();
+        
+        // Cache the new customer
+        await offlineStoreIndexedDB.init();
+        await offlineStoreIndexedDB.put('customers', result.customer);
+        
+        return result;
+      } catch (error) {
+        // If offline, add to sync queue
+        if (!navigator.onLine) {
+          await offlineStoreIndexedDB.init();
+          const tempCustomer = {
+            ...customerData,
+            id: `temp-${Date.now()}`,
+            created_at: new Date().toISOString(),
+            is_temp: true
+          };
+          
+          await offlineStoreIndexedDB.put('customers', tempCustomer);
+          await offlineStoreIndexedDB.addToSyncQueue({
+            operation: 'create',
+            table: 'customers',
+            data: tempCustomer
+          });
+          
+          return { customer: tempCustomer, offline: true };
+        }
+        throw error;
+      }
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['store-customers', variables.store_id] });
+      if (data.offline) {
+        toast.success('Customer created offline (will sync when online)');
+      } else {
+        toast.success('Customer created successfully');
+      }
+    },
+    onError: (error) => {
+      toast.error('Failed to create customer');
+      console.error('Create customer error:', error);
+    },
+  });
+};
+
+// Enhanced saved carts hook with offline support
+export const useOfflineSavedCarts = (storeId: string, cashierId: string, options?: {
+  enabled?: boolean;
+}) => {
+  const { enabled = true } = options || {};
+  
+  return useQuery({
+    queryKey: ['saved-carts', storeId],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/saved-carts?store_id=${storeId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch saved carts');
+        }
+        const data = await response.json();
+        const carts = data.carts || [];
+        
+        // Cache the data for offline use
+        await offlineStoreIndexedDB.init();
+        for (const cart of carts) {
+          await offlineStoreIndexedDB.put('saved_carts', cart);
+        }
+        
+        return carts;
+      } catch (error) {
+        // Fallback to offline data
+        console.log('Falling back to offline data for saved carts');
+        await offlineStoreIndexedDB.init();
+        return await offlineStoreIndexedDB.getSavedCartsByStore(storeId);
+      }
+    },
+    enabled: enabled && !!storeId,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+};
+
+// Enhanced save cart hook with offline support
+export const useOfflineSaveCart = (storeId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (cartData: {
+      store_id: string;
+      cart_data: unknown;
+      cashier_id: string;
+      [key: string]: unknown;
+    }) => {
+      try {
+        const response = await fetch('/api/saved-carts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(cartData),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to save cart');
+        }
+        
+        const result = await response.json();
+        
+        // Cache the new cart
+        await offlineStoreIndexedDB.init();
+        await offlineStoreIndexedDB.put('saved_carts', result.cart);
+        
+        return result;
+      } catch (error) {
+        // If offline, add to sync queue
+        if (!navigator.onLine) {
+          await offlineStoreIndexedDB.init();
+          const tempCart = {
+            ...cartData,
+            id: `temp-${Date.now()}`,
+            created_at: new Date().toISOString(),
+            is_temp: true
+          };
+          
+          await offlineStoreIndexedDB.put('saved_carts', tempCart);
+          await offlineStoreIndexedDB.addToSyncQueue({
+            operation: 'create',
+            table: 'saved_carts',
+            data: tempCart
+          });
+          
+          return { cart: tempCart, offline: true };
+        }
+        throw error;
+      }
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['saved-carts', variables.store_id] });
+      if (data.offline) {
+        toast.success('Cart saved offline (will sync when online)');
+      } else {
+        toast.success('Cart saved successfully');
+      }
+    },
+    onError: (error) => {
+      toast.error('Failed to save cart');
+      console.error('Save cart error:', error);
+    },
+  });
+};
+
+// Enhanced delete saved cart hook with offline support
+export const useOfflineDeleteSavedCart = (storeId: string) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (cartId: string) => {
+      try {
+        const response = await fetch(`/api/saved-carts/${cartId}`, {
+          method: 'DELETE',
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to delete saved cart');
+        }
+        
+        const result = await response.json();
+        
+        // Remove from cache
+        await offlineStoreIndexedDB.init();
+        await offlineStoreIndexedDB.delete('saved_carts', cartId);
+        
+        return result;
+      } catch (error) {
+        // If offline, add to sync queue
+        if (!navigator.onLine) {
+          await offlineStoreIndexedDB.init();
+          await offlineStoreIndexedDB.addToSyncQueue({
+            operation: 'delete',
+            table: 'saved_carts',
+            data: { id: cartId }
+          });
+          
+          // Remove from local cache immediately
+          await offlineStoreIndexedDB.delete('saved_carts', cartId);
+          
+          return { offline: true };
+        }
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['saved-carts'] });
+      if (data.offline) {
+        toast.success('Cart deleted offline (will sync when online)');
+      } else {
+        toast.success('Cart deleted successfully');
+      }
+    },
+    onError: (error) => {
+      toast.error('Failed to delete cart');
+      console.error('Delete cart error:', error);
+    },
+  });
+};
+
+// Enhanced business settings hook with offline support
+export const useOfflineBusinessSettings = (businessId: string, options?: {
+  enabled?: boolean;
+  forceRefresh?: boolean;
+}) => {
+  const { enabled = true, forceRefresh = false } = options || {};
+  
+  return useQuery({
+    queryKey: ['business-settings', businessId],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/businesses/${businessId}/settings`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch business settings');
+        }
+        const data = await response.json();
+        const settings = data.settings || {};
+        
+        // Cache the data for offline use
+        await offlineStoreIndexedDB.init();
+        await offlineStoreIndexedDB.put('business_settings', settings);
+        
+        return settings;
+      } catch (error) {
+        // Fallback to offline data
+        console.log('Falling back to offline data for business settings');
+        await offlineStoreIndexedDB.init();
+        return await offlineStoreIndexedDB.getBusinessSettings(businessId) || {};
+      }
+    },
+    enabled: enabled && !!businessId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: !forceRefresh,
+  });
+};
+
+// Enhanced categories hook with offline support
+export const useOfflineCategories = (businessId: string, options?: {
+  enabled?: boolean;
+}) => {
+  const { enabled = true } = options || {};
+  
+  return useQuery({
+    queryKey: ['categories', businessId],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/categories?business_id=${businessId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch categories');
+        }
+        const data = await response.json();
+        const categories = data.categories || [];
+        
+        // Cache the data for offline use
+        await offlineStoreIndexedDB.init();
+        for (const category of categories) {
+          await offlineStoreIndexedDB.put('categories', category);
+        }
+        
+        return categories;
+      } catch (error) {
+        // Fallback to offline data
+        console.log('Falling back to offline data for categories');
+        await offlineStoreIndexedDB.init();
+        return await offlineStoreIndexedDB.getCategoriesByBusiness(businessId);
+      }
+    },
+    enabled: enabled && !!businessId,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+};
+
+// Enhanced create sale hook with offline support
+export const useOfflineCreateSale = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (saleData: any) => {
+      try {
+        const response = await fetch('/api/sales', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(saleData),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to create sale');
+        }
+        
+        const result = await response.json();
+        
+        // Cache the new sale
+        await offlineStoreIndexedDB.init();
+        await offlineStoreIndexedDB.put('sales', result.sale);
+        
+        return result;
+      } catch (error) {
+        // If offline, add to sync queue
+        if (!navigator.onLine) {
+          await offlineStoreIndexedDB.init();
+          const tempSale = {
+            ...saleData,
+            id: `temp-${Date.now()}`,
+            offline_id: `temp-${Date.now()}`,
+            created_at: new Date().toISOString(),
+            is_temp: true,
+            offline_storage_failed: false
+          };
+          
+          await offlineStoreIndexedDB.put('sales', tempSale);
+          await offlineStoreIndexedDB.addToSyncQueue({
+            operation: 'create',
+            table: 'sales',
+            data: tempSale
+          });
+          
+          return { sale: tempSale, offline: true };
+        }
+        throw error;
+      }
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['store-sales', variables.store_id] });
+      if (data.offline) {
+        toast.success('Sale completed offline (will sync when online)');
+      } else {
+        toast.success('Sale completed successfully');
+      }
+    },
+    onError: (error) => {
+      toast.error('Failed to create sale');
+      console.error('Create sale error:', error);
     },
   });
 };

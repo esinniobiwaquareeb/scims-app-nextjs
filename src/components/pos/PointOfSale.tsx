@@ -7,19 +7,18 @@ import { useSystem } from '@/contexts/SystemContext';
 import { useActivityLogging } from '@/hooks/useActivityLogging';
 // import { Card, CardContent } from '@/components/ui/card';
 import { 
-  useStoreProducts, 
-  useStoreCustomers, 
-  useStoreSales,
-  useCreateCustomer,
-  useSavedCarts,
-  useSaveCart,
-  useDeleteSavedCart,
-  useBusinessSettings,
-  useCategories
+  useOfflineStoreProducts, 
+  useOfflineStoreCustomers, 
+  useOfflineStoreSales,
+  useOfflineCreateCustomer,
+  useOfflineSavedCarts,
+  useOfflineSaveCart,
+  useOfflineDeleteSavedCart,
+  useOfflineCategories,
+  useOfflineBusinessSettings,
+  useOfflineCreateSale,
+  useNetworkStatus
 } from '@/utils/hooks/useStoreData';
-import { 
-  useOfflineCreateSale
-} from '@/utils/hooks/useOfflineData';
 import { 
   ShoppingCart, 
   Activity,
@@ -128,7 +127,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
   } = useSystem();
   
   // Get business settings to determine business type and features
-  const { data: businessSettings } = useBusinessSettings(currentBusiness?.id || '', {
+  const { data: businessSettings } = useOfflineBusinessSettings(currentBusiness?.id || '', {
     enabled: !!currentBusiness?.id
   });
   
@@ -179,7 +178,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
   const { logSaleCreated, logCustomActivity } = useActivityLogging();
   
   // Network status for offline awareness
-  // const { isOnline } = useNetworkStatus();
+  const { } = useNetworkStatus();
   
   // Create a translate wrapper that matches the expected signature
   const translateWrapper = useCallback((key: string, fallback?: string) => {
@@ -232,38 +231,40 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
   
   const storeConfig = useSystem().getStoreSettings(currentStore?.id || '');
 
-  // Use React Query hooks for data fetching
+  // Use offline-aware React Query hooks for data fetching
   const {
     data: storeProducts = [],
     isLoading: productsLoading,
     refetch: refetchProducts
-  } = useStoreProducts(currentStore?.id || '', { enabled: !!currentStore?.id });
+  } = useOfflineStoreProducts(currentStore?.id || '', { 
+    enabled: !!currentStore?.id
+  });
 
   const {
     data: storeCustomers = [],
     isLoading: customersLoading
-  } = useStoreCustomers(currentStore?.id || '', { enabled: !!currentStore?.id });
+  } = useOfflineStoreCustomers(currentStore?.id || '', { enabled: !!currentStore?.id });
 
   const {
     data: allSales = [],
     isLoading: salesLoading,
     refetch: refetchSales
-  } = useStoreSales(currentStore?.id || '', { enabled: !!currentStore?.id });
+  } = useOfflineStoreSales(currentStore?.id || '', { enabled: !!currentStore?.id });
 
   const processSaleMutation = useOfflineCreateSale();
-  const createCustomerMutation = useCreateCustomer(currentStore?.id || '');
-  const saveCartMutation = useSaveCart(currentStore?.id || '');
-  const deleteSavedCartMutation = useDeleteSavedCart();
+  const createCustomerMutation = useOfflineCreateCustomer(currentStore?.id || '');
+  const saveCartMutation = useOfflineSaveCart(currentStore?.id || '');
+  const deleteSavedCartMutation = useOfflineDeleteSavedCart(currentStore?.id || '');
 
   const {
     data: savedCarts = [],
     isLoading: savedCartsLoading
-  } = useSavedCarts(currentStore?.id || '', user?.id || '', {
+  } = useOfflineSavedCarts(currentStore?.id || '', user?.id || '', {
     enabled: !!currentStore?.id && !!user?.id
   });
 
   // Get categories for the business
-  const { data: businessCategories, isLoading: categoriesLoading } = useCategories(currentBusiness?.id || '', {
+  const { data: businessCategories, isLoading: categoriesLoading } = useOfflineCategories(currentBusiness?.id || '', {
     enabled: !!currentBusiness?.id
   });
 

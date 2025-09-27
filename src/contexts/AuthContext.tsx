@@ -82,7 +82,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
     } catch (businessError) {
-      console.error('Error loading business data:', businessError);
+      console.warn('Failed to fetch user business data online, trying offline cache:', businessError);
+      
+      // Try to get from offline cache
+      try {
+        const { offlineStoreIndexedDB } = await import('@/utils/offline-store-indexeddb');
+        const cachedBusinesses = await offlineStoreIndexedDB.getAll('businesses');
+        const cachedStores = await offlineStoreIndexedDB.getAll('stores');
+        
+        if (cachedBusinesses.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const business = cachedBusinesses[0] as any; // Use first business as fallback
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const userStores = cachedStores.filter((store: any) => store.business_id === business.id);
+          
+          const businessObj = {
+            id: business.id,
+            name: business.name,
+            subscription_status: business.subscription_status,
+            language_id: business.language_id,
+            currency_id: business.currency_id,
+            timezone: business.timezone || 'UTC',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            stores: userStores as any,
+            createdAt: new Date().toISOString()
+          };
+          
+          setCurrentBusiness(businessObj);
+          setBusinesses([businessObj]);
+          
+          // Set current store if user has one
+          if (userStores.length > 0) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setCurrentStore(userStores[0] as any);
+          }
+          
+          return { business: businessObj, store: userStores[0] || null };
+        }
+      } catch (cacheError) {
+        console.warn('Failed to load from offline cache:', cacheError);
+      }
     }
     return null;
   }, []);
@@ -93,7 +132,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (user && !currentStore && user.role !== 'superadmin') {
       loadBusinessData(user.id);
     }
-  }, [user?.id]); // Only depend on user.id, not the entire user object or currentStore
+  }, [user?.id, loadBusinessData, currentStore]); // Only depend on user.id, not the entire user object or currentStore
 
   // Initialize authentication state
   useEffect(() => {
@@ -142,7 +181,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               }
             }
           } catch (businessError) {
-            console.error('Error loading business data on init:', businessError);
+            console.warn('Failed to fetch user business data online, trying offline cache:', businessError);
+            
+            // Try to get from offline cache
+            try {
+              const { offlineStoreIndexedDB } = await import('@/utils/offline-store-indexeddb');
+              const cachedBusinesses = await offlineStoreIndexedDB.getAll('businesses');
+              const cachedStores = await offlineStoreIndexedDB.getAll('stores');
+              
+              if (cachedBusinesses.length > 0) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const business = cachedBusinesses[0] as any; // Use first business as fallback
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const userStores = cachedStores.filter((store: any) => store.business_id === business.id);
+                
+                const businessObj = {
+                  id: business.id,
+                  name: business.name,
+                  subscription_status: business.subscription_status,
+                  language_id: business.language_id,
+                  currency_id: business.currency_id,
+                  timezone: business.timezone || 'UTC',
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            stores: userStores as any,
+                  createdAt: new Date().toISOString()
+                };
+                
+                setCurrentBusiness(businessObj);
+                setBusinesses([businessObj]);
+                
+                // Set current store if user has one
+                if (userStores.length > 0) {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setCurrentStore(userStores[0] as any);
+                }
+              }
+            } catch (cacheError) {
+              console.warn('Failed to load from offline cache:', cacheError);
+            }
           }
         }
         } else {
@@ -207,7 +283,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               }
             }
           } catch (businessError) {
-            console.error('Error loading business data:', businessError);
+            console.warn('Failed to fetch user business data online, trying offline cache:', businessError);
+            
+            // Try to get from offline cache
+            try {
+              const { offlineStoreIndexedDB } = await import('@/utils/offline-store-indexeddb');
+              const cachedBusinesses = await offlineStoreIndexedDB.getAll('businesses');
+              const cachedStores = await offlineStoreIndexedDB.getAll('stores');
+              
+              if (cachedBusinesses.length > 0) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const business = cachedBusinesses[0] as any; // Use first business as fallback
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const userStores = cachedStores.filter((store: any) => store.business_id === business.id);
+                
+                const businessObj = {
+                  id: business.id,
+                  name: business.name,
+                  subscription_status: business.subscription_status,
+                  language_id: business.language_id,
+                  currency_id: business.currency_id,
+                  timezone: business.timezone || 'UTC',
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            stores: userStores as any,
+                  createdAt: new Date().toISOString()
+                };
+                
+                setCurrentBusiness(businessObj);
+                setBusinesses([businessObj]);
+                
+                // Set current store if user has one
+                if (userStores.length > 0) {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setCurrentStore(userStores[0] as any);
+                }
+              }
+            } catch (cacheError) {
+              console.warn('Failed to load from offline cache:', cacheError);
+            }
           }
         }
         
