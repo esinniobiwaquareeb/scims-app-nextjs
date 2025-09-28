@@ -81,15 +81,19 @@ async function getStoreDashboardStats(storeId: string) {
 
   if (productsError) throw productsError;
 
-  // Get low stock count
-  const { data: lowStockProducts, error: lowStockError } = await supabase
+  // Get low stock count - fetch all products and filter by reorder level
+  const { data: allProducts, error: lowStockError } = await supabase
     .from('product')
-    .select('*')
+    .select('stock_quantity, reorder_level, min_stock_level')
     .eq('store_id', storeId)
-    .eq('is_active', true)
-    .lte('stock_quantity', 10);
+    .eq('is_active', true);
 
   if (lowStockError) throw lowStockError;
+
+  // Filter products that are below their reorder level (same logic as ProductManagement)
+  const lowStockProducts = (allProducts || []).filter(product => 
+    (product.stock_quantity || 0) <= (product.reorder_level || product.min_stock_level || 10)
+  );
 
   // Get today's orders count
   const { count: ordersCount, error: ordersError } = await supabase

@@ -51,9 +51,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Filter products that are below their reorder level
+    // Filter products that are below their reorder level (same logic as ProductManagement)
     const lowStockProducts = (products || []).filter(product => 
-      (product.stock_quantity || 0) <= (product.reorder_level || 0)
+      (product.stock_quantity || 0) <= (product.reorder_level || product.min_stock_level || 10)
     );
 
     // Also include all active products for restocking
