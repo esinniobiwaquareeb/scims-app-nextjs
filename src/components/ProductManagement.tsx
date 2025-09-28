@@ -761,14 +761,6 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
         onBack={onBack}
         showLogout={false}
       >
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <Button onClick={() => setIsAddDialogOpen(true)} disabled={!hasPermission()}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Product
-            </Button>
-          </div>
-        </div>
       </Header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -949,6 +941,12 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
           emptyMessage="No products found"
           tableName="products"
           userRole={user?.role}
+          actions={
+            <Button onClick={() => setIsAddDialogOpen(true)} disabled={!hasPermission()}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Product
+            </Button>
+          }
         />
 
         {/* Edit Product Dialog */}

@@ -416,30 +416,7 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
         onBack={onBack}
         showLogout={false}
       >
-        <div className="flex gap-2">
-          {/* Only show Add Store button for business admins */}
-          {!isStoreAdmin && (
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Store
-            </Button>
-          )}
-        </div>
       </Header>
-
-      {/* Demo Warning Banner */}
-      {isDemoUser && (
-        <div className="px-6 py-4">
-          <Alert className="border-amber-200 bg-amber-50">
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-amber-800">
-              <strong>Demo Mode:</strong> You are currently viewing the system in demo mode. 
-              Some actions like deleting stores are restricted to prevent data loss. 
-              This allows you to explore the system safely.
-            </AlertDescription>
-          </Alert>
-        </div>
-      )}
 
       {/* Add Store Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -598,6 +575,14 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
           emptyMessage="No stores found"
           tableName="stores"
           userRole={user?.role}
+          actions={
+            !isStoreAdmin && (
+              <Button onClick={() => setIsAddDialogOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Store
+              </Button>
+            )
+          }
         />
 
         {/* Edit Store Dialog */}

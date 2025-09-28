@@ -547,11 +547,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
         onBack={onBack}
         showLogout={false}
       >
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={exportProducts}>
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
+        <div className="flex">
           <Button onClick={() => setShowSyncDialog(true)} disabled={selectedProducts.length === 0}>
             <Copy className="w-4 h-4 mr-2" />
             Sync Selected ({selectedProducts.length})

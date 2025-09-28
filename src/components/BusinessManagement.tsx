@@ -509,16 +509,6 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
             onBack={onBack}
             showLogout={false}
           >
-            <div className="flex gap-2">
-          <Button variant="outline" onClick={() => refetchBusinesses()} disabled={businessesLoading}>
-            <Loader2 className={`w-4 h-4 mr-2 ${businessesLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Business
-          </Button>
-        </div>
       </Header>
 
       {/* Success Message Display */}
@@ -602,6 +592,12 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
           emptyMessage="No businesses found"
           tableName="businesses"
           userRole={user?.role}
+          actions={
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Business
+            </Button>
+          }
         />
 
         {/* Add Business Dialog */}

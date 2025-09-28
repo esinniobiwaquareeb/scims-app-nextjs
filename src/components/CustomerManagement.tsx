@@ -580,16 +580,6 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
         onBack={onBack}
         showLogout={false}
       >
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-          <Button variant="outline" size="sm" onClick={exportCustomers} className="w-full sm:w-auto">
-            <Download className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Export</span>
-          </Button>
-          <Button size="sm" onClick={openAddDialog} className="w-full sm:w-auto">
-            <Plus className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Add Customer</span>
-          </Button>
-        </div>
       </Header>
 
       <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
@@ -732,8 +722,20 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
                   ? `No customers match your search for "${searchTerm}"` 
                   : 'Start by adding your first customer to the system'
                 }
-                          tableName="customers"
-          userRole={user?.role}
+                tableName="customers"
+                userRole={user?.role}
+                actions={
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={exportCustomers}>
+                      <Download className="w-4 h-4 mr-2" />
+                      <span className="hidden sm:inline">Export</span>
+                    </Button>
+                    <Button size="sm" onClick={openAddDialog}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      <span className="hidden sm:inline">Add Customer</span>
+                    </Button>
+                  </div>
+                }
               />
             </CardContent>
           </Card>

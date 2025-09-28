@@ -394,20 +394,6 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
         onBack={onBack}
         showLogout={false}
       >
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={exportOrders}>
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-          <Button 
-            onClick={() => setShowCreateDialog(true)}
-            disabled={isAllStoresSelected}
-            title={isAllStoresSelected ? "Select a specific store to create restock orders" : ""}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create Order
-          </Button>
-        </div>
       </Header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -538,11 +524,25 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Restock Orders</CardTitle>
-                {searchTerm && (
-                  <div className="text-sm text-gray-600">
-                    {filteredOrders.length} of {restockOrders.length} orders found
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  {searchTerm && (
+                    <div className="text-sm text-gray-600">
+                      {filteredOrders.length} of {restockOrders.length} orders found
+                    </div>
+                  )}
+                  <Button variant="outline" onClick={exportOrders}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                  <Button 
+                    onClick={() => setShowCreateDialog(true)}
+                    disabled={isAllStoresSelected}
+                    title={isAllStoresSelected ? "Select a specific store to create restock orders" : ""}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Order
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>

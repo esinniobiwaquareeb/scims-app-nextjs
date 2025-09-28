@@ -666,15 +666,6 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
         onBack={onBack}
         showLogout={false}
       >
-        <div className="flex gap-2">
-          <Button 
-            onClick={openAddDialog}
-            disabled={!canCreate("user")}
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Add Staff
-          </Button>
-        </div>
       </Header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -805,16 +796,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                     </SelectContent>
                   </Select>
                 )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRefresh}
-                  disabled={isLoading}
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
+
               </div>
             </div>
           </CardContent>
@@ -1013,6 +995,15 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
               <p className="text-lg font-medium">No staff members found</p>
               <p className="text-sm">Try adjusting your search or filters</p>
             </div>
+          }
+          actions={
+            <Button 
+              onClick={openAddDialog}
+              disabled={!canCreate("user")}
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Add Staff
+            </Button>
           }
         />
 

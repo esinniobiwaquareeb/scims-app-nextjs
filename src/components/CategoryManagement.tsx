@@ -400,12 +400,6 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
         onBack={onBack}
         showLogout={false}
       >
-        <div className="flex items-center gap-2">
-          <Button size="sm" onClick={openAddDialog}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Category
-          </Button>
-        </div>
       </Header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -590,6 +584,12 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
               }
               tableName="categories"
               userRole={user?.role}
+              actions={
+                <Button size="sm" onClick={openAddDialog}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Category
+                </Button>
+              }
             />
         </Card>
       </main>

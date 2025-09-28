@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
+import { Header } from '@/components/common/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Package, 
-  ArrowLeft, 
   Plus, 
   Search, 
   Filter,
@@ -239,54 +239,50 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
   );
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={onBack}
-              className="shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Supply Management</h1>
-              <p className="text-muted-foreground">Manage supply orders, returns, and payments</p>
-            </div>
-          </div>
-          <Button onClick={handleCreateSupplyOrder} className="gap-2">
-            <Plus className="h-4 w-4" />
-            New Supply Order
-          </Button>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <Header 
+        title="Supply Management"
+        subtitle="Manage supply orders, returns, and payments"
+        showBackButton
+        onBack={onBack}
+        showLogout={false}
+      >
+        <Button onClick={handleCreateSupplyOrder} className="gap-2">
+          <Plus className="h-4 w-4" />
+          New Supply Order
+        </Button>
+      </Header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Search and Filter */}
-        <div className="flex gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search by supply number, customer name, or phone..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-input rounded-md bg-background"
-          >
-            <option value="all">All Status</option>
-            <option value="supplied">Supplied</option>
-            <option value="partially_returned">Partially Returned</option>
-            <option value="fully_returned">Fully Returned</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-        </div>
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search by supply number, customer name, or phone..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-2 border border-input rounded-md bg-background min-w-[150px]"
+              >
+                <option value="all">All Status</option>
+                <option value="supplied">Supplied</option>
+                <option value="partially_returned">Partially Returned</option>
+                <option value="fully_returned">Fully Returned</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -638,7 +634,7 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </div>
+      </main>
     </div>
   );
 };

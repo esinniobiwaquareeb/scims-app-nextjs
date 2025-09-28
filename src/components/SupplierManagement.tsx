@@ -488,13 +488,6 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
         onBack={onBack}
         showLogout={false}
       >
-        <Button 
-          disabled={isSaving}
-          onClick={() => setIsAddDialogOpen(true)}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          {translate('common.add')} Supplier
-        </Button>
       </Header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -562,6 +555,15 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
           emptyMessage="No suppliers found"
           tableName="suppliers"
           userRole={user?.role}
+          actions={
+            <Button 
+              disabled={isSaving}
+              onClick={() => setIsAddDialogOpen(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {translate('common.add')} Supplier
+            </Button>
+          }
         />
       </main>
 

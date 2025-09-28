@@ -716,23 +716,6 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
         onBack={onBack}
         showLogout={false}
       >
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={handleRefresh}
-            disabled={isLoadingCashiers || isLoadingStores}
-          >
-            <Loader2 className={`w-4 h-4 mr-2 ${isLoadingCashiers || isLoadingStores ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          <Button 
-            disabled={!hasPermission('cashiers_create')}
-            onClick={() => setIsAddDialogOpen(true)}
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Add Cashier
-          </Button>
-        </div>
       </Header>
 
       {/* Cashier Credentials Modal */}
@@ -887,6 +870,15 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
               <p className="text-lg font-medium">No cashiers found</p>
               <p className="text-sm">Try adjusting your search or filters</p>
             </div>
+          }
+          actions={
+            <Button 
+              disabled={!hasPermission('cashiers_create')}
+              onClick={() => setIsAddDialogOpen(true)}
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Add Cashier
+            </Button>
           }
         />
 

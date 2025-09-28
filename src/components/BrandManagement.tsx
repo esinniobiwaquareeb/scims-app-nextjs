@@ -1,27 +1,59 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useActivityLogger } from '@/contexts/ActivityLogger';
-import { Header } from '@/components/common/Header';
-import { DataTable } from '@/components/common/DataTable';
+import React, { useState, useCallback, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useActivityLogger } from "@/contexts/ActivityLogger";
+import { Header } from "@/components/common/Header";
+import { DataTable } from "@/components/common/DataTable";
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Trash2, Edit, Plus, RefreshCw, Loader2, X } from 'lucide-react';
-import { toast } from 'sonner';
-import { Brand, BrandFormData, validateBrandForm } from '@/components/brand/BrandHelpers';
-import { BRAND_TABLE_COLUMNS, INITIAL_BRAND_FORM_DATA, BRAND_FORM_FIELDS } from '@/components/brand/BrandConstants';
-import { 
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Trash2, Edit, Plus, Loader2, X } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Brand,
+  BrandFormData,
+  validateBrandForm,
+} from "@/components/brand/BrandHelpers";
+import {
+  BRAND_TABLE_COLUMNS,
+  INITIAL_BRAND_FORM_DATA,
+  BRAND_FORM_FIELDS,
+} from "@/components/brand/BrandConstants";
+import {
   useBusinessBrands,
   useCreateBusinessBrand,
   useUpdateBusinessBrand,
-  useDeleteBusinessBrand
-} from '@/utils/hooks/useStoreData';
+  useDeleteBusinessBrand,
+} from "@/utils/hooks/useStoreData";
 
 interface BrandManagementProps {
   onBack: () => void;
@@ -30,52 +62,51 @@ interface BrandManagementProps {
 export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
   const { user, currentBusiness } = useAuth();
   const { logActivity } = useActivityLogger();
-  
-  // Debug logging
-  console.log('BrandManagement rendered', { 
-    user: user?.id, 
-    currentBusiness: currentBusiness?.id,
-    userRole: user?.role 
-  });
-  
+
   // Dialog and form state
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
   const [brandToDelete, setBrandToDelete] = useState<Brand | null>(null);
-  const [formData, setFormData] = useState<BrandFormData>(INITIAL_BRAND_FORM_DATA);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [logoFilter, setLogoFilter] = useState<'all' | 'with-logo' | 'without-logo'>('all');
-  
+  const [formData, setFormData] = useState<BrandFormData>(
+    INITIAL_BRAND_FORM_DATA
+  );
+  const [searchTerm, setSearchTerm] = useState("");
+  const [logoFilter, setLogoFilter] = useState<
+    "all" | "with-logo" | "without-logo"
+  >("all");
+
   // Image upload state
   const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [editingLogoFile, setEditingLogoFile] = useState<File | null>(null);
-  const [editingLogoPreview, setEditingLogoPreview] = useState<string | null>(null);
+  const [editingLogoPreview, setEditingLogoPreview] = useState<string | null>(
+    null
+  );
 
   // Use React Query hooks for data fetching with smart caching
   // Brands are always business-level entities
   const {
     data: brands = [],
     isLoading: brandsLoading,
-    error: brandsError,
-    refetch: refetchBrands
-  } = useBusinessBrands(currentBusiness?.id || '', { enabled: !!currentBusiness?.id });
+  } = useBusinessBrands(currentBusiness?.id || "", {
+    enabled: !!currentBusiness?.id,
+  });
 
   // Use mutations for CRUD operations
   // Brands are always business-level entities
-  const createBrandMutation = useCreateBusinessBrand(currentBusiness?.id || '');
-  const updateBrandMutation = useUpdateBusinessBrand(currentBusiness?.id || '');
-  const deleteBrandMutation = useDeleteBusinessBrand(currentBusiness?.id || '');
+  const createBrandMutation = useCreateBusinessBrand(currentBusiness?.id || "");
+  const updateBrandMutation = useUpdateBusinessBrand(currentBusiness?.id || "");
+  const deleteBrandMutation = useDeleteBusinessBrand(currentBusiness?.id || "");
 
   // Combined loading state
   const isLoading = brandsLoading;
-  
+
   // Combined mutation loading state
-  const isMutating = 
-    createBrandMutation.isPending || 
-    updateBrandMutation.isPending || 
+  const isMutating =
+    createBrandMutation.isPending ||
+    updateBrandMutation.isPending ||
     deleteBrandMutation.isPending;
 
   // Initialize form data with business_id when component mounts
@@ -83,19 +114,19 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
     if (currentBusiness?.id) {
       setFormData((prev: BrandFormData) => ({
         ...prev,
-        business_id: currentBusiness.id
+        business_id: currentBusiness.id,
       }));
     }
   }, [currentBusiness?.id]);
 
   const resetForm = () => {
-    setFormData({ 
+    setFormData({
       ...INITIAL_BRAND_FORM_DATA,
-      business_id: currentBusiness?.id || ''
+      business_id: currentBusiness?.id || "",
     });
     setSelectedBrand(null);
     setBrandToDelete(null);
-    setSearchTerm(''); // Reset search when form is reset
+    setSearchTerm(""); // Reset search when form is reset
     setSelectedLogoFile(null);
     setLogoPreview(null);
     setEditingLogoFile(null);
@@ -103,33 +134,36 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
   };
 
   // Logo upload function
-  const uploadLogo = useCallback(async (file: File): Promise<string | null> => {
-    if (!file || !currentBusiness?.id) return null;
+  const uploadLogo = useCallback(
+    async (file: File): Promise<string | null> => {
+      if (!file || !currentBusiness?.id) return null;
 
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('storeId', currentBusiness.id); // Use business ID for brand logos
-      formData.append('type', 'brand');
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("storeId", currentBusiness.id); // Use business ID for brand logos
+        formData.append("type", "brand");
 
-      const response = await fetch('/api/upload/image', {
-        method: 'POST',
-        body: formData,
-      });
+        const response = await fetch("/api/upload/image", {
+          method: "POST",
+          body: formData,
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to upload logo');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to upload logo");
+        }
+
+        const data = await response.json();
+        return data.url;
+      } catch (error) {
+        console.error("Logo upload error:", error);
+        toast.error("Failed to upload logo. Please try again.");
+        return null;
       }
-
-      const data = await response.json();
-      return data.url;
-    } catch (error) {
-      console.error('Logo upload error:', error);
-      toast.error('Failed to upload logo. Please try again.');
-      return null;
-    }
-  }, [currentBusiness?.id]);
+    },
+    [currentBusiness?.id]
+  );
 
   const handleDeleteClick = (brand: Brand) => {
     setBrandToDelete(brand);
@@ -150,7 +184,7 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
     }
 
     try {
-      let logoUrl = formData.logo_url || '';
+      let logoUrl = formData.logo_url || "";
 
       // Upload logo if a new file is selected
       if (selectedLogoFile) {
@@ -159,7 +193,7 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
           logoUrl = uploadedUrl;
         } else {
           // If logo upload fails, don't proceed with brand creation
-          toast.error('Failed to upload logo. Please try again.');
+          toast.error("Failed to upload logo. Please try again.");
           return;
         }
       }
@@ -167,27 +201,30 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
       // Create brand data with uploaded logo URL
       const brandData = {
         ...formData,
-        logo_url: logoUrl
+        logo_url: logoUrl,
       };
-
-      console.log('Creating brand with data:', brandData);
 
       // Use the mutation hook - this will automatically invalidate cache on success
       const brand = await createBrandMutation.mutateAsync(brandData);
-      
+
       // Close dialog and reset form on success
       setShowCreateDialog(false);
       resetForm();
-      
+
       // Log activity
       if (brand) {
-        logActivity('brand_create', 'Brand Management', `Created brand: ${brand.name}`, { brandId: brand.id });
+        logActivity(
+          "brand_create",
+          "Brand Management",
+          `Created brand: ${brand.name}`,
+          { brandId: brand.id }
+        );
       }
-      
+
       // Note: Cache invalidation is handled automatically by the mutation hook
       // The brands table will automatically refresh with the new data
     } catch (err: unknown) {
-      console.error('Error creating brand:', err);
+      console.error("Error creating brand:", err);
       // Don't close dialog on error - let user fix and retry
     }
   };
@@ -196,13 +233,13 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
     setSelectedBrand(brand);
     setFormData({
       name: brand.name,
-      description: brand.description || '',
-      logo_url: brand.logo_url || '',
-      website: brand.website || '',
-      contact_person: brand.contact_person || '',
-      contact_email: brand.contact_email || '',
-      contact_phone: brand.contact_phone || '',
-      business_id: currentBusiness?.id || ''
+      description: brand.description || "",
+      logo_url: brand.logo_url || "",
+      website: brand.website || "",
+      contact_person: brand.contact_person || "",
+      contact_email: brand.contact_email || "",
+      contact_phone: brand.contact_phone || "",
+      business_id: currentBusiness?.id || "",
     });
     setShowEditDialog(true);
     // Reset editing logo state
@@ -220,7 +257,7 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
     }
 
     try {
-      let logoUrl = formData.logo_url || '';
+      let logoUrl = formData.logo_url || "";
 
       // Upload logo if a new file is selected
       if (editingLogoFile) {
@@ -229,7 +266,7 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
           logoUrl = uploadedUrl;
         } else {
           // If logo upload fails, don't proceed with brand update
-          toast.error('Failed to upload logo. Please try again.');
+          toast.error("Failed to upload logo. Please try again.");
           return;
         }
       }
@@ -237,28 +274,33 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
       // Create brand data with uploaded logo URL
       const brandData = {
         ...formData,
-        logo_url: logoUrl
+        logo_url: logoUrl,
       };
 
       // Use the mutation hook - this will automatically invalidate cache on success
       const brand = await updateBrandMutation.mutateAsync({
         brandId: selectedBrand.id,
-        brandData: brandData
+        brandData: brandData,
       });
-      
+
       // Close dialog and reset form on success
       setShowEditDialog(false);
       resetForm();
-      
+
       // Log activity
       if (brand) {
-        logActivity('brand_update', 'Brand Management', `Updated brand: ${brand.name}`, { brandId: brand.id });
+        logActivity(
+          "brand_update",
+          "Brand Management",
+          `Updated brand: ${brand.name}`,
+          { brandId: brand.id }
+        );
       }
-      
+
       // Note: Cache invalidation is handled automatically by the mutation hook
       // The brands table will automatically refresh with the updated data
     } catch (err: unknown) {
-      console.error('Error updating brand:', err);
+      console.error("Error updating brand:", err);
       // Don't close dialog on error - let user fix and retry
     }
   };
@@ -269,18 +311,23 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
     try {
       // Use the mutation hook - this will automatically invalidate cache on success
       await deleteBrandMutation.mutateAsync(brandToDelete.id);
-      
+
       // Log activity
-      logActivity('brand_delete', 'Brand Management', `Deleted brand: ${brandToDelete.name}`, { brandId: brandToDelete.id });
-      
+      logActivity(
+        "brand_delete",
+        "Brand Management",
+        `Deleted brand: ${brandToDelete.name}`,
+        { brandId: brandToDelete.id }
+      );
+
       // Close dialog and reset state
       setShowDeleteDialog(false);
       setBrandToDelete(null);
-      
+
       // Note: Cache invalidation is handled automatically by the mutation hook
       // The brands table will automatically refresh with the updated data
     } catch (err: unknown) {
-      console.error('Error deleting brand:', err);
+      console.error("Error deleting brand:", err);
       // Don't close dialog on error - let user retry
     }
   };
@@ -288,8 +335,8 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
   const enhancedColumns = [
     ...BRAND_TABLE_COLUMNS,
     {
-      header: 'Actions',
-      accessorKey: 'actions',
+      header: "Actions",
+      accessorKey: "actions",
       cell: (brand: Brand) => (
         <div className="flex items-center gap-2">
           <Button
@@ -312,8 +359,8 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
-      )
-    }
+      ),
+    },
   ];
 
   // Show loading state while data is being fetched
@@ -329,55 +376,20 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header 
+    <div className="min-h-screen bg-gray-50">
+      <Header
         title="Brand Management"
-        subtitle={`Manage product brands for ${currentBusiness?.name || 'your business'}`}
+        subtitle={`Manage product brands for ${
+          currentBusiness?.name || "your business"
+        }`}
         showBackButton
         onBack={onBack}
         showLogout={false}
-      >
-      </Header>
-      
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Error Display */}
-        {brandsError && (
-          <Card className="border-red-200 bg-red-50">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-red-800 text-sm">{brandsError?.message || 'An error occurred'}</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => refetchBrands()}
-                  disabled={brandsLoading}
-                >
-                  <RefreshCw className={`w-3 h-3 mr-2 ${brandsLoading ? 'animate-spin' : ''}`} />
-                  Retry
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+      ></Header>
 
-        {/* Mutation Status */}
-        {isMutating && (
-          <Card className="border-blue-200 bg-blue-50">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                <p className="text-blue-800 text-sm">
-                  {createBrandMutation.isPending && 'Creating brand...'}
-                  {updateBrandMutation.isPending && 'Updating brand...'}
-                  {deleteBrandMutation.isPending && 'Deleting brand...'}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -396,7 +408,9 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Brands with Logos</p>
+                  <p className="text-sm text-muted-foreground">
+                    Brands with Logos
+                  </p>
                   <p className="text-2xl font-semibold text-green-600">
                     {brands.filter((b: Brand) => b.logo_url).length}
                   </p>
@@ -409,230 +423,219 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Brands</CardTitle>
-                <CardDescription>
-                  Manage all brands for your business
-                </CardDescription>
-                <div className="mt-2">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    🌐 Business-wide view
-                  </span>
+        {/* Brands DataTable */}
+        <DataTable
+          title="Brands"
+          data={brands.filter((brand: Brand) => {
+            if (logoFilter === "with-logo") return !!brand.logo_url;
+            if (logoFilter === "without-logo") return !brand.logo_url;
+            return true;
+          })}
+          columns={enhancedColumns}
+          searchable={true}
+          searchPlaceholder="Search brands..."
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          emptyMessage="No brands found for your business. Create your first brand to get started!"
+          tableName="brands"
+          userRole={user?.role}
+          actions={
+            <Button
+              onClick={() => {
+                resetForm();
+                setShowCreateDialog(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Brand
+            </Button>
+          }
+        />
+
+        {/* Create Brand Dialog */}
+        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create New Brand</DialogTitle>
+              <DialogDescription>
+                Add a new brand to your business with logo and details
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              {/* Logo Upload Section */}
+              <div className="space-y-3">
+                <Label className="text-base font-medium">Brand Logo</Label>
+
+                {/* Current Logo Display */}
+                {formData.logo_url && !logoPreview && (
+                  <div className="relative inline-block">
+                    <img
+                      src={formData.logo_url}
+                      alt="Current brand logo"
+                      className="w-32 h-32 object-cover rounded-lg border"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
+                      onClick={() => handleFormChange("logo_url", "")}
+                      disabled={isMutating}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                )}
+
+                {/* New Logo Preview */}
+                {logoPreview && (
+                  <div className="relative inline-block">
+                    <img
+                      src={logoPreview}
+                      alt="Logo preview"
+                      className="w-32 h-32 object-cover rounded-lg border"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
+                      onClick={() => {
+                        setSelectedLogoFile(null);
+                        setLogoPreview(null);
+                      }}
+                      disabled={isMutating}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                )}
+
+                {/* Logo Upload Input */}
+                <div className="p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                  <div className="flex items-center gap-3">
+                    <Input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/svg+xml"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setSelectedLogoFile(file);
+                          // Create preview
+                          const reader = new FileReader();
+                          reader.onload = (e) => {
+                            setLogoPreview(e.target?.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="flex-1"
+                      disabled={isMutating}
+                    />
+                  </div>
+
+                  {/* File Info */}
+                  {selectedLogoFile && (
+                    <div className="text-xs text-muted-foreground mt-2">
+                      <p>File: {selectedLogoFile.name}</p>
+                      <p>
+                        Size:{" "}
+                        {(selectedLogoFile.size / (1024 * 1024)).toFixed(2)} MB
+                      </p>
+                      <p>Type: {selectedLogoFile.type}</p>
+                      <p className="text-blue-600">
+                        Logo will be uploaded when you save the brand
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Help Text */}
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    Upload a logo to make your brand more recognizable.
+                    Recommended size: 200x200px
+                  </p>
                 </div>
               </div>
-              <Button 
-                onClick={() => {
-                  console.log('Add Brand button clicked');
-                  resetForm();
-                  setShowCreateDialog(true);
-                }} 
-                disabled={isMutating}
-                className="bg-primary hover:bg-primary/90"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Brand
-              </Button>
-            </div>
-          </CardHeader>
-          
-          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Create New Brand</DialogTitle>
-                    <DialogDescription>
-                      Add a new brand to this store with logo and details
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    {/* Logo Upload Section */}
-                    <div className="space-y-3">
-                      <Label className="text-base font-medium">Brand Logo</Label>
-                      
-                      {/* Current Logo Display */}
-                      {formData.logo_url && !logoPreview && (
-                        <div className="relative inline-block">
-                          <img 
-                            src={formData.logo_url} 
-                            alt="Current brand logo" 
-                            className="w-32 h-32 object-cover rounded-lg border"
-                          />
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
-                            onClick={() => handleFormChange('logo_url', '')}
-                            disabled={isMutating}
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {/* New Logo Preview */}
-                      {logoPreview && (
-                        <div className="relative inline-block">
-                          <img 
-                            src={logoPreview} 
-                            alt="Logo preview" 
-                            className="w-32 h-32 object-cover rounded-lg border"
-                          />
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="destructive"
-                            className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
-                            onClick={() => {
-                              setSelectedLogoFile(null);
-                              setLogoPreview(null);
-                            }}
-                            disabled={isMutating}
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {/* Logo Upload Input */}
-                      <div className="p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-                        <div className="flex items-center gap-3">
-                          <Input
-                            type="file"
-                            accept="image/jpeg,image/jpg,image/png,image/svg+xml"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                setSelectedLogoFile(file);
-                                // Create preview
-                                const reader = new FileReader();
-                                reader.onload = (e) => {
-                                  setLogoPreview(e.target?.result as string);
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                            className="flex-1"
-                            disabled={isMutating}
-                          />
-                        </div>
-                        
-                        {/* File Info */}
-                        {selectedLogoFile && (
-                          <div className="text-xs text-muted-foreground mt-2">
-                            <p>File: {selectedLogoFile.name}</p>
-                            <p>Size: {(selectedLogoFile.size / (1024 * 1024)).toFixed(2)} MB</p>
-                            <p>Type: {selectedLogoFile.type}</p>
-                            <p className="text-blue-600">Logo will be uploaded when you save the brand</p>
-                          </div>
-                        )}
-                        
-                        {/* Help Text */}
-                        <p className="text-xs text-muted-foreground mt-2 text-center">
-                          Upload a logo to make your brand more recognizable. Recommended size: 200x200px
-                        </p>
-                      </div>
-                    </div>
 
-                    {/* Regular Form Fields */}
-                    {Object.entries(BRAND_FORM_FIELDS).map(([field, config]: [string, { label: string; required: boolean; placeholder: string }]) => (
-                      <div key={field} className="space-y-2">
-                        <Label htmlFor={field}>
-                          {config.label}
-                          {config.required && <span className="text-red-500 ml-1">*</span>}
-                        </Label>
-                        {field === 'description' ? (
-                          <Textarea
-                            id={field}
-                            value={formData[field as keyof BrandFormData]}
-                            onChange={(e) => handleFormChange(field as keyof BrandFormData, e.target.value)}
-                            placeholder={config.placeholder}
-                            rows={3}
-                          />
-                        ) : (
-                          <Input
-                            id={field}
-                            type={field.includes('email') ? 'email' : field.includes('website') ? 'url' : 'text'}
-                            value={formData[field as keyof BrandFormData]}
-                            onChange={(e) => handleFormChange(field as keyof BrandFormData, e.target.value)}
-                            placeholder={config.placeholder}
-                            required={config.required}
-                          />
-                        )}
-                      </div>
-                    ))}
-                    
-                    {/* Form Buttons */}
-                    <div className="flex gap-2 justify-end pt-4 border-t">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={() => setShowCreateDialog(false)}
-                        disabled={createBrandMutation.isPending || isMutating}
-                      >
-                        Cancel
-                      </Button>
-                      <Button 
-                        type="button" 
-                        onClick={handleCreate}
-                        disabled={isMutating}
-                      >
-                        {isMutating ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Creating...
-                          </>
-                        ) : (
-                          'Create Brand'
-                        )}
-                      </Button>
-                    </div>
+              {/* Regular Form Fields */}
+              {Object.entries(BRAND_FORM_FIELDS).map(
+                ([field, config]: [
+                  string,
+                  { label: string; required: boolean; placeholder: string }
+                ]) => (
+                  <div key={field} className="space-y-2">
+                    <Label htmlFor={field}>
+                      {config.label}
+                      {config.required && (
+                        <span className="text-red-500 ml-1">*</span>
+                      )}
+                    </Label>
+                    {field === "description" ? (
+                      <Textarea
+                        id={field}
+                        value={formData[field as keyof BrandFormData]}
+                        onChange={(e) =>
+                          handleFormChange(
+                            field as keyof BrandFormData,
+                            e.target.value
+                          )
+                        }
+                        placeholder={config.placeholder}
+                        rows={3}
+                      />
+                    ) : (
+                      <Input
+                        id={field}
+                        type={
+                          field.includes("email")
+                            ? "email"
+                            : field.includes("website")
+                            ? "url"
+                            : "text"
+                        }
+                        value={formData[field as keyof BrandFormData]}
+                        onChange={(e) =>
+                          handleFormChange(
+                            field as keyof BrandFormData,
+                            e.target.value
+                          )
+                        }
+                        placeholder={config.placeholder}
+                        required={config.required}
+                      />
+                    )}
                   </div>
-                </DialogContent>
-              </Dialog>
-          <CardContent>
-            {/* Logo Filter */}
-            <div className="mb-4 flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-muted-foreground">Logo Status:</span>
-                <Select value={logoFilter} onValueChange={(value) => setLogoFilter(value as 'all' | 'with-logo' | 'without-logo')}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Brands</SelectItem>
-                    <SelectItem value="with-logo">With Logo</SelectItem>
-                    <SelectItem value="without-logo">Without Logo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {logoFilter === 'all' && `Showing all ${brands.length} brands`}
-                {logoFilter === 'with-logo' && `Showing ${brands.filter((b: Brand) => b.logo_url).length} brands with logos`}
-                {logoFilter === 'without-logo' && `Showing ${brands.filter((b: Brand) => !b.logo_url).length} brands without logos`}
+                )
+              )}
+
+              {/* Form Buttons */}
+              <div className="flex gap-2 justify-end pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCreateDialog(false)}
+                  disabled={createBrandMutation.isPending || isMutating}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleCreate}
+                  disabled={isMutating}
+                >
+                  {isMutating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create Brand"
+                  )}
+                </Button>
               </div>
             </div>
-
-            <DataTable
-              title="Brands"
-              data={brands.filter((brand: Brand) => {
-                if (logoFilter === 'with-logo') return !!brand.logo_url;
-                if (logoFilter === 'without-logo') return !brand.logo_url;
-                return true;
-              })}
-              columns={enhancedColumns}
-              searchable={true}
-              searchPlaceholder="Search brands..."
-              searchValue={searchTerm}
-              onSearchChange={setSearchTerm}
-              emptyMessage="No brands found for your business. Create your first brand to get started!"
-              tableName="brands"
-              userRole={user?.role}
-            />
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
           <DialogContent className="max-w-2xl">
@@ -640,8 +643,8 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
               <div className="flex items-center gap-4">
                 {selectedBrand?.logo_url && (
                   <div className="w-16 h-16 rounded-lg overflow-hidden border bg-gray-100">
-                    <img 
-                      src={selectedBrand.logo_url} 
+                    <img
+                      src={selectedBrand.logo_url}
                       alt={selectedBrand.name}
                       className="w-full h-full object-cover"
                     />
@@ -659,13 +662,13 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
               {/* Logo Upload Section */}
               <div className="space-y-3">
                 <Label className="text-base font-medium">Brand Logo</Label>
-                
+
                 {/* Current Logo Display */}
                 {formData.logo_url && !editingLogoPreview && (
                   <div className="relative inline-block">
-                    <img 
-                      src={formData.logo_url} 
-                      alt="Current brand logo" 
+                    <img
+                      src={formData.logo_url}
+                      alt="Current brand logo"
                       className="w-32 h-32 object-cover rounded-lg border"
                     />
                     <Button
@@ -673,20 +676,20 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
                       size="sm"
                       variant="outline"
                       className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
-                      onClick={() => handleFormChange('logo_url', '')}
+                      onClick={() => handleFormChange("logo_url", "")}
                       disabled={isMutating}
                     >
                       <X className="w-3 h-3" />
                     </Button>
                   </div>
                 )}
-                
+
                 {/* New Logo Preview */}
                 {editingLogoPreview && (
                   <div className="relative inline-block">
-                    <img 
-                      src={editingLogoPreview} 
-                      alt="Logo preview" 
+                    <img
+                      src={editingLogoPreview}
+                      alt="Logo preview"
                       className="w-32 h-32 object-cover rounded-lg border"
                     />
                     <Button
@@ -704,7 +707,7 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
                     </Button>
                   </div>
                 )}
-                
+
                 {/* Logo Upload Input */}
                 <div className="p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
                   <div className="flex items-center gap-3">
@@ -727,57 +730,86 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
                       disabled={isMutating}
                     />
                   </div>
-                  
+
                   {/* File Info */}
                   {editingLogoFile && (
                     <div className="text-xs text-muted-foreground mt-2">
                       <p>File: {editingLogoFile.name}</p>
-                      <p>Size: {(editingLogoFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                      <p>
+                        Size:{" "}
+                        {(editingLogoFile.size / (1024 * 1024)).toFixed(2)} MB
+                      </p>
                       <p>Type: {editingLogoFile.type}</p>
-                      <p className="text-blue-600">Logo will be uploaded when you save the brand</p>
+                      <p className="text-blue-600">
+                        Logo will be uploaded when you save the brand
+                      </p>
                     </div>
                   )}
-                  
+
                   {/* Help Text */}
                   <p className="text-xs text-muted-foreground mt-2 text-center">
-                    Upload a logo to make your brand more recognizable. Recommended size: 200x200px
+                    Upload a logo to make your brand more recognizable.
+                    Recommended size: 200x200px
                   </p>
                 </div>
               </div>
 
               {/* Regular Form Fields */}
-              {Object.entries(BRAND_FORM_FIELDS).map(([field, config]: [string, { label: string; required: boolean; placeholder: string }]) => (
-                <div key={field} className="space-y-2">
-                  <Label htmlFor={field}>
-                    {config.label}
-                    {config.required && <span className="text-red-500 ml-1">*</span>}
-                  </Label>
-                  {field === 'description' ? (
-                    <Textarea
-                      id={field}
-                      value={formData[field as keyof BrandFormData]}
-                      onChange={(e) => handleFormChange(field as keyof BrandFormData, e.target.value)}
-                      placeholder={config.placeholder}
-                      rows={3}
-                    />
-                  ) : (
-                    <Input
-                      id={field}
-                      type={field.includes('email') ? 'email' : field.includes('website') ? 'url' : 'text'}
-                      value={formData[field as keyof BrandFormData]}
-                      onChange={(e) => handleFormChange(field as keyof BrandFormData, e.target.value)}
-                      placeholder={config.placeholder}
-                      required={config.required}
-                    />
-                  )}
-                </div>
-              ))}
-              
+              {Object.entries(BRAND_FORM_FIELDS).map(
+                ([field, config]: [
+                  string,
+                  { label: string; required: boolean; placeholder: string }
+                ]) => (
+                  <div key={field} className="space-y-2">
+                    <Label htmlFor={field}>
+                      {config.label}
+                      {config.required && (
+                        <span className="text-red-500 ml-1">*</span>
+                      )}
+                    </Label>
+                    {field === "description" ? (
+                      <Textarea
+                        id={field}
+                        value={formData[field as keyof BrandFormData]}
+                        onChange={(e) =>
+                          handleFormChange(
+                            field as keyof BrandFormData,
+                            e.target.value
+                          )
+                        }
+                        placeholder={config.placeholder}
+                        rows={3}
+                      />
+                    ) : (
+                      <Input
+                        id={field}
+                        type={
+                          field.includes("email")
+                            ? "email"
+                            : field.includes("website")
+                            ? "url"
+                            : "text"
+                        }
+                        value={formData[field as keyof BrandFormData]}
+                        onChange={(e) =>
+                          handleFormChange(
+                            field as keyof BrandFormData,
+                            e.target.value
+                          )
+                        }
+                        placeholder={config.placeholder}
+                        required={config.required}
+                      />
+                    )}
+                  </div>
+                )
+              )}
+
               {/* Form Buttons */}
               <div className="flex gap-2 justify-end pt-4 border-t">
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => {
                     setShowEditDialog(false);
                     resetForm();
@@ -786,8 +818,8 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
                 >
                   Cancel
                 </Button>
-                <Button 
-                  type="button" 
+                <Button
+                  type="button"
                   onClick={handleUpdate}
                   disabled={isMutating}
                 >
@@ -797,7 +829,7 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
                       Updating...
                     </>
                   ) : (
-                    'Update Brand'
+                    "Update Brand"
                   )}
                 </Button>
               </div>
@@ -811,11 +843,12 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Brand</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete &quot;{brandToDelete?.name}&quot;? This action cannot be undone.
+                Are you sure you want to delete &quot;{brandToDelete?.name}
+                &quot;? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel 
+              <AlertDialogCancel
                 onClick={() => {
                   setShowDeleteDialog(false);
                   setBrandToDelete(null);
@@ -835,13 +868,13 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
                     Deleting...
                   </>
                 ) : (
-                  'Delete'
+                  "Delete"
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </div>
+      </main>
     </div>
   );
 };
