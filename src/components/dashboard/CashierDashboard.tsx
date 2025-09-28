@@ -200,7 +200,7 @@ export const CashierDashboard: React.FC = () => {
       data = Array.isArray(cashierSales) ? cashierSales : [];
     } else if (user?.role === 'store_admin') {
       // Store admins can only see their store's sales
-      data = Array.isArray(storeSales) ? storeSales.filter((sale: Sale) => sale.storeId === currentStore?.id) : [];
+      data = Array.isArray(storeSales) ? storeSales.filter((sale: Sale) => sale.store_id === currentStore?.id) : [];
     } else if (user?.role === 'business_admin') {
       // Business admins can see all store sales
       data = Array.isArray(storeSales) ? storeSales : [];
