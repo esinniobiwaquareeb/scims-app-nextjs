@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
-import { CreateSupplyPaymentData } from '@/types/supply';
+import { SupplyPaymentFormData } from '@/types/supply';
 
 // GET - Fetch supply payments
 export async function GET(request: NextRequest) {
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
 // POST - Create new supply payment
 export async function POST(request: NextRequest) {
   try {
-    const paymentData: CreateSupplyPaymentData = await request.json();
+    const paymentData: SupplyPaymentFormData = await request.json();
 
     // Validate required fields
     if (!paymentData.supply_order_id || !paymentData.amount_paid || !paymentData.payment_method) {

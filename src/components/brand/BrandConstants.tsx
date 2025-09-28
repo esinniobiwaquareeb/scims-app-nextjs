@@ -80,5 +80,5 @@ export const INITIAL_BRAND_FORM_DATA: BrandFormData = {
   contact_person: '',
   contact_email: '',
   contact_phone: '',
-  business_id: ''
+  is_active: true
 };

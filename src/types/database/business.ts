@@ -24,6 +24,12 @@ export interface Business {
   business_type?: string;
   username?: string;
   slug?: string;
+  stores?: Array<{
+    id: string;
+    name: string;
+    address?: string;
+    is_active: boolean;
+  }>;
 }
 
 export interface BusinessSetting {

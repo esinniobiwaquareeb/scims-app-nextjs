@@ -17,6 +17,9 @@ export * from './ui';
 // Re-export existing auth types
 export * from './auth';
 
+// Re-export notification types
+export * from './notification';
+
 // Re-export staff specific types
 export * from './staff';
 

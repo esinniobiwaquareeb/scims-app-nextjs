@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
-import { CreateSupplyOrderData } from '@/types/supply';
+import { SupplyOrderFormData } from '@/types/supply';
 
 // GET - Fetch supply orders
 export async function GET(request: NextRequest) {
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
 // POST - Create new supply order
 export async function POST(request: NextRequest) {
   try {
-    const supplyData: CreateSupplyOrderData = await request.json();
+    const supplyData: SupplyOrderFormData = await request.json();
 
     // Validate required fields
     if (!supplyData.store_id || !supplyData.customer_id || !supplyData.cashier_id || !supplyData.items?.length) {

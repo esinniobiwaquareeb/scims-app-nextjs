@@ -20,7 +20,7 @@ interface Business {
   language_id?: string;
   timezone: string;
   subscription_plan_id?: string;
-  subscription_status: string;
+  subscription_status?: 'active' | 'expired' | 'cancelled' | 'suspended';
   is_active: boolean;
   country?: {
     id: string;

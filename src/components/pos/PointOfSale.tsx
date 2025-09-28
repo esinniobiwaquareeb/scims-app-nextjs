@@ -95,6 +95,10 @@ const WALK_IN_CUSTOMER: Customer = {
   name: 'Walk-in Customer',
   phone: '',
   email: '',
+  store_id: '',
+  total_purchases: 0,
+  is_active: true,
+  updated_at: new Date().toISOString(),
   created_at: new Date().toISOString()
 };
 
@@ -192,7 +196,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
   // const [error, setError] = useState<string | null>(null);
   
   // Cart state
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([] as CartItem[]);
   const [cartSearchTerm, setCartSearchTerm] = useState('');
   
   // Payment state
@@ -324,7 +328,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
 
   // Memoized calculations
   const calculateSubtotal = useCallback(() => {
-    return cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+    return cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0) as number;
   }, [cart]);
 
   const calculateDiscount = useCallback(() => {

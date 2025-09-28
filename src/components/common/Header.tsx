@@ -37,8 +37,8 @@ export const Header: React.FC<HeaderProps> = ({
 
 
   const showStoreSelector = currentBusiness && 
-    currentBusiness.stores.length > 0 &&
-    (user?.role === 'business_admin' || user?.role === 'admin');
+    currentBusiness.stores && currentBusiness.stores.length > 0 &&
+    (user?.role === 'business_admin' || user?.role === 'superadmin');
 
   return (
     <header className="bg-background shadow-sm border-b border-border sticky top-0 z-40">
@@ -90,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
                         </div>
                       </div>
                     </SelectItem>
-                    {currentBusiness.stores.map(store => (
+                    {currentBusiness.stores?.map(store => (
                       <SelectItem key={store.id} value={store.id}>
                         <div>
                           <p className="font-medium">{store.name}</p>

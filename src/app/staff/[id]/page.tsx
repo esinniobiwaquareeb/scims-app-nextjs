@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { StaffDetail } from '@/components/StaffDetail';
+import { StaffDetailComponent } from '@/components/StaffDetail';
 import { toast } from 'sonner';
 
 interface Staff {
@@ -20,6 +20,8 @@ interface Staff {
     address: string;
   };
   created_at: string;
+  updated_at: string;
+  password_hash: string;
   last_login?: string;
   totalSales?: number;
   transactionCount?: number;
@@ -111,7 +113,7 @@ export default function StaffDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <StaffDetail onBack={handleBack} staffMember={staff} />
+      <StaffDetailComponent onBack={handleBack} staffMember={staff} />
     </div>
   );
 }

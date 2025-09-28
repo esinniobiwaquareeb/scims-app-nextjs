@@ -64,7 +64,7 @@ export const BrandForm: React.FC<BrandFormProps> = ({
             {field === 'description' ? (
               <Textarea
                 id={field}
-                value={formData[field as keyof BrandFormData]}
+                value={formData[field as keyof BrandFormData] as string}
                 onChange={(e) => onChange(field as keyof BrandFormData, e.target.value)}
                 placeholder={config.placeholder}
                 rows={3}
@@ -73,7 +73,7 @@ export const BrandForm: React.FC<BrandFormProps> = ({
               <Input
                 id={field}
                 type={field.includes('email') ? 'email' : field.includes('website') ? 'url' : 'text'}
-                value={formData[field as keyof BrandFormData]}
+                value={formData[field as keyof BrandFormData] as string}
                 onChange={(e) => onChange(field as keyof BrandFormData, e.target.value)}
                 placeholder={config.placeholder}
                 required={config.required}

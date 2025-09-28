@@ -15,7 +15,8 @@ import { Header } from '@/components/common/Header';
 import { DataTable } from '@/components/common/DataTable';
 import { ImageWithFallback } from '@/components/common/ImageWithFallback';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
-import { Sale, SalesStats, ActivityLog } from '@/types/dashboard';
+import { Sale, ActivityLog } from '@/types/database';
+import { SalesStats } from '@/types/ui';
 import { calculateSalesStats, formatDateTime, formatTableDateTime } from '@/utils/dashboardUtils';
 import { 
   ShoppingCart, 
