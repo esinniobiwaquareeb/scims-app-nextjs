@@ -87,6 +87,21 @@ export const SaleDetailDialog: React.FC<SaleDetailDialogProps> = ({
                 )}
               </>
             )}
+            {/* Discount Information */}
+            {(sale.applied_coupon_id || sale.applied_promotion_id || sale.discount_reason) && (
+              <>
+                <div>
+                  <p className="text-muted-foreground">Discount Applied</p>
+                  <p className="font-medium text-green-600">
+                    {sale.applied_coupon?.code || sale.applied_promotion?.name || 'Discount'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Discount Reason</p>
+                  <p className="font-medium text-sm">{sale.discount_reason || 'N/A'}</p>
+                </div>
+              </>
+            )}
           </div>
 
           <Separator />
@@ -123,6 +138,12 @@ export const SaleDetailDialog: React.FC<SaleDetailDialogProps> = ({
               <span>Subtotal:</span>
               <span>{formatCurrency(sale.subtotal)}</span>
             </div>
+            {sale.discount_amount && sale.discount_amount > 0 && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span>Discount:</span>
+                <span>-{formatCurrency(sale.discount_amount)}</span>
+              </div>
+            )}
             {sale.tax_amount > 0 && (
               <div className="flex justify-between text-sm">
                 <span>Tax:</span>

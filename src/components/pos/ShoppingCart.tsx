@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { PaymentModal } from './PaymentModal';
+import { DiscountApplicationComponent } from '@/components/DiscountApplication';
 import {  
   Minus, 
   Plus, 
@@ -60,6 +61,9 @@ interface ShoppingCartProps {
   lastSaleInfo: any;
   cartSearchTerm: string;
   isSupplyMode?: boolean;
+  businessId?: string;
+  storeId?: string;
+  appliedDiscount?: any;
   onCartSearchChange: (term: string) => void;
   onUpdateQuantity: (productId: string, change: number) => void;
   onRemoveFromCart: (productId: string) => void;
@@ -72,6 +76,7 @@ interface ShoppingCartProps {
   onLoadSavedCarts: () => void;
   onSelectCustomer: () => void;
   onClearCustomer: () => void;
+  onDiscountApplied: (discount: any) => void;
   calculateSubtotal: () => number;
   calculateDiscount: () => number;
   calculateTax: () => number;
@@ -99,6 +104,9 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   lastSaleInfo,
   cartSearchTerm,
   isSupplyMode = false,
+  businessId,
+  storeId,
+  appliedDiscount,
   onCartSearchChange,
   onUpdateQuantity,
   onRemoveFromCart,
@@ -111,6 +119,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   onLoadSavedCarts,
   onSelectCustomer,
   onClearCustomer,
+  onDiscountApplied,
   calculateSubtotal,
   calculateDiscount,
   calculateTax,
@@ -333,6 +342,20 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
                 </div>
               )}
               
+              {/* Discount Application */}
+              {businessId && (
+                <DiscountApplicationComponent
+                  businessId={businessId}
+                  storeId={storeId}
+                  customerId={selectedCustomer?.id !== 'walk-in' ? selectedCustomer?.id : undefined}
+                  subtotal={calculateSubtotal()}
+                  productIds={cart?.map(item => item.product.id)}
+                  onDiscountApplied={onDiscountApplied}
+                  appliedDiscount={appliedDiscount}
+                  className="mb-3"
+                />
+              )}
+
               {/* Compact Order Summary */}
               <div className="space-y-1 text-xs">
                 <div className="flex justify-between">

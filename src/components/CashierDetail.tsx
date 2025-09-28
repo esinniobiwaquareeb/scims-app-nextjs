@@ -23,6 +23,27 @@ interface CashierSale {
   transaction_date: string;
   customer_name?: string;
   items_count: number;
+  discount_amount?: number;
+  applied_coupon_id?: string;
+  applied_promotion_id?: string;
+  discount_reason?: string;
+  applied_coupon?: {
+    id: string;
+    code: string;
+    name: string;
+    discount_type: {
+      name: string;
+    };
+    discount_value: number;
+  };
+  applied_promotion?: {
+    id: string;
+    name: string;
+    discount_type: {
+      name: string;
+    };
+    discount_value: number;
+  };
 }
 
 interface ActivityLog {
@@ -227,6 +248,28 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
       header: 'Amount',
       render: (sale: CashierSale) => (
         <div className="font-medium">{formatCurrency(sale.total_amount)}</div>
+      )
+    },
+    {
+      key: 'discount',
+      header: 'Discount',
+      render: (sale: CashierSale) => (
+        <div className="text-sm text-right">
+          {sale.discount_amount && sale.discount_amount > 0 ? (
+            <div>
+              <div className="font-medium text-green-600">
+                -{formatCurrency(sale.discount_amount)}
+              </div>
+              {(sale.applied_coupon?.code || sale.applied_promotion?.name) && (
+                <div className="text-xs text-muted-foreground">
+                  {sale.applied_coupon?.code || sale.applied_promotion?.name}
+                </div>
+              )}
+            </div>
+          ) : (
+            <span className="text-muted-foreground">None</span>
+          )}
+        </div>
       )
     },
     {

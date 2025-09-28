@@ -421,6 +421,28 @@ export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business
       )
     },
     {
+      key: 'discount',
+      header: 'Discount',
+      render: (sale: any) => (
+        <div className="text-sm text-right">
+          {sale.discount_amount && sale.discount_amount > 0 ? (
+            <div>
+              <div className="font-medium text-green-600">
+                -{formatCurrency(sale.discount_amount)}
+              </div>
+              {(sale.applied_coupon?.code || sale.applied_promotion?.name) && (
+                <div className="text-xs text-muted-foreground">
+                  {sale.applied_coupon?.code || sale.applied_promotion?.name}
+                </div>
+              )}
+            </div>
+          ) : (
+            <span className="text-muted-foreground">None</span>
+          )}
+        </div>
+      )
+    },
+    {
       key: 'payment',
       header: 'Payment',
       render: (sale: any) => (

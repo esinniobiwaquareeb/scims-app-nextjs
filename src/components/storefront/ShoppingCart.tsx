@@ -20,6 +20,7 @@ import {
   Truck
 } from 'lucide-react';
 import PaymentMethodSelector from './PaymentMethodSelector';
+import { DiscountApplicationComponent } from '@/components/DiscountApplication';
 
 interface Product {
   id: string;
@@ -48,6 +49,17 @@ interface Business {
 interface ShoppingCartProps {
   cart: CartItem[];
   business: Business;
+  businessId?: string;
+  storeId?: string;
+  appliedDiscount?: {
+    type: 'coupon' | 'promotion';
+    id: string;
+    name: string;
+    discount_amount: number;
+    discount_type: string;
+    discount_value: number;
+    code?: string;
+  } | null;
   onUpdateQuantity: (productId: string, quantity: number) => void;
   onOrder: () => void;
   isOrdering: boolean;
@@ -66,11 +78,23 @@ interface ShoppingCartProps {
   selectedPaymentMethod: string;
   setSelectedPaymentMethod: (method: string) => void;
   availablePaymentMethods: string[];
+  onDiscountApplied: (discount: {
+    type: 'coupon' | 'promotion';
+    id: string;
+    name: string;
+    discount_amount: number;
+    discount_type: string;
+    discount_value: number;
+    code?: string;
+  } | null) => void;
 }
 
 export default function StorefrontCart({
   cart,
   business,
+  businessId,
+  storeId,
+  appliedDiscount,
   onUpdateQuantity,
   onOrder,
   isOrdering,
@@ -88,10 +112,17 @@ export default function StorefrontCart({
   setOrderNotes,
   selectedPaymentMethod,
   setSelectedPaymentMethod,
-  availablePaymentMethods
+  availablePaymentMethods,
+  onDiscountApplied
 }: ShoppingCartProps) {
   const { isDark } = useTheme();
   const getCartTotal = () => {
+    const subtotal = cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+    const discountAmount = appliedDiscount?.discount_amount || 0;
+    return subtotal - discountAmount;
+  };
+
+  const getCartSubtotal = () => {
     return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
   };
 
@@ -184,11 +215,48 @@ export default function StorefrontCart({
               ))}
             </div>
             
-            {/* Total */}
+            {/* Discount Application */}
+            {businessId && (
+              <div className="mb-4">
+                <DiscountApplicationComponent
+                  businessId={businessId}
+                  storeId={storeId}
+                  subtotal={getCartSubtotal()}
+                  productIds={cart.map(item => item.product.id)}
+                  onDiscountApplied={onDiscountApplied}
+                  appliedDiscount={appliedDiscount}
+                />
+              </div>
+            )}
+
+            {/* Order Summary */}
             <div className={`border-t pt-4 ${
               isDark ? 'border-gray-700' : 'border-gray-200'
             }`}>
-              <div className="flex justify-between items-center mb-4">
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between">
+                  <span className={`text-sm ${
+                    isDark ? 'text-gray-300' : 'text-gray-600'
+                  }`}>
+                    Subtotal:
+                  </span>
+                  <span className={`text-sm ${
+                    isDark ? 'text-gray-300' : 'text-gray-600'
+                  }`}>
+                    {business.currency.symbol}{getCartSubtotal().toLocaleString()}
+                  </span>
+                </div>
+                {appliedDiscount && (
+                  <div className="flex justify-between text-green-600">
+                    <span className="text-sm">Discount:</span>
+                    <span className="text-sm">
+                      -{business.currency.symbol}{appliedDiscount.discount_amount.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-between items-center">
                 <span className={`text-lg font-semibold ${
                   isDark ? 'text-white' : 'text-gray-900'
                 }`}>

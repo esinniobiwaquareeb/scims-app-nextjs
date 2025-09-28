@@ -1,4 +1,399 @@
 -- ======================
+-- DISCOUNT & PROMOTION SYSTEM
+-- ======================
+
+-- Discount types table
+create table public.discount_type (
+  id uuid not null default gen_random_uuid (),
+  name character varying(100) not null,
+  description text null,
+  is_active boolean null default true,
+  created_at timestamp without time zone null default now(),
+  updated_at timestamp without time zone null default now(),
+  constraint discount_type_pkey primary key (id),
+  constraint discount_type_name_key unique (name)
+) TABLESPACE pg_default;
+
+-- Insert default discount types
+insert into public.discount_type (name, description) values
+('percentage', 'Percentage-based discount'),
+('fixed_amount', 'Fixed amount discount'),
+('buy_x_get_y', 'Buy X get Y free'),
+('bulk_discount', 'Bulk quantity discount'),
+('loyalty_discount', 'Loyalty customer discount'),
+('seasonal_discount', 'Seasonal promotion discount'),
+('first_time_buyer', 'First-time buyer discount'),
+('referral_discount', 'Referral discount');
+
+-- Promotions table
+create table public.promotion (
+  id uuid not null default gen_random_uuid (),
+  business_id uuid not null,
+  store_id uuid null, -- null means applies to all stores in business
+  name character varying(255) not null,
+  description text null,
+  discount_type_id uuid not null,
+  discount_value numeric(10, 2) not null, -- percentage or fixed amount
+  minimum_purchase_amount numeric(10, 2) null default 0,
+  maximum_discount_amount numeric(10, 2) null, -- for percentage discounts
+  minimum_quantity integer null default 1,
+  maximum_quantity integer null,
+  applicable_products jsonb null, -- array of product IDs, null means all products
+  applicable_categories jsonb null, -- array of category IDs
+  applicable_brands jsonb null, -- array of brand IDs
+  customer_restrictions jsonb null, -- loyalty level, customer groups, etc.
+  usage_limit integer null, -- total number of times this promotion can be used
+  usage_limit_per_customer integer null default 1,
+  current_usage_count integer null default 0,
+  start_date timestamp without time zone not null,
+  end_date timestamp without time zone not null,
+  is_active boolean null default true,
+  created_by uuid null,
+  created_at timestamp without time zone null default now(),
+  updated_at timestamp without time zone null default now(),
+  constraint promotion_pkey primary key (id),
+  constraint promotion_business_id_fkey foreign KEY (business_id) references business (id) on delete CASCADE,
+  constraint promotion_store_id_fkey foreign KEY (store_id) references store (id) on delete CASCADE,
+  constraint promotion_discount_type_id_fkey foreign KEY (discount_type_id) references discount_type (id) on delete RESTRICT,
+  constraint promotion_created_by_fkey foreign KEY (created_by) references "user" (id) on delete set null,
+  constraint promotion_discount_value_check check (discount_value > 0),
+  constraint promotion_minimum_purchase_amount_check check (minimum_purchase_amount >= 0),
+  constraint promotion_maximum_discount_amount_check check (maximum_discount_amount is null or maximum_discount_amount > 0),
+  constraint promotion_minimum_quantity_check check (minimum_quantity > 0),
+  constraint promotion_maximum_quantity_check check (maximum_quantity is null or maximum_quantity >= minimum_quantity),
+  constraint promotion_usage_limit_check check (usage_limit is null or usage_limit > 0),
+  constraint promotion_usage_limit_per_customer_check check (usage_limit_per_customer > 0),
+  constraint promotion_current_usage_count_check check (current_usage_count >= 0),
+  constraint promotion_dates_check check (end_date > start_date)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_promotion_business_id on public.promotion using btree (business_id) TABLESPACE pg_default;
+create index IF not exists idx_promotion_store_id on public.promotion using btree (store_id) TABLESPACE pg_default;
+create index IF not exists idx_promotion_discount_type_id on public.promotion using btree (discount_type_id) TABLESPACE pg_default;
+create index IF not exists idx_promotion_is_active on public.promotion using btree (is_active) TABLESPACE pg_default;
+create index IF not exists idx_promotion_dates on public.promotion using btree (start_date, end_date) TABLESPACE pg_default;
+
+-- Coupons table
+create table public.coupon (
+  id uuid not null default gen_random_uuid (),
+  business_id uuid not null,
+  store_id uuid null, -- null means applies to all stores in business
+  code character varying(50) not null,
+  name character varying(255) not null,
+  description text null,
+  discount_type_id uuid not null,
+  discount_value numeric(10, 2) not null,
+  minimum_purchase_amount numeric(10, 2) null default 0,
+  maximum_discount_amount numeric(10, 2) null,
+  applicable_products jsonb null,
+  applicable_categories jsonb null,
+  applicable_brands jsonb null,
+  customer_restrictions jsonb null,
+  usage_limit integer null,
+  usage_limit_per_customer integer null default 1,
+  current_usage_count integer null default 0,
+  start_date timestamp without time zone not null,
+  end_date timestamp without time zone not null,
+  is_active boolean null default true,
+  created_by uuid null,
+  created_at timestamp without time zone null default now(),
+  updated_at timestamp without time zone null default now(),
+  constraint coupon_pkey primary key (id),
+  constraint coupon_business_id_fkey foreign KEY (business_id) references business (id) on delete CASCADE,
+  constraint coupon_store_id_fkey foreign KEY (store_id) references store (id) on delete CASCADE,
+  constraint coupon_discount_type_id_fkey foreign KEY (discount_type_id) references discount_type (id) on delete RESTRICT,
+  constraint coupon_created_by_fkey foreign KEY (created_by) references "user" (id) on delete set null,
+  constraint coupon_code_key unique (business_id, code),
+  constraint coupon_discount_value_check check (discount_value > 0),
+  constraint coupon_minimum_purchase_amount_check check (minimum_purchase_amount >= 0),
+  constraint coupon_maximum_discount_amount_check check (maximum_discount_amount is null or maximum_discount_amount > 0),
+  constraint coupon_usage_limit_check check (usage_limit is null or usage_limit > 0),
+  constraint coupon_usage_limit_per_customer_check check (usage_limit_per_customer > 0),
+  constraint coupon_current_usage_count_check check (current_usage_count >= 0),
+  constraint coupon_dates_check check (end_date > start_date)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_coupon_business_id on public.coupon using btree (business_id) TABLESPACE pg_default;
+create index IF not exists idx_coupon_store_id on public.coupon using btree (store_id) TABLESPACE pg_default;
+create index IF not exists idx_coupon_code on public.coupon using btree (code) TABLESPACE pg_default;
+create index IF not exists idx_coupon_discount_type_id on public.coupon using btree (discount_type_id) TABLESPACE pg_default;
+create index IF not exists idx_coupon_is_active on public.coupon using btree (is_active) TABLESPACE pg_default;
+create index IF not exists idx_coupon_dates on public.coupon using btree (start_date, end_date) TABLESPACE pg_default;
+
+-- Coupon usage tracking
+create table public.coupon_usage (
+  id uuid not null default gen_random_uuid (),
+  coupon_id uuid not null,
+  customer_id uuid null,
+  sale_id uuid not null,
+  discount_amount numeric(10, 2) not null,
+  used_at timestamp without time zone null default now(),
+  created_at timestamp without time zone null default now(),
+  constraint coupon_usage_pkey primary key (id),
+  constraint coupon_usage_coupon_id_fkey foreign KEY (coupon_id) references coupon (id) on delete CASCADE,
+  constraint coupon_usage_customer_id_fkey foreign KEY (customer_id) references customer (id) on delete set null,
+  constraint coupon_usage_sale_id_fkey foreign KEY (sale_id) references sale (id) on delete CASCADE,
+  constraint coupon_usage_discount_amount_check check (discount_amount > 0)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_coupon_usage_coupon_id on public.coupon_usage using btree (coupon_id) TABLESPACE pg_default;
+create index IF not exists idx_coupon_usage_customer_id on public.coupon_usage using btree (customer_id) TABLESPACE pg_default;
+create index IF not exists idx_coupon_usage_sale_id on public.coupon_usage using btree (sale_id) TABLESPACE pg_default;
+create index IF not exists idx_coupon_usage_used_at on public.coupon_usage using btree (used_at) TABLESPACE pg_default;
+
+-- Promotion usage tracking
+create table public.promotion_usage (
+  id uuid not null default gen_random_uuid (),
+  promotion_id uuid not null,
+  customer_id uuid null,
+  sale_id uuid not null,
+  discount_amount numeric(10, 2) not null,
+  used_at timestamp without time zone null default now(),
+  created_at timestamp without time zone null default now(),
+  constraint promotion_usage_pkey primary key (id),
+  constraint promotion_usage_promotion_id_fkey foreign KEY (promotion_id) references promotion (id) on delete CASCADE,
+  constraint promotion_usage_customer_id_fkey foreign KEY (customer_id) references customer (id) on delete set null,
+  constraint promotion_usage_sale_id_fkey foreign KEY (sale_id) references sale (id) on delete CASCADE,
+  constraint promotion_usage_discount_amount_check check (discount_amount > 0)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_promotion_usage_promotion_id on public.promotion_usage using btree (promotion_id) TABLESPACE pg_default;
+create index IF not exists idx_promotion_usage_customer_id on public.promotion_usage using btree (customer_id) TABLESPACE pg_default;
+create index IF not exists idx_promotion_usage_sale_id on public.promotion_usage using btree (sale_id) TABLESPACE pg_default;
+create index IF not exists idx_promotion_usage_used_at on public.promotion_usage using btree (used_at) TABLESPACE pg_default;
+
+-- Add discount tracking to sale table
+alter table public.sale add column if not exists applied_coupon_id uuid null;
+alter table public.sale add column if not exists applied_promotion_id uuid null;
+alter table public.sale add column if not exists discount_reason text null;
+
+-- Add foreign key constraints for discount tracking
+alter table public.sale add constraint sale_applied_coupon_id_fkey foreign KEY (applied_coupon_id) references coupon (id) on delete set null;
+alter table public.sale add constraint sale_applied_promotion_id_fkey foreign KEY (applied_promotion_id) references promotion (id) on delete set null;
+
+-- Add indexes for discount tracking
+create index IF not exists idx_sale_applied_coupon_id on public.sale using btree (applied_coupon_id) TABLESPACE pg_default;
+create index IF not exists idx_sale_applied_promotion_id on public.sale using btree (applied_promotion_id) TABLESPACE pg_default;
+
+-- ======================
+-- DISCOUNT FUNCTIONS
+-- ======================
+
+-- Function to calculate discount amount
+CREATE OR REPLACE FUNCTION calculate_discount_amount(
+  discount_type_name text,
+  discount_value numeric,
+  subtotal numeric,
+  maximum_discount_amount numeric DEFAULT NULL
+) RETURNS numeric AS $$
+BEGIN
+  IF discount_type_name = 'percentage' OR discount_type_name = 'seasonal_discount' THEN
+    -- Calculate percentage discount
+    DECLARE
+      calculated_discount numeric := (subtotal * discount_value) / 100;
+    BEGIN
+      -- Apply maximum discount limit if specified
+      IF maximum_discount_amount IS NOT NULL AND calculated_discount > maximum_discount_amount THEN
+        RETURN maximum_discount_amount;
+      END IF;
+      RETURN calculated_discount;
+    END;
+  ELSIF discount_type_name = 'fixed_amount' THEN
+    -- Fixed amount discount (cannot exceed subtotal)
+    RETURN LEAST(discount_value, subtotal);
+  ELSIF discount_type_name = 'loyalty_discount' THEN
+    -- Loyalty discount as percentage
+    DECLARE
+      calculated_discount numeric := (subtotal * discount_value) / 100;
+    BEGIN
+      IF maximum_discount_amount IS NOT NULL AND calculated_discount > maximum_discount_amount THEN
+        RETURN maximum_discount_amount;
+      END IF;
+      RETURN calculated_discount;
+    END;
+  ELSIF discount_type_name = 'first_time_buyer' THEN
+    -- First time buyer discount as percentage
+    DECLARE
+      calculated_discount numeric := (subtotal * discount_value) / 100;
+    BEGIN
+      IF maximum_discount_amount IS NOT NULL AND calculated_discount > maximum_discount_amount THEN
+        RETURN maximum_discount_amount;
+      END IF;
+      RETURN calculated_discount;
+    END;
+  ELSIF discount_type_name = 'referral_discount' THEN
+    -- Referral discount as percentage
+    DECLARE
+      calculated_discount numeric := (subtotal * discount_value) / 100;
+    BEGIN
+      IF maximum_discount_amount IS NOT NULL AND calculated_discount > maximum_discount_amount THEN
+        RETURN maximum_discount_amount;
+      END IF;
+      RETURN calculated_discount;
+    END;
+  ELSE
+    -- For other discount types, return 0 (to be implemented)
+    RETURN 0;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to validate coupon usage
+CREATE OR REPLACE FUNCTION validate_coupon_usage(
+  coupon_code text,
+  business_id_param uuid,
+  store_id_param uuid,
+  customer_id_param uuid,
+  subtotal numeric
+) RETURNS jsonb AS $$
+DECLARE
+  coupon_record record;
+  customer_usage_count integer := 0;
+  result jsonb;
+BEGIN
+  -- Get coupon details
+  SELECT c.*, dt.name as discount_type_name INTO coupon_record
+  FROM coupon c
+  JOIN discount_type dt ON c.discount_type_id = dt.id
+  WHERE c.code = coupon_code 
+    AND c.business_id = business_id_param
+    AND (c.store_id IS NULL OR c.store_id = store_id_param)
+    AND c.is_active = true
+    AND c.start_date <= now()
+    AND c.end_date >= now();
+  
+  -- Check if coupon exists
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object(
+      'valid', false,
+      'error', 'Coupon not found or expired'
+    );
+  END IF;
+  
+  -- Check minimum purchase amount
+  IF coupon_record.minimum_purchase_amount > subtotal THEN
+    RETURN jsonb_build_object(
+      'valid', false,
+      'error', 'Minimum purchase amount not met'
+    );
+  END IF;
+  
+  -- Check total usage limit
+  IF coupon_record.usage_limit IS NOT NULL AND coupon_record.current_usage_count >= coupon_record.usage_limit THEN
+    RETURN jsonb_build_object(
+      'valid', false,
+      'error', 'Coupon usage limit exceeded'
+    );
+  END IF;
+  
+  -- Check per-customer usage limit
+  IF customer_id_param IS NOT NULL THEN
+    SELECT COUNT(*) INTO customer_usage_count
+    FROM coupon_usage cu
+    WHERE cu.coupon_id = coupon_record.id 
+      AND cu.customer_id = customer_id_param;
+    
+    IF customer_usage_count >= coupon_record.usage_limit_per_customer THEN
+      RETURN jsonb_build_object(
+        'valid', false,
+        'error', 'Coupon usage limit per customer exceeded'
+      );
+    END IF;
+  END IF;
+  
+  -- Calculate discount amount
+  DECLARE
+    discount_amount numeric := calculate_discount_amount(
+      coupon_record.discount_type_name,
+      coupon_record.discount_value,
+      subtotal,
+      coupon_record.maximum_discount_amount
+    );
+  BEGIN
+    RETURN jsonb_build_object(
+      'valid', true,
+      'coupon_id', coupon_record.id,
+      'discount_amount', discount_amount,
+      'discount_type', coupon_record.discount_type_name,
+      'discount_value', coupon_record.discount_value
+    );
+  END;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get applicable promotions
+CREATE OR REPLACE FUNCTION get_applicable_promotions(
+  business_id_param uuid,
+  store_id_param uuid,
+  customer_id_param uuid,
+  subtotal numeric,
+  product_ids uuid[] DEFAULT NULL
+) RETURNS jsonb AS $$
+DECLARE
+  promotion_record record;
+  promotions jsonb := '[]'::jsonb;
+  discount_amount numeric;
+BEGIN
+  -- Get all applicable promotions
+  FOR promotion_record IN
+    SELECT p.*, dt.name as discount_type_name
+    FROM promotion p
+    JOIN discount_type dt ON p.discount_type_id = dt.id
+    WHERE p.business_id = business_id_param
+      AND (p.store_id IS NULL OR p.store_id = store_id_param)
+      AND p.is_active = true
+      AND p.start_date <= now()
+      AND p.end_date >= now()
+      AND p.minimum_purchase_amount <= subtotal
+      AND (p.usage_limit IS NULL OR p.current_usage_count < p.usage_limit)
+  LOOP
+    -- Calculate discount amount
+    discount_amount := calculate_discount_amount(
+      promotion_record.discount_type_name,
+      promotion_record.discount_value,
+      subtotal,
+      promotion_record.maximum_discount_amount
+    );
+    
+    -- Add to promotions array
+    promotions := promotions || jsonb_build_object(
+      'id', promotion_record.id,
+      'name', promotion_record.name,
+      'description', promotion_record.description,
+      'discount_type', promotion_record.discount_type_name,
+      'discount_value', promotion_record.discount_value,
+      'discount_amount', discount_amount,
+      'minimum_purchase_amount', promotion_record.minimum_purchase_amount
+    );
+  END LOOP;
+  
+  RETURN promotions;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to update coupon usage count
+CREATE OR REPLACE FUNCTION update_coupon_usage_count(coupon_id_param uuid)
+RETURNS void AS $$
+BEGIN
+  UPDATE coupon 
+  SET current_usage_count = current_usage_count + 1,
+      updated_at = now()
+  WHERE id = coupon_id_param;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to update promotion usage count
+CREATE OR REPLACE FUNCTION update_promotion_usage_count(promotion_id_param uuid)
+RETURNS void AS $$
+BEGIN
+  UPDATE promotion 
+  SET current_usage_count = current_usage_count + 1,
+      updated_at = now()
+  WHERE id = promotion_id_param;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ======================
 -- ACTIVITY LOG
 -- ======================
 create table public.activity_log (
@@ -648,11 +1043,17 @@ create table public.public_order (
   payment_method character varying(50) null default 'pay_on_delivery'::character varying,
   whatsapp_sent boolean null default false,
   whatsapp_message_id character varying(255) null,
+  applied_coupon_id uuid null,
+  applied_promotion_id uuid null,
+  discount_reason text null,
+  discount_amount numeric(10, 2) not null default 0,
   created_at timestamp without time zone null default now(),
   updated_at timestamp without time zone null default now(),
   constraint public_order_pkey primary key (id),
   constraint public_order_business_id_fkey foreign KEY (business_id) references business (id) on delete CASCADE,
   constraint public_order_store_id_fkey foreign KEY (store_id) references store (id) on delete CASCADE,
+  constraint public_order_applied_coupon_id_fkey foreign KEY (applied_coupon_id) references coupon (id) on delete set null,
+  constraint public_order_applied_promotion_id_fkey foreign KEY (applied_promotion_id) references promotion (id) on delete set null,
   constraint public_order_status_check check (
     (
       (status)::text = any (
@@ -675,6 +1076,10 @@ create index IF not exists idx_public_order_store_id on public.public_order usin
 create index IF not exists idx_public_order_status on public.public_order using btree (status) TABLESPACE pg_default;
 
 create index IF not exists idx_public_order_created_at on public.public_order using btree (created_at) TABLESPACE pg_default;
+
+create index IF not exists idx_public_order_applied_coupon_id on public.public_order using btree (applied_coupon_id) TABLESPACE pg_default;
+
+create index IF not exists idx_public_order_applied_promotion_id on public.public_order using btree (applied_promotion_id) TABLESPACE pg_default;
 
 create trigger update_public_order_updated_at BEFORE
 update on public_order for EACH row

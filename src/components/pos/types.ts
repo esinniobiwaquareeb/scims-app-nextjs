@@ -52,6 +52,26 @@ export interface Sale {
     };
   }>;
   discount_amount?: number;
+  applied_coupon_id?: string;
+  applied_promotion_id?: string;
+  discount_reason?: string;
+  applied_coupon?: {
+    id: string;
+    code: string;
+    name: string;
+    discount_type: {
+      name: string;
+    };
+    discount_value: number;
+  };
+  applied_promotion?: {
+    id: string;
+    name: string;
+    discount_type: {
+      name: string;
+    };
+    discount_value: number;
+  };
   customers?: {
     name: string;
     phone: string;

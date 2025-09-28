@@ -14,6 +14,8 @@ export interface ReceiptData {
   }>;
   subtotal: number;
   tax: number;
+  discount?: number;
+  discountReason?: string;
   total: number;
   paymentMethod: string;
   cashAmount?: number;
@@ -266,6 +268,12 @@ export const generateReceiptHTML = (
             <span>Subtotal:</span>
             <span>${formatAmount(receiptData.subtotal)}</span>
           </div>
+          ${receiptData.discount && receiptData.discount > 0 ? `
+            <div class="total-row" style="color: #28a745; font-weight: bold;">
+              <span>Discount${receiptData.discountReason ? ` (${receiptData.discountReason})` : ''}:</span>
+              <span>-${formatAmount(receiptData.discount)}</span>
+            </div>
+          ` : ''}
           ${receiptData.tax > 0 ? `
             <div class="total-row">
               <span>Tax:</span>

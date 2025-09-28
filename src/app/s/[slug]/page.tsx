@@ -121,6 +121,17 @@ export default function StorefrontPage() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState<string[]>(['pay_on_delivery']);
   
+  // Discount state
+  const [appliedDiscount, setAppliedDiscount] = useState<{
+    type: 'coupon' | 'promotion';
+    id: string;
+    name: string;
+    discount_amount: number;
+    discount_type: string;
+    discount_value: number;
+    code?: string;
+  } | null>(null);
+  
   // Wishlist
   const [wishlist, setWishlist] = useState<string[]>([]);
 
@@ -275,8 +286,14 @@ export default function StorefrontPage() {
     return item ? item.quantity : 0;
   };
 
-  const getCartTotal = () => {
+  const getCartSubtotal = () => {
     return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+  };
+
+  const getCartTotal = () => {
+    const subtotal = getCartSubtotal();
+    const discountAmount = appliedDiscount?.discount_amount || 0;
+    return subtotal - discountAmount;
   };
 
   const handleOrder = async () => {
@@ -315,8 +332,11 @@ export default function StorefrontPage() {
           customer_email: customerEmail,
           customer_address: customerAddress,
           order_items: orderItems,
-          subtotal: getCartTotal(),
+          subtotal: getCartSubtotal(),
           total_amount: getCartTotal(),
+          applied_coupon_id: appliedDiscount?.type === 'coupon' ? appliedDiscount?.id : undefined,
+          applied_promotion_id: appliedDiscount?.type === 'promotion' ? appliedDiscount?.id : undefined,
+          discount_reason: appliedDiscount ? `${appliedDiscount.type}: ${appliedDiscount.name}` : undefined,
           notes: orderNotes,
           payment_method: selectedPaymentMethod
         }),
@@ -532,6 +552,9 @@ export default function StorefrontPage() {
               <StorefrontCart
                 cart={cart}
                 business={business}
+                businessId={business?.id}
+                storeId={stores?.[0]?.id}
+                appliedDiscount={appliedDiscount}
                 onUpdateQuantity={updateQuantity}
                 onOrder={handleOrder}
                 isOrdering={isOrdering}
@@ -550,6 +573,7 @@ export default function StorefrontPage() {
                 selectedPaymentMethod={selectedPaymentMethod}
                 setSelectedPaymentMethod={setSelectedPaymentMethod}
                 availablePaymentMethods={availablePaymentMethods}
+                onDiscountApplied={setAppliedDiscount}
               />
             </div>
           </div>

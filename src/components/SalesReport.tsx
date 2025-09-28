@@ -30,25 +30,19 @@ import {
   Filter,
   Search,
   BarChart3,
-  PieChart,
   Calendar,
   Eye,
   RefreshCw,
   Loader2,
-  FileText,
   CreditCard,
   Receipt,
-  User,
   Store,
-  Clock,
   Target,
   Award,
   Calculator
 } from 'lucide-react';
-import { Alert, AlertDescription } from './ui/alert';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
-import { RestockItem } from '@/types';
 
 interface SalesReportProps {
   onBack: () => void;
@@ -82,6 +76,26 @@ interface Sale {
   tax_amount: number;
   total_amount: number;
   discount_amount: number;
+  applied_coupon_id?: string;
+  applied_promotion_id?: string;
+  discount_reason?: string;
+  applied_coupon?: {
+    id: string;
+    code: string;
+    name: string;
+    discount_type: {
+      name: string;
+    };
+    discount_value: number;
+  };
+  applied_promotion?: {
+    id: string;
+    name: string;
+    discount_type: {
+      name: string;
+    };
+    discount_value: number;
+  };
   payment_method: string;
   cash_received?: number;
   change_given?: number;
@@ -160,13 +174,6 @@ interface FilterOptions {
   maxAmount: number;
 }
 
-interface StoreSalesResponse {
-  sales: Sale[];
-}
-
-interface BusinessStoresResponse {
-  stores: Array<{ id: string; name: string }>;
-}
 
 export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
   const { user, currentStore, currentBusiness } = useAuth();
@@ -175,7 +182,6 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
   
   // State
   const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
-  const [salesStats, setSalesStats] = useState<SalesStats | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   
   // Filter states
@@ -192,7 +198,6 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [availableCashiers, setAvailableCashiers] = useState<string[]>([]);
-  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState<string[]>([]);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [showSaleModal, setShowSaleModal] = useState(false);
@@ -323,13 +328,6 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
             .filter(Boolean) // Remove undefined/null values
         ));
         
-        const categories = Array.from(new Set(
-          stableSales
-            .flatMap((sale: Sale) => 
-              sale.sale_items?.map((item: SaleItem) => item.products?.categories?.name) || []
-            )
-            .filter(Boolean) // Remove undefined/null values
-        ));
         
         const paymentMethods = Array.from(new Set(
           stableSales
@@ -337,14 +335,13 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
             .filter(Boolean) // Remove undefined/null values
         ));
 
-        return { cashiers, categories, paymentMethods };
+        return { cashiers, paymentMethods };
       };
 
-      const { cashiers, categories, paymentMethods } = extractFilterOptions();
+      const { cashiers, paymentMethods } = extractFilterOptions();
       
       // Ensure we always have valid arrays with fallbacks
       setAvailableCashiers(['All', ...(cashiers.length > 0 ? cashiers as string[] : ['No cashiers found'])]);
-      setAvailableCategories(['All', ...(categories.length > 0 ? categories as string[] : ['No categories found'])]);
       setAvailablePaymentMethods(['All', ...(paymentMethods.length > 0 ? paymentMethods as string[] : ['No payment methods found'])]);
     }
   }, [stableSales]);
@@ -518,19 +515,6 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     };
   }, [filteredSales]);
 
-  // Transform sales data for display
-  const transformedSalesData = useMemo(() => {
-    return filteredSales.map((sale: Sale) => ({
-      id: sale.id,
-      date: new Date(sale.created_at || sale.transaction_date || ''),
-      customerName: sale.customers?.name || 'Walk-in Customer',
-      products: sale.sale_items?.map((item: { products?: { name: string } }) => item.products?.name || 'Unknown Product') || [],
-      total: parseFloat(String(sale.total_amount || 0)),
-      payment: sale.payment_method || 'cash',
-      cashier: sale.users?.username || 'Unknown',
-      storeId: sale.store_id || ''
-    }));
-  }, [filteredSales]);
 
   // Export functions
   const exportToCSV = useCallback(() => {
@@ -644,6 +628,28 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
             <div className="text-xs text-muted-foreground">
               +{formatCurrency(sale.tax_amount)} tax
             </div>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'discount',
+      label: 'Discount',
+      render: (sale: Sale) => (
+        <div className="text-sm text-right">
+          {sale.discount_amount > 0 ? (
+            <div>
+              <div className="font-medium text-green-600">
+                -{formatCurrency(sale.discount_amount)}
+              </div>
+              {(sale.applied_coupon?.code || sale.applied_promotion?.name) && (
+                <div className="text-xs text-muted-foreground">
+                  {sale.applied_coupon?.code || sale.applied_promotion?.name}
+                </div>
+              )}
+            </div>
+          ) : (
+            <span className="text-muted-foreground">None</span>
           )}
         </div>
       )
@@ -1378,6 +1384,22 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
                         {selectedSale.payment_method}
                       </Badge>
                     </div>
+                    {(selectedSale.applied_coupon_id || selectedSale.applied_promotion_id || selectedSale.discount_reason) && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="font-medium">Discount Applied:</span>
+                          <span className="text-green-600 font-medium">
+                            {selectedSale.applied_coupon?.code || selectedSale.applied_promotion?.name || 'Discount'}
+                          </span>
+                        </div>
+                        {selectedSale.discount_reason && (
+                          <div className="flex justify-between">
+                            <span className="font-medium">Discount Reason:</span>
+                            <span className="text-sm text-muted-foreground">{selectedSale.discount_reason}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </CardContent>
                 </Card>
 

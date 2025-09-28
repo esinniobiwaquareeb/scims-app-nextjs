@@ -805,6 +805,11 @@ export const CashierDashboard: React.FC = () => {
                   <p className="text-sm text-muted-foreground">
                     {formatDateTime(selectedSale.timestamp || selectedSale.transaction_date || selectedSale.created_at || new Date())}
                   </p>
+                  {(selectedSale.applied_coupon_id || selectedSale.applied_promotion_id || selectedSale.discount_reason) && (
+                    <p className="text-xs text-green-600 mt-1">
+                      Discount: {selectedSale.applied_coupon?.code || selectedSale.applied_promotion?.name || selectedSale.discount_reason || 'Applied'}
+                    </p>
+                  )}
                 </div>
                 <Badge variant="outline">
                   {(selectedSale.payment_method || selectedSale.paymentMethod) === 'cash' ? 'Cash' : 'Card'}

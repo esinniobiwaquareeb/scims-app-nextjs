@@ -44,6 +44,9 @@ interface SaleFormData {
   status: string;
   notes?: string;
   transaction_date: string;
+  applied_coupon_id?: string;
+  applied_promotion_id?: string;
+  discount_reason?: string;
   items: Array<{
     product_id: string;
     quantity: number;
@@ -229,6 +232,9 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
   const [showSaleSuccess, setShowSaleSuccess] = useState(false);
   const [lastSaleInfo, setLastSaleInfo] = useState<any>(null);
   
+  // Discount state
+  const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
+  
   const storeConfig = useSystem().getStoreSettings(currentStore?.id || '');
 
   // Use offline-aware React Query hooks for data fetching
@@ -330,11 +336,20 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
   const calculateDiscount = useCallback(() => {
     const subtotal = calculateSubtotal();
     const config = storeConfig as any;
+    let discount = 0;
+    
+    // Store config discount
     if (config?.enable_discount && config?.discount_rate > 0) {
-      return subtotal * (config.discount_rate / 100);
+      discount += subtotal * (config.discount_rate / 100);
     }
-    return 0;
-  }, [calculateSubtotal, storeConfig]);
+    
+    // Applied coupon/promotion discount
+    if (appliedDiscount?.discount_amount) {
+      discount += appliedDiscount.discount_amount;
+    }
+    
+    return discount;
+  }, [calculateSubtotal, storeConfig, appliedDiscount]);
 
   const calculateTax = useCallback(() => {
     const subtotal = calculateSubtotal();
@@ -516,6 +531,9 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
         status: 'completed',
         notes: '',
         transaction_date: new Date().toISOString(),
+        applied_coupon_id: appliedDiscount?.type === 'coupon' ? appliedDiscount?.id : undefined,
+        applied_promotion_id: appliedDiscount?.type === 'promotion' ? appliedDiscount?.id : undefined,
+        discount_reason: appliedDiscount ? `${appliedDiscount.type}: ${appliedDiscount.name}` : undefined,
         items: cart.map(item => ({
           product_id: item.product.id,
           quantity: item.quantity,
@@ -569,7 +587,8 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
         subtotal,
         tax,
         taxRate: config?.taxRate || 0,
-        discount_amount: 0,
+        discount: calculateDiscount(),
+        discountReason: appliedDiscount ? `${appliedDiscount.type}: ${appliedDiscount.name}` : undefined,
         total,
         cashAmount: paymentMethod === 'cash' ? cashAmountValue : 
           (paymentMethod === 'mixed' ? parseFloat(cashAmount) || 0 : 0),
@@ -662,7 +681,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
     } finally {
       setIsProcessing(false);
     }
-  }, [currentStore?.id, currentStore?.name, cart, calculateSubtotal, calculateDiscount, calculateTax, calculateTotal, paymentMethod, cashAmount, cardAmount, selectedCustomer, storeConfig, user?.name, user?.id, translateWrapper, playSound, logSaleCreated, printReceipt, onSaleCompleted, processSaleMutation, refetchProducts, isSupplyMode, processSupplyOrder, getCurrentCurrency]);
+  }, [currentStore?.id, currentStore?.name, cart, calculateSubtotal, calculateDiscount, calculateTax, calculateTotal, paymentMethod, cashAmount, cardAmount, selectedCustomer, storeConfig, user?.name, user?.id, translateWrapper, playSound, logSaleCreated, printReceipt, onSaleCompleted, processSaleMutation, refetchProducts, isSupplyMode, processSupplyOrder, getCurrentCurrency, appliedDiscount]);
 
   // Customer operations
   const handleAddCustomer = useCallback(async () => {
@@ -919,6 +938,9 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
             lastSaleInfo={lastSaleInfo}
             cartSearchTerm={cartSearchTerm}
             isSupplyMode={isSupplyMode}
+            businessId={currentBusiness?.id}
+            storeId={currentStore?.id}
+            appliedDiscount={appliedDiscount}
             onCartSearchChange={setCartSearchTerm}
             onUpdateQuantity={updateQuantity}
             onRemoveFromCart={removeFromCart}
@@ -931,6 +953,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
             onLoadSavedCarts={() => setShowSavedCarts(true)}
             onSelectCustomer={() => setShowCustomerDialog(true)}
             onClearCustomer={clearCustomer}
+            onDiscountApplied={setAppliedDiscount}
             calculateSubtotal={calculateSubtotal}
             calculateDiscount={calculateDiscount}
             calculateTax={calculateTax}

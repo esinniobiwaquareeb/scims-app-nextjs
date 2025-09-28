@@ -47,6 +47,23 @@ export async function GET(request: NextRequest) {
         store:store_id(
           id,
           name
+        ),
+        applied_coupon:applied_coupon_id(
+          id,
+          code,
+          name,
+          discount_value,
+          discount_type:discount_type_id(
+            name
+          )
+        ),
+        applied_promotion:applied_promotion_id(
+          id,
+          name,
+          discount_value,
+          discount_type:discount_type_id(
+            name
+          )
         )
       `)
       .order('transaction_date', { ascending: false });
@@ -158,7 +175,10 @@ export async function POST(request: NextRequest) {
         change_given: saleData.change_given || null,
         status: 'completed',
         notes: saleData.notes,
-        transaction_date: localDate.toISOString()
+        transaction_date: localDate.toISOString(),
+        applied_coupon_id: saleData.applied_coupon_id || null,
+        applied_promotion_id: saleData.applied_promotion_id || null,
+        discount_reason: saleData.discount_reason || null
       })
       .select()
       .single();
@@ -238,6 +258,52 @@ export async function POST(request: NextRequest) {
           console.error('Error adding payment method:', paymentError);
           // Continue with other payment methods even if one fails
         }
+      }
+    }
+
+    // Handle coupon usage tracking
+    if (saleData.applied_coupon_id) {
+      try {
+        // Create coupon usage record
+        await supabase
+          .from('coupon_usage')
+          .insert({
+            coupon_id: saleData.applied_coupon_id,
+            customer_id: saleData.customer_id || null,
+            sale_id: sale.id,
+            discount_amount: saleData.discount_amount || 0
+          });
+
+        // Update coupon usage count
+        await supabase.rpc('update_coupon_usage_count', {
+          coupon_id_param: saleData.applied_coupon_id
+        });
+      } catch (couponError) {
+        console.error('Error tracking coupon usage:', couponError);
+        // Don't fail the sale if coupon tracking fails
+      }
+    }
+
+    // Handle promotion usage tracking
+    if (saleData.applied_promotion_id) {
+      try {
+        // Create promotion usage record
+        await supabase
+          .from('promotion_usage')
+          .insert({
+            promotion_id: saleData.applied_promotion_id,
+            customer_id: saleData.customer_id || null,
+            sale_id: sale.id,
+            discount_amount: saleData.discount_amount || 0
+          });
+
+        // Update promotion usage count
+        await supabase.rpc('update_promotion_usage_count', {
+          promotion_id_param: saleData.applied_promotion_id
+        });
+      } catch (promotionError) {
+        console.error('Error tracking promotion usage:', promotionError);
+        // Don't fail the sale if promotion tracking fails
       }
     }
 

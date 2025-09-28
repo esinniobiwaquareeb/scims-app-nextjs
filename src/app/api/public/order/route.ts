@@ -20,7 +20,10 @@ export async function POST(request: NextRequest) {
       subtotal,
       total_amount,
       notes,
-      payment_method
+      payment_method,
+      applied_coupon_id,
+      applied_promotion_id,
+      discount_reason
     } = orderData;
 
     // Validation
@@ -57,6 +60,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Calculate discount amount
+    const discountAmount = subtotal - total_amount;
+
     // Create the order
     const { data: order, error: orderError } = await supabase
       .from('public_order')
@@ -70,8 +76,12 @@ export async function POST(request: NextRequest) {
         order_items,
         subtotal,
         total_amount,
+        discount_amount: discountAmount,
         notes: notes || null,
         payment_method: payment_method || 'pay_on_delivery',
+        applied_coupon_id: applied_coupon_id || null,
+        applied_promotion_id: applied_promotion_id || null,
+        discount_reason: discount_reason || null,
         status: 'pending'
       })
       .select()
@@ -83,6 +93,52 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Failed to create order' },
         { status: 500 }
       );
+    }
+
+    // Handle coupon usage tracking
+    if (applied_coupon_id) {
+      try {
+        // Create coupon usage record
+        await supabase
+          .from('coupon_usage')
+          .insert({
+            coupon_id: applied_coupon_id,
+            customer_id: null, // Public orders don't have customer_id
+            sale_id: order.id, // Using order.id as sale_id for tracking
+            discount_amount: discountAmount
+          });
+
+        // Update coupon usage count
+        await supabase.rpc('update_coupon_usage_count', {
+          coupon_id_param: applied_coupon_id
+        });
+      } catch (couponError) {
+        console.error('Error tracking coupon usage:', couponError);
+        // Don't fail the order if coupon tracking fails
+      }
+    }
+
+    // Handle promotion usage tracking
+    if (applied_promotion_id) {
+      try {
+        // Create promotion usage record
+        await supabase
+          .from('promotion_usage')
+          .insert({
+            promotion_id: applied_promotion_id,
+            customer_id: null, // Public orders don't have customer_id
+            sale_id: order.id, // Using order.id as sale_id for tracking
+            discount_amount: discountAmount
+          });
+
+        // Update promotion usage count
+        await supabase.rpc('update_promotion_usage_count', {
+          promotion_id_param: applied_promotion_id
+        });
+      } catch (promotionError) {
+        console.error('Error tracking promotion usage:', promotionError);
+        // Don't fail the order if promotion tracking fails
+      }
     }
 
     // Send WhatsApp notification
