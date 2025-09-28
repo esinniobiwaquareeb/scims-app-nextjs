@@ -519,16 +519,6 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
                       ))}
                   </SelectContent>
                 </Select>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={loadData}
-                  disabled={isLoading}
-                  className="flex items-center gap-2"
-                >
-                  <Loader2 className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
               </div>
             </div>
           </CardContent>

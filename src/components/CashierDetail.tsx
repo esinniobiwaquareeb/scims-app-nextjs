@@ -5,12 +5,11 @@ import { useSystem } from '../contexts/SystemContext';
 import { useAuth } from '../contexts/AuthContext';
 import { DataTable } from './common/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
-import { Loader2, Search, Download, Clock, ListChecks } from 'lucide-react';
+import { Loader2, Download, Clock } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 
@@ -78,10 +77,8 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
   const [activity, setActivity] = useState<ActivityLog[]>([]);
 
   // Filters
-  const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [paymentFilter, setPaymentFilter] = useState('all');
-  const [activitySearch, setActivitySearch] = useState('');
   const [activityType, setActivityType] = useState('all');
 
   useEffect(() => {
@@ -146,8 +143,6 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
 
   const filteredSales = useMemo(() => {
     return sales.filter((s) => {
-      const q = search.toLowerCase();
-      const matchesSearch = s.receipt_number.toLowerCase().includes(q) || (s.customer_name || '').toLowerCase().includes(q);
       const now = new Date();
       const date = new Date(s.transaction_date);
       const matchesDate =
@@ -156,22 +151,16 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
         (dateFilter === 'week' && date >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)) ||
         (dateFilter === 'month' && date >= new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000));
       const matchesPayment = paymentFilter === 'all' || s.payment_method === paymentFilter;
-      return matchesSearch && matchesDate && matchesPayment;
+      return matchesDate && matchesPayment;
     });
-  }, [sales, search, dateFilter, paymentFilter]);
+  }, [sales, dateFilter, paymentFilter]);
 
   const filteredActivity = useMemo(() => {
-    const q = activitySearch.toLowerCase();
     return (activity || []).filter((log: ActivityLog) => {
-      const matchesText = (
-        (log.description || '').toLowerCase().includes(q) ||
-        (log.module || '').toLowerCase().includes(q) ||
-        (log.action || '').toLowerCase().includes(q)
-      );
       const matchesType = activityType === 'all' || log.action === activityType;
-      return matchesText && matchesType;
+      return matchesType;
     });
-  }, [activity, activitySearch, activityType]);
+  }, [activity, activityType]);
 
   const totalSalesAmount = filteredSales.reduce((sum, s) => sum + (s.total_amount || 0), 0);
   const totalTransactions = filteredSales.length;
@@ -298,7 +287,7 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       <Header 
         title={`Cashier: ${cashier.name}`}
         subtitle={`Store: ${cashier.storeName || 'Not assigned'}`}
@@ -307,110 +296,138 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
         showLogout={false}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
-            <CardContent className="p-6 text-center">
-              <p className="text-muted-foreground text-sm">Total Sales</p>
-              <p className="text-2xl font-semibold">{formatCurrency(totalSalesAmount)}</p>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Sales</p>
+                  <p className="text-2xl font-semibold">{formatCurrency(totalSalesAmount)}</p>
+                </div>
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <span className="text-blue-600 text-sm font-medium">₦</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-6 text-center">
-              <p className="text-muted-foreground text-sm">Transactions</p>
-              <p className="text-2xl font-semibold">{totalTransactions}</p>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Transactions</p>
+                  <p className="text-2xl font-semibold">{totalTransactions}</p>
+                </div>
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <span className="text-green-600 text-sm font-medium">#</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-6 text-center">
-              <p className="text-muted-foreground text-sm">Avg Transaction</p>
-              <p className="text-2xl font-semibold">{formatCurrency(avgTransaction)}</p>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Avg Transaction</p>
+                  <p className="text-2xl font-semibold">{formatCurrency(avgTransaction)}</p>
+                </div>
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <span className="text-purple-600 text-sm font-medium">Ø</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Sales Filters */}
-        <Card>
+        {/* Filters */}
+        <Card className="mb-6">
           <CardContent className="p-4">
-            <div className="flex flex-wrap gap-4 items-center">
-              <div className="relative flex-1 min-w-[220px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input className="pl-10" placeholder="Search receipt or customer..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Date:</span>
+                <Select value={dateFilter} onValueChange={setDateFilter}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Date" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="week">This Week</SelectItem>
+                    <SelectItem value="month">This Month</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="w-36"><SelectValue placeholder="Date" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="month">This Month</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-                <SelectTrigger className="w-36"><SelectValue placeholder="Payment" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Payment</SelectItem>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="card">Card</SelectItem>
-                  <SelectItem value="mobile">Mobile</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button onClick={exportSales}><Download className="w-4 h-4 mr-2" />Export</Button>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground min-w-[80px]">Payment:</span>
+                <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Payment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Payment</SelectItem>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="mobile">Mobile</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="ml-auto">
+                <Button variant="outline" onClick={exportSales}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Sales DataTable */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Sales Transactions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <DataTable
-              title=""
-              data={filteredSales}
-              columns={salesColumns}
-              searchable={false}
-              pagination={{
-                enabled: true,
-                pageSize: 15,
-                showPageSizeSelector: false,
-                showPageInfo: true
-              }}
-              emptyMessage={
-                <div className="text-muted-foreground">
-                  <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>No sales found</p>
-                </div>
-              }
-            />
-          </CardContent>
-        </Card>
+        <DataTable
+          title="Sales Transactions"
+          data={filteredSales}
+          columns={salesColumns}
+          searchable={true}
+          searchPlaceholder="Search receipt or customer..."
+          pagination={{
+            enabled: true,
+            pageSize: 15,
+            showPageSizeSelector: false,
+            showPageInfo: true
+          }}
+          emptyMessage={
+            <div className="text-muted-foreground">
+              <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p>No sales found</p>
+            </div>
+          }
+        />
 
         {/* Activity Log */}
-        <Card>
+        <Card className="mt-6">
           <CardHeader>
-            <CardTitle>Activity Log ({filteredActivity.length})</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Activity Log ({filteredActivity.length})</CardTitle>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground">Type:</span>
+                <Select value={activityType} onValueChange={setActivityType}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="login">Login</SelectItem>
+                    <SelectItem value="create">Create</SelectItem>
+                    <SelectItem value="update">Update</SelectItem>
+                    <SelectItem value="delete">Delete</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4 items-center mb-4">
-              <div className="relative flex-1 min-w-[220px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input className="pl-10" placeholder="Search activity..." value={activitySearch} onChange={(e) => setActivitySearch(e.target.value)} />
-              </div>
-              <Select value={activityType} onValueChange={setActivityType}>
-                <SelectTrigger className="w-40"><SelectValue placeholder="Type" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="login">Login</SelectItem>
-                  <SelectItem value="create">Create</SelectItem>
-                  <SelectItem value="update">Update</SelectItem>
-                  <SelectItem value="delete">Delete</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <ScrollArea className="h-[360px]">
               <Table>
                 <TableHeader>
@@ -454,7 +471,7 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
                     <TableRow>
                       <TableCell colSpan={4} className="text-center py-8">
                         <div className="text-muted-foreground">
-                          <ListChecks className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                          <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
                           <p className="text-lg font-medium">No activity found</p>
                         </div>
                       </TableCell>

@@ -7,20 +7,15 @@ import { DataTable } from './common/DataTable';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { useStoreSales } from '../utils/hooks/useStoreData';
 import { toast } from 'sonner';
 import { 
-  ArrowLeft,
   Download,
-  Search,
-  Clock,
   Users,
   Receipt,
-  Loader2,
-  RefreshCw
+  Loader2
 } from 'lucide-react';
 
 interface StaffDetailProps {
@@ -66,7 +61,6 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
   const { currentBusiness, currentStore } = useAuth();
   const { formatCurrency } = useSystem();
   
-  const [salesSearchTerm, setSalesSearchTerm] = useState('');
   const [salesDateFilter, setSalesDateFilter] = useState('all');
   const [salesStatusFilter, setSalesStatusFilter] = useState('all');
   const [salesPaymentFilter, setSalesPaymentFilter] = useState('all');
@@ -75,24 +69,17 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
     data: staffSales,
     isLoading,
     isError,
-    refetch,
     error
   } = useStoreSales(staffMember?.store_id || '', {
     enabled: !!staffMember?.store_id && !!staffMember.store_id
   });
 
-  const handleRefresh = useCallback(() => {
-    refetch();
-  }, [refetch]);
 
   // Filter staff sales
   const filteredStaffSales = useMemo(() => {
     if (!staffSales) return [];
 
     return staffSales.filter((sale: any) => {
-      const matchesSearch = sale.receipt_number.toLowerCase().includes(salesSearchTerm.toLowerCase()) ||
-                           (sale.customer_name && sale.customer_name.toLowerCase().includes(salesSearchTerm.toLowerCase()));
-      
       const matchesDate = salesDateFilter === 'all' || 
                          (salesDateFilter === 'today' && new Date(sale.transaction_date).toDateString() === new Date().toDateString()) ||
                          (salesDateFilter === 'week' && new Date(sale.transaction_date) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) ||
@@ -101,9 +88,9 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
       const matchesStatus = salesStatusFilter === 'all' || sale.status === salesStatusFilter;
       const matchesPayment = salesPaymentFilter === 'all' || sale.payment_method === salesPaymentFilter;
       
-      return matchesSearch && matchesDate && matchesStatus && matchesPayment;
+      return matchesDate && matchesStatus && matchesPayment;
     });
-  }, [staffSales, salesSearchTerm, salesDateFilter, salesStatusFilter, salesPaymentFilter]);
+  }, [staffSales, salesDateFilter, salesStatusFilter, salesPaymentFilter]);
 
   // Sales statistics
   const totalSalesAmount = useMemo(() => 
@@ -146,14 +133,10 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
-  const getRoleColor = (role: string) => {
-    const roleOption = ROLE_OPTIONS.find(r => r.value === role);
-    return roleOption?.color || 'bg-gray-500';
-  };
 
   if (!staffMember) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <p className="text-lg font-medium text-gray-700 mb-2">No Staff Member Selected</p>
@@ -224,17 +207,16 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       <Header 
         title={`Staff Details: ${staffMember.name}`}
         subtitle={`Store: ${staffMember.storeName || 'Not assigned'}`}
         showBackButton
         onBack={onBack}
         showLogout={false}
-      >
-      </Header>
+      />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {!staffMember.store_id && (
           <Card className="border-amber-200 bg-amber-50">
             <CardContent className="p-4">
@@ -244,19 +226,15 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
         )}
 
         {isError && (
-          <Card className="border-destructive bg-destructive/10">
+          <Card className="border-destructive bg-destructive/10 mb-6">
             <CardContent className="p-4">
               <p className="text-destructive text-sm">{error?.message || 'Failed to load sales data'}</p>
-              <Button onClick={handleRefresh} className="mt-4">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Retry
-              </Button>
             </CardContent>
           </Card>
         )}
 
         {/* Staff Info Card */}
-        <Card>
+        <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
               <Avatar className="w-12 h-12">
@@ -311,126 +289,144 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
         </Card>
 
         {/* Sales Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
-            <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">Total Sales</p>
-                <p className="text-2xl font-semibold">
-                  {isLoading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : formatCurrency(totalSalesAmount)}
-                </p>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Sales</p>
+                  <p className="text-2xl font-semibold">
+                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : formatCurrency(totalSalesAmount)}
+                  </p>
+                </div>
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <span className="text-blue-600 text-sm font-medium">₦</span>
+                </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">Transactions</p>
-                <p className="text-2xl font-semibold">
-                  {isLoading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : totalTransactions}
-                </p>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Transactions</p>
+                  <p className="text-2xl font-semibold">
+                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : totalTransactions}
+                  </p>
+                </div>
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <span className="text-green-600 text-sm font-medium">#</span>
+                </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">Avg Transaction</p>
-                <p className="text-2xl font-semibold">
-                  {isLoading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : formatCurrency(avgTransactionValue)}
-                </p>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Avg Transaction</p>
+                  <p className="text-2xl font-semibold">
+                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : formatCurrency(avgTransactionValue)}
+                  </p>
+                </div>
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <span className="text-purple-600 text-sm font-medium">Ø</span>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Sales Filters */}
-        <Card>
+        {/* Filters */}
+        <Card className="mb-6">
           <CardContent className="p-4">
-            <div className="flex gap-4 items-center flex-wrap">
-              <div className="flex-1 min-w-[200px] relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Search by receipt or customer..."
-                  value={salesSearchTerm}
-                  onChange={(e) => setSalesSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+            <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Date:</span>
+                <Select value={salesDateFilter} onValueChange={setSalesDateFilter}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="week">This Week</SelectItem>
+                    <SelectItem value="month">This Month</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <Select value={salesDateFilter} onValueChange={setSalesDateFilter}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="month">This Month</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={salesStatusFilter} onValueChange={setSalesStatusFilter}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={salesPaymentFilter} onValueChange={setSalesPaymentFilter}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Payment</SelectItem>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="card">Card</SelectItem>
-                  <SelectItem value="mobile">Mobile</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button onClick={exportStaffSales} disabled={filteredStaffSales.length === 0}>
-                <Download className="w-4 h-4 mr-2" />
-                Export
-              </Button>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Status:</span>
+                <Select value={salesStatusFilter} onValueChange={setSalesStatusFilter}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground min-w-[80px]">Payment:</span>
+                <Select value={salesPaymentFilter} onValueChange={setSalesPaymentFilter}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Payment</SelectItem>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="mobile">Mobile</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="ml-auto">
+                <Button variant="outline" onClick={exportStaffSales} disabled={filteredStaffSales.length === 0}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Sales DataTable */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Sales Transactions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
+        {isLoading ? (
+          <Card>
+            <CardContent className="p-8">
+              <div className="flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 <p className="text-muted-foreground ml-2">Loading sales data...</p>
               </div>
-            ) : (
-              <DataTable
-                title=""
-                data={filteredStaffSales}
-                columns={salesColumns}
-                searchable={false}
-                pagination={{
-                  enabled: true,
-                  pageSize: 15,
-                  showPageSizeSelector: false,
-                  showPageInfo: true
-                }}
-                emptyMessage={
-                  <div className="text-muted-foreground">
-                    <Receipt className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p>{isLoading ? 'Loading sales data...' : 'No sales found'}</p>
-                  </div>
-                }
-              />
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ) : (
+          <DataTable
+            title="Sales Transactions"
+            data={filteredStaffSales}
+            columns={salesColumns}
+            searchable={true}
+            searchPlaceholder="Search receipt or customer..."
+            pagination={{
+              enabled: true,
+              pageSize: 15,
+              showPageSizeSelector: false,
+              showPageInfo: true
+            }}
+            emptyMessage={
+              <div className="text-muted-foreground">
+                <Receipt className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>No sales found</p>
+              </div>
+            }
+          />
+        )}
       </main>
     </div>
   );

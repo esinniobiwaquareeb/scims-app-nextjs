@@ -4,7 +4,7 @@ import { useActivityLogger } from '@/contexts/ActivityLogger';
 import { Header } from '@/components/common/Header';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -109,7 +109,7 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
     
     setEditingItem(null);
     setItemToDelete(null);
-  }, [currentStore?.id, activeTab]);
+  }, [currentBusiness?.id, currentStore?.id, activeTab]);
 
   const fetchDiscountTypes = useCallback(async () => {
     try {
@@ -585,13 +585,13 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Promotions</p>
-                  <p className="text-2xl font-semibold text-blue-600">{stats.totalPromotions}</p>
+                  <p className="text-2xl font-semibold">{stats.totalPromotions}</p>
                 </div>
                 <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                   <TrendingUp className="text-blue-600 text-sm" />
@@ -605,7 +605,7 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Active Promotions</p>
-                  <p className="text-2xl font-semibold text-green-600">{stats.activePromotions}</p>
+                  <p className="text-2xl font-semibold">{stats.activePromotions}</p>
                 </div>
                 <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                   <span className="text-green-600 text-sm font-medium">✓</span>
@@ -619,7 +619,7 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Coupons</p>
-                  <p className="text-2xl font-semibold text-purple-600">{stats.totalCoupons}</p>
+                  <p className="text-2xl font-semibold">{stats.totalCoupons}</p>
                 </div>
                 <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
                   <Tag className="text-purple-600 text-sm" />
@@ -633,7 +633,7 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Active Coupons</p>
-                  <p className="text-2xl font-semibold text-orange-600">{stats.activeCoupons}</p>
+                  <p className="text-2xl font-semibold">{stats.activeCoupons}</p>
                 </div>
                 <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
                   <Gift className="text-orange-600 text-sm" />
@@ -647,20 +647,20 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Usage</p>
-                  <p className="text-2xl font-semibold text-blue-600">{stats.totalPromotionUsage + stats.totalCouponUsage}</p>
+                  <p className="text-2xl font-semibold">{stats.totalPromotionUsage + stats.totalCouponUsage}</p>
                   <p className="text-xs text-muted-foreground">
                     {stats.totalPromotionUsage} promotions, {stats.totalCouponUsage} coupons
                   </p>
                 </div>
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Package className="text-blue-600 text-sm" />
+                <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                  <Package className="text-indigo-600 text-sm" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="promotions" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
@@ -672,86 +672,74 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="promotions" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Promotions</CardTitle>
-                    <CardDescription>
-                      Manage promotional campaigns for your business
-                    </CardDescription>
-                    <div className="mt-2">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        🌐 Business-wide view
-                      </span>
-                    </div>
-                  </div>
-                  <Button 
-                    onClick={() => {
-                      resetForm();
-                      setActiveTab('promotions');
-                      setShowCreateDialog(true);
-                    }} 
-                    disabled={isMutating}
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Promotion
-                  </Button>
+          <TabsContent value="promotions" className="mt-6">
+            <DataTable
+              data={promotions}
+              columns={promotionColumns}
+              searchable={true}
+              title="Promotions"
+              searchPlaceholder="Search promotions..."
+              pagination={{
+                enabled: true,
+                pageSize: 10,
+                showPageSizeSelector: false,
+                showPageInfo: true
+              }}
+              actions={
+                <Button 
+                  onClick={() => {
+                    resetForm();
+                    setActiveTab('promotions');
+                    setShowCreateDialog(true);
+                  }} 
+                  disabled={isMutating}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Promotion
+                </Button>
+              }
+              emptyMessage={
+                <div className="text-center py-8">
+                  <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No promotions found</p>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <DataTable
-                  data={promotions}
-                  columns={promotionColumns}
-                  searchable={true}
-                  title="Promotions"
-                  emptyMessage="No promotions found. Create your first promotion to get started."
-                />
-              </CardContent>
-            </Card>
+              }
+            />
           </TabsContent>
 
-          <TabsContent value="coupons" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Coupons</CardTitle>
-                    <CardDescription>
-                      Manage coupon codes for your customers
-                    </CardDescription>
-                    <div className="mt-2">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        🎫 Code-based discounts
-                      </span>
-                    </div>
-                  </div>
-                  <Button 
-                    onClick={() => {
-                      resetForm();
-                      setActiveTab('coupons');
-                      setShowCreateDialog(true);
-                    }} 
-                    disabled={isMutating}
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Coupon
-                  </Button>
+          <TabsContent value="coupons" className="mt-6">
+            <DataTable
+              data={coupons}
+              columns={couponColumns}
+              searchable={true}
+              title="Coupons"
+              searchPlaceholder="Search coupons..."
+              pagination={{
+                enabled: true,
+                pageSize: 10,
+                showPageSizeSelector: false,
+                showPageInfo: true
+              }}
+              actions={
+                <Button 
+                  onClick={() => {
+                    resetForm();
+                    setActiveTab('coupons');
+                    setShowCreateDialog(true);
+                  }} 
+                  disabled={isMutating}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Coupon
+                </Button>
+              }
+              emptyMessage={
+                <div className="text-center py-8">
+                  <Tag className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No coupons found</p>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <DataTable
-                  data={coupons}
-                  columns={couponColumns}
-                  searchable={true}
-                  title="Coupons"
-                  emptyMessage="No coupons found. Create your first coupon to get started."
-                />
-              </CardContent>
-            </Card>
+              }
+            />
           </TabsContent>
         </Tabs>
 

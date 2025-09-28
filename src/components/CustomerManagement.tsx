@@ -5,7 +5,7 @@ import { useActivityLogger } from '@/contexts/ActivityLogger';
 import { Header } from '@/components/common/Header';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,13 +19,11 @@ import {
   useCreateCustomer,
   useUpdateCustomer,
   useDeleteCustomer,
-  useCustomerSales,
-  useBusinessStoresReport
+  useCustomerSales
 } from '@/utils/hooks/useStoreData';
 import { toast } from 'sonner';
 import { 
   Plus, 
-  Search, 
   Edit, 
   Trash2, 
   Phone, 
@@ -39,9 +37,8 @@ import {
   Activity,
   Eye,
   Loader2,
-  RefreshCw,
-  Info,
-  Users
+  Users,
+  Building2
 } from 'lucide-react';
 import { Store } from '@/types/auth';
 import { Customer as DBCustomer } from '@/types/index';
@@ -117,7 +114,6 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
     notes: ''
   });
   
-  const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [filterStore, setFilterStore] = useState<string>('all');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -130,28 +126,17 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   const {
     data: dbCustomers = [],
     isLoading: isLoadingCustomers,
-    error: customersError,
     refetch: refetchCustomers
   } = useStoreCustomers(currentStore?.id || '', {
     enabled: !!currentStore?.id
   });
 
-  const {
-    data: businessStoresResponse,
-    isLoading: isLoadingBusinessStores,
-    error: businessStoresError,
-    refetch: refetchBusinessStores
-  } = useBusinessStoresReport(currentBusiness?.id || '', {
-    enabled: user?.role === 'business_admin' && !!currentBusiness?.id
-  });
-
-  const businessStores = businessStoresResponse?.stores || [];
+  // Get stores from currentBusiness (same pattern as Header component)
+  const businessStores = currentBusiness?.stores || [];
 
   const {
     data: storeSales = [],
     isLoading: isLoadingSales,
-    error: salesError,
-    refetch: refetchSales
   } = useStoreSales(currentStore?.id || '', {
     enabled: !!currentStore?.id
   });
@@ -175,7 +160,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   );
 
   // Loading states
-  const isLoading = isLoadingCustomers || isLoadingSales || isLoadingCustomerSales || isLoadingBusinessStores;
+  const isLoading = isLoadingCustomers || isLoadingSales || isLoadingCustomerSales;
 
   // Transform database customers to match our interface with calculated stats
   const customers = useMemo(() => {
@@ -216,17 +201,13 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
 
   // Filter customers
   const filteredCustomers = customers.filter((customer: Customer) => {
-    const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.phone.includes(searchTerm) ||
-                         (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase()));
-    
     const matchesFilter = filterStatus === 'all' ||
                          (filterStatus === 'active' && customer.totalPurchases > 0) ||
                          (filterStatus === 'inactive' && customer.totalPurchases === 0);
     
     const matchesStore = filterStore === 'all' || customer.storeId === filterStore;
     
-    return matchesSearch && matchesFilter && matchesStore;
+    return matchesFilter && matchesStore;
   });
 
   // Customer stats
@@ -375,29 +356,6 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
     }
   };
 
-  // Refresh function for manual data refresh
-  const handleRefresh = useCallback(async () => {
-    try {
-      if (user?.role === 'business_admin') {
-        // Business admin can refresh all data
-        await Promise.all([
-          refetchCustomers(),
-          refetchSales(),
-          refetchBusinessStores()
-        ]);
-      } else {
-        // Store admin only refreshes their store's data
-        await Promise.all([
-          refetchCustomers(),
-          refetchSales()
-        ]);
-      }
-      toast.success('Data refreshed successfully');
-    } catch (error: unknown) {
-      console.error('Error refreshing data:', error);
-      toast.error('Failed to refresh data');
-    }
-  }, [user?.role, refetchCustomers, refetchSales, refetchBusinessStores]);
 
   // Handle view customer
   const handleViewCustomer = useCallback((customer: Customer) => {
@@ -582,164 +540,151 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
       >
       </Header>
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
-        <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-          {/* Error Display */}
-          {(customersError || salesError || businessStoresError) && (
-            <Card className="mb-4 sm:mb-6 border-destructive bg-destructive/10">
-              <CardContent className="p-3 sm:p-4">
-                <p className="text-destructive text-sm">
-                  {customersError?.message || salesError?.message || businessStoresError?.message || 'Failed to load customer data'}
-                </p>
-              </CardContent>
-            </Card>
-          )}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-          {/* Customer Statistics */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-            <Card>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Customers</p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-semibold">
-                      {isLoading ? <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" /> : customerStats.total}
-                    </p>
-                  </div>
-                  <Users className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
+        {/* Customer Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Customers</p>
+                  <p className="text-2xl font-semibold">
+                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : customerStats.total}
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
+                <Users className="w-8 h-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Active Customers</p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-semibold">
-                      {isLoading ? <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" /> : customerStats.active}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {customerStats.total > 0 ? Math.round((customerStats.active / customerStats.total) * 100) : 0}% active
-                    </p>
-                  </div>
-                  <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Active Customers</p>
+                  <p className="text-2xl font-semibold">
+                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : customerStats.active}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {customerStats.total > 0 ? Math.round((customerStats.active / customerStats.total) * 100) : 0}% active
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
+                <Activity className="w-8 h-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Revenue</p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-semibold">
-                      {isLoading ? <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" /> : formatCurrency(customerStats.totalSpent)}
-                    </p>
-                  </div>
-                  <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Revenue</p>
+                  <p className="text-2xl font-semibold">
+                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : formatCurrency(customerStats.totalSpent)}
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
+                <TrendingUp className="w-8 h-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Avg. per Customer</p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-semibold">
-                      {isLoading ? <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" /> : formatCurrency(customerStats.averageSpent)}
-                    </p>
-                  </div>
-                  <Receipt className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600" />
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Avg. per Customer</p>
+                  <p className="text-2xl font-semibold">
+                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : formatCurrency(customerStats.averageSpent)}
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
+                <Receipt className="w-8 h-8 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
           </div>
 
-          {/* Filters and Search */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Customers</CardTitle>
-              <CardDescription>
-                Manage your customer database and track purchase history. Phone numbers serve as unique identifiers to prevent duplicate customer records.
-              </CardDescription>
-              <div className="flex items-center gap-2 mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <Info className="w-4 h-4 text-blue-600" />
-                <p className="text-sm text-blue-800">
-                  <strong>Phone Number Uniqueness:</strong> Each customer must have a unique phone number. 
-                  This prevents duplicate customer records and ensures accurate tracking of purchase history.
-                </p>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-                <div className="relative col-span-1 sm:col-span-2 lg:col-span-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Search customers by name, phone, or email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Status:</span>
                 <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as 'all' | 'active' | 'inactive')}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-40">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Customers</SelectItem>
-                    <SelectItem value="active">Active (with purchases)</SelectItem>
-                    <SelectItem value="inactive">Inactive (no purchases)</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
-                {user?.role === 'business_admin' && (
-                  <Select value={filterStore} onValueChange={(value: string) => setFilterStore(value)}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Stores</SelectItem>
-                      {businessStores.map((store: Store) => (
-                        <SelectItem key={store.id} value={store.id}>
-                          {store.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
               </div>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Store:</span>
+                <Select value={filterStore} onValueChange={(value: string) => setFilterStore(value)}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-blue-600" />
+                        <div>
+                          <p className="font-medium">All Stores</p>
+                          <p className="text-sm text-muted-foreground">Combined view</p>
+                        </div>
+                      </div>
+                    </SelectItem>
+                    {businessStores.map((store: Store) => (
+                      <SelectItem key={store.id} value={store.id}>
+                        <div>
+                          <p className="font-medium">{store.name}</p>
+                          <p className="text-sm text-muted-foreground truncate max-w-60">
+                            {store.address || 'No address'}
+                          </p>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="text-sm text-muted-foreground ml-auto">
+                {filterStatus === 'all' && filterStore === 'all' && `Showing all ${customers.length} customers`}
+                {filterStatus === 'active' && filterStore === 'all' && `Showing ${customers.filter(c => c.totalPurchases > 0).length} active customers`}
+                {filterStatus === 'inactive' && filterStore === 'all' && `Showing ${customers.filter(c => c.totalPurchases === 0).length} inactive customers`}
+                {filterStore !== 'all' && `Showing customers from selected store`}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              <DataTable
-                title="Customers"
-                columns={columns}
-                data={filteredCustomers}
-                searchable={true}
-                searchPlaceholder="Search customers..."
-                searchValue={searchTerm}
-                onSearchChange={setSearchTerm}
-                emptyMessage={searchTerm 
-                  ? `No customers match your search for "${searchTerm}"` 
-                  : 'Start by adding your first customer to the system'
-                }
-                tableName="customers"
-                userRole={user?.role}
-                actions={
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={exportCustomers}>
-                      <Download className="w-4 h-4 mr-2" />
-                      <span className="hidden sm:inline">Export</span>
-                    </Button>
-                    <Button size="sm" onClick={openAddDialog}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      <span className="hidden sm:inline">Add Customer</span>
-                    </Button>
-                  </div>
-                }
-              />
-            </CardContent>
-          </Card>
-        </div>
+        {/* Customers DataTable */}
+        <DataTable
+          title="Customers"
+          columns={columns}
+          data={filteredCustomers}
+          searchable={true}
+          searchPlaceholder="Search customers by name, phone, or email..."
+          emptyMessage="Start by adding your first customer to the system"
+          tableName="customers"
+          userRole={user?.role}
+          actions={
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={exportCustomers}>
+                <Download className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Export</span>
+              </Button>
+              <Button size="sm" onClick={openAddDialog}>
+                <Plus className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Add Customer</span>
+              </Button>
+            </div>
+          }
+        />
       </main>
 
       {/* Add Customer Dialog */}
