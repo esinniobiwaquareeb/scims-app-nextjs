@@ -420,6 +420,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
         subtitle={`Manage staff roles and access permissions${currentBusiness ? ` for ${currentBusiness.name}` : ''}`}
         showBackButton
         onBack={onBack}
+        showLogout={false}
       >
         <Button onClick={() => setIsAddRoleDialogOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />

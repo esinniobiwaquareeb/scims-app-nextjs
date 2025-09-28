@@ -414,6 +414,7 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
         subtitle={`Manage stores for ${currentBusiness?.name || 'your business'}`}
         showBackButton
         onBack={onBack}
+        showLogout={false}
       >
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => refetchStores()} disabled={isLoadingStores}>

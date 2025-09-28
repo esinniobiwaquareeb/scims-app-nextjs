@@ -714,6 +714,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
         subtitle={`Manage cashiers${currentStore ? ` for ${currentStore.name}` : ''}`}
         showBackButton
         onBack={onBack}
+        showLogout={false}
       >
         <div className="flex gap-2">
           <Button 

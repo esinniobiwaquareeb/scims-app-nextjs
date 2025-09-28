@@ -545,6 +545,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
         subtitle="Sync products across all stores in your business"
         showBackButton
         onBack={onBack}
+        showLogout={false}
       >
         <div className="flex gap-2">
           <Button variant="outline" onClick={exportProducts}>

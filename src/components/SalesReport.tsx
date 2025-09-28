@@ -728,6 +728,7 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
         subtitle={translate('sales.analytics') || 'Comprehensive sales analytics and insights'}
         showBackButton
         onBack={onBack}
+        showLogout={false}
       >
         <Button variant="outline" onClick={handleRefresh} className="flex items-center gap-2">
           <RefreshCw className="w-4 h-4" />

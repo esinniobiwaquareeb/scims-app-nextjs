@@ -486,6 +486,7 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
         subtitle="Manage suppliers for your business"
         showBackButton
         onBack={onBack}
+        showLogout={false}
       >
         <Button
           variant="outline"

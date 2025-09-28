@@ -578,6 +578,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
         subtitle={`Manage customers for ${currentStore?.name}`}
         showBackButton
         onBack={onBack}
+        showLogout={false}
       >
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <Button 

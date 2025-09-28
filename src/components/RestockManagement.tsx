@@ -392,6 +392,7 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
         subtitle={`Manage inventory replenishment and restock orders${isAllStoresSelected ? ' (Select a store to view orders)' : ''}`}
         showBackButton
         onBack={onBack}
+        showLogout={false}
       >
         <div className="flex gap-2">
           <Button 

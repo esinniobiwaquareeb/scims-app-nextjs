@@ -507,6 +507,7 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
             subtitle="Manage all registered businesses on SCIMS"
             showBackButton
             onBack={onBack}
+            showLogout={false}
           >
             <div className="flex gap-2">
           <Button variant="outline" onClick={() => refetchBusinesses()} disabled={businessesLoading}>

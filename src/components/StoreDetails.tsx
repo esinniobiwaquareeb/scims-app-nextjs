@@ -123,7 +123,7 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
   if (isStoreAdmin && !hasAccessToStore) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header title="Access Denied" onBack={onBack} />
+        <Header title="Access Denied" onBack={onBack} showLogout={false} />
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
@@ -144,7 +144,7 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
   if (isLoadingSettings || isLoadingStats) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header title={`Store: ${storeName || 'Loading...'}`} onBack={onBack} />
+        <Header title={`Store: ${storeName || 'Loading...'}`} onBack={onBack} showLogout={false} />
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary mx-auto mb-4"></div>
@@ -171,7 +171,7 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
   if (!storeSettings) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header title="Store Not Found" onBack={onBack} />
+        <Header title="Store Not Found" onBack={onBack} showLogout={false} />
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <p className="text-gray-600 mb-4">Store not found</p>
@@ -219,6 +219,7 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
           'Address not available'}
         showBackButton
         onBack={onBack}
+        showLogout={false}
       />
       
       <main className="container mx-auto px-4 py-6">

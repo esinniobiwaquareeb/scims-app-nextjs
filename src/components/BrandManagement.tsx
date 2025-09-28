@@ -335,6 +335,7 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
         subtitle={`Manage product brands for ${currentBusiness?.name || 'your business'}`}
         showBackButton
         onBack={onBack}
+        showLogout={false}
       >
         <Button 
           variant="outline" 

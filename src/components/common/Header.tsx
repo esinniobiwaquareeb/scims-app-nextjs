@@ -11,6 +11,7 @@ interface HeaderProps {
   showBackButton?: boolean;
   onBack?: () => void;
   onNavigate?: (view: string) => void;
+  showLogout?: boolean;
   children?: React.ReactNode;
 }
 
@@ -19,6 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
   subtitle, 
   showBackButton, 
   onBack, 
+  showLogout = true,
   children 
 }) => {
   const { user, logout, currentBusiness, currentStore, switchStore } = useAuth();
@@ -117,15 +119,17 @@ export const Header: React.FC<HeaderProps> = ({
             
             {children}
             
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="hidden sm:inline-flex">
-                {user?.role?.replace('_', ' ')}
-              </Badge>
-              <Button variant="outline" onClick={() => logout()} size="sm">
-                <LogOut className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Logout</span>
-              </Button>
-            </div>
+            {showLogout && (
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="hidden sm:inline-flex">
+                  {user?.role?.replace('_', ' ')}
+                </Badge>
+                <Button variant="outline" onClick={() => logout()} size="sm">
+                  <LogOut className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Logout</span>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

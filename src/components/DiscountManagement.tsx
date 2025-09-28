@@ -574,24 +574,15 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header title="Discount Management" />
+      <Header 
+        title="Discount Management"
+        subtitle="Manage promotions and coupons for your business"
+        showBackButton
+        onBack={onBack}
+        showLogout={false}
+      />
       
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Discount Management</h1>
-              <p className="text-gray-600 mt-2">Manage promotions and coupons for your business</p>
-            </div>
-            <Button 
-              variant="outline" 
-              onClick={onBack}
-              className="flex items-center gap-2"
-            >
-              ← Back
-            </Button>
-          </div>
-        </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

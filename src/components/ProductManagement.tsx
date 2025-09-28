@@ -759,6 +759,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
                  currentStore ? `Managing inventory for ${currentStore.name}` : 'Manage inventory and product catalog'}
         showBackButton
         onBack={onBack}
+        showLogout={false}
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">

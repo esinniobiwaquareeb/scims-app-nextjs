@@ -182,7 +182,7 @@ export const BusinessAdminDashboard: React.FC = () => {
     },
     {
       title: 'Discounts & Promotions',
-      description: 'Manage discounts, coupons, and promotional campaigns',
+      description: 'Manage discounts & coupons',
       icon: Tag,
       color: 'text-pink-600',
       action: '/discounts'

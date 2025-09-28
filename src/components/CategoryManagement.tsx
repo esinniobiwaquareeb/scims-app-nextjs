@@ -398,6 +398,7 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
         subtitle="Manage product categories for your business"
         showBackButton
         onBack={onBack}
+        showLogout={false}
       >
         <div className="flex items-center gap-2">
           <Button 

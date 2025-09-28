@@ -569,6 +569,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
         subtitle="Create and manage SCIMS subscription plans"
         showBackButton
         onBack={onBack}
+        showLogout={false}
       >
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>

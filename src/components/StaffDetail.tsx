@@ -230,6 +230,7 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
         subtitle={`Store: ${staffMember.storeName || 'Not assigned'}`}
         showBackButton
         onBack={onBack}
+        showLogout={false}
       >
         <Button 
           variant="outline" 

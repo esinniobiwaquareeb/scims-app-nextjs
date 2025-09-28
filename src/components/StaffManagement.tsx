@@ -664,6 +664,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
         }`}
         showBackButton
         onBack={onBack}
+        showLogout={false}
       >
         <div className="flex gap-2">
           <Button

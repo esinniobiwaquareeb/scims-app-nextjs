@@ -467,6 +467,7 @@ export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business
         subtitle={`${BUSINESS_TYPE_LABELS[business.business_type as keyof typeof BUSINESS_TYPE_LABELS] || 'Business'} • ${business.subscription_status} subscription`}
         showBackButton
         onBack={onBack}
+        showLogout={false}
       >
         <Button onClick={exportBusinessData} variant="outline">
           <Download className="w-4 h-4 mr-2" />

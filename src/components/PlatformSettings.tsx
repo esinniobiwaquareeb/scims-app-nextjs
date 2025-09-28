@@ -184,6 +184,7 @@ export const PlatformSettings: React.FC<PlatformSettingsProps> = ({ onBack }) =>
         subtitle="Configure SCIMS system-wide settings and preferences"
         showBackButton
         onBack={onBack}
+        showLogout={false}
       >
         <div className="flex gap-2">
           <Button 

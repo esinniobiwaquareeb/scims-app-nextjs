@@ -500,7 +500,7 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
   if (!currentBusiness || user?.role !== 'business_admin') {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header title="Business Settings" subtitle="Access denied" showBackButton onBack={onBack} />
+        <Header title="Business Settings" subtitle="Access denied" showBackButton onBack={onBack} showLogout={false} />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Card>
             <CardContent className="p-8 text-center">
@@ -521,6 +521,7 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
         subtitle={`Configure business-wide settings for ${currentBusiness.name}`}
         showBackButton
         onBack={onBack}
+        showLogout={false}
       >
         <div className="flex gap-2">
           <Button 
