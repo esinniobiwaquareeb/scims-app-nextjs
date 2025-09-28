@@ -1577,7 +1577,10 @@ export const useBusinessProductsWithLowStock = (businessId: string, options?: {
         throw new Error('Failed to fetch low stock products');
       }
       const data = await response.json();
-      return data.products || [];
+      return {
+        lowStockProducts: data.products || [],
+        allProducts: data.allProducts || []
+      };
     },
     enabled: enabled && !!businessId,
     staleTime: 5 * 60 * 1000,

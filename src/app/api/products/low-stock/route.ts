@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
         min_stock_level,
         cost,
         price,
+        is_active,
         category:category_id(
           id,
           name
@@ -55,7 +56,13 @@ export async function GET(request: NextRequest) {
       (product.stock_quantity || 0) <= (product.reorder_level || 0)
     );
 
-    return NextResponse.json({ products: lowStockProducts });
+    // Also include all active products for restocking
+    const allActiveProducts = (products || []).filter(product => product.is_active);
+
+    return NextResponse.json({ 
+      products: lowStockProducts,
+      allProducts: allActiveProducts 
+    });
   } catch (error) {
     console.error('Error in low stock products API:', error);
     return NextResponse.json(

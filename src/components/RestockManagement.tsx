@@ -189,9 +189,8 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
   // Get all products for restocking (not just low stock)
   const getAllProducts = () => {
     if (isAllStoresSelected) {
-      // For business view, we'll use the low stock products as a starting point
-      // and add more products if needed
-      return businessProductsData?.lowStockProducts || [];
+      // For business view, use all active products (including zero-stock synced products)
+      return businessProductsData?.allProducts || [];
     }
     if (!productsData) return [];
     return productsData; // Return all products for store view

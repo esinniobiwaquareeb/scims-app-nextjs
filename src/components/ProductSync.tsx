@@ -37,9 +37,9 @@ interface Product {
   supplier_id?: string;
   brand_id?: string;
   is_active: boolean;
-  categories?: { name: string };
-  suppliers?: { name: string };
-  brands?: { name: string };
+  category?: { id: string; name: string };
+  supplier?: { id: string; name: string };
+  brand?: { id: string; name: string };
 }
 
 interface Store {
@@ -126,6 +126,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
       const productsData = await productsResponse.json();
       const storeProducts = productsData.products || [];
       
+      
       setProducts(storeProducts);
       
       if (storeProducts.length === 0) {
@@ -167,7 +168,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (product.barcode && product.barcode.includes(searchTerm));
-    const matchesCategory = categoryFilter === 'all' || product.categories?.name === categoryFilter;
+    const matchesCategory = categoryFilter === 'all' || product.category?.name === categoryFilter;
     return matchesSearch && matchesCategory && product.is_active;
   });
 
@@ -214,7 +215,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
   }
 
   // Get unique categories
-  const categories = ['all', ...Array.from(new Set(products.map(p => p.categories?.name).filter(Boolean) as string[]))];
+  const categories = ['all', ...Array.from(new Set(products.map(p => p.category?.name).filter(Boolean) as string[]))];
 
   // Handle product selection
   const toggleProductSelection = (productId: string, checked?: boolean) => {
@@ -254,15 +255,20 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
     }
   };
 
-  // Select all products
-  const selectAllProducts = () => {
-    setSelectedProducts(filteredProducts.map(p => p.id));
+  // Toggle all products selection
+  const toggleAllProducts = () => {
+    const allProductIds = filteredProducts.map(p => p.id);
+    const allSelected = allProductIds.every(id => selectedProducts.includes(id));
+    
+    if (allSelected) {
+      setSelectedProducts([]);
+    } else {
+      setSelectedProducts(allProductIds);
+    }
   };
 
-  // Deselect all products
-  const deselectAllProducts = () => {
-    setSelectedProducts([]);
-  };
+  // Check if all products are selected
+  const allProductsSelected = filteredProducts.length > 0 && filteredProducts.every(p => selectedProducts.includes(p.id));
 
   // Select all stores
   const selectAllStores = () => {
@@ -293,11 +299,36 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
       for (const store of selectedStoreData) {
         for (const product of selectedProductData) {
           try {
+            // Check for duplicates first using original SKU, name, and barcode
+            const duplicateCheckResponse = await fetch('/api/products/check-duplicate', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                store_id: store.id,
+                sku: product.sku,
+                name: product.name,
+                barcode: product.barcode
+              }),
+            });
+
+            if (!duplicateCheckResponse.ok) {
+              throw new Error('Failed to check for duplicates');
+            }
+
+            const duplicateData = await duplicateCheckResponse.json();
+            
+            if (duplicateData.hasDuplicates) {
+              console.log(`Skipping ${product.name} - duplicate found in store ${store.name}`);
+              continue; // Skip this product as it already exists
+            }
+
             if (syncMode === 'copy') {
-              // Copy product to store
+              // Copy product to store with original SKU (no modification)
               const productData = {
                 name: product.name,
-                sku: `${product.sku}-${store.name.slice(0, 3).toUpperCase()}`,
+                sku: product.sku, // Use original SKU
                 barcode: product.barcode,
                 description: product.description,
                 price: product.price,
@@ -336,7 +367,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
                 reorder_level: product.reorder_level
               };
 
-              // Check if product exists in target store by SKU
+              // Check if product exists in target store by original SKU
               const existingProductResponse = await fetch(`/api/products?store_id=${store.id}&sku=${product.sku}`);
               if (existingProductResponse.ok) {
                 const existingData = await existingProductResponse.json();
@@ -359,7 +390,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
                   // Create if doesn't exist
                   const productData = {
                     name: product.name,
-                    sku: product.sku,
+                    sku: product.sku, // Use original SKU
                     barcode: product.barcode,
                     description: product.description,
                     price: product.price,
@@ -379,6 +410,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
                     },
                     body: JSON.stringify({
                       store_id: store.id,
+                      business_id: currentBusiness?.id,
                       ...productData
                     }),
                   });
@@ -428,12 +460,27 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
     {
       key: 'selection',
       header: '',
-      render: (product: Product) => (
-        <Checkbox
-          checked={selectedProducts.includes(product.id)}
-          onCheckedChange={(checked) => toggleProductSelection(product.id, checked)}
-        />
-      )
+      width: '50px',
+      minWidth: '50px',
+      maxWidth: '50px',
+      render: (product: Product) => {
+        const isChecked = selectedProducts.includes(product.id);
+        
+        return (
+          <div 
+            className="flex justify-center cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleProductSelection(product.id, !isChecked);
+            }}
+          >
+            <Checkbox
+              checked={isChecked}
+              onCheckedChange={(checked) => toggleProductSelection(product.id, checked === true)}
+            />
+          </div>
+        );
+      }
     },
     {
       key: 'name',
@@ -461,10 +508,10 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
       render: (product: Product) => (
         <div>
           <p className="text-sm text-muted-foreground">
-            {product.categories?.name || 'No Category'}
+            {product.category?.name || 'No Category'}
           </p>
           <p className="text-sm text-muted-foreground">
-            {product.suppliers?.name || 'No Supplier'}
+            {product.supplier?.name || 'No Supplier'}
           </p>
         </div>
       )
@@ -474,7 +521,7 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
       header: 'Brand',
       render: (product: Product) => (
         <p className="text-sm text-muted-foreground">
-          {product.brands?.name || 'No Brand'}
+          {product.brand?.name || 'No Brand'}
         </p>
       )
     }
@@ -628,11 +675,13 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
               }}
               actions={
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={selectAllProducts}>
-                    Select All
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={deselectAllProducts}>
-                    Deselect All
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={toggleAllProducts}
+                    disabled={filteredProducts.length === 0}
+                  >
+                    {allProductsSelected ? 'Deselect All' : 'Select All'}
                   </Button>
                 </div>
               }

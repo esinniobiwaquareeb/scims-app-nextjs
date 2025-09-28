@@ -268,9 +268,9 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
     enabled: !!currentBusiness?.id
   });
 
-  // Process the data
+  // Process the data - include all active products (including zero-stock)
   const products = useMemo(() => {
-    return (storeProducts || []).filter((p: { is_active: any; stock_quantity: number; }) => p.is_active && p.stock_quantity > 0);
+    return (storeProducts || []).filter((p: { is_active: any; }) => p.is_active);
   }, [storeProducts]);
 
   const categories = useMemo(() => {

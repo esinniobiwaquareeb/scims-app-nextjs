@@ -103,6 +103,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check payment status - prevent returns if partial payment exists
+    const { data: existingPayments, error: paymentsError } = await supabase
+      .from('supply_payment')
+      .select('amount_paid')
+      .eq('supply_order_id', returnData.supply_order_id);
+
+    if (paymentsError) {
+      console.error('Error fetching existing payments:', paymentsError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to fetch payment information' },
+        { status: 500 }
+      );
+    }
+
+    const totalPaid = existingPayments?.reduce((sum, payment) => sum + payment.amount_paid, 0) || 0;
+    const remainingAmount = supplyOrder.total_amount - totalPaid;
+
+    // Block returns if there's any payment made (partial or full)
+    if (totalPaid > 0) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `Cannot return items after payment has been made. Total paid: ${totalPaid.toFixed(2)}, Remaining: ${remainingAmount.toFixed(2)}` 
+        },
+        { status: 400 }
+      );
+    }
+
     // Calculate total returned amount (will be calculated properly below)
     // const totalReturnedAmount = returnData.items.reduce((sum, item) => {
     //   return sum + (item.quantity_returned * 0); // We'll calculate this properly below
