@@ -4,8 +4,7 @@ import {
   DollarSign, 
   Package, 
   AlertTriangle, 
-  ShoppingCart,
-  TrendingUp 
+  ShoppingCart
 } from 'lucide-react';
 
 interface StatsGridProps {
@@ -41,12 +40,10 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats, storeCount, isAllSt
               <div>
                 <p className="text-sm text-muted-foreground">Today&apos;s Sales</p>
                 <p className="text-2xl font-semibold">{formatCurrency(stats.todaysSales)}</p>
-                <div className="flex items-center mt-2">
-                  <TrendingUp className="w-4 h-4 text-green-600 mr-1" />
-                  <span className="text-sm text-green-600">+12.5%</span>
-                </div>
               </div>
-              <DollarSign className="w-8 h-8 text-green-600" />
+              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-4 h-4 text-green-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -57,9 +54,10 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats, storeCount, isAllSt
               <div>
                 <p className="text-sm text-muted-foreground">Total Products</p>
                 <p className="text-2xl font-semibold">{stats.totalProducts}</p>
-                <p className="text-sm text-muted-foreground mt-1">In inventory</p>
               </div>
-              <Package className="w-8 h-8 text-blue-600" />
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Package className="w-4 h-4 text-blue-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -69,10 +67,11 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats, storeCount, isAllSt
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Low Stock Items</p>
-                <p className="text-2xl font-semibold text-orange-600">{stats.lowStockItems}</p>
-                <p className="text-sm text-muted-foreground mt-1">Need attention</p>
+                <p className="text-2xl font-semibold">{stats.lowStockItems}</p>
               </div>
-              <AlertTriangle className="w-8 h-8 text-orange-600" />
+              <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-orange-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -83,9 +82,10 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats, storeCount, isAllSt
               <div>
                 <p className="text-sm text-muted-foreground">Orders Today</p>
                 <p className="text-2xl font-semibold">{stats.ordersToday}</p>
-                <p className="text-sm text-muted-foreground mt-1">Completed</p>
               </div>
-              <ShoppingCart className="w-8 h-8 text-purple-600" />
+              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                <ShoppingCart className="w-4 h-4 text-purple-600" />
+              </div>
             </div>
           </CardContent>
         </Card>

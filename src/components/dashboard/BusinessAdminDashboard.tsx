@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React from 'react';
@@ -10,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/common/Header';
 import { StatsGrid } from '@/components/dashboard/StatsGrid';
 import { FeatureCard } from '@/components/dashboard/FeatureCard';
-import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Package, 
   Users, 
@@ -18,7 +18,6 @@ import {
   BarChart3,
   FileText,
   Truck,
-  Building2,
   FolderOpen,
   Tag,
   UserCheck,
@@ -34,7 +33,7 @@ import {
 import { useBusinessDashboardStats, useStoreDashboardStats } from '@/utils/hooks/useStoreData';
 
 export const BusinessAdminDashboard: React.FC = () => {
-  const { user, logout, currentBusiness, currentStore } = useAuth();
+  const { user, currentBusiness, currentStore } = useAuth();
   const { formatCurrency } = useSystem();
   const router = useRouter();
 
@@ -56,9 +55,6 @@ export const BusinessAdminDashboard: React.FC = () => {
   // Use store-specific stats if available, otherwise use business-wide stats
   const dashboardStats = currentStore ? storeDashboardStats : businessDashboardStats;
 
-  const handleLogout = async () => {
-    await logout(() => router.push('/auth/login'));
-  };
 
   const handleNavigate = (path: string) => {
     router.push(path);
@@ -222,9 +218,9 @@ export const BusinessAdminDashboard: React.FC = () => {
       >
         {/* Business Type Indicator */}
         {user?.role === 'business_admin' && currentBusiness && (
-          <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-2 border border-blue-200 dark:border-blue-800">
+          <div className="flex items-center gap-2 bg-blue-50 rounded-lg px-4 py-2 border border-blue-200">
             <span className="text-lg">{businessTypeDisplay.icon}</span>
-            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+            <span className="text-sm font-medium text-blue-700">
               {businessTypeDisplay.label}
             </span>
           </div>
@@ -236,8 +232,11 @@ export const BusinessAdminDashboard: React.FC = () => {
         <div className="space-y-8">
           {/* Stats Grid */}
           {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
+            <div className="flex justify-center py-12">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+                <p className="text-muted-foreground">Loading dashboard data...</p>
+              </div>
             </div>
           ) : dashboardStats ? (
             <StatsGrid 
@@ -290,8 +289,8 @@ export const BusinessAdminDashboard: React.FC = () => {
           {/* Low Stock Alerts */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <AlertTriangle className="w-5 h-5 text-yellow-600" />
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-orange-600" />
                 <span>Low Stock Alerts</span>
                 {(dashboardStats?.lowStockCount || 0) > 0 && (
                   <Badge variant="destructive" className="ml-2">
@@ -308,10 +307,10 @@ export const BusinessAdminDashboard: React.FC = () => {
                 </div>
               ) : (dashboardStats?.lowStockCount || 0) > 0 ? (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                        <Package className="w-4 h-4 text-orange-600" />
+                  <div className="flex items-center justify-between p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <Package className="w-5 h-5 text-orange-600" />
                       </div>
                       <div>
                         <p className="font-medium text-sm">Low Stock Products</p>
@@ -331,8 +330,10 @@ export const BusinessAdminDashboard: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Package className="w-12 h-12 text-green-400 mx-auto mb-4" />
-                  <p className="text-muted-foreground">All products well stocked</p>
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Package className="w-8 h-8 text-green-600" />
+                  </div>
+                  <p className="text-muted-foreground font-medium">All products well stocked</p>
                   <p className="text-sm text-muted-foreground">No low stock alerts at this time</p>
                 </div>
               )}
@@ -343,8 +344,13 @@ export const BusinessAdminDashboard: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                Recent Activity
-                {currentBusiness?.id && (
+                <BarChart3 className="w-5 h-5 text-blue-600" />
+                <span>Recent Activity</span>
+                {currentStore ? (
+                  <span className="text-sm font-normal text-muted-foreground">
+                    • {currentStore.name}
+                  </span>
+                ) : currentBusiness?.id && (
                   <span className="text-sm font-normal text-muted-foreground">
                     • {currentBusiness.name}
                   </span>
@@ -357,16 +363,45 @@ export const BusinessAdminDashboard: React.FC = () => {
                   <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
                   <p className="text-muted-foreground">Loading recent activities...</p>
                 </div>
+              ) : dashboardStats?.recentSales && dashboardStats.recentSales.length > 0 ? (
+                <div className="space-y-4">
+                  {dashboardStats.recentSales.map((sale: any) => (
+                    <div key={sale.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <DollarSign className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">Sale completed</p>
+                          <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
+                            {sale.receipt_number}
+                          </span>
+                          {!currentStore && sale.store_name && (
+                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                              {sale.store_name}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(sale.transaction_date).toLocaleDateString()}
+                          {sale.total_amount && ` • ${formatCurrency(parseFloat(sale.total_amount))}`}
+                          {sale.customer?.name && ` • ${sale.customer.name}`}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <div className="text-center py-8">
-                  <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-muted-foreground">No recent activities</p>
-                  <p className="text-sm text-muted-foreground">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Activity className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-muted-foreground font-medium">No recent activities</p>
+                  <p className="text-sm text-muted-foreground mb-4">
                     Activities will appear here as you manage your business
                   </p>
                   <Button 
                     variant="outline" 
-                    className="mt-4"
                     onClick={() => handleNavigate('/activity-logs')}
                   >
                     View Activity Logs

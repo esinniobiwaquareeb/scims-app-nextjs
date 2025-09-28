@@ -19,21 +19,21 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
 }) => {
   return (
     <Card 
-      className="cursor-pointer hover:shadow-lg transition-shadow duration-200 group"
+      className="cursor-pointer hover:shadow-lg transition-all duration-200 group border-0 shadow-sm"
       onClick={onClick}
     >
-      <CardHeader>
-        <div className="flex items-center justify-between">
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-lg group-hover:text-primary transition-colors">
+            <CardTitle className="text-lg group-hover:text-primary transition-colors mb-2">
               {title}
             </CardTitle>
-            <CardDescription className="mt-2">
+            <CardDescription className="text-sm leading-relaxed">
               {description}
             </CardDescription>
           </div>
-          <div className={`w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center ml-4 group-hover:scale-110 transition-transform`}>
-            <Icon className={`w-6 h-6 ${color}`} />
+          <div className={`w-12 h-12 rounded-lg flex items-center justify-center ml-4 group-hover:scale-110 transition-transform ${color.includes('bg-') ? color : `bg-${color}-100`}`}>
+            <Icon className={`w-6 h-6 ${color.includes('text-') ? color : `text-${color}-600`}`} />
           </div>
         </div>
       </CardHeader>

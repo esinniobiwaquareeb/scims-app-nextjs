@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 
@@ -106,11 +107,30 @@ async function getStoreDashboardStats(storeId: string) {
 
   if (ordersError) throw ordersError;
 
+  // Get recent sales for activity feed
+  const { data: recentSales, error: recentSalesError } = await supabase
+    .from('sale')
+    .select(`
+      id,
+      receipt_number,
+      total_amount,
+      transaction_date,
+      customer:customer_id (name),
+      store:store_id (name)
+    `)
+    .eq('store_id', storeId)
+    .eq('status', 'completed')
+    .order('transaction_date', { ascending: false })
+    .limit(5);
+
+  if (recentSalesError) throw recentSalesError;
+
   return {
     sales: todaySales?.reduce((sum, sale) => sum + (sale.total_amount || 0), 0) || 0,
     productsCount: productsCount || 0,
     lowStockCount: lowStockProducts?.length || 0,
-    orders: ordersCount || 0
+    orders: ordersCount || 0,
+    recentSales: recentSales || []
   };
 }
 
@@ -119,7 +139,7 @@ async function getBusinessDashboardStats(businessId: string) {
   // Get all stores for this business
   const { data: stores, error: storesError } = await supabase
     .from('store')
-    .select('id')
+    .select('id, name')
     .eq('business_id', businessId)
     .eq('is_active', true);
 
@@ -139,6 +159,7 @@ async function getBusinessDashboardStats(businessId: string) {
   let totalProductsCount = 0;
   let totalLowStockCount = 0;
   let totalOrders = 0;
+  let allRecentSales: any[] = [];
 
   // Aggregate stats from all stores
   for (const store of stores) {
@@ -149,17 +170,31 @@ async function getBusinessDashboardStats(businessId: string) {
         totalProductsCount += storeStats.productsCount || 0;
         totalLowStockCount += storeStats.lowStockCount || 0;
         totalOrders += storeStats.orders || 0;
+        
+        // Collect recent sales from all stores and add store name
+        if (storeStats.recentSales) {
+          const salesWithStoreName = storeStats.recentSales.map((sale: any) => ({
+            ...sale,
+            store_name: store.name
+          }));
+          allRecentSales = allRecentSales.concat(salesWithStoreName);
+        }
       }
     } catch (error) {
       console.error(`Error loading stats for store ${store.id}:`, error);
     }
   }
 
+  // Sort all recent sales by date and take the most recent 5
+  allRecentSales.sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime());
+  const recentSales = allRecentSales.slice(0, 5);
+
   return {
     sales: totalSales,
     productsCount: totalProductsCount,
     lowStockCount: totalLowStockCount,
     orders: totalOrders,
-    storeCount: stores.length
+    storeCount: stores.length,
+    recentSales: recentSales
   };
 }

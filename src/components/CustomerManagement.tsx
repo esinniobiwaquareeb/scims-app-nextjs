@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
@@ -654,8 +655,8 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
               
               <div className="text-sm text-muted-foreground ml-auto">
                 {filterStatus === 'all' && filterStore === 'all' && `Showing all ${customers.length} customers`}
-                {filterStatus === 'active' && filterStore === 'all' && `Showing ${customers.filter(c => c.totalPurchases > 0).length} active customers`}
-                {filterStatus === 'inactive' && filterStore === 'all' && `Showing ${customers.filter(c => c.totalPurchases === 0).length} inactive customers`}
+                {filterStatus === 'active' && filterStore === 'all' && `Showing ${customers.filter((c: any) => c.totalPurchases > 0).length} active customers`}
+                {filterStatus === 'inactive' && filterStore === 'all' && `Showing ${customers.filter((c: any) => c.totalPurchases === 0).length} inactive customers`}
                 {filterStore !== 'all' && `Showing customers from selected store`}
               </div>
             </div>

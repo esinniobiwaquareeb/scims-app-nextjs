@@ -21,7 +21,6 @@ import {
   AlertTriangle,
   Loader2,
   DollarSign,
-  Building2,
   FolderOpen,
   Tag,
   UserCheck,
@@ -163,9 +162,6 @@ export const StoreAdminDashboard: React.FC = () => {
         title="Store Admin Dashboard"
         subtitle={`Welcome back, ${user?.name || user?.username} • Managing: ${currentStore?.name || 'Store'}`}
       >
-        <Button onClick={handleLogout} variant="outline">
-          Logout
-        </Button>
       </Header>
 
       {/* Main Content */}
@@ -173,8 +169,11 @@ export const StoreAdminDashboard: React.FC = () => {
         <div className="space-y-8">
           {/* Stats Grid */}
           {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
+            <div className="flex justify-center py-12">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+                <p className="text-muted-foreground">Loading dashboard data...</p>
+              </div>
             </div>
           ) : dashboardData?.stats ? (
             <StatsGrid 
@@ -227,8 +226,8 @@ export const StoreAdminDashboard: React.FC = () => {
           {/* Low Stock Alerts */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <AlertTriangle className="w-5 h-5 text-yellow-600" />
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-orange-600" />
                 <span>Low Stock Alerts</span>
                 {(dashboardData?.stats?.lowStockItems || 0) > 0 && (
                   <Badge variant="destructive" className="ml-2">
@@ -246,14 +245,14 @@ export const StoreAdminDashboard: React.FC = () => {
               ) : dashboardData?.lowStockProducts && dashboardData.lowStockProducts.length > 0 ? (
                 <div className="space-y-3">
                   {dashboardData.lowStockProducts.map((product) => (
-                    <div key={product.id} className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                          <Package className="w-4 h-4 text-red-600" />
+                    <div key={product.id} className="flex items-center justify-between p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                          <Package className="w-5 h-5 text-orange-600" />
                         </div>
                         <div>
                           <p className="font-medium text-sm">{product.name}</p>
-                          <p className="text-xs text-red-600">
+                          <p className="text-xs text-orange-600">
                             Stock: {product.stock_quantity} (Min: {product.min_stock_level})
                           </p>
                         </div>
@@ -266,8 +265,10 @@ export const StoreAdminDashboard: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Package className="w-12 h-12 text-green-400 mx-auto mb-4" />
-                  <p className="text-muted-foreground">All products well stocked</p>
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Package className="w-8 h-8 text-green-600" />
+                  </div>
+                  <p className="text-muted-foreground font-medium">All products well stocked</p>
                   <p className="text-sm text-muted-foreground">No low stock alerts at this time</p>
                 </div>
               )}
@@ -278,7 +279,8 @@ export const StoreAdminDashboard: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                Recent Activity
+                <BarChart3 className="w-5 h-5 text-blue-600" />
+                <span>Recent Activity</span>
                 {currentStore?.id && (
                   <span className="text-sm font-normal text-muted-foreground">
                     • {currentStore.name}
@@ -295,14 +297,14 @@ export const StoreAdminDashboard: React.FC = () => {
               ) : dashboardData?.recentSales && dashboardData.recentSales.length > 0 ? (
                 <div className="space-y-4">
                   {dashboardData.recentSales.map((sale) => (
-                    <div key={sale.id} className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <DollarSign className="w-4 h-4 text-blue-600" />
+                    <div key={sale.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <DollarSign className="w-5 h-5 text-blue-600" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="font-medium">Sale completed</p>
-                          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                          <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
                             {sale.receipt_number}
                           </span>
                         </div>
@@ -316,8 +318,10 @@ export const StoreAdminDashboard: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-muted-foreground">No recent activities</p>
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <BarChart3 className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-muted-foreground font-medium">No recent activities</p>
                   <p className="text-sm text-muted-foreground">Activities will appear here as you use the system</p>
                 </div>
               )}
