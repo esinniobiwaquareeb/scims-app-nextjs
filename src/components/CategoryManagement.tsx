@@ -401,15 +401,6 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
         showLogout={false}
       >
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh}
-            disabled={isLoading}
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
           <Button size="sm" onClick={openAddDialog}>
             <Plus className="w-4 h-4 mr-2" />
             Add Category

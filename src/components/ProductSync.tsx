@@ -651,10 +651,6 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button variant="outline" onClick={() => currentStore?.id && loadProductsForStore(currentStore.id)}>
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Refresh
-                    </Button>
                   </div>
                 </div>
               </CardContent>

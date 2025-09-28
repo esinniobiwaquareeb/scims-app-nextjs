@@ -313,10 +313,6 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
         showLogout={false}
       >
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
           <Button variant="outline" onClick={exportLogs}>
             <Download className="w-4 h-4 mr-2" />
             Export CSV

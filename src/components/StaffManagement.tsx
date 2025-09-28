@@ -667,16 +667,6 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
         showLogout={false}
       >
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleRefresh}
-            disabled={isLoading}
-          >
-            <RefreshCw
-              className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </Button>
           <Button 
             onClick={openAddDialog}
             disabled={!canCreate("user")}

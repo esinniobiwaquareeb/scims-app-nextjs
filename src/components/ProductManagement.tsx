@@ -767,17 +767,6 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
               <Plus className="w-4 h-4 mr-2" />
               Add Product
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                refetchProducts();
-              }} 
-              disabled={isLoadingProducts || isRefetching}
-              className="text-blue-600 border-blue-200 hover:bg-blue-50"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isRefetching ? 'animate-spin' : ''}`} />
-              {isRefetching ? 'Refreshing...' : 'Refresh'}
-            </Button>
           </div>
         </div>
       </Header>

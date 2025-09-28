@@ -417,10 +417,6 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
         showLogout={false}
       >
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => refetchStores()} disabled={isLoadingStores}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingStores ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
           {/* Only show Add Store button for business admins */}
           {!isStoreAdmin && (
             <Button onClick={() => setIsAddDialogOpen(true)}>

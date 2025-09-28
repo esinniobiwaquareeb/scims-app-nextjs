@@ -187,17 +187,6 @@ export const PlatformSettings: React.FC<PlatformSettingsProps> = ({ onBack }) =>
         showLogout={false}
       >
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              refetchSettings();
-              refetchHealth();
-            }}
-            disabled={loading || saving}
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
           <Button variant="outline" onClick={resetToDefaults}>
             Reset to Defaults
           </Button>

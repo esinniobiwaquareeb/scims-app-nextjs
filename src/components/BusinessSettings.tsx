@@ -526,17 +526,6 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
         <div className="flex gap-2">
           <Button 
             variant="outline" 
-            onClick={() => {
-              // Refetch all data
-              window.location.reload(); // Simple refresh for now
-            }}
-            disabled={isLoading || isSaving}
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          <Button 
-            variant="outline" 
             onClick={() => setShowReceiptPreview(!showReceiptPreview)}
           >
             <Eye className="w-4 h-4 mr-2" />

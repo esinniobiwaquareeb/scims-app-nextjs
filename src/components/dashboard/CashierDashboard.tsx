@@ -552,10 +552,6 @@ export const CashierDashboard: React.FC = () => {
             <ShoppingCart className="w-4 h-4" />
             Open POS
           </Button>
-          <Button variant="outline" onClick={handleRefresh} className="flex items-center gap-2">
-            <RefreshCw className="w-4 h-4" />
-            Refresh
-          </Button>
         </div>
       </Header>
 
@@ -721,10 +717,6 @@ export const CashierDashboard: React.FC = () => {
                             <SelectItem value="all">All Time</SelectItem>
                           </SelectContent>
                         </Select>
-                        <Button variant="outline" onClick={handleRefresh} className="flex items-center gap-2">
-                          <RefreshCw className="w-4 h-4" />
-                          Refresh
-                        </Button>
                       </div>
                       
                       <DataTable

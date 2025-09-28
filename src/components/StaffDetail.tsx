@@ -232,14 +232,6 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
         onBack={onBack}
         showLogout={false}
       >
-        <Button 
-          variant="outline" 
-          onClick={handleRefresh}
-          disabled={isLoading}
-        >
-          <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
       </Header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">

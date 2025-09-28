@@ -395,14 +395,6 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
         showLogout={false}
       >
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => refetchOrders()}
-            disabled={loading}
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
           <Button variant="outline" onClick={exportOrders}>
             <Download className="w-4 h-4 mr-2" />
             Export

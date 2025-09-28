@@ -730,10 +730,6 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
         onBack={onBack}
         showLogout={false}
       >
-        <Button variant="outline" onClick={handleRefresh} className="flex items-center gap-2">
-          <RefreshCw className="w-4 h-4" />
-          {translate('dashboard.refresh') || 'Refresh'}
-        </Button>
       </Header>
 
       <div className="p-6">

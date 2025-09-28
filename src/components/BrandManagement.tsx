@@ -337,14 +337,6 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
         onBack={onBack}
         showLogout={false}
       >
-        <Button 
-          variant="outline" 
-          onClick={() => refetchBrands()}
-          disabled={brandsLoading || isMutating}
-        >
-          <RefreshCw className={`w-4 h-4 mr-2 ${brandsLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
       </Header>
       
       <div className="container mx-auto px-4 py-6 space-y-6">

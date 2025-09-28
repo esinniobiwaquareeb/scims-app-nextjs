@@ -581,16 +581,6 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
         showLogout={false}
       >
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className="w-full sm:w-auto"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh</span>
-          </Button>
           <Button variant="outline" size="sm" onClick={exportCustomers} className="w-full sm:w-auto">
             <Download className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Export</span>

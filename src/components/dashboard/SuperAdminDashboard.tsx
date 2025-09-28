@@ -255,15 +255,6 @@ export const SuperAdminDashboard: React.FC = () => {
               <SelectItem value="90d">Last 90 days</SelectItem>
             </SelectContent>
           </Select>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={refetchAllData}
-            disabled={isLoading}
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
           {systemSettings.demoMode && (
             <Badge variant="secondary" className="flex items-center gap-1">
               <Eye className="w-3 h-3" />

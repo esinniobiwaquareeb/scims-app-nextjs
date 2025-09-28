@@ -488,14 +488,6 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
         onBack={onBack}
         showLogout={false}
       >
-        <Button
-          variant="outline"
-          onClick={() => refetchSuppliers()}
-          disabled={isLoadingSuppliers}
-        >
-          <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingSuppliers ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
         <Button 
           disabled={isSaving}
           onClick={() => setIsAddDialogOpen(true)}
