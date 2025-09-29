@@ -321,12 +321,10 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
     return () => clearInterval(timer);
   }, []);
 
-  // Ensure selectedCustomer is always set to WALK_IN_CUSTOMER on mount
+  // Initialize selectedCustomer to WALK_IN_CUSTOMER on mount only
   useEffect(() => {
-    if (!selectedCustomer || selectedCustomer.id !== 'walk-in') {
-      setSelectedCustomer(WALK_IN_CUSTOMER);
-    }
-  }, [selectedCustomer]);
+    setSelectedCustomer(WALK_IN_CUSTOMER);
+  }, []);
 
   // Memoized calculations
   const calculateSubtotal = useCallback(() => {
