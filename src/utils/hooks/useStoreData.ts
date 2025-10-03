@@ -883,16 +883,18 @@ export const useUpdateStaff = (businessId: string, storeId?: string) => {
   
   return useMutation({
     mutationFn: async ({ staffId, staffData }: { staffId: string; staffData: StaffFormData }) => {
+      const requestData = {
+        ...staffData,
+        business_id: businessId,
+        store_id: storeId || staffData.store_id
+      };
+
       const response = await fetch(`/api/staff/${staffId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...staffData,
-          business_id: businessId,
-          store_id: storeId || staffData.store_id
-        }),
+        body: JSON.stringify(requestData),
       });
       
       if (!response.ok) {

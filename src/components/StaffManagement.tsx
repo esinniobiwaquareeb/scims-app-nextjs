@@ -58,7 +58,6 @@ import {
   Loader2,
   Search,
   Eye,
-  RefreshCw,
   Key,
   Users,
 } from "lucide-react";
@@ -331,7 +330,6 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
     data: businessStaff = [],
     isLoading: isLoadingBusinessStaff,
     error: businessStaffError,
-    refetch: refetchBusinessStaff,
   } = useBusinessStaff(currentBusiness?.id || "", {
     enabled: !!currentBusiness?.id && user?.role === 'business_admin',
   });
@@ -340,7 +338,6 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
     data: storeStaff = [],
     isLoading: isLoadingStoreStaff,
     error: storeStaffError,
-    refetch: refetchStoreStaff,
   } = useStoreStaff(currentStore?.id || "", {
     enabled: !!currentStore?.id && user?.role === 'store_admin',
   });
@@ -349,12 +346,9 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   const dbStaff = user?.role === 'business_admin' ? businessStaff : storeStaff;
   const isLoadingStaff = user?.role === 'business_admin' ? isLoadingBusinessStaff : isLoadingStoreStaff;
   const staffError = user?.role === 'business_admin' ? businessStaffError : storeStaffError;
-  const refetchStaff = user?.role === 'business_admin' ? refetchBusinessStaff : refetchStoreStaff;
-
   const {
     data: stores = [],
     isLoading: isLoadingStores,
-    refetch: refetchStores,
   } = useBusinessStores(currentBusiness?.id || "", {
     enabled: !!currentBusiness?.id,
   });
@@ -392,6 +386,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
 
   // Staff data is already filtered by role - no additional filtering needed
   const accessibleStaff = useMemo(() => {
+    console.log('StaffManagement Debug - dbStaff:', dbStaff);
     return dbStaff;
   }, [dbStaff]);
 
@@ -538,18 +533,6 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
     },
     [dbStaff, currentBusiness, updateStaffMutation]
   );
-
-  // Refresh function for manual data refresh
-  const handleRefresh = useCallback(async () => {
-    try {
-      await Promise.all([refetchStaff(), refetchStores()]);
-      toast.success("Data refreshed successfully");
-    } catch (error) {
-      console.error("Error refreshing data:", error);
-      toast.error("Failed to refresh data");
-    }
-  }, [refetchStaff, refetchStores]);
-
 
   const openEditDialog = useCallback((staffMember: Staff) => {
     setSelectedStaff({ ...staffMember }); // Create a copy to avoid reference issues
@@ -836,7 +819,21 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                     {staff.storeName || "Not assigned"}
                   </p>
                   <p className="text-sm text-muted-foreground">
+                    {staff.store_id ? `ID: ${staff.store_id}` : "No store assigned"}
+                  </p>
+                </div>
+              ),
+            },
+            {
+              key: "contact",
+              label: "Contact",
+              render: (staff: Staff) => (
+                <div>
+                  <p className="text-sm font-medium">
                     {staff.phone || "No phone"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {staff.email}
                   </p>
                 </div>
               ),

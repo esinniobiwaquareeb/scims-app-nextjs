@@ -21,7 +21,7 @@ export async function GET(
       .from('user_business_role')
       .select(`
         store_id,
-        store!store_id(
+        store:store_id(
           id,
           name
         )
@@ -36,7 +36,7 @@ export async function GET(
     const staffMember = {
       ...user,
       store_id: userRole?.store_id,
-      storeName: userRole?.store?.[0]?.name
+      storeName: userRole?.store ? (userRole.store as { name: string }[])[0]?.name : null
     };
 
     return NextResponse.json({
@@ -103,21 +103,49 @@ export async function PUT(
       );
     }
 
-    // If store_id is provided, update the user_business_role
-    if (body.store_id) {
-      const { error: roleError } = await supabase
-        .from('user_business_role')
-        .update({
-          store_id: body.store_id,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', staffId);
+    // First, let's check what user_business_role records exist for this user
+    const { data: existingRoles, error: fetchRolesError } = await supabase
+      .from('user_business_role')
+      .select('*')
+      .eq('user_id', staffId);
 
-      if (roleError) {
-        console.error('Supabase error updating user role:', roleError);
-        // Don't fail the entire operation if role update fails
-      }
+    if (fetchRolesError) {
+      console.error('Error fetching existing user roles:', fetchRolesError);
+    } else {
+      console.log('Existing user roles for staff:', {
+        staffId,
+        existingRoles,
+        businessId: body.business_id
+      });
     }
+
+    // Update the user_business_role store assignment
+    // Filter by both user_id and business_id to ensure we're updating the correct record
+    const { data: updateResult, error: roleError } = await supabase
+      .from('user_business_role')
+      .update({
+        store_id: body.store_id || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', staffId)
+      .eq('business_id', body.business_id)
+      .select();
+
+    if (roleError) {
+      console.error('Supabase error updating user role:', roleError);
+      return NextResponse.json(
+        { error: 'Failed to update staff store assignment' },
+        { status: 500 }
+      );
+    }
+
+    // Debug logging
+    console.log('Staff store assignment updated:', {
+      staffId,
+      storeId: body.store_id,
+      businessId: body.business_id,
+      updateResult
+    });
 
     return NextResponse.json({
       success: true,

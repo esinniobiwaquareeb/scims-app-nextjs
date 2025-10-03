@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       .select(`
         user_id,
         store_id,
-        store!store_id(
+        store:store_id(
           id,
           name
         )
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
       created_at: string;
       last_login: string;
     }) => {
-      const userRole = userRoles.find((role: { user_id: string; store_id?: string; store?: Array<{ name: string }> }) => role.user_id === user.id);
+      const userRole = userRoles.find((role: { user_id: string; store_id?: string; store?: { name: string } }) => role.user_id === user.id);
       const stats = userIdToStats[user.id] || { totalSales: 0, transactionCount: 0 };
       return {
         id: user.id,
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
         email: user.email,
         phone: user.phone,
         store_id: userRole?.store_id,
-        storeName: userRole?.store?.[0]?.name,
+        storeName: userRole?.store?.name || null,
         is_active: user.is_active,
         role: user.role,
         created_at: user.created_at,
@@ -107,6 +107,13 @@ export async function GET(request: NextRequest) {
 
     // Apply pagination
     const paginatedStaff = transformedStaff.slice(offset, offset + limit);
+
+    // Debug logging
+    console.log('Staff API Debug:', {
+      totalStaff: transformedStaff.length,
+      sampleStaff: transformedStaff[0],
+      salesStats: userIdToStats
+    });
 
     return NextResponse.json({
       success: true,
