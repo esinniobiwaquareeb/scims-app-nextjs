@@ -879,6 +879,7 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
                       value={selectedBusiness.email}
                       onChange={(e) => setSelectedBusiness({ ...selectedBusiness, email: e.target.value })}
                       placeholder="Enter email address"
+                      disabled={true}
                     />
                   </div>
                 </div>

@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
         created_at,
         updated_at
       `)
-      .eq('is_active', true)
       .order('display_order', { ascending: true });
 
     if (error) {
