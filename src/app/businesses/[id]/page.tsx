@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { BusinessDetail } from '@/components/BusinessDetail';
-import { supabase } from '@/lib/supabase/config';
 import { toast } from 'sonner';
 
 interface Business {
@@ -75,21 +74,15 @@ export default function BusinessDetailPage() {
       if (!params.id) return;
 
       try {
-        const { data, error } = await supabase
-          .from('business')
-          .select(`
-            *,
-            country:country_id(id, name, code),
-            currency:currency_id(id, name, symbol),
-            language:language_id(id, name, code),
-            subscription_plans:subscription_plan_id(id, name, description, price_monthly, price_yearly, max_stores, max_products, max_users),
-            stores(id, name, address, city, state, postal_code, phone, email, manager_name, is_active, created_at)
-          `)
-          .eq('id', params.id)
-          .single();
-
-        if (error) throw error;
-        setBusiness(data);
+        const res = await fetch(`/api/businesses/${params.id}`);
+        if (!res.ok) {
+          throw new Error('Failed to fetch business');
+        }
+        const json = await res.json();
+        if (!json.success) {
+          throw new Error(json.error || 'Failed to fetch business');
+        }
+        setBusiness(json.business);
       } catch (error) {
         console.error('Error fetching business:', error);
         toast.error('Failed to fetch business details');
