@@ -53,7 +53,7 @@ import {
   useCreateBusinessBrand,
   useUpdateBusinessBrand,
   useDeleteBusinessBrand,
-} from "@/utils/hooks/useStoreData";
+} from "@/utils/hooks/brands";
 
 interface BrandManagementProps {
   onBack: () => void;

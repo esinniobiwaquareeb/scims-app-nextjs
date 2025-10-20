@@ -18,7 +18,7 @@ import {
   useCreateBusinessCategory,
   useUpdateBusinessCategory,
   useDeleteBusinessCategory
-} from '@/utils/hooks/useStoreData';
+} from '@/utils/hooks/categories';
 import { toast } from 'sonner';
 import { 
   Package, 

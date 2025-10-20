@@ -1,11 +1,12 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-// Direct database client not yet implemented
-// import { directDB } from '../utils/supabase/direct-client';
 import { useAuth } from './AuthContext';
-import { useStoreSettings, useBusinessSettings, useLanguages, useCurrencies } from '@/utils/hooks/useStoreData';
-// import { Business, Store } from '@/types';
+import { useLanguages, useCurrencies } from '@/utils/hooks/useStoreData';
+import { 
+  useStoreSettings
+} from '../utils/hooks/stores';
+import { useBusinessSettings } from '@/utils/hooks/businessSettings';
 import { translate as translateUtil } from '../utils/translations';
 import { printReceipt as printReceiptUtil, previewReceipt as previewReceiptUtil, ReceiptData } from '../utils/receipt';
 import {

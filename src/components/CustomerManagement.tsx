@@ -14,14 +14,14 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { 
+import { useStoreSales } from '@/utils/hooks/sales';
+import {
   useStoreCustomers,
-  useStoreSales,
   useCreateCustomer,
   useUpdateCustomer,
   useDeleteCustomer,
   useCustomerSales
-} from '@/utils/hooks/useStoreData';
+} from '@/utils/hooks/customers';
 import { toast } from 'sonner';
 import { 
   Plus, 
@@ -143,7 +143,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   });
 
   // React Query mutations
-  const createCustomerMutation = useCreateCustomer(currentStore?.id || '');
+  const createCustomerMutation = useCreateCustomer();
   const updateCustomerMutation = useUpdateCustomer(currentStore?.id || '');
   const deleteCustomerMutation = useDeleteCustomer(currentStore?.id || '');
 
@@ -151,14 +151,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   const {
     data: customerSales = [],
     isLoading: isLoadingCustomerSales
-  } = useCustomerSales(
-    selectedCustomer?.id || '', 
-    currentStore?.id || '',
-    currentBusiness?.id || '',
-    {
-      enabled: !!selectedCustomer?.id && !!currentStore?.id
-    }
-  );
+  } = useCustomerSales(selectedCustomer?.id || '');
 
   // Loading states
   const isLoading = isLoadingCustomers || isLoadingSales || isLoadingCustomerSales;

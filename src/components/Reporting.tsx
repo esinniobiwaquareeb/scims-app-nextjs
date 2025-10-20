@@ -17,7 +17,7 @@ import {
   useReportingInventoryStats,
   useReportingFinancialMetrics,
   useReportingChartData
-} from '@/utils/hooks/useStoreData';
+} from '@/utils/hooks/reports';
 import { toast } from 'sonner';
 import { 
   TrendingUp, 

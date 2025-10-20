@@ -24,16 +24,14 @@ import {
   Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { 
-  usePlatformBusinesses, 
+import {
   useSubscriptionPlans,
-  useCreateBusiness,
-  useUpdateBusiness,
-  useDeleteBusiness,
   useCountries,
   useCurrencies,
   useLanguages
 } from '../utils/hooks/useStoreData';
+
+import { useBusinesses, useCreateBusiness, useUpdateBusiness, useDeleteBusiness } from '../utils/hooks/business';
 import { BusinessDetail } from './BusinessDetail';
 import { 
   BUSINESS_TYPES, 
@@ -139,7 +137,7 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
     isLoading: businessesLoading,
     error: businessesError,
     refetch: refetchBusinesses
-  } = usePlatformBusinesses({ enabled: user?.role === 'superadmin' });
+  } = useBusinesses({ enabled: user?.role === 'superadmin' });
 
   const {
     data: subscriptionPlans = [],

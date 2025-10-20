@@ -30,16 +30,16 @@ import {
   RefreshCw,
   Copy
 } from 'lucide-react';
-import { 
-  useBusinessCategories, 
-  useBusinessSuppliers, 
-  useBusinessBrands,
+import { useBusinessStores } from '@/utils/hooks/stores';
+import { useBusinessCategories } from '@/utils/hooks/categories';
+import { useBusinessSuppliers } from '@/utils/hooks/suppliers';
+import { useBusinessBrands } from '@/utils/hooks/brands';
+import {
   useCreateProduct,
   useUpdateProduct,
   useDeleteProduct,
-  useStoreProducts,
-  useBusinessStores
-} from '@/utils/hooks/useStoreData';
+  useStoreProducts
+} from '@/utils/hooks/products';
 
 interface Product {
   id: string;
@@ -242,8 +242,8 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
   }, [user?.role, currentStore?.id]);
 
   // Use mutations for CRUD operations
-  const createProductMutation = useCreateProduct(currentStore?.id || '');
-  const updateProductMutation = useUpdateProduct(currentStore?.id || '');
+  const createProductMutation = useCreateProduct();
+  const updateProductMutation = useUpdateProduct();
   const deleteProductMutation = useDeleteProduct(currentStore?.id || '');
 
   // Combined loading state

@@ -23,9 +23,10 @@ import { getStatusIcon, getSubscriptionColor, calculateStats } from '@/component
 
 // Import React Query hooks
 import { 
-  usePlatformBusinesses, 
   useSubscriptionPlans
 } from '@/utils/hooks/useStoreData';
+
+import {useBusinesses} from '@/utils/hooks/business';
 
 interface SuperAdminDashboardProps {
   onNavigate: (route: string) => void;
@@ -75,7 +76,7 @@ export const SuperAdminDashboard: React.FC = () => {
     isLoading: businessesLoading,
     error: businessesError,
     refetch: refetchBusinesses
-  } = usePlatformBusinesses({ enabled: user?.role === 'superadmin' });
+  } = useBusinesses({ enabled: user?.role === 'superadmin' });
 
   // Mock data for missing hooks - these would be replaced with actual API calls
   const revenueData: Array<{ date: string; revenue: number }> = [

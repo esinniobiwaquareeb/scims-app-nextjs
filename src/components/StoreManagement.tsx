@@ -33,7 +33,7 @@ import {
   useCreateStore,
   useUpdateStore,
   useDeleteStore
-} from '@/utils/hooks/useStoreData';
+} from '@/utils/hooks/stores';
 
 interface StoreManagementProps {
   onBack: () => void;

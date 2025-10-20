@@ -9,7 +9,7 @@ import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { useStoreSales } from '../utils/hooks/useStoreData';
+import { useStoreSales } from '../utils/hooks/sales';
 import { toast } from 'sonner';
 import { 
   Download,

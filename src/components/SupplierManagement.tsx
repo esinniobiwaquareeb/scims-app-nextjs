@@ -17,7 +17,7 @@ import {
   useCreateBusinessSupplier,
   useUpdateBusinessSupplier,
   useDeleteBusinessSupplier
-} from '@/utils/hooks/useStoreData';
+} from '@/utils/hooks/suppliers';
 import { 
 
   Building, 

@@ -6,19 +6,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { useActivityLogging } from '@/hooks/useActivityLogging';
 // import { Card, CardContent } from '@/components/ui/card';
-import { 
-  useOfflineStoreProducts, 
-  useOfflineStoreCustomers, 
-  useOfflineStoreSales,
-  useOfflineCreateCustomer,
-  useOfflineSavedCarts,
-  useOfflineSaveCart,
-  useOfflineDeleteSavedCart,
-  useOfflineCategories,
-  useOfflineBusinessSettings,
-  useOfflineCreateSale,
-  useNetworkStatus
-} from '@/utils/hooks/useStoreData';
+import { useNetworkStatus } from '@/utils/hooks/useStoreData';
+import { useOfflineSavedCarts, useOfflineSaveCart } from '@/utils/hooks/savedCarts';
+import { useOfflineDeleteSavedCart } from '@/utils/hooks/savedCarts';
+import { useOfflineCategories } from '@/utils/hooks/categories';
+import { useOfflineBusinessSettings } from '@/utils/hooks/businessSettings';
+import { useOfflineStoreSales, useOfflineCreateSale } from '@/utils/hooks/sales';
+import { useOfflineStoreCustomers, useOfflineCreateCustomer } from '@/utils/hooks/customers';
+import { useOfflineStoreProducts } from '@/utils/hooks/products';
 import { 
   ShoppingCart, 
   Activity,
@@ -42,7 +37,7 @@ interface SaleFormData {
   cash_received?: number;
   change_given?: number;
   status: string;
-  notes?: string;
+notes?: string;
   transaction_date: string;
   applied_coupon_id?: string;
   applied_promotion_id?: string;
@@ -258,14 +253,14 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
   } = useOfflineStoreSales(currentStore?.id || '', { enabled: !!currentStore?.id });
 
   const processSaleMutation = useOfflineCreateSale();
-  const createCustomerMutation = useOfflineCreateCustomer(currentStore?.id || '');
+  const createCustomerMutation = useOfflineCreateCustomer();
   const saveCartMutation = useOfflineSaveCart(currentStore?.id || '');
   const deleteSavedCartMutation = useOfflineDeleteSavedCart(currentStore?.id || '');
 
   const {
     data: savedCarts = [],
     isLoading: savedCartsLoading
-  } = useOfflineSavedCarts(currentStore?.id || '', user?.id || '', {
+  } = useOfflineSavedCarts(currentStore?.id || '', {
     enabled: !!currentStore?.id && !!user?.id
   });
 

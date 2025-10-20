@@ -17,16 +17,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from './ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { 
-  useBusinessCashiers, 
-  useBusinessStores, 
-  useCashierSales,
+import {  
+  useBusinessStores,
+} from '@/utils/hooks/stores';
+
+import { useResetUserPassword } from '@/utils/hooks/useStoreData';
+import {
   useCreateCashier,
   useUpdateCashier,
   useUpdateCashierStore,
   useDeleteCashier,
-  useResetUserPassword
-} from '@/utils/hooks/useStoreData';
+  useBusinessCashiers,
+} from '@/utils/hooks/cashiers';
+
+import {
+  useCashierSales,
+} from '@/utils/hooks/sales';
+
 import { toast } from 'sonner';
 import { 
   Users, 

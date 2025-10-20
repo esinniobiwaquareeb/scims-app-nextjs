@@ -15,10 +15,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { DatePickerWithRange } from './ui/date-range-picker';
 import { DataTable } from './common/DataTable';
 import { 
-  useStoreSalesReport,
-  useBusinessStoresReport,
-  useAggregatedSalesReport
+  useBusinessStoresReport
 } from '../utils/hooks/useStoreData';
+
+import {useStoreSalesReport,useAggregatedSalesReport} from '../utils/hooks/sales';
 import { 
   ShoppingCart, 
   TrendingUp, 

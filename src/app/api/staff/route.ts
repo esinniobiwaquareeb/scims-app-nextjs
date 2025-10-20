@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 import bcrypt from 'bcryptjs';
@@ -86,8 +87,9 @@ export async function GET(request: NextRequest) {
       created_at: string;
       last_login: string;
     }) => {
-      const userRole = userRoles.find((role: { user_id: string; store_id?: string; store?: { name: string } }) => role.user_id === user.id);
+      const userRole = userRoles.find((role) => role.user_id === user.id);
       const stats = userIdToStats[user.id] || { totalSales: 0, transactionCount: 0 };
+      const storeName = (userRole as any)?.store?.[0]?.name ?? (userRole as any)?.store?.name ?? null;
       return {
         id: user.id,
         name: user.name,
@@ -95,7 +97,7 @@ export async function GET(request: NextRequest) {
         email: user.email,
         phone: user.phone,
         store_id: userRole?.store_id,
-        storeName: userRole?.store?.name || null,
+        storeName,
         is_active: user.is_active,
         role: user.role,
         created_at: user.created_at,

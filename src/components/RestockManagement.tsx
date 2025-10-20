@@ -28,11 +28,10 @@ import {
   useCreateRestockOrder, 
   useUpdateRestockOrderStatus, 
   useReceiveRestockItems,
-  useStoreProducts,
-  useBusinessProductsWithLowStock,
-  useBusinessSuppliers,
   useRestockOrders
-} from '../utils/hooks/useStoreData';
+} from '../utils/hooks/restock';
+import { useBusinessSuppliers } from '../utils/hooks/suppliers';
+import { useStoreProducts, useBusinessProductsWithLowStock } from '../utils/hooks/products';
 
 interface RestockOrder {
   id: string;

@@ -2,13 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystem } from '../contexts/SystemContext';
-import { useActivityLogger } from '../contexts/ActivityLogger';
+// import { useActivityLogger } from '../contexts/ActivityLogger';
 import { toast } from 'sonner';
 import { Header } from './common/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Separator } from './ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { 
   Store as StoreIcon, 
@@ -21,15 +20,15 @@ import {
   ShoppingCart, 
   BarChart3, 
   Settings, 
-  Edit,
+  
   AlertTriangle
 } from 'lucide-react';
 import { 
-  useStoreSettings, 
-  useStoreProducts, 
-  useStoreSales,
-  useStoreCustomers
-} from '../utils/hooks/useStoreData';
+  useStoreSettings
+} from '../utils/hooks/stores';
+import { useStoreSales } from '../utils/hooks/sales';
+import { useStoreCustomers } from '../utils/hooks/customers';
+import { useStoreProducts } from '../utils/hooks/products';
 import { StoreSettings } from './StoreSettings';
 
 
@@ -51,8 +50,7 @@ interface StoreDetailsProps {
 }
 
 export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => {
-  const { translate, formatCurrency, getCurrentCurrency } = useSystem();
-  const { logActivity } = useActivityLogger();
+  const { formatCurrency, getCurrentCurrency } = useSystem();
   const { user, currentStore: authCurrentStore } = useAuth();
   
   const [activeTab, setActiveTab] = useState('overview');
@@ -77,9 +75,9 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
   });
 
   // Store dashboard stats will be calculated from other data
-  const dashboardStats = null;
-  const isLoadingStats = false;
-  const statsError = null;
+  // const dashboardStats = null;
+  // const isLoadingStats = false;
+  // const statsError = null;
 
   // Fetch store products
   const {
@@ -110,14 +108,14 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
 
   // Handle errors
   useEffect(() => {
-    const errors = [settingsError, statsError, productsError, salesError, customersError].filter(Boolean);
+    const errors = [settingsError, productsError, salesError, customersError].filter(Boolean);
     if (errors.length > 0) {
       const errorMessage = errors[0]?.message || 'Failed to load store data';
       setError(errorMessage);
     } else {
       setError(null);
     }
-  }, [settingsError, statsError, productsError, salesError, customersError]);
+  }, [settingsError, productsError, salesError, customersError]);
 
   // If store admin doesn't have access to this store, show access denied
   if (isStoreAdmin && !hasAccessToStore) {
@@ -141,7 +139,7 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
   }
 
   // Loading state
-  if (isLoadingSettings || isLoadingStats) {
+  if (isLoadingSettings) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header title={`Store: ${storeName || 'Loading...'}`} onBack={onBack} showLogout={false} />
@@ -186,7 +184,7 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
 
   // Use store data from settings as primary, then from props as fallback
   const storeData = storeSettings || store;
-  const stats = dashboardStats || {};
+  // const stats = dashboardStats || {};
   const storeProducts = products || [];
   const storeSales = sales || [];
   const storeCustomers = customers || [];

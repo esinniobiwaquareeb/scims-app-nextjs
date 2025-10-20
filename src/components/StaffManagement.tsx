@@ -40,14 +40,10 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  useBusinessStaff,
-  useStoreStaff,
-  useBusinessStores,
-  useCreateStaff,
-  useUpdateStaff,
-  useDeleteStaff,
   useResetUserPassword,
 } from "@/utils/hooks/useStoreData";
+import {useStoreStaff, useCreateStaff, useUpdateStaff, useDeleteStaff,  useBusinessStaff} from '@/utils/hooks/staff';
+import {useBusinessStores} from '@/utils/hooks/stores';
 import { toast } from "sonner";
 import {
   Edit,

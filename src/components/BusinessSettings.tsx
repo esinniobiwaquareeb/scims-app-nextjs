@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { useActivityLogger } from '@/contexts/ActivityLogger';
-import { 
-  useBusinessSettings, 
+import {  
   useCurrencies, 
   useLanguages, 
   useCountries,
-  useSubscriptionPlans,
-  useUpdateBusinessSettings 
+  useSubscriptionPlans 
 } from '../utils/hooks/useStoreData';
+import {useBusinessSettings, useUpdateBusinessSettings} from '@/utils/hooks/businessSettings'
 import { Header } from './common/Header';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
