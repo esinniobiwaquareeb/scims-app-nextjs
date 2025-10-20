@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -6,12 +6,11 @@ import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
+import { toast } from 'sonner';
 import { 
   Plus, 
   Edit, 
   Trash2, 
-  Save, 
-  X, 
   Package, 
   ShoppingCart, 
   Users,
@@ -73,6 +72,7 @@ export const MenuManagement: React.FC = () => {
   const [selectedBusinessType, setSelectedBusinessType] = useState<string>('retail');
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [isAddingItem, setIsAddingItem] = useState(false);
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState<MenuItem | null>(null);
   const [newItem, setNewItem] = useState<Partial<MenuItem>>({
     title: '',
     description: '',
@@ -95,11 +95,7 @@ export const MenuManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Load data
-  useEffect(() => {
-    loadData();
-  }, [selectedBusinessType]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -131,7 +127,11 @@ export const MenuManagement: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedBusinessType]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Show loading state
   if (isLoading) {
@@ -280,10 +280,11 @@ export const MenuManagement: React.FC = () => {
         sort_order: 0,
         is_active: true
       });
+      toast.success('Menu item added successfully!');
       loadData();
     } catch (error: unknown) {
       console.error('Error adding menu item:', error);
-      alert(error instanceof Error ? error.message : 'Failed to add menu item');
+      toast.error(error instanceof Error ? error.message : 'Failed to add menu item');
     }
   };
 
@@ -315,17 +316,16 @@ export const MenuManagement: React.FC = () => {
       }
 
       setEditingItem(null);
+      toast.success('Menu item updated successfully!');
       loadData();
     } catch (error: unknown) {
       console.error('Error updating menu item:', error);
-      alert(error instanceof Error ? error.message : 'Failed to update menu item');
+      toast.error(error instanceof Error ? error.message : 'Failed to update menu item');
     }
   };
 
   // Handle deleting menu item
   const handleDeleteItem = async (itemId: string) => {
-    if (!confirm('Are you sure you want to delete this menu item?')) return;
-
     try {
       const response = await fetch(`/api/menu/items/${itemId}`, {
         method: 'DELETE'
@@ -336,10 +336,12 @@ export const MenuManagement: React.FC = () => {
         throw new Error(errorData.error || 'Failed to delete menu item');
       }
 
+      setDeleteConfirmItem(null);
+      toast.success('Menu item deleted successfully!');
       loadData();
     } catch (error: unknown) {
       console.error('Error deleting menu item:', error);
-      alert(error instanceof Error ? error.message : 'Failed to delete menu item');
+      toast.error(error instanceof Error ? error.message : 'Failed to delete menu item');
     }
   };
 
@@ -592,7 +594,7 @@ export const MenuManagement: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDeleteItem(item.id)}
+                          onClick={() => setDeleteConfirmItem(item)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -738,6 +740,51 @@ export const MenuManagement: React.FC = () => {
               <div className="flex gap-2">
                 <Button onClick={handleUpdateItem}>Save Changes</Button>
                 <Button variant="outline" onClick={() => setEditingItem(null)}>Cancel</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="text-red-600">Delete Menu Item</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-4 p-4 bg-red-50 rounded-lg">
+                <div className={`w-12 h-12 ${deleteConfirmItem.bg_color} rounded-lg flex items-center justify-center`}>
+                  {(() => {
+                    const IconComponent = iconOptions.find(opt => opt.value === deleteConfirmItem.icon)?.icon || Package;
+                    return <IconComponent className={`w-6 h-6 ${deleteConfirmItem.color}`} />;
+                  })()}
+                </div>
+                <div>
+                  <h4 className="font-medium">{deleteConfirmItem.title}</h4>
+                  <p className="text-sm text-gray-600">{deleteConfirmItem.description}</p>
+                </div>
+              </div>
+              
+              <p className="text-gray-700">
+                Are you sure you want to delete this menu item? This action cannot be undone.
+              </p>
+              
+              <div className="flex gap-2">
+                <Button 
+                  variant="destructive" 
+                  onClick={() => handleDeleteItem(deleteConfirmItem.id)}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setDeleteConfirmItem(null)}
+                >
+                  Cancel
+                </Button>
               </div>
             </CardContent>
           </Card>

@@ -896,14 +896,14 @@ export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business
                     <TableRow key={log.id}>
                       <TableCell>
                         <div>
-                          <p className="text-sm">{new Date(log.created_at).toLocaleDateString()}</p>
-                          <p className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleTimeString()}</p>
+                          <p className="text-sm">{new Date(log.timestamp).toLocaleDateString()}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(log.timestamp).toLocaleTimeString()}</p>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className="text-xs">{log.activity_type}</Badge>
+                        <Badge variant="secondary" className="text-xs">{log.action}</Badge>
                       </TableCell>
-                      <TableCell>{log.category}</TableCell>
+                      <TableCell>{log.module}</TableCell>
                       <TableCell className="max-w-[300px]">
                         <span className="truncate block">{log.description}</span>
                       </TableCell>
