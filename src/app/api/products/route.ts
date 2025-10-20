@@ -36,9 +36,9 @@ export async function GET(request: NextRequest) {
     if (storeId && storeId !== 'All') {
       // Fetch products for a specific store
       query = query.eq('store_id', storeId);
-    } else if (storeId === 'All' && businessId) {
-      // Fetch products for all stores in a business when "All" is selected
-      // First get all stores for the business
+    } else if (businessId) {
+      // Fetch products for all stores in a business
+      // This handles both cases: storeId === 'All' with businessId, or just businessId alone
       const { data: stores, error: storesError } = await supabase
         .from('store')
         .select('id')
