@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSystem } from '@/contexts/SystemContext';
 import { Header } from '@/components/common/Header';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -571,29 +570,10 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
         onBack={onBack}
         showLogout={false}
       >
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Plan
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create New Subscription Plan</DialogTitle>
-              <DialogDescription>
-                Design a new subscription plan with custom features and pricing.
-              </DialogDescription>
-            </DialogHeader>
-            <PlanForm
-              plan={newPlan}
-              onChange={setNewPlan}
-              onSave={handleAddPlan}
-              onCancel={() => setIsAddDialogOpen(false)}
-              submitting={submitting}
-            />
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setIsAddDialogOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Plan
+        </Button>
       </Header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -658,6 +638,25 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
           tableName="subscriptionPlans"
           userRole={user?.role}
         />
+
+        {/* Add Plan Dialog */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create New Subscription Plan</DialogTitle>
+              <DialogDescription>
+                Design a new subscription plan with custom features and pricing.
+              </DialogDescription>
+            </DialogHeader>
+            <PlanForm
+              plan={newPlan}
+              onChange={setNewPlan}
+              onSave={handleAddPlan}
+              onCancel={() => setIsAddDialogOpen(false)}
+              submitting={submitting}
+            />
+          </DialogContent>
+        </Dialog>
 
         {/* Edit Plan Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
