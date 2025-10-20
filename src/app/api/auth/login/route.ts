@@ -28,6 +28,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if demo mode is enabled for demo users
+    if (user.is_demo) {
+      const { data: platformSettings } = await supabase
+        .from('platform_setting')
+        .select('demo_mode')
+        .single();
+
+      const isDemoModeEnabled = platformSettings?.demo_mode === true;
+
+      if (!isDemoModeEnabled) {
+        return NextResponse.json(
+          { success: false, error: 'Demo mode is currently disabled. Please contact support.' },
+          { status: 403 }
+        );
+      }
+    }
+
     // Check if email is verified (only for non-demo users)
     if (!user.is_demo && !user.email_verified) {
       return NextResponse.json(

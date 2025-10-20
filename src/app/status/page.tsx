@@ -25,14 +25,49 @@ import { AnimatedSection } from '@/components/landing/AnimatedSection';
 
 export default function StatusPage() {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isMounted, setIsMounted] = useState(false);
+  const [searchParams, setSearchParams] = useState<URLSearchParams | null>(null);
 
   useEffect(() => {
+    setIsMounted(true);
+    setSearchParams(new URLSearchParams(window.location.search));
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
 
     return () => clearInterval(timer);
   }, []);
+
+  // Determine the status message based on URL parameters
+  const isMaintenanceMode = searchParams?.get('maintenance') === '1';
+  const isPlatformAccessDisabled = searchParams?.get('platform_access') === 'disabled';
+
+  const getStatusMessage = () => {
+    if (isPlatformAccessDisabled) {
+      return {
+        title: 'Platform Access Temporarily Disabled',
+        description: 'Platform access is currently disabled. Please contact support for assistance.',
+        icon: '🚫',
+        status: 'Platform Access Disabled'
+      };
+    }
+    if (isMaintenanceMode) {
+      return {
+        title: 'System Maintenance',
+        description: 'We are currently performing scheduled maintenance. We\'ll be back online shortly.',
+        icon: '🔧',
+        status: 'Under Maintenance'
+      };
+    }
+    return {
+      title: 'System Status',
+      description: 'Real-time status of SCIMS services and infrastructure. We monitor our systems 24/7 to ensure optimal performance.',
+      icon: '📊',
+      status: 'All Systems Operational'
+    };
+  };
+
+  const statusMessage = getStatusMessage();
 
   const systemStatus = [
     {
@@ -154,30 +189,35 @@ export default function StatusPage() {
       <section className="relative py-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
         <div className="relative max-w-7xl mx-auto">
           <div className="text-center">
-            <div className="text-6xl mb-6">📊</div>
+            <div className="text-6xl mb-6">{statusMessage.icon}</div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
-              System Status
+              {statusMessage.title}
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-              Real-time status of SCIMS services and infrastructure. We monitor our systems 24/7 to ensure optimal performance.
+              {statusMessage.description}
             </p>
             
             <div className="flex items-center justify-center space-x-4 text-sm text-muted-foreground">
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>All Systems Operational</span>
+                <div className={`w-2 h-2 rounded-full animate-pulse ${
+                  isPlatformAccessDisabled ? 'bg-red-500' : 
+                  isMaintenanceMode ? 'bg-yellow-500' : 
+                  'bg-green-500'
+                }`}></div>
+                <span>{statusMessage.status}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Clock className="w-4 h-4" />
-                <span>Last updated: {currentTime.toLocaleTimeString()}</span>
+                <span suppressHydrationWarning>Last updated: {isMounted ? currentTime.toLocaleTimeString() : ''}</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* System Status */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8">
+      {/* System Status - Only show when not in maintenance or platform access disabled */}
+      {!isMaintenanceMode && !isPlatformAccessDisabled && (
+        <section className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <SectionHeader
             badge="🔧 System Status"
@@ -188,7 +228,6 @@ export default function StatusPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {systemStatus.map((service, index) => {
-              const StatusIcon = getStatusIcon(service.status);
               return (
                 <AnimatedSection key={index} animation="fadeUp" delay={index * 0.1}>
                   <div className="bg-background rounded-xl p-6 shadow-sm border hover:shadow-md transition-shadow duration-200">
@@ -220,10 +259,12 @@ export default function StatusPage() {
             })}
           </div>
         </div>
-      </section>
+        </section>
+      )}
 
-      {/* Recent Incidents */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
+      {/* Recent Incidents - Only show when not in maintenance or platform access disabled */}
+      {!isMaintenanceMode && !isPlatformAccessDisabled && (
+        <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
         <div className="max-w-7xl mx-auto">
           <SectionHeader
             badge="📋 Recent Incidents"
@@ -264,10 +305,12 @@ export default function StatusPage() {
             })}
           </div>
         </div>
-      </section>
+        </section>
+      )}
 
-      {/* Performance Metrics */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8">
+      {/* Performance Metrics - Only show when not in maintenance or platform access disabled */}
+      {!isMaintenanceMode && !isPlatformAccessDisabled && (
+        <section className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <SectionHeader
             badge="📈 Performance"
@@ -307,7 +350,8 @@ export default function StatusPage() {
             </div>
           </div>
         </div>
-      </section>
+        </section>
+      )}
 
       {/* Contact Section */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">

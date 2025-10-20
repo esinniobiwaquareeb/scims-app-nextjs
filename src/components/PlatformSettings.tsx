@@ -29,7 +29,8 @@ import {
   Loader2,
   RefreshCw,
   Phone,
-  MessageCircle
+  MessageCircle,
+  ShieldOff
 } from 'lucide-react';
 interface PlatformSettingsProps {
   onBack: () => void;
@@ -70,6 +71,7 @@ interface PlatformSettingsData {
   platform_website?: string;
   enable_pay_on_delivery?: boolean;
   enable_online_payment?: boolean;
+  enable_platform_access?: boolean;
   payment_methods?: string[];
   supported_currencies: Currency[];
   supported_languages: Language[];
@@ -303,6 +305,24 @@ export const PlatformSettings: React.FC<PlatformSettingsProps> = ({ onBack }) =>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
+                  <p className="text-sm text-muted-foreground">Platform Access</p>
+                  <Badge variant={localSettings.enable_platform_access ? "secondary" : "outline"}>
+                    {localSettings.enable_platform_access ? 'Enabled' : 'Disabled'}
+                  </Badge>
+                </div>
+                {localSettings.enable_platform_access ? (
+                  <Shield className="w-8 h-8 text-green-600" />
+                ) : (
+                  <ShieldOff className="w-8 h-8 text-gray-600" />
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
                   <p className="text-sm text-muted-foreground">Version</p>
                   <p className="font-medium">{localSettings.platform_version}</p>
                 </div>
@@ -403,6 +423,19 @@ export const PlatformSettings: React.FC<PlatformSettingsProps> = ({ onBack }) =>
                     <Switch
                       checked={localSettings.maintenance_mode}
                       onCheckedChange={(checked) => handleInputChange('maintenance_mode', checked)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label>Platform Access</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Enable platform access for all users
+                      </p>
+                    </div>
+                    <Switch
+                      checked={localSettings.enable_platform_access}
+                      onCheckedChange={(checked) => handleInputChange('enable_platform_access', checked)}
                     />
                   </div>
                 </CardContent>

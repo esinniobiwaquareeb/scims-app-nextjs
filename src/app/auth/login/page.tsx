@@ -11,7 +11,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -30,25 +29,40 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [demoUsers, setDemoUsers] = useState<DemoUser[]>([]);
+  const [isDemoModeEnabled, setIsDemoModeEnabled] = useState(false);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const { login, isLoading } = useAuth();
   const router = useRouter();
 
-  // Load demo users from API
+  // Load platform settings and demo users
   useEffect(() => {
-    const loadDemoUsers = async () => {
+    const loadPlatformSettings = async () => {
       try {
-        const response = await authAPI.getDemoUsers();
-        if (response.success) {
-          setDemoUsers(response.users || []);
+        // Check if demo mode is enabled
+        const settingsResponse = await fetch('/api/platform/settings');
+        if (settingsResponse.ok) {
+          const settingsData = await settingsResponse.json();
+          const demoModeEnabled = settingsData.settings?.demo_mode === true;
+          setIsDemoModeEnabled(demoModeEnabled);
+          
+          // Only load demo users if demo mode is enabled
+          if (demoModeEnabled) {
+            const demoResponse = await authAPI.getDemoUsers();
+            if (demoResponse.success) {
+              setDemoUsers(demoResponse.users || []);
+            }
+          } else {
+            setDemoUsers([]);
+          }
         }
       } catch (error) {
-        console.error('Failed to load demo users:', error);
+        console.error('Failed to load platform settings:', error);
+        setIsDemoModeEnabled(false);
         setDemoUsers([]);
       }
     };
 
-    loadDemoUsers();
+    loadPlatformSettings();
   }, []);
 
   const validateForm = (username: string, password: string): string | null => {
@@ -78,13 +92,18 @@ export default function LoginPage() {
       } else {
         setError(result.error || "Login failed. Please try again.");
       }
-    } catch (error: unknown) {
-      console.error('Login error:', error);
+    } catch {
       setError("Login failed. Please try again.");
     }
   };
 
   const handleDemoLogin = async (demoUser: DemoUser) => {
+    // Check if demo mode is enabled
+    if (!isDemoModeEnabled) {
+      setError("Demo mode is currently disabled. Please use your regular credentials to login.");
+      return;
+    }
+
     setUsername(demoUser.username);
     setPassword('123456');
     setError("");
@@ -98,7 +117,7 @@ export default function LoginPage() {
       } else {
         setError("Demo login failed. Please try manual login or contact administrator.");
       }
-    } catch (error) {
+    } catch {
       setError("Demo login failed. Please try manual login or contact administrator.");
     }
   };
@@ -200,7 +219,7 @@ export default function LoginPage() {
             </Button>
           </div>
           
-          {demoUsers.length > 0 && (
+          {isDemoModeEnabled && demoUsers.length > 0 && (
             <div className="pt-2 border-t">
               <div className="mb-3">
                 <Alert className="py-2 bg-blue-50 border-blue-200">

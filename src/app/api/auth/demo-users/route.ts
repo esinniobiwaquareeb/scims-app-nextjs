@@ -3,6 +3,22 @@ import { supabase } from '@/lib/supabase/config';
 
 export async function GET() {
   try {
+    // Check if demo mode is enabled
+    const { data: platformSettings } = await supabase
+      .from('platform_setting')
+      .select('demo_mode')
+      .single();
+
+    const isDemoModeEnabled = platformSettings?.demo_mode === true;
+
+    // If demo mode is disabled, return empty array
+    if (!isDemoModeEnabled) {
+      return NextResponse.json({
+        success: true,
+        users: []
+      });
+    }
+
     const { data: users, error } = await supabase
       .from('user')
       .select('*')

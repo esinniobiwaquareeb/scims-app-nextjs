@@ -958,6 +958,7 @@ create table public.platform_setting (
   platform_website character varying(255) null default 'https://scims.app'::character varying,
   enable_pay_on_delivery boolean null default true,
   enable_online_payment boolean null default false,
+  enable_platform_access boolean null default true,
   payment_methods jsonb null default '["pay_on_delivery"]'::jsonb,
   created_at timestamp without time zone null default now(),
   updated_at timestamp without time zone null default now(),

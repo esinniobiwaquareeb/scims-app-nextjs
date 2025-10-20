@@ -136,6 +136,7 @@ export async function PUT(request: NextRequest) {
       platform_website,
       enable_pay_on_delivery,
       enable_online_payment,
+      enable_platform_access,
       payment_methods
     } = body;
 
@@ -179,6 +180,7 @@ export async function PUT(request: NextRequest) {
           platform_website,
           enable_pay_on_delivery,
           enable_online_payment,
+          enable_platform_access,
           payment_methods,
           updated_at: new Date().toISOString()
         })
@@ -219,6 +221,7 @@ export async function PUT(request: NextRequest) {
           platform_website,
           enable_pay_on_delivery,
           enable_online_payment,
+          enable_platform_access,
           payment_methods
         })
         .select()
