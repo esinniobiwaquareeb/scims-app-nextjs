@@ -44,7 +44,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="bg-background shadow-sm border-b border-border sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4 gap-4">
           <div className="flex items-center gap-4 min-w-0">
             {showBackButton && onBack && (

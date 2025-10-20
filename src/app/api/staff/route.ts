@@ -109,14 +109,6 @@ export async function GET(request: NextRequest) {
 
     // Apply pagination
     const paginatedStaff = transformedStaff.slice(offset, offset + limit);
-
-    // Debug logging
-    console.log('Staff API Debug:', {
-      totalStaff: transformedStaff.length,
-      sampleStaff: transformedStaff[0],
-      salesStats: userIdToStats
-    });
-
     return NextResponse.json({
       success: true,
       staff: paginatedStaff,
