@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { useActivityLogger } from '@/contexts/ActivityLogger';
-import { Header } from '@/components/common/Header';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,7 +49,7 @@ interface Store {
 }
 
 interface ProductSyncProps {
-  onBack: () => void;
+  onBack?: () => void; // Optional for backward compatibility
 }
 
 export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
@@ -199,18 +199,20 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
   // Check if user has access to this component
   if (!user || (user.role !== 'business_admin' && user.role !== 'superadmin')) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <p className="text-lg font-medium text-red-700 mb-2">Access Denied</p>
-          <p className="text-muted-foreground mb-4">
-            You don&apos;t have permission to access product synchronization.
-          </p>
-          <Button onClick={onBack} variant="outline">
-            Go Back
-          </Button>
+      <DashboardLayout
+        title="Product Synchronization"
+        subtitle="Access Denied"
+      >
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <AlertTriangle className="w-12 h-12 text-destructive mx-auto mb-4" />
+            <p className="text-lg font-medium text-destructive mb-2">Access Denied</p>
+            <p className="text-muted-foreground mb-4">
+              You don&apos;t have permission to access product synchronization.
+            </p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
@@ -529,41 +531,33 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading product sync...</p>
+      <DashboardLayout
+        title="Product Synchronization"
+        subtitle="Loading product sync..."
+      >
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading product sync...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header
-        title="Product Synchronization"
-        subtitle="Sync products across all stores in your business"
-        showBackButton
-        onBack={onBack}
-        showLogout={false}
-      >
-        <div className="flex">
-          <Button onClick={() => setShowSyncDialog(true)} disabled={selectedProducts.length === 0}>
-            <Copy className="w-4 h-4 mr-2" />
-            Sync Selected ({selectedProducts.length})
-          </Button>
-        </div>
-      </Header>
+    <DashboardLayout
+      title="Product Synchronization"
+      subtitle="Sync products across all stores in your business"
+    >
+      <div className="flex">
+        <Button onClick={() => setShowSyncDialog(true)} disabled={selectedProducts.length === 0}>
+          <Copy className="w-4 h-4 mr-2" />
+          Sync Selected ({selectedProducts.length})
+        </Button>
+      </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-              <p className="text-muted-foreground">Loading sync data...</p>
-            </div>
-          </div>
-        ) : error ? (
+      {error ? (
           <div className="text-center py-12">
             <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <p className="text-lg font-medium text-red-700 mb-2">Error Loading Data</p>
@@ -687,7 +681,6 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
             />
           </div>
         )}
-      </main>
 
       {/* Sync Dialog */}
       <Dialog open={showSyncDialog} onOpenChange={setShowSyncDialog}>
@@ -788,6 +781,6 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </DashboardLayout>
   );
 };

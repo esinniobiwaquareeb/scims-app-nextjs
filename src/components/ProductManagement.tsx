@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
-import { Header } from '@/components/common/Header';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/ui/button';
 
@@ -89,7 +89,7 @@ interface Brand {
 }
 
 interface ProductManagementProps {
-  onBack: () => void;
+  onBack?: () => void; // Optional for backward compatibility
 }
 
 export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) => {
@@ -742,28 +742,26 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading products...</p>
+      <DashboardLayout
+        title="Product Management"
+        subtitle="Loading products..."
+      >
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading products...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header 
-        title="Product Management"
-        subtitle={selectedStoreFilter === 'All' ? 'Managing inventory across all stores' : 
-                 currentStore ? `Managing inventory for ${currentStore.name}` : 'Manage inventory and product catalog'}
-        showBackButton
-        onBack={onBack}
-        showLogout={false}
-      >
-      </Header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <DashboardLayout
+      title="Product Management"
+      subtitle={selectedStoreFilter === 'All' ? 'Managing inventory across all stores' : 
+               currentStore ? `Managing inventory for ${currentStore.name}` : 'Manage inventory and product catalog'}
+    >
         {/* Success Message */}
         {!isMutating && !isRefetching && !error && (createProductMutation.isSuccess || updateProductMutation.isSuccess || deleteProductMutation.isSuccess) && (
           <Card className="mb-6 border-green-200 bg-green-50">
@@ -1499,7 +1497,6 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </main>
-    </div>
+    </DashboardLayout>
   );
 };

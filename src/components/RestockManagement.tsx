@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { useActivityLogger } from '@/contexts/ActivityLogger';
-import { Header } from '@/components/common/Header';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -91,7 +91,7 @@ interface Supplier {
 }
 
 interface RestockManagementProps {
-  onBack: () => void;
+  onBack?: () => void; // Optional for backward compatibility
 }
 
 export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) => {
@@ -385,17 +385,10 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header
-        title="Restock Management"
-        subtitle={`Manage inventory replenishment and restock orders${isAllStoresSelected ? ' (Select a store to view orders)' : ''}`}
-        showBackButton
-        onBack={onBack}
-        showLogout={false}
-      >
-      </Header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <DashboardLayout
+      title="Restock Management"
+      subtitle={`Manage inventory replenishment and restock orders${isAllStoresSelected ? ' (Select a store to view orders)' : ''}`}
+    >
         {/* Error Display */}
         {error && (
           <Card className="mb-6 border-red-200 bg-red-50">
@@ -666,7 +659,6 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
             </CardContent>
           </Card>
         </div>
-      </main>
 
       {/* Create Order Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -1016,6 +1008,6 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </DashboardLayout>
   );
 };

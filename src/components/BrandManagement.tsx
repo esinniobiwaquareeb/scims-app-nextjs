@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActivityLogger } from "@/contexts/ActivityLogger";
-import { Header } from "@/components/common/Header";
+import { DashboardLayout } from "@/components/common/DashboardLayout";
 import { DataTable } from "@/components/common/DataTable";
 
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,7 @@ import {
 } from "@/utils/hooks/brands";
 
 interface BrandManagementProps {
-  onBack: () => void;
+  onBack?: () => void; // Optional for backward compatibility
 }
 
 export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
@@ -366,28 +366,27 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
   // Show loading state while data is being fetched
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading brands...</p>
+      <DashboardLayout
+        title="Brand Management"
+        subtitle="Loading brands..."
+      >
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading brands...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header
-        title="Brand Management"
-        subtitle={`Manage product brands for ${
-          currentBusiness?.name || "your business"
-        }`}
-        showBackButton
-        onBack={onBack}
-        showLogout={false}
-      ></Header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <DashboardLayout
+      title="Brand Management"
+      subtitle={`Manage product brands for ${
+        currentBusiness?.name || "your business"
+      }`}
+    >
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Card>
@@ -874,7 +873,6 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </main>
-    </div>
+    </DashboardLayout>
   );
 };
