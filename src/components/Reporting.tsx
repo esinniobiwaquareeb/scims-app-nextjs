@@ -592,7 +592,14 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                 <Label>Date Range</Label>
                 <DatePickerWithRange
                   date={dateRange}
-                  onDateChange={(date) => date && setDateRange(date)}
+                  onDateChange={(date) => {
+                    if (date) {
+                      setDateRange({
+                        from: date.from ?? dateRange.from,
+                        to: date.to ?? dateRange.to,
+                      })
+                    }
+                  }}
                 />
               </div>
 
