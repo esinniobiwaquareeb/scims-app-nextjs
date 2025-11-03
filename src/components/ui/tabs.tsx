@@ -51,7 +51,7 @@ const TabsList = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "inline-flex h-10 items-center justify-center rounded-lg bg-gray-100/50 p-1",
+      "inline-flex h-10 items-center justify-center rounded-lg bg-muted p-1",
       className
     )}
     role="tablist"
@@ -77,11 +77,11 @@ const TabsTrigger = React.forwardRef<
       onClick={() => context.onValueChange?.(value)}
       className={cn(
         "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-all",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring",
         "disabled:pointer-events-none disabled:opacity-50",
         isActive 
-          ? "bg-white text-gray-900 shadow-sm" 
-          : "text-gray-600 hover:text-gray-900 hover:bg-white/50",
+          ? "bg-background text-foreground shadow-sm dark:bg-card dark:text-foreground" 
+          : "text-muted-foreground hover:text-foreground hover:bg-background/50 dark:hover:bg-card/50",
         className
       )}
       {...props}
@@ -107,7 +107,7 @@ const TabsContent = React.forwardRef<
       role="tabpanel"
       tabIndex={0}
       className={cn(
-        "mt-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500",
+        "mt-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring",
         className
       )}
       {...props}

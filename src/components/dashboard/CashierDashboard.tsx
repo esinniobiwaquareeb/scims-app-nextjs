@@ -448,7 +448,7 @@ export const CashierDashboard: React.FC = () => {
       searchable: true,
       render: (sale: Sale) => (
         <div className="text-right">
-          <p className="font-semibold text-green-600">
+          <p className="font-semibold text-green-600 dark:text-green-400">
             {formatCurrency(Number(sale.total_amount || sale.total || 0))}
           </p>
         </div>
@@ -536,7 +536,7 @@ export const CashierDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header 
         title="Cashier Dashboard"
         subtitle={`Welcome back, ${user?.name || user?.username}`}
@@ -558,9 +558,9 @@ export const CashierDashboard: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           {hasError && (
-            <Card className="border-red-200 bg-red-50">
+            <Card className="border-destructive/50 bg-destructive/10 dark:bg-destructive/20">
               <CardContent className="p-4">
-                <p className="text-red-800 text-sm">
+                <p className="text-destructive dark:text-destructive-foreground text-sm">
                   {hasError.message || 'Failed to load dashboard data'}
                 </p>
               </CardContent>
@@ -583,12 +583,12 @@ export const CashierDashboard: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Today&apos;s Sales</p>
-                        <p className="text-3xl font-bold text-green-600">{formatCurrency(overviewStats.totalSales)}</p>
+                        <p className="text-3xl font-bold text-green-600 dark:text-green-400">{formatCurrency(overviewStats.totalSales)}</p>
                         <p className="text-sm text-muted-foreground mt-1">
                           {overviewStats.transactionCount} transactions
                         </p>
                       </div>
-                      <DollarSign className="w-10 h-10 text-green-600" />
+                      <DollarSign className="w-10 h-10 text-green-600 dark:text-green-400" />
                     </div>
                   </CardContent>
                 </Card>
@@ -598,12 +598,12 @@ export const CashierDashboard: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Average Sale</p>
-                        <p className="text-3xl font-bold text-purple-600">{formatCurrency(overviewStats.averageTransaction)}</p>
+                        <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{formatCurrency(overviewStats.averageTransaction)}</p>
                         <p className="text-sm text-muted-foreground mt-1">
                           Per transaction
                         </p>
                       </div>
-                      <TrendingUp className="w-10 h-10 text-purple-600" />
+                      <TrendingUp className="w-10 h-10 text-purple-600 dark:text-purple-400" />
                     </div>
                   </CardContent>
                 </Card>
@@ -613,12 +613,12 @@ export const CashierDashboard: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Payment Methods</p>
-                        <p className="text-3xl font-bold text-blue-600">{overviewStats.cashTransactions + overviewStats.cardTransactions}</p>
+                        <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{overviewStats.cashTransactions + overviewStats.cardTransactions}</p>
                         <p className="text-sm text-muted-foreground mt-1">
                           {overviewStats.cashTransactions} cash, {overviewStats.cardTransactions} card
                         </p>
                       </div>
-                      <Receipt className="w-10 h-10 text-blue-600" />
+                      <Receipt className="w-10 h-10 text-blue-600 dark:text-blue-400" />
                     </div>
                   </CardContent>
                 </Card>
@@ -659,7 +659,7 @@ export const CashierDashboard: React.FC = () => {
                           {salesData.slice(0, 5).map(sale => (
                             <div 
                               key={sale.id} 
-                              className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group" 
+                              className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted transition-colors cursor-pointer group" 
                               onClick={() => handleSaleClick(sale)}
                             >
                               <div className="flex items-center gap-4">
@@ -791,14 +791,14 @@ export const CashierDashboard: React.FC = () => {
           {selectedSale && (
             <div className="space-y-6">
               {/* Sale Header */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                 <div>
                   <h3 className="font-semibold">Sale #{selectedSale.id.slice(-6)}</h3>
                   <p className="text-sm text-muted-foreground">
                     {formatDateTime(selectedSale.timestamp || selectedSale.transaction_date || selectedSale.created_at || new Date())}
                   </p>
                   {(selectedSale.applied_coupon_id || selectedSale.applied_promotion_id || selectedSale.discount_reason) && (
-                    <p className="text-xs text-green-600 mt-1">
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                       Discount: {selectedSale.applied_coupon?.code || selectedSale.applied_promotion?.name || selectedSale.discount_reason || 'Applied'}
                     </p>
                   )}
@@ -842,8 +842,8 @@ export const CashierDashboard: React.FC = () => {
                               className="w-12 h-12 rounded-lg object-cover"
                             />
                           ) : (
-                            <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                              <Package className="w-6 h-6 text-gray-400" />
+                            <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
+                              <Package className="w-6 h-6 text-muted-foreground" />
                             </div>
                           )}
                           <div>
@@ -856,7 +856,7 @@ export const CashierDashboard: React.FC = () => {
                         <div className="text-right">
                           <p className="font-semibold">{formatCurrency(item.total_price)}</p>
                           Discount: {item.discount_amount && item.discount_amount > 0 && (
-                            <p className="text-xs text-green-600">-{formatCurrency(item.discount_amount)}</p>
+                            <p className="text-xs text-green-600 dark:text-green-400">-{formatCurrency(item.discount_amount)}</p>
                           )}
                         </div>
                       </div>
@@ -866,7 +866,7 @@ export const CashierDashboard: React.FC = () => {
               )}
 
               {/* Totals */}
-              <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
+              <div className="space-y-3 p-4 bg-muted rounded-lg">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
                   <span>{formatCurrency(selectedSale.subtotal || 0)}</span>
@@ -880,7 +880,7 @@ export const CashierDashboard: React.FC = () => {
                 {(selectedSale.discount_amount || 0) > 0 && (
                   <div className="flex justify-between">
                     <span>Discount:</span>
-                    <span className="text-green-600">-{formatCurrency(selectedSale.discount_amount || 0)}</span>
+                    <span className="text-green-600 dark:text-green-400">-{formatCurrency(selectedSale.discount_amount || 0)}</span>
                   </div>
                 )}
                 <Separator />
