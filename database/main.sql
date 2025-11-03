@@ -538,6 +538,7 @@ create table public.business_setting (
   enable_menu_management boolean null default false,
   enable_ingredient_tracking boolean null default false,
   enable_public_store boolean null default false,
+  allow_variable_pricing boolean null default false,
   store_theme character varying(50) null default 'default'::character varying,
   store_banner_url text null,
   store_description text null,

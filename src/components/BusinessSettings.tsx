@@ -104,6 +104,7 @@ interface BusinessSettings {
   enable_menu_management?: boolean;
   enable_ingredient_tracking?: boolean;
   enable_public_store?: boolean;
+  allow_variable_pricing?: boolean;
   store_theme?: string;
   store_banner_url?: string;
   store_description?: string;
@@ -246,6 +247,7 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
     enable_menu_management: false,
     enable_ingredient_tracking: false,
     enable_public_store: false,
+    allow_variable_pricing: false,
     store_theme: 'default',
     store_banner_url: '',
     store_description: '',
@@ -941,6 +943,19 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
                         <Switch
                           checked={localSettings.allowReturns}
                           onCheckedChange={(checked) => setLocalSettings({...localSettings, allowReturns: checked})}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <Label>Allow Variable Pricing</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Allow customers to pay above or below the selling price on POS. When disabled, exact payment is required.
+                          </p>
+                        </div>
+                        <Switch
+                          checked={localSettings.allow_variable_pricing || false}
+                          onCheckedChange={(checked) => setLocalSettings({...localSettings, allow_variable_pricing: checked})}
                         />
                       </div>
                       

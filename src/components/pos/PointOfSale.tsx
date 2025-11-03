@@ -97,9 +97,16 @@ const WALK_IN_CUSTOMER: Customer = {
 };
 
 // Utility function for floating point comparison
-const isValidCashAmount = (cashAmount: string, total: number): boolean => {
+// When variable pricing is enabled, any amount is valid (including below total)
+// When variable pricing is disabled, cash must be >= total
+const isValidCashAmount = (cashAmount: string, total: number, allowVariablePricing: boolean = false): boolean => {
   const cash = parseFloat(cashAmount);
   if (isNaN(cash)) return false;
+  if (allowVariablePricing) {
+    // In variable pricing mode, any positive amount is valid
+    return cash > 0;
+  }
+  // In fixed pricing mode, cash must be >= total
   return cash >= (total - 0.001);
 };
 
@@ -131,6 +138,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
   
   // Derive business type and features from settings
   const businessType = businessSettings?.business_type || 'retail';
+  const allowVariablePricing = businessSettings?.allow_variable_pricing || false;
   // const isFeatureEnabled = (feature: string) => {
   //   if (!businessSettings) return false;
     
@@ -360,13 +368,18 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
   }, [calculateSubtotal, calculateDiscount, calculateTax]);
 
   const getChange = useCallback(() => {
+    // In variable pricing mode, no change - they pay exactly what they want
+    if (allowVariablePricing) {
+      return 0;
+    }
+    // In fixed pricing mode, calculate change normally
     if (paymentMethod === 'cash' && cashAmount) {
       const cash = parseFloat(cashAmount);
       const total = calculateTotal();
       return cash >= total ? cash - total : 0;
     }
     return 0;
-  }, [paymentMethod, cashAmount, calculateTotal]);
+  }, [paymentMethod, cashAmount, calculateTotal, allowVariablePricing]);
 
   // Cart operations
   const addToCart = useCallback((product: Product) => {
@@ -501,9 +514,41 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
     try {
       const subtotal = calculateSubtotal();
       const tax = calculateTax();
-      const total = calculateTotal();
+      const calculatedTotal = calculateTotal();
+      
+      // Calculate actual amount paid
       const cashAmountValue = parseFloat(cashAmount) || 0;
-      const change = paymentMethod === 'cash' ? Math.max(0, cashAmountValue - total) : 0;
+      const cardAmountValue = parseFloat(cardAmount) || 0;
+      
+      let actualAmountPaid: number;
+      let change = 0;
+      
+      if (allowVariablePricing) {
+        // In variable pricing mode: actual amount paid is what the customer decides to pay
+        if (paymentMethod === 'cash') {
+          actualAmountPaid = cashAmountValue;
+          change = 0; // No change in variable pricing - they pay exactly what they want
+        } else if (paymentMethod === 'card') {
+          actualAmountPaid = cardAmountValue;
+          change = 0;
+        } else { // mixed
+          actualAmountPaid = cashAmountValue + cardAmountValue;
+          change = 0;
+        }
+      } else {
+        // In fixed pricing mode: must pay calculated total or more
+        actualAmountPaid = calculatedTotal;
+        if (paymentMethod === 'cash') {
+          change = Math.max(0, cashAmountValue - calculatedTotal);
+        } else if (paymentMethod === 'mixed') {
+          change = Math.max(0, cashAmountValue - (calculatedTotal - cardAmountValue));
+        }
+      }
+
+      // Build notes with original calculated total if variable pricing is enabled
+      const notes = allowVariablePricing && Math.abs(actualAmountPaid - calculatedTotal) > 0.01
+        ? `Variable Pricing: Original Total ${formatCurrency(calculatedTotal)}, Actual Paid ${formatCurrency(actualAmountPaid)}`
+        : '';
 
       const saleData: SaleFormData = {
         store_id: currentStore.id,
@@ -513,16 +558,15 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
         subtotal: calculateSubtotal(),
         tax_amount: calculateTax(),
         discount_amount: calculateDiscount(),
-        total_amount: calculateTotal(),
+        total_amount: actualAmountPaid, // Use actual amount paid when variable pricing is enabled
         payment_method: paymentMethod === 'mixed' ? 
           (parseFloat(cashAmount) > parseFloat(cardAmount) ? 'cash' : 'card') : 
           paymentMethod,
         cash_received: paymentMethod === 'cash' ? cashAmountValue : 
           (paymentMethod === 'mixed' ? parseFloat(cashAmount) || 0 : undefined),
-        change_given: paymentMethod === 'cash' ? change : 
-          (paymentMethod === 'mixed' ? Math.max(0, parseFloat(cashAmount) - total) : 0),
+        change_given: change,
         status: 'completed',
-        notes: '',
+        notes: notes,
         transaction_date: new Date().toISOString(),
         applied_coupon_id: appliedDiscount?.type === 'coupon' ? appliedDiscount?.id : undefined,
         applied_promotion_id: appliedDiscount?.type === 'promotion' ? appliedDiscount?.id : undefined,
@@ -568,9 +612,26 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
         customerName: selectedCustomer?.id === 'walk-in' ? 'Walk-in Customer' : selectedCustomer?.name,
         customerPhone: selectedCustomer?.id === 'walk-in' ? '' : selectedCustomer?.phone,
         paymentMethod: paymentMethod === 'mixed' ? 
-          `${translateWrapper('pos.cash')} + ${translateWrapper('pos.cash')}` : 
+          `${translateWrapper('pos.cash')} + ${translateWrapper('pos.card')}` : 
           (paymentMethod === 'cash' ? translateWrapper('pos.cash') : translateWrapper('pos.card')),
-        receiptNumber: newSale.receipt_number || newSale.id.slice(-6),
+        receiptNumber: (() => {
+          // Clean up receipt number format - remove RCP- prefix and any random suffixes
+          const receiptNum = newSale.receipt_number || '';
+          if (receiptNum.startsWith('RCP-')) {
+            // Extract just the timestamp part and format as R + last 6 digits
+            const parts = receiptNum.replace('RCP-', '').split('-');
+            if (parts.length > 0 && parts[0]) {
+              const timestamp = parts[0];
+              return `R${timestamp.slice(-6)}`;
+            }
+          }
+          // If already starts with R, use as is (but limit length)
+          if (receiptNum.startsWith('R')) {
+            return receiptNum.length > 10 ? `R${receiptNum.slice(-6)}` : receiptNum;
+          }
+          // Fallback to last 6 digits of ID or timestamp
+          return `R${newSale.id?.slice(-6) || Date.now().toString().slice(-6)}`;
+        })(),
         items: cart.map(item => ({
           name: item.product.name,
           quantity: item.quantity,
@@ -582,33 +643,35 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
         taxRate: config?.taxRate || 0,
         discount: calculateDiscount(),
         discountReason: appliedDiscount ? `${appliedDiscount.type}: ${appliedDiscount.name}` : undefined,
-        total,
+        calculatedTotal: allowVariablePricing ? calculatedTotal : undefined, // Show original total when variable pricing
+        total: actualAmountPaid, // Actual amount paid is the total on receipt
         cashAmount: paymentMethod === 'cash' ? cashAmountValue : 
           (paymentMethod === 'mixed' ? parseFloat(cashAmount) || 0 : 0),
-        change: paymentMethod === 'cash' ? change : 
-          (paymentMethod === 'mixed' ? Math.max(0, parseFloat(cashAmount) - total) : 0),
+        cardAmount: paymentMethod === 'card' ? cardAmountValue : 
+          (paymentMethod === 'mixed' ? parseFloat(cardAmount) || 0 : 0),
+        change: change,
         transactionDate: new Date(),
-        currencySymbol: getCurrentCurrency() // Add currency symbol from SystemContext
+        currencySymbol: getCurrentCurrency(), // Add currency symbol from SystemContext
+        allowVariablePricing: allowVariablePricing // Pass flag to receipt for display
       };
 
       playSound('success');
       
       // Log activity with appropriate sale ID
       const saleId = newSale.id || newSale.offline_id;
-      logSaleCreated(saleData.receipt_number, total, {
+      logSaleCreated(saleData.receipt_number, actualAmountPaid, {
         saleId: saleId,
         items: cart.length,
         subtotal,
         tax,
-        total,
+        total: actualAmountPaid,
         paymentMethod: paymentMethod === 'mixed' ? 'mixed' : paymentMethod,
         customerId: selectedCustomer?.id !== 'walk-in' ? selectedCustomer?.id : '',
         customerName: selectedCustomer?.name,
         cash_received: paymentMethod === 'cash' ? cashAmountValue : 
           (paymentMethod === 'mixed' ? parseFloat(cashAmount) || 0 : ''),
-        change_given: paymentMethod === 'cash' ? change : 
-          (paymentMethod === 'mixed' ? Math.max(0, parseFloat(cashAmount) - total) : ''),
-        cardAmount: paymentMethod === 'card' ? parseFloat(cardAmount) || 0 : 
+        change_given: change,
+        cardAmount: paymentMethod === 'card' ? cardAmountValue : 
           (paymentMethod === 'mixed' ? parseFloat(cardAmount) || 0 : '')
       });
 
@@ -631,7 +694,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
       
       setLastSaleInfo({
         receiptNumber: receiptNumber,
-        total: total,
+        total: actualAmountPaid,
         items: cart.length,
         timestamp: new Date().toISOString()
       });
@@ -674,7 +737,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
     } finally {
       setIsProcessing(false);
     }
-  }, [currentStore?.id, currentStore?.name, cart, calculateSubtotal, calculateDiscount, calculateTax, calculateTotal, paymentMethod, cashAmount, cardAmount, selectedCustomer, storeConfig, user?.name, user?.id, translateWrapper, playSound, logSaleCreated, printReceipt, onSaleCompleted, processSaleMutation, refetchProducts, isSupplyMode, processSupplyOrder, getCurrentCurrency, appliedDiscount]);
+  }, [currentStore?.id, currentStore?.name, cart, calculateSubtotal, calculateDiscount, calculateTax, calculateTotal, paymentMethod, cashAmount, cardAmount, selectedCustomer, storeConfig, user?.name, user?.id, translateWrapper, playSound, logSaleCreated, printReceipt, onSaleCompleted, processSaleMutation, refetchProducts, isSupplyMode, processSupplyOrder, getCurrentCurrency, appliedDiscount, allowVariablePricing, formatCurrency]);
 
   // Customer operations
   const handleAddCustomer = useCallback(async () => {
@@ -931,6 +994,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
             lastSaleInfo={lastSaleInfo}
             cartSearchTerm={cartSearchTerm}
             isSupplyMode={isSupplyMode}
+            allowVariablePricing={allowVariablePricing}
             businessId={currentBusiness?.id}
             storeId={currentStore?.id}
             appliedDiscount={appliedDiscount}
@@ -952,7 +1016,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
             calculateTax={calculateTax}
             calculateTotal={calculateTotal}
             getChange={getChange}
-            isValidCashAmount={isValidCashAmount}
+            isValidCashAmount={(cashAmount: string, total: number) => isValidCashAmount(cashAmount, total, allowVariablePricing)}
             formatCurrency={formatCurrency}
             translate={translateWrapper}
           />

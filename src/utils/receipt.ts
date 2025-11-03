@@ -16,11 +16,14 @@ export interface ReceiptData {
   tax: number;
   discount?: number;
   discountReason?: string;
+  calculatedTotal?: number; // Original calculated total (for variable pricing)
   total: number;
   paymentMethod: string;
   cashAmount?: number;
+  cardAmount?: number;
   change?: number;
   currencySymbol?: string; // Add currency symbol for receipt display
+  allowVariablePricing?: boolean; // Flag to show variable pricing info
 }
 
 export interface StoreSettings {
@@ -250,14 +253,14 @@ export const generateReceiptHTML = (
         
         <!-- Items -->
         <div class="items-section">
-          <div class="item" style="font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 2px; margin-bottom: 3px; background-color: #f5f5f5; padding: 2px;">
-            <div class="item-name">ITEM</div>
-            <div class="item-details">QTY × PRICE = TOTAL</div>
+          <div style="display: flex; justify-content: space-between; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 4px; margin-bottom: 5px; background-color: #f5f5f5; padding: 4px 2px;">
+            <div style="flex: 1; margin-right: 10px; font-weight: 600; font-size: 11px;">ITEM</div>
+            <div style="text-align: right; white-space: nowrap; font-weight: 600; font-size: 11px;">QTY × PRICE = TOTAL</div>
           </div>
           ${receiptData.items?.map((item: { name: string; quantity: number; price: number; }) => `
-            <div class="item" style="border-bottom: 1px dotted #ccc;">
-              <div class="item-name">${item.name}</div>
-              <div class="item-details">${item.quantity} × ${formatAmount(item.price)} = ${formatAmount(item.quantity * item.price)}</div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px dotted #ccc; margin-bottom: 4px; padding-bottom: 4px; font-size: 12px; line-height: 1.4;">
+              <div style="flex: 1; margin-right: 10px; font-weight: 500; word-wrap: break-word; overflow-wrap: break-word; max-width: 60%;">${item.name}</div>
+              <div style="text-align: right; white-space: nowrap; font-weight: 500; flex-shrink: 0;">${item.quantity} × ${formatAmount(item.price)} = ${formatAmount(item.quantity * item.price)}</div>
             </div>
           `).join('') || ''}
         </div>
@@ -280,36 +283,62 @@ export const generateReceiptHTML = (
               <span>${formatAmount(receiptData.tax)}</span>
             </div>
           ` : ''}
-          <div class="total-row final">
-            <span>TOTAL:</span>
+          ${(() => {
+            // Only show Original Total if variable pricing is enabled AND amounts actually differ
+            const calculatedTotal = receiptData.calculatedTotal ?? 0;
+            const shouldShowOriginal = receiptData.allowVariablePricing && 
+                                     calculatedTotal > 0 &&
+                                     Math.abs(calculatedTotal - receiptData.total) > 0.01;
+            return shouldShowOriginal ? `
+              <div class="total-row" style="color: #666; font-size: 11px; margin-bottom: 2px;">
+                <span>Original Total:</span>
+                <span>${formatAmount(calculatedTotal)}</span>
+              </div>
+            ` : '';
+          })()}
+          <div class="total-row final" style="margin-top: ${(() => {
+            const calculatedTotal = receiptData.calculatedTotal ?? 0;
+            const shouldShowOriginal = receiptData.allowVariablePricing && 
+                                     calculatedTotal > 0 &&
+                                     Math.abs(calculatedTotal - receiptData.total) > 0.01;
+            return shouldShowOriginal ? '2px' : '4px';
+          })()};">
+            <span>TOTAL${(() => {
+              const calculatedTotal = receiptData.calculatedTotal ?? 0;
+              const shouldShowPaid = receiptData.allowVariablePricing && 
+                                    calculatedTotal > 0 &&
+                                    Math.abs(calculatedTotal - receiptData.total) > 0.01;
+              return shouldShowPaid ? ' (Paid)' : '';
+            })()}:</span>
             <span>${formatAmount(receiptData.total)}</span>
           </div>
         </div>
         
         <!-- Payment Info -->
-        ${(receiptData.cashAmount && receiptData.cashAmount > 0) ? `
-          <div class="payment-info">
-            <div class="payment-row">
-              <span>Payment Method:</span>
-              <span>${receiptData.paymentMethod}</span>
-            </div>
+        <div class="payment-info">
+          <div class="payment-row">
+            <span>Payment Method:</span>
+            <span>${receiptData.paymentMethod}</span>
+          </div>
+          ${receiptData.cashAmount && receiptData.cashAmount > 0 ? `
             <div class="payment-row">
               <span>Cash Received:</span>
               <span>${formatAmount(receiptData.cashAmount)}</span>
             </div>
+          ` : ''}
+          ${receiptData.cardAmount && receiptData.cardAmount > 0 ? `
+            <div class="payment-row">
+              <span>Card Amount:</span>
+              <span>${formatAmount(receiptData.cardAmount)}</span>
+            </div>
+          ` : ''}
+          ${receiptData.change && receiptData.change > 0 ? `
             <div class="payment-row">
               <span>Change:</span>
-              <span>${formatAmount(receiptData.change || 0)}</span>
+              <span>${formatAmount(receiptData.change)}</span>
             </div>
-          </div>
-        ` : `
-          <div class="payment-info">
-            <div class="payment-row">
-              <span>Payment Method:</span>
-              <span>${receiptData.paymentMethod}</span>
-            </div>
-          </div>
-        `}
+          ` : ''}
+        </div>
         
         <!-- Footer -->
         <div class="footer">

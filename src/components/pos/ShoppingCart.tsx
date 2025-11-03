@@ -61,6 +61,7 @@ interface ShoppingCartProps {
   lastSaleInfo: any;
   cartSearchTerm: string;
   isSupplyMode?: boolean;
+  allowVariablePricing?: boolean;
   businessId?: string;
   storeId?: string;
   appliedDiscount?: any;
@@ -104,6 +105,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   lastSaleInfo,
   cartSearchTerm,
   isSupplyMode = false,
+  allowVariablePricing = false,
   businessId,
   storeId,
   appliedDiscount,
@@ -432,6 +434,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
         showSaleSuccess={showSaleSuccess}
         lastSaleInfo={lastSaleInfo}
         isSupplyMode={isSupplyMode}
+        allowVariablePricing={allowVariablePricing}
         onSelectCustomer={onSelectCustomer}
         onClearCustomer={onClearCustomer}
         onPaymentMethodChange={onPaymentMethodChange}
