@@ -7,32 +7,22 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Header } from '@/components/common/Header';
 import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { StatsGrid } from '@/components/dashboard/StatsGrid';
 import { 
   Package, 
-  Users, 
-  Settings,
   BarChart3,
-  FileText,
-  Truck,
-  ShoppingCart,
   AlertTriangle,
   Loader2,
   DollarSign,
-  FolderOpen,
-  Tag,
-  UserCheck,
-  Shield,
-  RotateCcw
+  ArrowRight
 } from 'lucide-react';
 import { useStoreAdminDashboard } from '@/utils/hooks/useStoreAdminDashboard';
 
 
 
 export const StoreAdminDashboard: React.FC = () => {
-  const { user, logout, currentStore } = useAuth();
+  const { user, currentStore } = useAuth();
   const { formatCurrency } = useSystem();
   const router = useRouter();
 
@@ -94,24 +84,28 @@ export const StoreAdminDashboard: React.FC = () => {
                 </div>
               ) : dashboardData?.lowStockProducts && dashboardData.lowStockProducts.length > 0 ? (
                 <div className="space-y-3">
-                  {dashboardData.lowStockProducts.map((product) => (
-                    <div key={product.id} className="flex items-center justify-between p-4 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                          <Package className="w-5 h-5 text-orange-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{product.name}</p>
-                          <p className="text-xs text-orange-600">
-                            Stock: {product.stock_quantity} (Min: {product.min_stock_level})
-                          </p>
-                        </div>
+                  <div className="flex items-center justify-between p-4 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center shrink-0">
+                        <Package className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                       </div>
-                      <Badge variant="destructive" className="text-xs">
-                        Low Stock
-                      </Badge>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm text-foreground">Low Stock Products</p>
+                        <p className="text-xs text-orange-600 dark:text-orange-400">
+                          {dashboardData.lowStockProducts.length} product{dashboardData.lowStockProducts.length !== 1 ? 's' : ''} need attention at {currentStore?.name || 'this store'}
+                        </p>
+                      </div>
                     </div>
-                  ))}
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => router.push('/products')}
+                      className="ml-4 shrink-0"
+                    >
+                      View Inventory
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-8">
@@ -172,7 +166,17 @@ export const StoreAdminDashboard: React.FC = () => {
                     <BarChart3 className="w-8 h-8 text-muted-foreground" />
                   </div>
                   <p className="text-foreground font-medium">No recent activities</p>
-                  <p className="text-sm text-muted-foreground">Activities will appear here as you use the system</p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Activities will appear here as you use the system
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => router.push('/activity-logs')}
+                  >
+                    View Activity Logs
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
                 </div>
               )}
             </CardContent>

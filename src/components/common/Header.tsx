@@ -52,39 +52,41 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="bg-background shadow-sm border-b border-border sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4 gap-4">
-          <div className="flex items-center gap-4 min-w-0">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center py-3 sm:py-4 gap-2 sm:gap-4">
+          {/* Left Section - Title */}
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 pl-10 lg:pl-0">
             {showBackButton && onBack && (
-              <Button variant="outline" size="sm" onClick={onBack} className="shrink-0">
+              <Button variant="outline" size="sm" onClick={onBack} className="shrink-0 hidden sm:flex">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Back</span>
+                Back
               </Button>
             )}
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl font-semibold text-foreground truncate">{title}</h1>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base sm:text-lg lg:text-xl font-semibold text-foreground truncate">{title}</h1>
               {subtitle && (
-                <p className="text-sm text-muted-foreground truncate">{subtitle}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate hidden sm:block">{subtitle}</p>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-            
+          {/* Right Section - Store Selector, Actions, Profile */}
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 shrink-0">
+            {/* Store Selector - Hidden on very small screens */}
             {showStoreSelector && (
-              <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2 border border-border">
+              <div className="hidden sm:flex items-center gap-2 bg-muted rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 border border-border">
                 <Store className="w-4 h-4 text-muted-foreground shrink-0" />
                 <Select 
                   value={currentStore?.id || 'all'} 
                   onValueChange={handleStoreChange}
                 >
-                  <SelectTrigger className="border-0 shadow-none h-auto p-0 font-medium bg-transparent">
+                  <SelectTrigger className="border-0 shadow-none h-auto p-0 font-medium bg-transparent w-auto min-w-0">
                     <SelectValue placeholder="Select Store">
-                      <span className="truncate max-w-32 sm:max-w-none">
+                      <span className="truncate max-w-[100px] lg:max-w-none">
                         {currentStore?.name || (
-                          <span className="flex items-center gap-2 text-blue-600">
-                            <Building2 className="w-4 h-4" />
-                            All Stores
+                          <span className="flex items-center gap-1.5">
+                            <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <span className="hidden lg:inline">All Stores</span>
                           </span>
                         )}
                       </span>
@@ -115,32 +117,39 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             )}
 
-            {/* Store display for store admins (read-only) */}
+            {/* Store display for store admins - Hidden on mobile */}
             {user?.role === 'store_admin' && currentStore && (
-              <div className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2 border border-blue-200">
-                <Store className="w-4 h-4 text-blue-600 shrink-0" />
-                <span className="text-sm font-medium text-blue-700">
+              <div className="hidden sm:flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 border border-blue-200 dark:border-blue-800">
+                <Store className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-300 truncate max-w-[120px] lg:max-w-none">
                   {currentStore.name}
                 </span>
               </div>
             )}
             
-            {children}
+            {/* Header Actions */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {children}
+            </div>
             
+            {/* Profile Dropdown */}
             {showLogout && user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                    <Avatar className="h-8 w-8">
+                  <button 
+                    className="flex items-center gap-1.5 sm:gap-2 rounded-md px-1.5 sm:px-2 py-1.5 hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary shrink-0"
+                    aria-label="User menu"
+                  >
+                    <Avatar className="h-7 w-7 sm:h-8 sm:w-8 shrink-0">
                       <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
                         {user.name?.charAt(0)?.toUpperCase() || user.username?.charAt(0)?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="hidden sm:flex flex-col items-start">
-                      <span className="text-sm font-medium text-foreground">
+                    <div className="hidden md:flex flex-col items-start text-left">
+                      <span className="text-xs sm:text-sm font-medium text-foreground leading-tight">
                         {user.name || user.username}
                       </span>
-                      <span className="text-xs text-muted-foreground capitalize">
+                      <span className="text-[10px] sm:text-xs text-muted-foreground capitalize leading-tight">
                         {user.role?.replace('_', ' ')}
                       </span>
                     </div>
@@ -152,7 +161,7 @@ export const Header: React.FC<HeaderProps> = ({
                       <p className="text-sm font-medium leading-none">
                         {user.name || user.username}
                       </p>
-                      <p className="text-xs leading-none text-muted-foreground">
+                      <p className="text-xs leading-none text-muted-foreground truncate">
                         {user.email || user.username}
                       </p>
                     </div>

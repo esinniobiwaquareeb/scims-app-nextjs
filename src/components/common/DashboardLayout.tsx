@@ -36,15 +36,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             showLogout={true}
           >
             {headerActions || (
-              <div className="flex items-center gap-2">
-                <NotificationBell className="mr-2" />
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <NotificationBell className="sm:mr-2" />
                 <Button 
                   onClick={() => router.push('/pos')} 
                   variant="outline"
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-1.5 sm:gap-2"
                   size="sm"
                 >
-                  <ShoppingCart className="w-4 h-4" />
+                  <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   <span className="hidden sm:inline">Open POS</span>
                 </Button>
               </div>
@@ -53,7 +53,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         )}
         
         <main className="flex-1 overflow-auto">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="w-full max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
             {children}
           </div>
         </main>

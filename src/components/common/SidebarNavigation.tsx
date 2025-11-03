@@ -344,17 +344,17 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
   const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Logo/Brand Section */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center">
-            <Building2 className="w-6 h-6 text-white" />
+      <div className="p-3 sm:p-4 border-b border-border">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-brand-primary rounded-lg flex items-center justify-center shrink-0">
+            <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="font-semibold text-foreground truncate">SCIMS</h2>
+            <h2 className="text-sm sm:text-base font-semibold text-foreground truncate">SCIMS</h2>
             {currentStore ? (
-              <p className="text-xs text-muted-foreground truncate">{currentStore.name}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{currentStore.name}</p>
             ) : currentBusiness ? (
-              <p className="text-xs text-muted-foreground truncate">{currentBusiness.name}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{currentBusiness.name}</p>
             ) : null}
           </div>
         </div>
@@ -362,7 +362,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
 
       {/* Navigation */}
       <ScrollArea className="flex-1">
-        <nav className="p-4 space-y-2">
+        <nav className="p-3 sm:p-4 space-y-1.5 sm:space-y-2">
           {menuGroups.map((group) => {
             const groupHasActiveItem = group.items.some(item => 
               hasAccess(item) && isActive(item.href)
@@ -374,21 +374,21 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
                 <button
                   onClick={() => toggleGroup(group.title)}
                   className={cn(
-                    "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    "w-full flex items-center justify-between px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors",
                     "hover:bg-muted",
                     groupHasActiveItem && "bg-muted"
                   )}
                 >
                   <span className="capitalize text-muted-foreground">{group.title}</span>
                   {isExpanded ? (
-                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
                   ) : (
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
                   )}
                 </button>
 
                 {isExpanded && (
-                  <div className="ml-4 space-y-1 border-l border-border pl-4">
+                  <div className="ml-3 sm:ml-4 space-y-0.5 sm:space-y-1 border-l border-border pl-3 sm:pl-4">
                     {group.items
                       .filter(hasAccess)
                       .map((item) => {
@@ -401,23 +401,23 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
                             href={item.href}
                             onClick={() => setIsMobileOpen(false)}
                             className={cn(
-                              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                              "flex items-center gap-2 sm:gap-3 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition-colors",
                               "hover:bg-muted",
                               active && "bg-muted text-foreground font-medium"
                             )}
                           >
                             <Icon className={cn(
-                              "w-4 h-4 shrink-0",
+                              "w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0",
                               active ? "text-brand-primary" : "text-muted-foreground"
                             )} />
                             <span className={cn(
-                              "flex-1",
+                              "flex-1 truncate",
                               active ? "text-foreground" : "text-muted-foreground"
                             )}>
                               {item.title}
                             </span>
                             {item.badge && (
-                              <span className="px-2 py-0.5 text-xs bg-brand-primary/10 text-brand-primary rounded-full">
+                              <span className="px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs bg-brand-primary/10 text-brand-primary rounded-full shrink-0">
                                 {item.badge}
                               </span>
                             )}
@@ -436,22 +436,22 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
 
   return (
     <>
-      {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
+      {/* Mobile Menu Button - Positioned in header */}
+      <div className="lg:hidden fixed top-3 left-3 z-50">
         <Button
           variant="outline"
           size="icon"
           onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="bg-background"
+          className="bg-background h-8 w-8 shadow-sm"
         >
-          {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          {isMobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
         </Button>
       </div>
 
       {/* Mobile Overlay */}
       {isMobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          className="lg:hidden fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
@@ -459,18 +459,15 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-full w-64 bg-background border-r border-border z-50",
+          "fixed left-0 top-0 h-full w-64 sm:w-72 bg-background border-r border-border z-50",
           "transition-transform duration-300 ease-in-out",
-          "lg:translate-x-0",
-          isMobileOpen ? "translate-x-0" : "-translate-x-full",
+          "lg:relative lg:translate-x-0 lg:z-auto",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           className
         )}
       >
         {sidebarContent}
       </aside>
-
-      {/* Desktop Spacer */}
-      <div className="hidden lg:block w-64 flex-shrink-0" />
     </>
   );
 };
