@@ -244,7 +244,7 @@ export const generateReceiptHTML = (
         </div>
         
         <!-- Receipt Info -->
-        <div class="receipt-info">
+        <div class="receipt-info" style="margin-bottom: 8px; border-bottom: 1px dashed #000; padding-bottom: 6px;">
           <div class="receipt-number">Receipt #: ${receiptData.receiptNumber}</div>
           <div class="cashier-info">Cashier: ${receiptData.cashierName || 'Unknown'}</div>
           ${receiptData.customerName && receiptData.customerName !== 'Walk-in Customer' ? 
@@ -253,32 +253,34 @@ export const generateReceiptHTML = (
         
         <!-- Items -->
         <div class="items-section">
-          <div style="display: flex; justify-content: space-between; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 4px; margin-bottom: 5px; background-color: #f5f5f5; padding: 4px 2px;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 4px; margin-bottom: 6px; background-color: #f5f5f5; padding: 4px 2px;">
             <div style="flex: 1; margin-right: 10px; font-weight: 600; font-size: 11px;">ITEM</div>
             <div style="text-align: right; white-space: nowrap; font-weight: 600; font-size: 11px;">QTY × PRICE = TOTAL</div>
           </div>
           ${receiptData.items?.map((item: { name: string; quantity: number; price: number; }) => `
-            <div style="display: flex; justify-content: space-between; border-bottom: 1px dotted #ccc; margin-bottom: 4px; padding-bottom: 4px; font-size: 12px; line-height: 1.4;">
-              <div style="flex: 1; margin-right: 10px; font-weight: 500; word-wrap: break-word; overflow-wrap: break-word; max-width: 60%;">${item.name}</div>
-              <div style="text-align: right; white-space: nowrap; font-weight: 500; flex-shrink: 0;">${item.quantity} × ${formatAmount(item.price)} = ${formatAmount(item.quantity * item.price)}</div>
+            <div style="display: block; border-bottom: 1px dotted #ccc; margin-bottom: 5px; padding-bottom: 5px; font-size: 12px; line-height: 1.5; page-break-inside: avoid;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="flex: 1; margin-right: 10px; font-weight: 500; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; hyphens: auto; min-width: 0;">${item.name}</div>
+                <div style="text-align: right; white-space: nowrap; font-weight: 500; flex-shrink: 0; margin-left: 5px;">${item.quantity} × ${formatAmount(item.price)} = ${formatAmount(item.quantity * item.price)}</div>
+              </div>
             </div>
           `).join('') || ''}
         </div>
         
         <!-- Totals -->
         <div class="totals-section">
-          <div class="total-row">
+          <div class="total-row" style="margin-bottom: 3px;">
             <span>Subtotal:</span>
             <span>${formatAmount(receiptData.subtotal)}</span>
           </div>
           ${receiptData.discount && receiptData.discount > 0 ? `
-            <div class="total-row" style="color: #28a745; font-weight: bold;">
+            <div class="total-row" style="color: #28a745; font-weight: bold; margin-bottom: 3px;">
               <span>Discount${receiptData.discountReason ? ` (${receiptData.discountReason})` : ''}:</span>
               <span>-${formatAmount(receiptData.discount)}</span>
             </div>
           ` : ''}
           ${receiptData.tax > 0 ? `
-            <div class="total-row">
+            <div class="total-row" style="margin-bottom: 3px;">
               <span>Tax:</span>
               <span>${formatAmount(receiptData.tax)}</span>
             </div>
@@ -290,7 +292,7 @@ export const generateReceiptHTML = (
                                      calculatedTotal > 0 &&
                                      Math.abs(calculatedTotal - receiptData.total) > 0.01;
             return shouldShowOriginal ? `
-              <div class="total-row" style="color: #666; font-size: 11px; margin-bottom: 2px;">
+              <div class="total-row" style="color: #666; font-size: 11px; margin-bottom: 3px; padding-bottom: 2px;">
                 <span>Original Total:</span>
                 <span>${formatAmount(calculatedTotal)}</span>
               </div>
@@ -301,7 +303,7 @@ export const generateReceiptHTML = (
             const shouldShowOriginal = receiptData.allowVariablePricing && 
                                      calculatedTotal > 0 &&
                                      Math.abs(calculatedTotal - receiptData.total) > 0.01;
-            return shouldShowOriginal ? '2px' : '4px';
+            return shouldShowOriginal ? '4px' : '6px';
           })()};">
             <span>TOTAL${(() => {
               const calculatedTotal = receiptData.calculatedTotal ?? 0;
