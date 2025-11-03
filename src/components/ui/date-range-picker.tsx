@@ -1,18 +1,19 @@
 import * as React from "react"
 import { cn } from "./utils"
-import { DateRange } from "react-day-picker"
+import { Input } from "./input"
+import { Calendar } from "lucide-react"
 
 export interface DatePickerWithRangeProps
   extends React.HTMLAttributes<HTMLDivElement> {
-  date?: DateRange
-  onDateChange?: (date: DateRange) => void
+  date?: { from?: Date; to?: Date }
+  onDateChange?: (date: { from?: Date; to?: Date }) => void
   placeholder?: string
 }
 
 const DatePickerWithRange = React.forwardRef<
   HTMLDivElement,
   DatePickerWithRangeProps
->(({ className, date, onDateChange, placeholder, ...props }, ref) => {
+>(({ className, date, onDateChange, ...props }, ref) => {
   const [fromDate, setFromDate] = React.useState<Date | undefined>(date?.from)
   const [toDate, setToDate] = React.useState<Date | undefined>(date?.to)
 
@@ -21,44 +22,59 @@ const DatePickerWithRange = React.forwardRef<
     if (date?.to) setToDate(date.to)
   }, [date])
 
+  const formatDateForInput = (date: Date | undefined): string => {
+    if (!date) return ''
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   const handleFromChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const date = e.target.value ? new Date(e.target.value) : undefined
-    setFromDate(date)
-    if (date && toDate && onDateChange) {
-      onDateChange({ from: date, to: toDate })
+    const newDate = e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined
+    setFromDate(newDate)
+    if (newDate && toDate && onDateChange) {
+      onDateChange({ from: newDate, to: toDate })
+    } else if (newDate && !toDate && onDateChange) {
+      onDateChange({ from: newDate, to: undefined })
     }
   }
 
   const handleToChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const date = e.target.value ? new Date(e.target.value) : undefined
-    setToDate(date)
-    if (fromDate && date && onDateChange) {
-      onDateChange({ from: fromDate, to: date })
+    const newDate = e.target.value ? new Date(e.target.value + 'T23:59:59') : undefined
+    setToDate(newDate)
+    if (fromDate && newDate && onDateChange) {
+      onDateChange({ from: fromDate, to: newDate })
+    } else if (fromDate && !newDate && onDateChange) {
+      onDateChange({ from: fromDate, to: undefined })
     }
   }
 
   return (
     <div
       ref={ref}
-      className={cn("flex items-center space-x-2", className)}
+      className={cn("flex items-center gap-2", className)}
       {...props}
     >
-      <div className="flex flex-col space-y-1">
-        <label className="text-sm font-medium">From</label>
-        <input
+      <div className="relative flex-1">
+        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Input
           type="date"
-          value={fromDate?.toISOString().split('T')[0] || ''}
+          value={formatDateForInput(fromDate)}
           onChange={handleFromChange}
-          className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="pl-10"
+          placeholder="From"
         />
       </div>
-      <div className="flex flex-col space-y-1">
-        <label className="text-sm font-medium">To</label>
-        <input
+      <span className="text-muted-foreground text-sm shrink-0">to</span>
+      <div className="relative flex-1">
+        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Input
           type="date"
-          value={toDate?.toISOString().split('T')[0] || ''}
+          value={formatDateForInput(toDate)}
           onChange={handleToChange}
-          className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="pl-10"
+          placeholder="To"
         />
       </div>
     </div>

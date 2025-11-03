@@ -56,8 +56,15 @@ export const authAPI = {
       localStorage.removeItem('scims_business');
       localStorage.removeItem('scims_store');
       
-      // Also clear the cookie
-      document.cookie = 'scims_auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      // Clear session storage as well
+      sessionStorage.clear();
+      
+      // Clear cookies - ensure proper cleanup
+      const cookieName = 'scims_auth_token';
+      const expireDate = 'Thu, 01 Jan 1970 00:00:00 UTC';
+      
+      // Clear with root path
+      document.cookie = `${cookieName}=; expires=${expireDate}; path=/;`;
     }
   },
 

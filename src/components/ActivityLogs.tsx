@@ -14,7 +14,6 @@ import { Badge } from '@/components/ui/badge';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from 'sonner';
 import { 
   Activity, 
   Search, 
@@ -25,7 +24,6 @@ import {
   CheckCircle,
   Info,
   XCircle,
-  RefreshCw,
   Calendar,
   User,
   Shield,
@@ -52,7 +50,7 @@ interface ActivityLog {
   metadata?: Record<string, unknown>;
 }
 
-export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
+export const ActivityLogs: React.FC<ActivityLogsProps> = () => {
   const { user, currentBusiness, currentStore } = useAuth();
   const { formatDate } = useSystem();
   
@@ -112,10 +110,14 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
   const uniqueUsers = useMemo(() => ['All', ...Array.from(new Set(logs.map((log: ActivityLog) => log.userName)))], [logs]);
 
   // Refresh data
-  const handleRefresh = async () => {
-    setLastRefresh(new Date());
-    await refetch();
-  };
+  React.useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      setLastRefresh(new Date());
+      refetch();
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(refreshInterval);
+  }, [refetch]);
 
   // Get severity styling
   const getSeverityIcon = (severity: string) => {
@@ -174,7 +176,7 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
         userRole: user?.role
       });
       setShowClearDialog(false);
-    } catch (error) {
+    } catch {
       // Error is handled by the mutation hook
     }
   };
@@ -426,13 +428,16 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
                   Filters & Search
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                   <div className="xl:col-span-2">
-                    <Label>Search</Label>
+                    <Label htmlFor="search" className="mb-2 block">
+                      Search
+                    </Label>
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                       <Input
+                        id="search"
                         placeholder="Search activities, users, descriptions..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -441,8 +446,10 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
                     </div>
                   </div>
 
-                  <div>
-                    <Label>Date Range</Label>
+                  <div className="xl:col-span-2">
+                    <Label htmlFor="date-range" className="mb-2 block">
+                      Date Range
+                    </Label>
                     <DatePickerWithRange
                       date={dateRange}
                       onDateChange={(date) => {
@@ -455,9 +462,11 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
                   </div>
 
                   <div>
-                    <Label>Module</Label>
+                    <Label htmlFor="module" className="mb-2 block">
+                      Module
+                    </Label>
                     <Select value={selectedModule} onValueChange={setSelectedModule}>
-                      <SelectTrigger>
+                      <SelectTrigger id="module">
                         <SelectValue placeholder="All modules" />
                       </SelectTrigger>
                       <SelectContent>
@@ -471,9 +480,11 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
                   </div>
 
                   <div>
-                    <Label>Action</Label>
+                    <Label htmlFor="action" className="mb-2 block">
+                      Action
+                    </Label>
                     <Select value={selectedAction} onValueChange={setSelectedAction}>
-                      <SelectTrigger>
+                      <SelectTrigger id="action">
                         <SelectValue placeholder="All actions" />
                       </SelectTrigger>
                       <SelectContent>
@@ -487,9 +498,11 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
                   </div>
 
                   <div>
-                    <Label>User</Label>
+                    <Label htmlFor="user" className="mb-2 block">
+                      User
+                    </Label>
                     <Select value={selectedUser} onValueChange={setSelectedUser}>
-                      <SelectTrigger>
+                      <SelectTrigger id="user">
                         <SelectValue placeholder="All users" />
                       </SelectTrigger>
                       <SelectContent>

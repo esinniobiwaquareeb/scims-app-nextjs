@@ -173,7 +173,11 @@ export const Header: React.FC<HeaderProps> = ({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
                     variant="destructive"
-                    onClick={() => logout()}
+                    onClick={async () => {
+                      await logout();
+                      // Force a hard redirect to clear all client-side state and ensure proper logout
+                      window.location.href = '/auth/login';
+                    }}
                   >
                     <LogOut className="w-4 h-4 mr-2" />
                     <span>Logout</span>
