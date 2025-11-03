@@ -717,20 +717,20 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
         subtitle="Loading sales report..."
       >
         <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading sales report...</p>
-          </div>
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading sales report...</p>
         </div>
+      </div>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout
-      title={translate('sales.report') || 'Sales Report'}
-      subtitle={translate('sales.analytics') || 'Comprehensive sales analytics and insights'}
-    >
+        title={translate('sales.report') || 'Sales Report'}
+        subtitle={translate('sales.analytics') || 'Comprehensive sales analytics and insights'}
+      >
         {/* Store/Business Indicator */}
         {user?.role === 'store_admin' && currentStore && (
           <Card className="mb-6 border-blue-200 bg-blue-50">

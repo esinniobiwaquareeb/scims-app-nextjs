@@ -367,11 +367,11 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
         subtitle="Loading reports and analytics..."
       >
         <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading reports and analytics...</p>
-          </div>
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading reports and analytics...</p>
         </div>
+      </div>
       </DashboardLayout>
     );
   }
@@ -385,11 +385,11 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
           'All Stores - Comprehensive business insights'
       }
       headerActions={
-        <div className="flex gap-2">
-          {/* Store Selector */}
-          {currentBusiness && currentBusiness.stores.length > 0 && user?.role !== 'cashier' && user?.role !== 'store_admin' && (
-            <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2 border border-border">
-              <Store className="w-4 h-4 text-muted-foreground shrink-0" />
+            <div className="flex gap-2">
+              {/* Store Selector */}
+              {currentBusiness && currentBusiness.stores.length > 0 && user?.role !== 'cashier' && user?.role !== 'store_admin' && (
+                <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2 border border-border">
+                  <Store className="w-4 h-4 text-muted-foreground shrink-0" />
                   <Select 
                     value={reportingStoreId || 'all'} 
                     onValueChange={(value) => {
@@ -461,7 +461,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                 <Download className="w-4 h-4 mr-2" />
                 Export CSV
               </Button>
-        </div>
+            </div>
       }
     >
         {/* Error Display */}

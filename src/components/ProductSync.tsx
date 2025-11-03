@@ -204,12 +204,12 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
         subtitle="Access Denied"
       >
         <div className="flex items-center justify-center py-12">
-          <div className="text-center">
+        <div className="text-center">
             <AlertTriangle className="w-12 h-12 text-destructive mx-auto mb-4" />
             <p className="text-lg font-medium text-destructive mb-2">Access Denied</p>
-            <p className="text-muted-foreground mb-4">
-              You don&apos;t have permission to access product synchronization.
-            </p>
+          <p className="text-muted-foreground mb-4">
+            You don&apos;t have permission to access product synchronization.
+          </p>
           </div>
         </div>
       </DashboardLayout>
@@ -536,26 +536,26 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
         subtitle="Loading product sync..."
       >
         <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading product sync...</p>
-          </div>
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading product sync...</p>
         </div>
+      </div>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout
-      title="Product Synchronization"
-      subtitle="Sync products across all stores in your business"
-    >
-      <div className="flex">
-        <Button onClick={() => setShowSyncDialog(true)} disabled={selectedProducts.length === 0}>
-          <Copy className="w-4 h-4 mr-2" />
-          Sync Selected ({selectedProducts.length})
-        </Button>
-      </div>
+        title="Product Synchronization"
+        subtitle="Sync products across all stores in your business"
+      >
+        <div className="flex">
+          <Button onClick={() => setShowSyncDialog(true)} disabled={selectedProducts.length === 0}>
+            <Copy className="w-4 h-4 mr-2" />
+            Sync Selected ({selectedProducts.length})
+          </Button>
+        </div>
 
       {error ? (
           <div className="text-center py-12">

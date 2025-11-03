@@ -504,21 +504,21 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
         title="Business Settings"
         subtitle="Access denied"
       >
-        <Card>
-          <CardContent className="p-8 text-center">
-            <Shield className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Access Denied</h3>
-            <p className="text-muted-foreground">Only business administrators can access business settings.</p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Shield className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">Access Denied</h3>
+              <p className="text-muted-foreground">Only business administrators can access business settings.</p>
+            </CardContent>
+          </Card>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout
-      title="Business Settings"
-      subtitle={`Configure business-wide settings for ${currentBusiness.name}`}
+        title="Business Settings"
+        subtitle={`Configure business-wide settings for ${currentBusiness.name}`}
       headerActions={
         <div className="flex gap-2">
           <Button 

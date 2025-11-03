@@ -747,21 +747,21 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
         subtitle="Loading products..."
       >
         <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading products...</p>
-          </div>
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading products...</p>
         </div>
+      </div>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout
-      title="Product Management"
-      subtitle={selectedStoreFilter === 'All' ? 'Managing inventory across all stores' : 
-               currentStore ? `Managing inventory for ${currentStore.name}` : 'Manage inventory and product catalog'}
-    >
+        title="Product Management"
+        subtitle={selectedStoreFilter === 'All' ? 'Managing inventory across all stores' : 
+                 currentStore ? `Managing inventory for ${currentStore.name}` : 'Manage inventory and product catalog'}
+      >
         {/* Success Message */}
         {!isMutating && !isRefetching && !error && (createProductMutation.isSuccess || updateProductMutation.isSuccess || deleteProductMutation.isSuccess) && (
           <Card className="mb-6 border-green-200 bg-green-50">

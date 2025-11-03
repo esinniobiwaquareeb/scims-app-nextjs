@@ -481,9 +481,9 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
 
   return (
     <DashboardLayout
-      title={translate('management.suppliers')}
-      subtitle="Manage suppliers for your business"
-    >
+        title={translate('management.suppliers')}
+        subtitle="Manage suppliers for your business"
+      >
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>

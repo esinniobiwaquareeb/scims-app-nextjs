@@ -112,7 +112,7 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = () => {
   // Refresh data
   React.useEffect(() => {
     const refreshInterval = setInterval(() => {
-      setLastRefresh(new Date());
+    setLastRefresh(new Date());
       refetch();
     }, 30000); // Refresh every 30 seconds
 
@@ -281,28 +281,28 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = () => {
   if (isLoading) {
     return (
       <DashboardLayout
-        title="Activity Logs"
-        subtitle="Loading..."
+          title="Activity Logs"
+          subtitle="Loading..."
       >
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          {[...Array(5)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <Skeleton className="h-8 w-16 mb-2" />
-                <Skeleton className="h-6 w-12" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <Skeleton className="h-96 w-full" />
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+            {[...Array(5)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <Skeleton className="h-8 w-16 mb-2" />
+                  <Skeleton className="h-6 w-12" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <Skeleton className="h-96 w-full" />
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout
-      title="Activity Logs"
-      subtitle={`System activity and audit trail${currentStore ? ` for ${currentStore.name}` : ''}`}
+        title="Activity Logs"
+        subtitle={`System activity and audit trail${currentStore ? ` for ${currentStore.name}` : ''}`}
       headerActions={
         <div className="flex gap-2">
           <Button variant="outline" onClick={exportLogs}>

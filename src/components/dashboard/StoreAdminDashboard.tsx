@@ -37,9 +37,9 @@ export const StoreAdminDashboard: React.FC = () => {
 
   return (
     <DashboardLayout
-      title="Store Admin Dashboard"
-      subtitle={`Welcome back, ${user?.name || user?.username} • Managing: ${currentStore?.name || 'Store'}`}
-    >
+        title="Store Admin Dashboard"
+        subtitle={`Welcome back, ${user?.name || user?.username} • Managing: ${currentStore?.name || 'Store'}`}
+      >
         <div className="space-y-8">
           {/* Stats Grid */}
           {isLoading ? (
@@ -88,12 +88,12 @@ export const StoreAdminDashboard: React.FC = () => {
                     <div className="flex items-center gap-3 flex-1">
                       <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center shrink-0">
                         <Package className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                      </div>
+                        </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm text-foreground">Low Stock Products</p>
                         <p className="text-xs text-orange-600 dark:text-orange-400">
                           {dashboardData.lowStockProducts.length} product{dashboardData.lowStockProducts.length !== 1 ? 's' : ''} need attention at {currentStore?.name || 'this store'}
-                        </p>
+                          </p>
                       </div>
                     </div>
                     <Button 

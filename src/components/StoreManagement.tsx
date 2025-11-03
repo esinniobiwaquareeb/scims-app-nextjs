@@ -409,9 +409,9 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
 
   return (
     <DashboardLayout
-      title="Store Management"
-      subtitle={`Manage stores for ${currentBusiness?.name || 'your business'}`}
-    >
+        title="Store Management"
+        subtitle={`Manage stores for ${currentBusiness?.name || 'your business'}`}
+      >
       {/* Add Store Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-2xl">

@@ -371,21 +371,21 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
         subtitle="Loading brands..."
       >
         <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading brands...</p>
-          </div>
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading brands...</p>
         </div>
+      </div>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout
-      title="Brand Management"
-      subtitle={`Manage product brands for ${
-        currentBusiness?.name || "your business"
-      }`}
+        title="Brand Management"
+        subtitle={`Manage product brands for ${
+          currentBusiness?.name || "your business"
+        }`}
     >
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">

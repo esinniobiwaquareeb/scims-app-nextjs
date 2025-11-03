@@ -66,19 +66,19 @@ export const BusinessAdminDashboard: React.FC = () => {
 
   return (
     <DashboardLayout
-      title="Business Admin Dashboard"
-      subtitle={`Welcome back, ${user?.name || user?.username} • ${businessTypeDisplay.label}`}
+        title="Business Admin Dashboard"
+        subtitle={`Welcome back, ${user?.name || user?.username} • ${businessTypeDisplay.label}`}
       headerActions={
         <>
           {/* Business Type Indicator - Hidden on mobile */}
-          {user?.role === 'business_admin' && currentBusiness && (
+        {user?.role === 'business_admin' && currentBusiness && (
             <div className="hidden md:flex items-center gap-2 sm:gap-3 lg:gap-4 bg-muted rounded-lg px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-2.5 border border-border">
               <span className="text-base sm:text-lg">{businessTypeDisplay.icon}</span>
               <span className="text-xs sm:text-sm font-medium text-foreground whitespace-nowrap">
-                {businessTypeDisplay.label}
-              </span>
-            </div>
-          )}
+              {businessTypeDisplay.label}
+            </span>
+          </div>
+        )}
           <Button 
             onClick={() => router.push('/pos')} 
             variant="outline"

@@ -716,9 +716,9 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
 
   return (
     <DashboardLayout
-      title="Cashier Management"
-      subtitle={`Manage cashiers${currentStore ? ` for ${currentStore.name}` : ''}`}
-    >
+        title="Cashier Management"
+        subtitle={`Manage cashiers${currentStore ? ` for ${currentStore.name}` : ''}`}
+      >
       {/* Cashier Credentials Modal */}
       <Dialog open={isCredentialsModalOpen} onOpenChange={setIsCredentialsModalOpen}>
         <DialogContent className="max-w-md">

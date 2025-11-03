@@ -636,11 +636,11 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
 
   return (
     <DashboardLayout
-      title="Staff Management"
-      subtitle={`Manage staff members${
-        currentStore ? ` for ${currentStore.name}` : ""
-      }`}
-    >
+        title="Staff Management"
+        subtitle={`Manage staff members${
+          currentStore ? ` for ${currentStore.name}` : ""
+        }`}
+      >
         {staffError && (
           <Card className="mb-6 border-destructive bg-destructive/10">
             <CardContent className="p-4">

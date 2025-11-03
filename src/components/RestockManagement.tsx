@@ -386,9 +386,9 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
 
   return (
     <DashboardLayout
-      title="Restock Management"
-      subtitle={`Manage inventory replenishment and restock orders${isAllStoresSelected ? ' (Select a store to view orders)' : ''}`}
-    >
+        title="Restock Management"
+        subtitle={`Manage inventory replenishment and restock orders${isAllStoresSelected ? ' (Select a store to view orders)' : ''}`}
+      >
         {/* Error Display */}
         {error && (
           <Card className="mb-6 border-red-200 bg-red-50">

@@ -256,12 +256,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     ? 'text-green-700 bg-green-50 border border-green-200'
                     : isVariablePricingEnabled
                       ? 'text-blue-700 bg-blue-50 border border-blue-200'
-                      : 'text-red-700 bg-red-50 border border-red-200'
+                    : 'text-red-700 bg-red-50 border border-red-200'
                 }`}>
                   {formatCurrency(parseFloat(cardAmount) || 0)}
                   {!isVariablePricingEnabled && Math.abs(parseFloat(cardAmount) - calculateTotal()) > 0.01 && (
                     <div className="text-xs mt-1">
-                      {formatCurrency(parseFloat(cardAmount) || 0)} / {formatCurrency(calculateTotal())}
+                  {formatCurrency(parseFloat(cardAmount) || 0)} / {formatCurrency(calculateTotal())}
                     </div>
                   )}
                   {isVariablePricingEnabled && Math.abs(parseFloat(cardAmount) - calculateTotal()) > 0.01 && (
@@ -301,10 +301,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     <>
                       <div className={`text-sm font-medium ${getChange() >= 0 ? 'text-green-700' : 'text-orange-700'}`}>
                         {getChange() >= 0 ? `Change: ${formatCurrency(getChange())}` : `Short: ${formatCurrency(Math.abs(getChange()))}`}
-                      </div>
-                      {getChange() > 0 && (
-                        <div className="text-xs text-green-600 mt-1">
-                          💰 Ready to give {formatCurrency(getChange())} back
+                  </div>
+                  {getChange() > 0 && (
+                    <div className="text-xs text-green-600 mt-1">
+                      💰 Ready to give {formatCurrency(getChange())} back
                         </div>
                       )}
                       {getChange() < 0 && (
@@ -341,11 +341,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       // In fixed pricing mode, auto-adjust card amount to match total
                       // In variable pricing mode, allow independent amounts
                       if (!isVariablePricingEnabled) {
-                        if (cashValue && parseFloat(cashValue) < calculateTotal()) {
-                          const remaining = calculateTotal() - parseFloat(cashValue);
-                          onCardAmountChange(remaining.toFixed(2));
-                        } else if (cashValue && parseFloat(cashValue) >= calculateTotal()) {
-                          onCardAmountChange('0.00');
+                      if (cashValue && parseFloat(cashValue) < calculateTotal()) {
+                        const remaining = calculateTotal() - parseFloat(cashValue);
+                        onCardAmountChange(remaining.toFixed(2));
+                      } else if (cashValue && parseFloat(cashValue) >= calculateTotal()) {
+                        onCardAmountChange('0.00');
                         }
                       }
                     }}
@@ -378,11 +378,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       // In fixed pricing mode, auto-adjust cash amount to match total
                       // In variable pricing mode, allow independent amounts
                       if (!isVariablePricingEnabled) {
-                        if (cardValue && parseFloat(cardValue) < calculateTotal()) {
-                          const remaining = calculateTotal() - parseFloat(cardValue);
-                          onCashAmountChange(remaining.toFixed(2));
-                        } else if (cardValue && parseFloat(cardValue) >= calculateTotal()) {
-                          onCashAmountChange('0.00');
+                      if (cardValue && parseFloat(cardValue) < calculateTotal()) {
+                        const remaining = calculateTotal() - parseFloat(cardValue);
+                        onCashAmountChange(remaining.toFixed(2));
+                      } else if (cardValue && parseFloat(cardValue) >= calculateTotal()) {
+                        onCashAmountChange('0.00');
                         }
                       }
                     }}
@@ -408,7 +408,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   ? 'bg-green-100 text-green-800'
                   : isVariablePricingEnabled
                     ? 'bg-blue-100 text-blue-800'
-                    : 'bg-red-100 text-red-800'
+                  : 'bg-red-100 text-red-800'
               }`}>
                 Combined Total: {formatCurrency((parseFloat(cashAmount) || 0) + (parseFloat(cardAmount) || 0))}
                 {!isVariablePricingEnabled && Math.abs((parseFloat(cashAmount) || 0) + (parseFloat(cardAmount) || 0) - calculateTotal()) > 0.01 && (
@@ -466,8 +466,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     : (
                         // Fixed pricing: validate amounts match total
                         (paymentMethod === 'cash' && (!cashAmount || !isValidCashAmount(cashAmount, calculateTotal()))) ||
-                        (paymentMethod === 'card' && (!cardAmount || Math.abs(parseFloat(cardAmount) - calculateTotal()) > 0.01)) ||
-                        (paymentMethod === 'mixed' && (!cashAmount || !cardAmount || Math.abs((parseFloat(cashAmount) + parseFloat(cardAmount)) - calculateTotal()) > 0.01))
+                  (paymentMethod === 'card' && (!cardAmount || Math.abs(parseFloat(cardAmount) - calculateTotal()) > 0.01)) ||
+                  (paymentMethod === 'mixed' && (!cashAmount || !cardAmount || Math.abs((parseFloat(cashAmount) + parseFloat(cardAmount)) - calculateTotal()) > 0.01))
                       )
                 ))
               }

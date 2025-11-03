@@ -124,7 +124,7 @@ export const Header: React.FC<HeaderProps> = ({
             
             {/* Header Actions */}
             <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 shrink-0">
-              {children}
+            {children}
             </div>
             
             {/* Profile Dropdown */}
@@ -159,7 +159,7 @@ export const Header: React.FC<HeaderProps> = ({
                       <p className="text-xs leading-none text-muted-foreground truncate">
                         {user.email || user.username}
                       </p>
-                    </div>
+              </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem>

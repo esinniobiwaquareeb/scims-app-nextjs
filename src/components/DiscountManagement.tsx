@@ -568,19 +568,19 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
         subtitle="Loading discounts..."
       >
         <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Loading discounts...</p>
-          </div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading discounts...</p>
         </div>
+      </div>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout
-      title="Discount Management"
-      subtitle="Manage promotions and coupons for your business"
+        title="Discount Management"
+        subtitle="Manage promotions and coupons for your business"
     >
 
         {/* Stats Cards */}

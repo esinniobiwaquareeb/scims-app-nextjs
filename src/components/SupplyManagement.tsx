@@ -240,8 +240,8 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
 
   return (
     <DashboardLayout
-      title="Supply Management"
-      subtitle="Manage supply orders, returns, and payments"
+        title="Supply Management"
+        subtitle="Manage supply orders, returns, and payments"
       headerActions={
         <Button onClick={handleCreateSupplyOrder} className="gap-2">
           <Plus className="h-4 w-4" />

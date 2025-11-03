@@ -387,20 +387,20 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
         subtitle="Loading categories..."
       >
         <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading categories...</p>
-          </div>
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading categories...</p>
         </div>
+      </div>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout
-      title="Category Management"
-      subtitle="Manage product categories for your business"
-    >
+        title="Category Management"
+        subtitle="Manage product categories for your business"
+      >
         {/* Error Display */}
         {categoriesError && (
           <Card className="mb-6 border-destructive bg-destructive/10">
