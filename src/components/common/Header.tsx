@@ -33,18 +33,13 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { user, logout, currentBusiness, currentStore, switchStore } = useAuth();
 
-  // Function to handle store selection including "All Stores"
   const handleStoreChange = (value: string) => {
     if (value === 'all') {
-      // Clear current store selection to show all stores combined
       switchStore('');
     } else {
-      // Switch to specific store
       switchStore(value);
     }
   };
-
-
 
   const showStoreSelector = currentBusiness && 
     currentBusiness.stores.length > 0 &&
@@ -52,10 +47,10 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="bg-background shadow-sm border-b border-border sticky top-0 z-40">
-      <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-3 sm:py-4 gap-2 sm:gap-4">
+      <div className="w-full px-3 sm:px-4 lg:px-6">
+        <div className="flex items-center justify-between py-2.5 sm:py-3 lg:py-4 gap-2 sm:gap-3">
           {/* Left Section - Title */}
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 pl-10 lg:pl-0">
+          <div className="flex items-center gap-2 min-w-0 flex-1 pl-9 lg:pl-0">
             {showBackButton && onBack && (
               <Button variant="outline" size="sm" onClick={onBack} className="shrink-0 hidden sm:flex">
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -63,15 +58,15 @@ export const Header: React.FC<HeaderProps> = ({
               </Button>
             )}
             <div className="min-w-0 flex-1">
-              <h1 className="text-base sm:text-lg lg:text-xl font-semibold text-foreground truncate">{title}</h1>
+              <h1 className="text-sm sm:text-base lg:text-lg xl:text-xl font-semibold text-foreground truncate leading-tight">{title}</h1>
               {subtitle && (
-                <p className="text-xs sm:text-sm text-muted-foreground truncate hidden sm:block">{subtitle}</p>
+                <p className="text-xs text-muted-foreground truncate hidden sm:block mt-0.5">{subtitle}</p>
               )}
             </div>
           </div>
 
           {/* Right Section - Store Selector, Actions, Profile */}
-          <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 lg:gap-2 shrink-0">
             {/* Store Selector - Hidden on very small screens */}
             {showStoreSelector && (
               <div className="hidden sm:flex items-center gap-2 bg-muted rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 border border-border">
@@ -128,7 +123,7 @@ export const Header: React.FC<HeaderProps> = ({
             )}
             
             {/* Header Actions */}
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1 sm:gap-1.5 lg:gap-2 shrink-0">
               {children}
             </div>
             

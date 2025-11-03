@@ -437,12 +437,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
   return (
     <>
       {/* Mobile Menu Button - Positioned in header */}
-      <div className="lg:hidden fixed top-3 left-3 z-50">
+      <div className="lg:hidden fixed top-2.5 left-2.5 z-50">
         <Button
           variant="outline"
           size="icon"
           onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="bg-background h-8 w-8 shadow-sm"
+          className="bg-background h-8 w-8 shadow-sm border-border"
         >
           {isMobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
         </Button>

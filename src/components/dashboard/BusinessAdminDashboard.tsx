@@ -82,23 +82,23 @@ export const BusinessAdminDashboard: React.FC = () => {
       subtitle={`Welcome back, ${user?.name || user?.username} • ${businessTypeDisplay.label}`}
       headerActions={
         <>
-          {/* Business Type Indicator */}
+          {/* Business Type Indicator - Hidden on mobile */}
           {user?.role === 'business_admin' && currentBusiness && (
-            <div className="flex items-center gap-2 bg-muted rounded-lg px-4 py-2 border border-border">
-              <span className="text-lg">{businessTypeDisplay.icon}</span>
-              <span className="text-sm font-medium text-foreground">
+            <div className="hidden md:flex items-center gap-1.5 lg:gap-2 bg-muted rounded-lg px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 border border-border">
+              <span className="text-base sm:text-lg">{businessTypeDisplay.icon}</span>
+              <span className="text-xs sm:text-sm font-medium text-foreground whitespace-nowrap">
                 {businessTypeDisplay.label}
               </span>
             </div>
           )}
-          <NotificationBell className="mr-2" />
+          <NotificationBell className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
           <Button 
             onClick={() => router.push('/pos')} 
             variant="outline"
-            className="flex items-center gap-2"
+            className="flex items-center gap-1.5 sm:gap-2 h-8 sm:h-9 shrink-0"
             size="sm"
           >
-            <ShoppingCart className="w-4 h-4" />
+            <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span className="hidden sm:inline">Open POS</span>
           </Button>
         </>
