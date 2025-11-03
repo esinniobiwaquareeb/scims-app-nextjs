@@ -35,20 +35,22 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             showBackButton={false}
             showLogout={true}
           >
-            {headerActions || (
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <NotificationBell className="sm:mr-2" />
+            <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
+              <NotificationBell />
+              {headerActions ? (
+                headerActions
+              ) : (
                 <Button 
                   onClick={() => router.push('/pos')} 
                   variant="outline"
-                  className="flex items-center gap-1.5 sm:gap-2"
+                  className="h-8 sm:h-9 shrink-0"
                   size="sm"
                 >
                   <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Open POS</span>
+                  <span className="hidden sm:inline">Open <br /> POS</span>
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </Header>
         )}
         

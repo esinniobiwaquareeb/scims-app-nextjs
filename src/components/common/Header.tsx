@@ -48,9 +48,9 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="bg-background shadow-sm border-b border-border sticky top-0 z-40">
       <div className="w-full px-3 sm:px-4 lg:px-6">
-        <div className="flex items-center justify-between py-2.5 sm:py-3 lg:py-4 gap-2 sm:gap-3">
+        <div className="flex items-center justify-between py-2.5 sm:py-3 lg:py-4 gap-2 sm:gap-3 lg:gap-4">
           {/* Left Section - Title */}
-          <div className="flex items-center gap-2 min-w-0 flex-1 pl-9 lg:pl-0">
+          <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0 flex-1 pl-9 lg:pl-0">
             {showBackButton && onBack && (
               <Button variant="outline" size="sm" onClick={onBack} className="shrink-0 hidden sm:flex">
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -66,10 +66,10 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Right Section - Store Selector, Actions, Profile */}
-          <div className="flex items-center gap-1 sm:gap-1.5 lg:gap-2 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 shrink-0">
             {/* Store Selector - Hidden on very small screens */}
             {showStoreSelector && (
-              <div className="hidden sm:flex items-center gap-2 bg-muted rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 border border-border">
+              <div className="hidden sm:flex items-center gap-2 sm:gap-3 lg:gap-4 bg-muted rounded-lg px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-2.5 border border-border">
                 <Store className="w-4 h-4 text-muted-foreground shrink-0" />
                 <Select 
                   value={currentStore?.id || 'all'} 
@@ -79,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <SelectValue placeholder="Select Store">
                       <span className="truncate max-w-[100px] lg:max-w-none">
                         {currentStore?.name || (
-                          <span className="flex items-center gap-1.5">
+                          <span className="flex items-center gap-1.5 sm:gap-2">
                             <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             <span className="hidden lg:inline">All Stores</span>
                           </span>
@@ -114,7 +114,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Store display for store admins - Hidden on mobile */}
             {user?.role === 'store_admin' && currentStore && (
-              <div className="hidden sm:flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 border border-blue-200 dark:border-blue-800">
+              <div className="hidden sm:flex items-center gap-2 sm:gap-3 lg:gap-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-2.5 border border-blue-200 dark:border-blue-800">
                 <Store className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                 <span className="text-sm font-medium text-blue-700 dark:text-blue-300 truncate max-w-[120px] lg:max-w-none">
                   {currentStore.name}
@@ -123,7 +123,7 @@ export const Header: React.FC<HeaderProps> = ({
             )}
             
             {/* Header Actions */}
-            <div className="flex items-center gap-1 sm:gap-1.5 lg:gap-2 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 shrink-0">
               {children}
             </div>
             
@@ -132,10 +132,10 @@ export const Header: React.FC<HeaderProps> = ({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button 
-                    className="flex items-center gap-1.5 sm:gap-2 rounded-md px-1.5 sm:px-2 py-1.5 hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary shrink-0"
+                    className="flex items-center gap-2 sm:gap-3 lg:gap-4 rounded-md px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-2.5 border border-border hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary shrink-0"
                     aria-label="User menu"
                   >
-                    <Avatar className="h-7 w-7 sm:h-8 sm:w-8 shrink-0">
+                    <Avatar className="h-7 w-7 sm:h-8 sm:w-8 lg:h-9 lg:w-9 shrink-0">
                       <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
                         {user.name?.charAt(0)?.toUpperCase() || user.username?.charAt(0)?.toUpperCase() || 'U'}
                       </AvatarFallback>

@@ -8,28 +8,16 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Header } from '@/components/common/Header';
 import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { StatsGrid } from '@/components/dashboard/StatsGrid';
-import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { 
   Package, 
-  Users, 
-  Settings,
   BarChart3,
-  FileText,
-  Truck,
-  FolderOpen,
-  Tag,
-  UserCheck,
-  Shield,
   Activity,
   Loader2,
   AlertTriangle,
   DollarSign,
-  Store,
-  ShoppingCart,
-  RotateCcw
+  ShoppingCart
 } from 'lucide-react';
 import { useBusinessDashboardStats, useStoreDashboardStats } from '@/utils/hooks/useStoreData';
 
@@ -84,18 +72,17 @@ export const BusinessAdminDashboard: React.FC = () => {
         <>
           {/* Business Type Indicator - Hidden on mobile */}
           {user?.role === 'business_admin' && currentBusiness && (
-            <div className="hidden md:flex items-center gap-1.5 lg:gap-2 bg-muted rounded-lg px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 border border-border">
+            <div className="hidden md:flex items-center gap-2 sm:gap-3 lg:gap-4 bg-muted rounded-lg px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-2.5 border border-border">
               <span className="text-base sm:text-lg">{businessTypeDisplay.icon}</span>
               <span className="text-xs sm:text-sm font-medium text-foreground whitespace-nowrap">
                 {businessTypeDisplay.label}
               </span>
             </div>
           )}
-          <NotificationBell className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
           <Button 
             onClick={() => router.push('/pos')} 
             variant="outline"
-            className="flex items-center gap-1.5 sm:gap-2 h-8 sm:h-9 shrink-0"
+            className="h-8 sm:h-9 shrink-0"
             size="sm"
           >
             <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -163,7 +150,7 @@ export const BusinessAdminDashboard: React.FC = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => handleNavigate('/products')}
+                      onClick={() => router.push('/products')}
                     >
                       View Inventory
                     </Button>
@@ -243,7 +230,7 @@ export const BusinessAdminDashboard: React.FC = () => {
                   </p>
                   <Button 
                     variant="outline" 
-                    onClick={() => handleNavigate('/activity-logs')}
+                    onClick={() => router.push('/activity-logs')}
                   >
                     View Activity Logs
                   </Button>

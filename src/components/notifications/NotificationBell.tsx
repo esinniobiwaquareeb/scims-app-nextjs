@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/components/ui/utils';
 import { Bell, BellRing } from 'lucide-react';
 import { NotificationPanel } from './NotificationPanel';
 
@@ -23,12 +24,12 @@ export function NotificationBell({ className }: NotificationBellProps) {
         variant="ghost"
         size="sm"
         onClick={() => setIsPanelOpen(true)}
-        className={`relative ${className}`}
+        className={cn("relative h-8 w-8 sm:h-9 sm:w-9 p-0", className)}
       >
         {hasUnreadNotifications ? (
-          <BellRing className="w-5 h-5 text-orange-600" />
+          <BellRing className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 dark:text-orange-400" />
         ) : (
-          <Bell className="w-5 h-5" />
+          <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-foreground" />
         )}
         
         {hasUnreadNotifications && (
