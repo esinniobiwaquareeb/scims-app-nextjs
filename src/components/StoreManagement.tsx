@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDemoRestrictions } from '@/hooks/useDemoRestrictions';
-import { Header } from '@/components/common/Header';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,7 +36,7 @@ import {
 } from '@/utils/hooks/stores';
 
 interface StoreManagementProps {
-  onBack: () => void;
+  onBack?: () => void; // Optional for backward compatibility
 }
 
 interface Store {
@@ -408,16 +408,10 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header 
-        title="Store Management"
-        subtitle={`Manage stores for ${currentBusiness?.name || 'your business'}`}
-        showBackButton
-        onBack={onBack}
-        showLogout={false}
-      >
-      </Header>
-
+    <DashboardLayout
+      title="Store Management"
+      subtitle={`Manage stores for ${currentBusiness?.name || 'your business'}`}
+    >
       {/* Add Store Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-2xl">
@@ -522,8 +516,6 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
           </div>
         </DialogContent>
       </Dialog>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
@@ -691,7 +683,6 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
             )}
           </DialogContent>
         </Dialog>
-      </main>
-    </div>
+    </DashboardLayout>
   );
 };

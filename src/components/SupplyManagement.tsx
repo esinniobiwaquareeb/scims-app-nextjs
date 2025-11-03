@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
-import { Header } from '@/components/common/Header';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +35,7 @@ import { useActivityLogger } from '@/contexts/ActivityLogger';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface SupplyManagementProps {
-  onBack: () => void;
+  onBack?: () => void; // Optional for backward compatibility
 }
 
 export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) => {
@@ -239,21 +239,16 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header 
-        title="Supply Management"
-        subtitle="Manage supply orders, returns, and payments"
-        showBackButton
-        onBack={onBack}
-        showLogout={false}
-      >
+    <DashboardLayout
+      title="Supply Management"
+      subtitle="Manage supply orders, returns, and payments"
+      headerActions={
         <Button onClick={handleCreateSupplyOrder} className="gap-2">
           <Plus className="h-4 w-4" />
           New Supply Order
         </Button>
-      </Header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      }
+    >
 
         {/* Search and Filter */}
         <Card className="mb-6">
@@ -634,7 +629,6 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </main>
-    </div>
+    </DashboardLayout>
   );
 };

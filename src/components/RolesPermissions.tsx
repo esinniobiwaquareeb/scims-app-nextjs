@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Header } from '@/components/common/Header';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -30,7 +30,7 @@ import { useActivityLogger } from '@/contexts/ActivityLogger';
 import { usePermissions } from '@/contexts/PermissionsContext';
 
 interface RolesPermissionsProps {
-  onBack: () => void;
+  onBack?: () => void; // Optional for backward compatibility
 }
 
 interface Role {
@@ -414,21 +414,16 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header
-        title="Roles & Permissions"
-        subtitle={`Manage staff roles and access permissions${currentBusiness ? ` for ${currentBusiness.name}` : ''}`}
-        showBackButton
-        onBack={onBack}
-        showLogout={false}
-      >
+    <DashboardLayout
+      title="Roles & Permissions"
+      subtitle={`Manage staff roles and access permissions${currentBusiness ? ` for ${currentBusiness.name}` : ''}`}
+      headerActions={
         <Button onClick={() => setIsAddRoleDialogOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Add Role
         </Button>
-      </Header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      }
+    >
         {/* Error Display */}
         {error && (
           <Card className="mb-6 border-destructive bg-destructive/10">
@@ -686,7 +681,6 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
             )}
           </CardContent>
         </Card>
-      </main>
 
       {/* Edit Role Dialog */}
       <Dialog open={isEditRoleDialogOpen} onOpenChange={setIsEditRoleDialogOpen}>
@@ -1077,6 +1071,6 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </DashboardLayout>
   );
 };

@@ -9,7 +9,7 @@ import {
   useSubscriptionPlans 
 } from '../utils/hooks/useStoreData';
 import {useBusinessSettings, useUpdateBusinessSettings} from '@/utils/hooks/businessSettings'
-import { Header } from './common/Header';
+import { DashboardLayout } from './common/DashboardLayout';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -48,7 +48,7 @@ import {
 } from './common/BusinessTypeConstants';
 
 interface BusinessSettingsProps {
-  onBack: () => void;
+  onBack?: () => void; // Optional for backward compatibility
 }
 
 interface BusinessSettings {
@@ -498,30 +498,26 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
 
   if (!currentBusiness || user?.role !== 'business_admin') {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header title="Business Settings" subtitle="Access denied" showBackButton onBack={onBack} showLogout={false} />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Shield className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">Access Denied</h3>
-              <p className="text-muted-foreground">Only business administrators can access business settings.</p>
-            </CardContent>
-          </Card>
-        </main>
-      </div>
+      <DashboardLayout
+        title="Business Settings"
+        subtitle="Access denied"
+      >
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Shield className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">Access Denied</h3>
+            <p className="text-muted-foreground">Only business administrators can access business settings.</p>
+          </CardContent>
+        </Card>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header 
-        title="Business Settings"
-        subtitle={`Configure business-wide settings for ${currentBusiness.name}`}
-        showBackButton
-        onBack={onBack}
-        showLogout={false}
-      >
+    <DashboardLayout
+      title="Business Settings"
+      subtitle={`Configure business-wide settings for ${currentBusiness.name}`}
+      headerActions={
         <div className="flex gap-2">
           <Button 
             variant="outline" 
@@ -544,9 +540,8 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
             )}
           </Button>
         </div>
-      </Header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      }
+    >
         {/* Business Settings Info Card */}
         <Card className="mb-6 border-blue-200 bg-blue-50">
           <CardContent className="p-4">
@@ -1697,7 +1692,6 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
             </div>
           )}
         </div>
-      </main>
-    </div>
+    </DashboardLayout>
   );
 };

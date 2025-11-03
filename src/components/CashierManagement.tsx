@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { usePermissions } from '@/contexts/PermissionsContext';
 import { useActivityLogger } from '@/contexts/ActivityLogger';
-import { Header } from '@/components/common/Header';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { DataTable } from '@/components/common/DataTable';
 import { PasswordResetDialog } from '@/components/common/PasswordResetDialog';
 import { Button } from './ui/button';
@@ -50,7 +50,7 @@ import {
 } from 'lucide-react';
 
 interface CashierManagementProps {
-  onBack: () => void;
+  onBack?: () => void; // Optional for backward compatibility
   onNavigate?: (view: string, params?: Record<string, unknown>) => void;
 }
 
@@ -715,16 +715,10 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header 
-        title="Cashier Management"
-        subtitle={`Manage cashiers${currentStore ? ` for ${currentStore.name}` : ''}`}
-        showBackButton
-        onBack={onBack}
-        showLogout={false}
-      >
-      </Header>
-
+    <DashboardLayout
+      title="Cashier Management"
+      subtitle={`Manage cashiers${currentStore ? ` for ${currentStore.name}` : ''}`}
+    >
       {/* Cashier Credentials Modal */}
       <Dialog open={isCredentialsModalOpen} onOpenChange={setIsCredentialsModalOpen}>
         <DialogContent className="max-w-md">
@@ -760,8 +754,6 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {cashiersError && (
           <Card className="mb-6 border-destructive bg-destructive/10">
             <CardContent className="p-4">
@@ -1177,7 +1169,6 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
           description={`Reset password for ${cashierForPasswordReset?.name}`}
           buttonText="Reset Password"
         />
-      </main>
-    </div>
+    </DashboardLayout>
   );
 };

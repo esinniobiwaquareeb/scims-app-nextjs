@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSystem } from "@/contexts/SystemContext";
 import { useActivityLogger } from "@/contexts/ActivityLogger";
 import { usePermissions } from "@/contexts/PermissionsContext";
-import { Header } from "@/components/common/Header";
+import { DashboardLayout } from "@/components/common/DashboardLayout";
 import { DataTable } from "@/components/common/DataTable";
 import { PasswordResetDialog } from "@/components/common/PasswordResetDialog";
 import { Button } from "@/components/ui/button";
@@ -59,7 +59,7 @@ import {
 } from "lucide-react";
 
 interface StaffManagementProps {
-  onBack: () => void;
+  onBack?: () => void; // Optional for backward compatibility
   onNavigate?: (view: string, params?: Record<string, unknown>) => void;
 }
 
@@ -635,19 +635,12 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
 
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header
-        title="Staff Management"
-        subtitle={`Manage staff members${
-          currentStore ? ` for ${currentStore.name}` : ""
-        }`}
-        showBackButton
-        onBack={onBack}
-        showLogout={false}
-      >
-      </Header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <DashboardLayout
+      title="Staff Management"
+      subtitle={`Manage staff members${
+        currentStore ? ` for ${currentStore.name}` : ""
+      }`}
+    >
         {staffError && (
           <Card className="mb-6 border-destructive bg-destructive/10">
             <CardContent className="p-4">
@@ -1123,7 +1116,6 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
           description={`Reset password for ${staffForPasswordReset?.name}`}
           buttonText="Reset Password"
         />
-      </main>
-    </div>
+    </DashboardLayout>
   );
 };

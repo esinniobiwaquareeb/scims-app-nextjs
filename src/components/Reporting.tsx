@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
-import { Header } from '@/components/common/Header';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { DataTable } from '@/components/common/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,7 +44,7 @@ import { DateRange } from 'react-day-picker';
 import { Product, Sale, SaleType, CustomerType } from '@/types';
 
 interface ReportingProps {
-  onBack: () => void;
+  onBack?: () => void; // Optional for backward compatibility
 }
 
 interface TransformedSalesData {
@@ -362,41 +362,34 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
   // Show loading state for initial data fetch
   if (isLoading && (!salesData.length && !productPerformance.length && !customerData.length)) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading reports and analytics...</p>
+      <DashboardLayout
+        title="Reports & Analytics"
+        subtitle="Loading reports and analytics..."
+      >
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading reports and analytics...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" onClick={onBack}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">Reports & Analytics</h1>
-                <p className="text-sm text-muted-foreground">
-                  {reportingStoreId ? 
-                    `${currentBusiness?.stores?.find(s => s.id === reportingStoreId)?.name || 'Store'} - ` : 
-                    'All Stores - '
-                  }Comprehensive business insights
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              {/* Store Selector */}
-              {currentBusiness && currentBusiness.stores.length > 0 && user?.role !== 'cashier' && user?.role !== 'store_admin' && (
-                <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2 border border-border">
-                  <Store className="w-4 h-4 text-muted-foreground shrink-0" />
+    <DashboardLayout
+      title="Reports & Analytics"
+      subtitle={
+        reportingStoreId ? 
+          `${currentBusiness?.stores?.find(s => s.id === reportingStoreId)?.name || 'Store'} - Comprehensive business insights` : 
+          'All Stores - Comprehensive business insights'
+      }
+      headerActions={
+        <div className="flex gap-2">
+          {/* Store Selector */}
+          {currentBusiness && currentBusiness.stores.length > 0 && user?.role !== 'cashier' && user?.role !== 'store_admin' && (
+            <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2 border border-border">
+              <Store className="w-4 h-4 text-muted-foreground shrink-0" />
                   <Select 
                     value={reportingStoreId || 'all'} 
                     onValueChange={(value) => {
@@ -468,12 +461,9 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                 <Download className="w-4 h-4 mr-2" />
                 Export CSV
               </Button>
-            </div>
-          </div>
         </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      }
+    >
         {/* Error Display */}
         {hasError && (
           <Card className="mb-6 border-destructive bg-destructive/10">
@@ -1128,7 +1118,6 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
             </div>
           </TabsContent>
         </Tabs>
-      </main>
-    </div>
+    </DashboardLayout>
   );
 };

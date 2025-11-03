@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { useActivityLogs, useClearActivityLogs } from '@/utils/hooks/useStoreData';
-import { Header } from '@/components/common/Header';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 
 interface ActivityLogsProps {
-  onBack: () => void;
+  onBack?: () => void; // Optional for backward compatibility
 }
 
 interface ActivityLog {
@@ -278,40 +278,30 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
   // Loading skeleton
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header 
-          title="Activity Logs"
-          subtitle="Loading..."
-          showBackButton
-          onBack={onBack}
-          showLogout={false}
-        />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-            {[...Array(5)].map((_, i) => (
-              <Card key={i}>
-                <CardContent className="p-6">
-                  <Skeleton className="h-8 w-16 mb-2" />
-                  <Skeleton className="h-6 w-12" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          <Skeleton className="h-96 w-full" />
-        </main>
-      </div>
+      <DashboardLayout
+        title="Activity Logs"
+        subtitle="Loading..."
+      >
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+          {[...Array(5)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <Skeleton className="h-8 w-16 mb-2" />
+                <Skeleton className="h-6 w-12" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Skeleton className="h-96 w-full" />
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header 
-        title="Activity Logs"
-        subtitle={`System activity and audit trail${currentStore ? ` for ${currentStore.name}` : ''}`}
-        showBackButton
-        onBack={onBack}
-        showLogout={false}
-      >
+    <DashboardLayout
+      title="Activity Logs"
+      subtitle={`System activity and audit trail${currentStore ? ` for ${currentStore.name}` : ''}`}
+      headerActions={
         <div className="flex gap-2">
           <Button variant="outline" onClick={exportLogs}>
             <Download className="w-4 h-4 mr-2" />
@@ -324,9 +314,8 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
             </Button>
           )}
         </div>
-      </Header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      }
+    >
         {/* Last Refresh Info */}
         <div className="mb-4 text-sm text-muted-foreground flex items-center gap-2">
           <Calendar className="w-4 h-4" />
@@ -650,7 +639,6 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
             </div>
           </TabsContent>
         </Tabs>
-      </main>
 
       {/* Clear Logs Confirmation Dialog */}
       {showClearDialog && (
@@ -675,6 +663,6 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({ onBack }) => {
           </div>
         </div>
       )}
-    </div>
+    </DashboardLayout>
   );
 };

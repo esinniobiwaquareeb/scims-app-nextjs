@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActivityLogger } from '@/contexts/ActivityLogger';
-import { Header } from '@/components/common/Header';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,7 +35,7 @@ import {
 } from '@/types/discount';
 
 interface DiscountManagementProps {
-  onBack: () => void;
+  onBack?: () => void; // Optional for backward compatibility
 }
 
 export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }) => {
@@ -563,26 +563,25 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Loading discounts...</p>
+      <DashboardLayout
+        title="Discount Management"
+        subtitle="Loading discounts..."
+      >
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">Loading discounts...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header 
-        title="Discount Management"
-        subtitle="Manage promotions and coupons for your business"
-        showBackButton
-        onBack={onBack}
-        showLogout={false}
-      />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <DashboardLayout
+      title="Discount Management"
+      subtitle="Manage promotions and coupons for your business"
+    >
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
@@ -787,8 +786,7 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </main>
-    </div>
+    </DashboardLayout>
   );
 };
 

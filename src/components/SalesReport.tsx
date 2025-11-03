@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { useActivityLogger } from '@/contexts/ActivityLogger';
-import { Header } from '@/components/common/Header';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -45,7 +45,7 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 
 interface SalesReportProps {
-  onBack: () => void;
+  onBack?: () => void; // Optional for backward compatibility
 }
 
 interface SaleItem {
@@ -712,27 +712,25 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading sales report...</p>
+      <DashboardLayout
+        title={translate('sales.report') || 'Sales Report'}
+        subtitle="Loading sales report..."
+      >
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading sales report...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header
-        title={translate('sales.report') || 'Sales Report'}
-        subtitle={translate('sales.analytics') || 'Comprehensive sales analytics and insights'}
-        showBackButton
-        onBack={onBack}
-        showLogout={false}
-      >
-      </Header>
-
-      <div className="p-6">
+    <DashboardLayout
+      title={translate('sales.report') || 'Sales Report'}
+      subtitle={translate('sales.analytics') || 'Comprehensive sales analytics and insights'}
+    >
         {/* Store/Business Indicator */}
         {user?.role === 'store_admin' && currentStore && (
           <Card className="mb-6 border-blue-200 bg-blue-50">
@@ -1336,7 +1334,6 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
 
       {/* Sale Details Modal */}
       {showSaleModal && selectedSale && (
@@ -1522,6 +1519,6 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
           </DialogContent>
         </Dialog>
       )}
-    </div>
+    </DashboardLayout>
   );
 };
