@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,6 +31,7 @@ import {
   Menu as MenuIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Logo from '@/components/common/Logo';
 
 interface MenuGroup {
   title: string;
@@ -76,17 +77,17 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
     });
   };
 
-  const isActive = (href: string) => {
+  const isActive = useCallback((href: string) => {
     if (href === '/dashboard') {
       return pathname === '/dashboard';
     }
     return pathname.startsWith(href);
-  };
+  }, [pathname]);
 
-  const hasAccess = (item: MenuItem) => {
+  const hasAccess = useCallback((item: MenuItem) => {
     if (!item.roles) return true;
     return item.roles.includes(user?.role || '');
-  };
+  }, [user?.role]);
 
   // Business Admin Menu Groups
   const businessAdminMenuGroups: MenuGroup[] = [
@@ -432,22 +433,48 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
   ];
 
   // Determine which menu groups to use based on user role
-  const menuGroups = user?.role === 'superadmin' 
-    ? superAdminMenuGroups 
-    : user?.role === 'business_admin' 
-    ? businessAdminMenuGroups 
-    : user?.role === 'cashier'
-    ? cashierMenuGroups
-    : storeAdminMenuGroups;
+  const menuGroups = useMemo(() => {
+    if (user?.role === 'superadmin') {
+      return superAdminMenuGroups;
+    }
+    if (user?.role === 'business_admin') {
+      return businessAdminMenuGroups;
+    }
+    if (user?.role === 'cashier') {
+      return cashierMenuGroups;
+    }
+    return storeAdminMenuGroups;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.role]);
+
+  // Auto-expand groups that contain active items when pathname changes
+  useEffect(() => {
+    const groupsToExpand = new Set<string>();
+    
+    menuGroups.forEach((group) => {
+      const accessibleItems = group.items.filter(hasAccess);
+      const hasActiveItem = accessibleItems.some(item => isActive(item.href));
+      
+      if (hasActiveItem) {
+        groupsToExpand.add(group.title);
+      }
+    });
+
+    if (groupsToExpand.size > 0) {
+      setExpandedGroups(prev => {
+        const next = new Set(prev);
+        groupsToExpand.forEach(groupTitle => next.add(groupTitle));
+        return next;
+      });
+    }
+  }, [pathname, menuGroups, hasAccess, isActive]); // Re-run when pathname or role changes
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Logo/Brand Section */}
       <div className="p-3 sm:p-4 border-b border-border">
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-brand-primary rounded-lg flex items-center justify-center shrink-0">
-            <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-          </div>
+          <Logo size="md" showText={false} animated={false} />
           <div className="flex-1 min-w-0">
             <h2 className="text-sm sm:text-base font-semibold text-foreground truncate">SCIMS</h2>
             {user?.role === 'superadmin' ? (
