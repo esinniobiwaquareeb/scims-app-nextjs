@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import { NextRequest } from 'next/server';
-import { handleApiError, AppError } from './api-errors';
+import { AppError } from './api-errors';
 
 /**
  * Parse and validate JSON body with Zod schema
