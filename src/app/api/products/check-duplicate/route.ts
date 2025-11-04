@@ -21,20 +21,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Build OR conditions for duplicate checking using proper Supabase syntax
     let query = supabase
       .from('product')
       .select('id, name, sku, barcode, store_id')
       .eq('store_id', store_id)
       .eq('is_active', true);
 
-    // Build OR conditions for duplicate checking
-    const orConditions = [];
-    if (sku) orConditions.push(`sku.eq.${sku}`);
-    if (name) orConditions.push(`name.eq.${name}`);
-    if (barcode) orConditions.push(`barcode.eq.${barcode}`);
+    // Build OR conditions - Supabase OR syntax: "field1.eq.value1,field2.eq.value2"
+    const orConditions: string[] = [];
+    if (sku && sku.trim() !== '') {
+      orConditions.push(`sku.eq.${sku.trim()}`);
+    }
+    if (name && name.trim() !== '') {
+      orConditions.push(`name.eq.${name.trim()}`);
+    }
+    if (barcode && barcode.trim() !== '') {
+      orConditions.push(`barcode.eq.${barcode.trim()}`);
+    }
 
     if (orConditions.length > 0) {
       query = query.or(orConditions.join(','));
+    } else {
+      // If no valid conditions, return no duplicates
+      return NextResponse.json({
+        success: true,
+        hasDuplicates: false,
+        duplicates: [],
+        count: 0
+      });
     }
 
     const { data: existingProducts, error } = await query;
@@ -47,14 +62,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check for exact matches
-    const exactMatches = existingProducts?.filter(product => {
-      const skuMatch = sku && product.sku === sku;
-      const nameMatch = name && product.name === name;
-      const barcodeMatch = barcode && product.barcode === barcode;
+    // Filter for exact matches (handles case sensitivity and whitespace)
+    const exactMatches = (existingProducts || []).filter(product => {
+      const skuMatch = sku && sku.trim() !== '' && product.sku?.trim() === sku.trim();
+      const nameMatch = name && name.trim() !== '' && product.name?.trim() === name.trim();
+      const barcodeMatch = barcode && barcode.trim() !== '' && product.barcode?.trim() === barcode.trim();
       
       return skuMatch || nameMatch || barcodeMatch;
-    }) || [];
+    });
 
     return NextResponse.json({
       success: true,

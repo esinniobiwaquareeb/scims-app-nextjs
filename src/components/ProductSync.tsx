@@ -19,8 +19,7 @@ import {
   Copy, 
   RefreshCw,
   AlertTriangle,
-  Loader2,
-  Download
+  Loader2
 } from 'lucide-react';
 
 interface Product {
@@ -52,7 +51,7 @@ interface ProductSyncProps {
   onBack?: () => void; // Optional for backward compatibility
 }
 
-export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
+export const ProductSync: React.FC<ProductSyncProps> = () => {
   const { user, currentBusiness, currentStore } = useAuth();
   const { formatCurrency } = useSystem();
   const { logActivity } = useActivityLogger();
@@ -64,6 +63,17 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [syncProgress, setSyncProgress] = useState<{
+    current: number;
+    total: number;
+    currentProduct: string;
+    currentStore: string;
+  } | null>(null);
+  const [syncErrors, setSyncErrors] = useState<Array<{
+    product: string;
+    store: string;
+    error: string;
+  }>>([]);
   
   // UI State
   const [showSyncDialog, setShowSyncDialog] = useState(false);
@@ -291,15 +301,26 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
 
     try {
       setSyncing(true);
+      setSyncErrors([]);
       
       const selectedProductData = products.filter(p => selectedProducts.includes(p.id));
       const selectedStoreData = stores.filter(s => selectedStores.includes(s.id));
       
+      const totalOperations = selectedProductData.length * selectedStoreData.length;
+      let currentOperation = 0;
       let successCount = 0;
       let errorCount = 0;
 
       for (const store of selectedStoreData) {
         for (const product of selectedProductData) {
+          currentOperation++;
+          setSyncProgress({
+            current: currentOperation,
+            total: totalOperations,
+            currentProduct: product.name,
+            currentStore: store.name
+          });
+
           try {
             // Check for duplicates first using original SKU, name, and barcode
             const duplicateCheckResponse = await fetch('/api/products/check-duplicate', {
@@ -320,6 +341,10 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
             }
 
             const duplicateData = await duplicateCheckResponse.json();
+            
+            if (!duplicateData.success) {
+              throw new Error(duplicateData.error || 'Failed to check for duplicates');
+            }
             
             if (duplicateData.hasDuplicates) {
               console.log(`Skipping ${product.name} - duplicate found in store ${store.name}`);
@@ -356,80 +381,118 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
               });
 
               if (!response.ok) {
-                throw new Error('Failed to create product');
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Failed to create product');
+              }
+
+              const responseData = await response.json();
+              if (!responseData.success) {
+                throw new Error(responseData.error || 'Failed to create product');
               }
 
               successCount++;
             } else {
-              // Sync existing product (update price, description, etc.)
-              const updateData = {
-                price: product.price,
-                description: product.description,
-                min_stock_level: product.min_stock_level,
-                reorder_level: product.reorder_level
-              };
+              // Sync mode: Update existing product or create new one
+              // Use duplicate check to find existing product
+              const duplicateCheckResponse2 = await fetch('/api/products/check-duplicate', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  store_id: store.id,
+                  sku: product.sku,
+                  name: product.name,
+                  barcode: product.barcode
+                }),
+              });
 
-              // Check if product exists in target store by original SKU
-              const existingProductResponse = await fetch(`/api/products?store_id=${store.id}&sku=${product.sku}`);
-              if (existingProductResponse.ok) {
-                const existingData = await existingProductResponse.json();
-                const existingProduct = existingData.products?.[0];
-                
-                if (existingProduct) {
-                  const updateResponse = await fetch(`/api/products/${existingProduct.id}`, {
-                    method: 'PUT',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(updateData),
-                  });
+              if (!duplicateCheckResponse2.ok) {
+                throw new Error('Failed to check for existing product');
+              }
 
-                  if (!updateResponse.ok) {
-                    throw new Error('Failed to update product');
-                  }
-                  successCount++;
-                } else {
-                  // Create if doesn't exist
-                  const productData = {
-                    name: product.name,
-                    sku: product.sku, // Use original SKU
-                    barcode: product.barcode,
-                    description: product.description,
-                    price: product.price,
-                    stock_quantity: 0,
-                    min_stock_level: product.min_stock_level,
-                    reorder_level: product.reorder_level,
-                    category_id: product.category_id,
-                    supplier_id: product.supplier_id,
-                    brand_id: product.brand_id,
-                    is_active: true
-                  };
+              const duplicateData2 = await duplicateCheckResponse2.json();
+              
+              if (!duplicateData2.success) {
+                throw new Error(duplicateData2.error || 'Failed to check for existing product');
+              }
+              
+              if (duplicateData2.hasDuplicates && duplicateData2.duplicates && duplicateData2.duplicates.length > 0) {
+                // Update existing product
+                const existingProduct = duplicateData2.duplicates[0];
+                const updateData = {
+                  price: product.price,
+                  description: product.description,
+                  min_stock_level: product.min_stock_level,
+                  reorder_level: product.reorder_level,
+                  category_id: product.category_id,
+                  supplier_id: product.supplier_id,
+                  brand_id: product.brand_id
+                };
 
-                  const createResponse = await fetch('/api/products', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      store_id: store.id,
-                      business_id: currentBusiness?.id,
-                      ...productData
-                    }),
-                  });
+                const updateResponse = await fetch(`/api/products/${existingProduct.id}`, {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(updateData),
+                });
 
-                  if (!createResponse.ok) {
-                    throw new Error('Failed to create product');
-                  }
-                  successCount++;
+                if (!updateResponse.ok) {
+                  const errorData = await updateResponse.json().catch(() => ({}));
+                  throw new Error(errorData.error || 'Failed to update product');
                 }
+                successCount++;
+              } else {
+                // Create new product if doesn't exist
+                const productData = {
+                  name: product.name,
+                  sku: product.sku,
+                  barcode: product.barcode,
+                  description: product.description,
+                  price: product.price,
+                  stock_quantity: 0,
+                  min_stock_level: product.min_stock_level,
+                  reorder_level: product.reorder_level,
+                  category_id: product.category_id,
+                  supplier_id: product.supplier_id,
+                  brand_id: product.brand_id,
+                  is_active: true
+                };
+
+                const createResponse = await fetch('/api/products', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    store_id: store.id,
+                    business_id: currentBusiness?.id,
+                    ...productData
+                  }),
+                });
+
+                if (!createResponse.ok) {
+                  const errorData = await createResponse.json().catch(() => ({}));
+                  throw new Error(errorData.error || 'Failed to create product');
+                }
+                successCount++;
               }
             }
           } catch (error) {
             console.error(`Error syncing product ${product.name} to store ${store.name}:`, error);
             errorCount++;
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            setSyncErrors(prev => [...prev, {
+              product: product.name,
+              store: store.name,
+              error: errorMessage
+            }]);
           }
         }
       }
+
+      setSyncProgress(null);
 
       // Log activity
       logActivity('inventory_update', 'Product Sync', `Synced ${successCount} products to ${selectedStores.length} stores`, {
@@ -442,7 +505,12 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
       if (errorCount === 0) {
         toast.success(`Successfully synced ${successCount} products to ${selectedStores.length} stores`);
       } else {
-        toast.success(`Synced ${successCount} products with ${errorCount} errors`);
+        toast.warning(`Synced ${successCount} products with ${errorCount} errors. Check details below.`);
+      }
+
+      // Refresh products list after sync
+      if (currentStore?.id) {
+        await loadProductsForStore(currentStore.id);
       }
 
       setShowSyncDialog(false);
@@ -451,7 +519,9 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
       
     } catch (error: unknown) {
       console.error('Error during sync:', error);
-      toast.error('Failed to sync products');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to sync products: ${errorMessage}`);
+      setSyncProgress(null);
     } finally {
       setSyncing(false);
     }
@@ -753,8 +823,48 @@ export const ProductSync: React.FC<ProductSyncProps> = ({ onBack }) => {
             <div className="bg-gray-50 p-3 rounded-lg">
               <p className="text-sm text-muted-foreground">
                 <strong>{selectedProducts.length}</strong> products will be {syncMode === 'copy' ? 'copied to' : 'synced with'} <strong>{selectedStores.length}</strong> stores
+                {syncMode === 'copy' && (
+                  <span className="block mt-1 text-xs text-muted-foreground">
+                    Note: Products with duplicates will be skipped
+                  </span>
+                )}
               </p>
             </div>
+
+            {/* Sync Progress */}
+            {syncProgress && (
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium text-blue-900">Syncing in progress...</p>
+                  <p className="text-sm text-blue-700">
+                    {syncProgress.current} / {syncProgress.total}
+                  </p>
+                </div>
+                <div className="w-full bg-blue-200 rounded-full h-2 mb-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }}
+                  />
+                </div>
+                <p className="text-xs text-blue-700">
+                  Processing: <strong>{syncProgress.currentProduct}</strong> → <strong>{syncProgress.currentStore}</strong>
+                </p>
+              </div>
+            )}
+
+            {/* Sync Errors */}
+            {syncErrors.length > 0 && (
+              <div className="bg-red-50 p-4 rounded-lg border border-red-200 max-h-40 overflow-y-auto">
+                <p className="text-sm font-medium text-red-900 mb-2">Errors ({syncErrors.length}):</p>
+                <div className="space-y-1">
+                  {syncErrors.map((err, idx) => (
+                    <p key={idx} className="text-xs text-red-700">
+                      <strong>{err.product}</strong> → <strong>{err.store}</strong>: {err.error}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex justify-end gap-2">
