@@ -550,7 +550,6 @@ export const CashierDashboard: React.FC = () => {
       subtitle={`Welcome back, ${user?.name || user?.username}`}
       headerActions={
         <div className="flex items-center gap-2">
-          <NotificationBell />
           <Button 
             onClick={() => router.push('/pos')} 
             variant="default"
