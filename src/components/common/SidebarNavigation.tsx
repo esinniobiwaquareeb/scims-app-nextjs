@@ -26,7 +26,9 @@ import {
   ChevronDown,
   Menu,
   X,
-  Building2
+  Building2,
+  CreditCard,
+  Menu as MenuIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -50,7 +52,13 @@ interface SidebarNavigationProps {
 export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className }) => {
   const pathname = usePathname();
   const { user, currentBusiness, currentStore } = useAuth();
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['dashboard', 'sales', 'inventory']));
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => {
+    // Default expanded groups based on role
+    if (user?.role === 'superadmin') {
+      return new Set(['overview', 'management']);
+    }
+    return new Set(['dashboard', 'sales', 'inventory']);
+  });
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const toggleGroup = (groupTitle: string) => {
@@ -339,7 +347,65 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
     }
   ];
 
-  const menuGroups = user?.role === 'business_admin' ? businessAdminMenuGroups : storeAdminMenuGroups;
+  // Super Admin Menu Groups
+  const superAdminMenuGroups: MenuGroup[] = [
+    {
+      title: 'overview',
+      items: [
+        {
+          title: 'Dashboard',
+          href: '/dashboard',
+          icon: LayoutDashboard,
+          roles: ['superadmin']
+        }
+      ]
+    },
+    {
+      title: 'management',
+      items: [
+        {
+          title: 'Businesses',
+          href: '/businesses',
+          icon: Building2,
+          roles: ['superadmin']
+        },
+        {
+          title: 'Subscriptions',
+          href: '/subscriptions',
+          icon: CreditCard,
+          roles: ['superadmin']
+        },
+        {
+          title: 'Menu Management',
+          href: '/menu-management',
+          icon: MenuIcon,
+          roles: ['superadmin']
+        }
+      ]
+    },
+    {
+      title: 'system',
+      items: [
+        {
+          title: 'Platform Settings',
+          href: '/platform-settings',
+          icon: Settings,
+          roles: ['superadmin']
+        },
+        {
+          title: 'Activity Logs',
+          href: '/activity-logs',
+          icon: Activity,
+          roles: ['superadmin']
+        }
+      ]
+    }
+  ];
+
+  // Determine which menu groups to use based on user role
+  const menuGroups = user?.role === 'superadmin' 
+    ? superAdminMenuGroups 
+    : (user?.role === 'business_admin' ? businessAdminMenuGroups : storeAdminMenuGroups);
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
@@ -351,7 +417,9 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-sm sm:text-base font-semibold text-foreground truncate">SCIMS</h2>
-            {currentStore ? (
+            {user?.role === 'superadmin' ? (
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Platform Admin</p>
+            ) : currentStore ? (
               <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{currentStore.name}</p>
             ) : currentBusiness ? (
               <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{currentBusiness.name}</p>

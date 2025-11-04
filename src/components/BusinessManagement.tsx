@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
-import { Header } from './common/Header';
+import { DashboardLayout } from './common/DashboardLayout';
 import { DataTable } from './common/DataTable';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
@@ -32,17 +33,11 @@ import {
 } from '../utils/hooks/useStoreData';
 
 import { useBusinesses, useCreateBusiness, useUpdateBusiness, useDeleteBusiness } from '../utils/hooks/business';
-import { BusinessDetail } from './BusinessDetail';
 import { 
-  BUSINESS_TYPES, 
   BUSINESS_TYPE_LABELS, 
   BUSINESS_TYPE_DESCRIPTIONS,
   BUSINESS_TYPE_ICONS 
 } from './common/BusinessTypeConstants';
-
-interface BusinessManagementProps {
-  onBack: () => void;
-}
 
 interface Business {
   id: string;
@@ -102,16 +97,15 @@ interface Business {
   updated_at: string;
 }
 
-export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }) => {
+export const BusinessManagement: React.FC = () => {
   const { user } = useAuth();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [showBusinessDetail, setShowBusinessDetail] = useState(false);
 
   const [newBusiness, setNewBusiness] = useState({
     name: '',
@@ -367,9 +361,8 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
   };
 
   const handleViewBusiness = useCallback((business: Business) => {
-    setSelectedBusiness(business);
-    setShowBusinessDetail(true);
-  }, []);
+    router.push(`/businesses/${business.id}`);
+  }, [router]);
 
   const handleEditBusiness = useCallback((business: Business) => {
     setSelectedBusiness(business);
@@ -467,51 +460,45 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading businesses...</p>
+      <DashboardLayout
+        title="Business Management"
+        subtitle="Loading businesses..."
+      >
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading businesses...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   if (hasError) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="w-8 h-8 text-red-600 mx-auto mb-4" />
-          <p className="text-red-600">Error loading businesses. Please try again.</p>
+      <DashboardLayout
+        title="Business Management"
+        subtitle="Error loading businesses"
+      >
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <AlertCircle className="w-8 h-8 text-red-600 mx-auto mb-4" />
+            <p className="text-red-600">Error loading businesses. Please try again.</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Business Detail Page */}
-      {showBusinessDetail && selectedBusiness ? (
-        <BusinessDetail
-          business={selectedBusiness}
-          onBack={() => {
-            setShowBusinessDetail(false);
-            setSelectedBusiness(null);
-          }}
-        />
-      ) : (
-        <>
-          <Header 
-            title="Business Management"
-            subtitle="Manage all registered businesses on SCIMS"
-            showBackButton
-            onBack={onBack}
-            showLogout={false}
-          >
-      </Header>
+    <DashboardLayout
+      title="Business Management"
+      subtitle="Manage all registered businesses on SCIMS"
+    >
 
       {/* Success Message Display */}
       {createBusinessMutation.isSuccess && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="py-4">
           <Card className="border-green-200 bg-green-50">
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
@@ -525,7 +512,7 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="space-y-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
@@ -1135,9 +1122,7 @@ export const BusinessManagement: React.FC<BusinessManagementProps> = ({ onBack }
             </div>
           </DialogContent>
         </Dialog>
-          </main>
-        </>
-      )}
-    </div>
+        </div>
+    </DashboardLayout>
   );
 };

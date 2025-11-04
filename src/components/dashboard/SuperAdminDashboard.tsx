@@ -1,25 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
-import { Header } from '@/components/common/Header';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Settings, Eye, Wrench, TrendingUp, Users, Building2, Loader2, RefreshCw } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { Eye, Wrench, TrendingUp, Users, Loader2, RefreshCw } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { DataTable } from '@/components/common/DataTable';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
 // Import refactored components and helpers
-import { QuickActions } from '@/components/superadmin/QuickActions';
 import { StatsGrid } from '@/components/superadmin/StatsGrid';
 import { SystemStatus } from '@/components/superadmin/SystemStatus';
-import { MenuManagement } from '@/components/superadmin/MenuManagement';
-import { getStatusIcon, getSubscriptionColor, calculateStats } from '@/components/superadmin/SuperAdminHelpers';
+import { calculateStats } from '@/components/superadmin/SuperAdminHelpers';
 
 // Import React Query hooks
 import { 
@@ -28,32 +26,6 @@ import {
 
 import {useBusinesses} from '@/utils/hooks/business';
 
-interface SuperAdminDashboardProps {
-  onNavigate: (route: string) => void;
-}
-
-// Type definitions for business data
-interface Business {
-  id: string;
-  name: string;
-  subscription_status?: string;
-  subscription_plans?: {
-    name: string;
-  };
-  stores?: Array<{
-    id: string;
-    name: string;
-    is_active: boolean;
-  }>;
-  created_at?: string;
-}
-
-// Type definitions for subscription plans
-interface SubscriptionPlan {
-  name: string;
-  price: string;
-  status: string;
-}
 
 // Type definitions for platform health metrics
 interface PlatformHealthMetric {
@@ -120,7 +92,6 @@ export const SuperAdminDashboard: React.FC = () => {
   };
 
   const {
-    data: subscriptionPlans = [],
     isLoading: plansLoading,
     error: plansError,
     refetch: refetchPlans
@@ -131,18 +102,9 @@ export const SuperAdminDashboard: React.FC = () => {
   // Combined loading states
   const isLoading = businessesLoading || plansLoading;
 
-  // Handle tab switching
-  const handleTabSwitch = (tabName: string) => {
-    setActiveTab(tabName);
-  };
-
   // Handle navigation for external routes
   const handleNavigation = (route: string) => {
-    if (route === 'menu-management') {
-      setActiveTab('menu-management');
-    } else {
-      router.push(route);
-    }
+    router.push(route);
   };
 
   // Combined error state
@@ -156,7 +118,7 @@ export const SuperAdminDashboard: React.FC = () => {
         refetchPlans()
       ]);
       toast.success('Dashboard data refreshed successfully');
-    } catch (error) {
+    } catch {
       toast.error('Failed to refresh some data');
     }
   };
@@ -176,103 +138,54 @@ export const SuperAdminDashboard: React.FC = () => {
   // Show loading state while data is being fetched
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Loading analytics data...</p>
+      <DashboardLayout
+        title={`${systemSettings.platformName} ${translate('dashboard.title').replace('SCIMS', '')}`}
+        subtitle="Loading analytics data..."
+      >
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Loading analytics data...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
-  // DataTable columns configuration for businesses
-  const businessColumns = [
-    {
-      key: 'business',
-      header: 'Business',
-      render: (business: Business) => (
-        <div>
-          <p className="font-medium">{business.name || 'Unknown'}</p>
-          <p className="text-sm text-muted-foreground">ID: {business.id}</p>
-        </div>
-      )
-    },
-    {
-      key: 'subscription',
-      header: 'Subscription',
-      render: (business: Business) => (
-        <Badge variant={getSubscriptionColor(business.subscription_plans?.name || 'Unknown', business.subscription_status || 'Unknown')}>
-          {business.subscription_plans?.name || 'Unknown'}
+  // Prepare header actions
+  const headerActions = (
+    <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
+      <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+        <SelectTrigger className="w-32">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="7d">Last 7 days</SelectItem>
+          <SelectItem value="30d">Last 30 days</SelectItem>
+          <SelectItem value="90d">Last 90 days</SelectItem>
+        </SelectContent>
+      </Select>
+      {systemSettings.demoMode && (
+        <Badge variant="secondary" className="flex items-center gap-1">
+          <Eye className="w-3 h-3" />
+          Demo Mode
         </Badge>
-      )
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (business: Business) => (
-        <div className="flex items-center gap-2">
-          {getStatusIcon(business.subscription_status || 'Unknown')}
-          <span className="capitalize">{business.subscription_status || 'Unknown'}</span>
-        </div>
-      )
-    },
-    {
-      key: 'stores',
-      header: 'Stores',
-      render: (business: Business) => (
-        <div>
-          <span className="font-medium">{(business.stores || []).length}</span>
-          <span className="text-sm text-muted-foreground ml-1">
-            ({(business.stores || []).filter((s) => s.is_active).length} active)
-          </span>
-        </div>
-      )
-    },
-    {
-      key: 'created',
-      header: 'Created',
-      render: (business: Business) => (
-        <div>
-          {business.created_at ? new Date(business.created_at).toLocaleDateString() : 'Unknown'}
-        </div>
-      )
-    }
-  ];
+      )}
+      {systemSettings.maintenanceMode && (
+        <Badge variant="destructive" className="flex items-center gap-1">
+          <Wrench className="w-3 h-3" />
+          {translate('settings.maintenance')}
+        </Badge>
+      )}
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header 
-        title={`${systemSettings.platformName} ${translate('dashboard.title').replace('SCIMS', '')}`}
-        subtitle={translate('dashboard.title').replace('SCIMS ', '') + ' - Stock Control & Inventory Management System'}
-      >
-        <div className="flex items-center gap-2">
-          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="90d">Last 90 days</SelectItem>
-            </SelectContent>
-          </Select>
-          {systemSettings.demoMode && (
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Eye className="w-3 h-3" />
-              Demo Mode
-            </Badge>
-          )}
-          {systemSettings.maintenanceMode && (
-            <Badge variant="destructive" className="flex items-center gap-1">
-              <Wrench className="w-3 h-3" />
-              {translate('settings.maintenance')}
-            </Badge>
-          )}
-        </div>
-      </Header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <QuickActions onNavigate={handleNavigation} translate={translate} />
+    <DashboardLayout
+      title={`${systemSettings.platformName} ${translate('dashboard.title').replace('SCIMS', '')}`}
+      subtitle={translate('dashboard.title').replace('SCIMS ', '') + ' - Stock Control & Inventory Management System'}
+      headerActions={headerActions}
+    >
         <StatsGrid stats={stats} platformUsers={platformUsers} formatCurrency={formatCurrency} translate={translate} />
 
         {hasError && (
@@ -295,12 +208,9 @@ export const SuperAdminDashboard: React.FC = () => {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="businesses">Businesses</TabsTrigger>
-            <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="menu-management">Menu Management</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -388,156 +298,6 @@ export const SuperAdminDashboard: React.FC = () => {
               translate={translate} 
               onNavigate={handleNavigation} 
             />
-          </TabsContent>
-
-          <TabsContent value="businesses">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Building2 className="w-5 h-5" />
-                      Recent Businesses
-                    </CardTitle>
-                    <CardDescription>Latest registered businesses on SCIMS</CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => refetchBusinesses()}
-                      disabled={businessesLoading}
-                    >
-                      <RefreshCw className={`w-4 h-4 mr-2 ${businessesLoading ? 'animate-spin' : ''}`} />
-                      Refresh
-                    </Button>
-                    <Button onClick={() => handleNavigation('businesses')}>
-                      <Settings className="w-4 h-4 mr-2" />
-                      Manage All
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <DataTable
-                  title=""
-                  data={businesses?.slice(0, 5) || []}
-                  columns={businessColumns}
-                  searchable={false}
-                  tableName="superadmin"
-                  userRole={user?.role}
-                  pagination={{
-                    enabled: false
-                  }}
-                  emptyMessage={
-                    businessesLoading 
-                      ? 'Loading businesses...' 
-                      : 'No businesses found. Create your first business to get started.'
-                  }
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="subscriptions">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>SCIMS Plans</CardTitle>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => refetchPlans()}
-                        disabled={plansLoading}
-                      >
-                        <RefreshCw className={`w-3 h-3 mr-2 ${plansLoading ? 'animate-spin' : ''}`} />
-                        Refresh
-                      </Button>
-                      <Button onClick={() => handleNavigation('subscriptions')}>
-                        <Settings className="w-4 h-4 mr-2" />
-                        Manage
-                      </Button>
-                    </div>
-                  </div>
-                  <CardDescription>Current subscription offerings</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <DataTable
-                    title=""
-                    data={subscriptionPlans}
-                    columns={[
-                      {
-                        key: 'name',
-                        header: 'Plan Name',
-                        render: (plan: { id: string; name: string; price: string; status: string }) => (
-                          <div className="font-medium">{plan.name}</div>
-                        )
-                      },
-                      {
-                        key: 'price',
-                        header: 'Price',
-                        render: (plan: { id: string; name: string; price: string; status: string }) => (
-                          <div className="text-sm text-muted-foreground">{plan.price}</div>
-                        )
-                      },
-                      {
-                        key: 'status',
-                        header: 'Status',
-                        render: (plan: { id: string; name: string; price: string; status: string }) => (
-                          <Badge variant="secondary">{plan.status}</Badge>
-                        )
-                      }
-                    ]}
-                    searchable={false}
-                    tableName="subscriptionPlans"
-                    userRole={user?.role}
-                    pagination={{
-                      enabled: false
-                    }}
-                    emptyMessage="No subscription plans found"
-                  />
-                </CardContent>
-              </Card>
-
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Revenue by Plan</CardTitle>
-                      <CardDescription>Monthly recurring revenue breakdown</CardDescription>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => refetchAllData()}
-                      disabled={isLoading}
-                    >
-                      <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                      Refresh
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {subscriptionData.revenueByPlan.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={subscriptionData.revenueByPlan}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="plan" />
-                        <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                        <Tooltip formatter={(value) => [formatCurrency(value as number), 'Revenue']} />
-                        <Bar dataKey="revenue" fill="#8884d8" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                      No revenue by plan data available
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
           </TabsContent>
 
           <TabsContent value="analytics">
@@ -684,13 +444,7 @@ export const SuperAdminDashboard: React.FC = () => {
               </Card>
             </div>
           </TabsContent>
-
-          {/* Menu Management Tab */}
-          <TabsContent value="menu-management" className="space-y-6">
-            <MenuManagement />
-          </TabsContent>
         </Tabs>
-      </main>
-    </div>
+    </DashboardLayout>
   );
 };

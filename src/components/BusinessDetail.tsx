@@ -1,23 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { Header } from './common/Header';
+import { DashboardLayout } from './common/DashboardLayout';
 import { useSystem } from '../contexts/SystemContext';
-import { useAuth } from '../contexts/AuthContext';
 import { DataTable } from './common/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
-import { Button } from './ui/button';
 import { toast } from 'sonner';
-import { Loader2, Search, Download, Building2, Store, Users, CreditCard, Globe, MapPin, Phone, Mail, Globe2, Calendar, Activity, TrendingUp, Package, Truck, AlertCircle, CheckCircle, XCircle, Building } from 'lucide-react';
+import { Loader2, Search, Building2, Store, Users, CreditCard, Globe, MapPin, Phone, Mail, Globe2, Calendar, Activity, TrendingUp, Package, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { 
   BUSINESS_TYPE_LABELS, 
   BUSINESS_TYPE_DESCRIPTIONS,
-  BUSINESS_TYPE_ICONS,
-  getBusinessTypeConfig
+  BUSINESS_TYPE_ICONS
 } from './common/BusinessTypeConstants';
 
 interface Business {
@@ -79,13 +76,11 @@ interface Business {
 }
 
 interface BusinessDetailProps {
-  onBack: () => void;
   business: Business | null;
 }
 
-export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business }) => {
+export const BusinessDetail: React.FC<BusinessDetailProps> = ({ business }) => {
   const { formatCurrency } = useSystem();
-  const { user } = useAuth();
 
   const [isLoading, setIsLoading] = useState(true);
   const [products, setProducts] = useState<any[]>([]);
@@ -268,12 +263,17 @@ export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading business details...</p>
+      <DashboardLayout
+        title="Loading..."
+        subtitle="Loading business details..."
+      >
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading business details...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
@@ -461,18 +461,11 @@ export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business
   ];
 
   return (
-    <div className="h-full flex flex-col">
-      <Header 
-        title={business.name}
-        subtitle={`${BUSINESS_TYPE_LABELS[business.business_type as keyof typeof BUSINESS_TYPE_LABELS] || 'Business'} • ${business.subscription_status} subscription`}
-        showBackButton
-        onBack={onBack}
-        showLogout={false}
-        simplified
-      />
-
-      <main className="flex-1 overflow-y-auto pt-[73px] sm:pt-[81px] lg:pt-[89px]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <DashboardLayout
+      title={business.name}
+      subtitle={`${BUSINESS_TYPE_LABELS[business.business_type as keyof typeof BUSINESS_TYPE_LABELS] || 'Business'} • ${business.subscription_status} subscription`}
+    >
+      <div className="space-y-6">
         {/* Business Overview */}
         <Card>
           <CardHeader>
@@ -922,8 +915,7 @@ export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business
             </ScrollArea>
           </CardContent>
         </Card>
-        </div>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };

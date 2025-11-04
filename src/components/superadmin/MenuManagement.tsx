@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { DashboardLayout } from '../common/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -136,26 +137,36 @@ export const MenuManagement: React.FC = () => {
   // Show loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading menu data...</p>
+      <DashboardLayout
+        title="Menu Management"
+        subtitle="Loading menu data..."
+      >
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading menu data...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   // Show error state
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">Error loading menu data: {error}</p>
-          <Button onClick={loadData}>
-            Retry
-          </Button>
+      <DashboardLayout
+        title="Menu Management"
+        subtitle="Error loading menu data"
+      >
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">Error loading menu data: {error}</p>
+            <Button onClick={loadData}>
+              Retry
+            </Button>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
@@ -357,19 +368,17 @@ export const MenuManagement: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Menu Management</h1>
-          <p className="text-gray-600 mt-2">
-            Manage menu items for different business types
-          </p>
-        </div>
+    <DashboardLayout
+      title="Menu Management"
+      subtitle="Manage menu items for different business types"
+      headerActions={
         <Button onClick={() => setIsAddingItem(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Add Menu Item
         </Button>
-      </div>
+      }
+    >
+      <div className="space-y-6">
 
       {/* Business Type Selector */}
       <Card>
@@ -790,6 +799,7 @@ export const MenuManagement: React.FC = () => {
           </Card>
         </div>
       )}
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };

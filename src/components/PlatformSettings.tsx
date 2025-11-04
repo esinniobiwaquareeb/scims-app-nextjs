@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Header } from '@/components/common/Header';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { usePlatformSettings, useSystemHealth, useUpdatePlatformSettings } from '@/utils/hooks/useStoreData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,9 +32,6 @@ import {
   MessageCircle,
   ShieldOff
 } from 'lucide-react';
-interface PlatformSettingsProps {
-  onBack: () => void;
-}
 
 interface Currency {
   code: string;
@@ -77,7 +74,7 @@ interface PlatformSettingsData {
   supported_languages: Language[];
 }
 
-export const PlatformSettings: React.FC<PlatformSettingsProps> = ({ onBack }) => {
+export const PlatformSettings: React.FC = () => {
   const { user } = useAuth();
   const [localSettings, setLocalSettings] = useState<PlatformSettingsData | null>(null);
 
@@ -166,24 +163,25 @@ export const PlatformSettings: React.FC<PlatformSettingsProps> = ({ onBack }) =>
 
   if (loading || !localSettings) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading platform settings...</p>
+      <DashboardLayout
+        title="Platform Settings"
+        subtitle="Loading platform settings..."
+      >
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading platform settings...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header 
-        title="Platform Settings"
-        subtitle="Configure SCIMS system-wide settings and preferences"
-        showBackButton
-        onBack={onBack}
-        showLogout={false}
-      >
+    <DashboardLayout
+      title="Platform Settings"
+      subtitle="Configure SCIMS system-wide settings and preferences"
+      headerActions={
         <div className="flex gap-2">
           <Button variant="outline" onClick={resetToDefaults}>
             Reset to Defaults
@@ -202,9 +200,9 @@ export const PlatformSettings: React.FC<PlatformSettingsProps> = ({ onBack }) =>
             )}
           </Button>
         </div>
-      </Header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      }
+    >
+      <div className="space-y-6">
         {/* Error Display */}
         {(settingsError || healthError) && (
           <Card className="mb-6 border-red-200 bg-red-50">
@@ -955,7 +953,7 @@ export const PlatformSettings: React.FC<PlatformSettingsProps> = ({ onBack }) =>
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };

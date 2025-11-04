@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Header } from '@/components/common/Header';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,9 +22,6 @@ import {
   Loader2
 } from 'lucide-react';
 
-interface SubscriptionManagementProps {
-  onBack: () => void;
-}
 
 interface SubscriptionPlan {
   id: string;
@@ -252,7 +249,7 @@ const PlanForm = React.memo(({
 
 PlanForm.displayName = 'PlanForm';
 
-export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ onBack }) => {
+export const SubscriptionManagement: React.FC = () => {
   const { user } = useAuth();
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [stats, setStats] = useState<PlanStats>({
@@ -552,31 +549,32 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading subscription plans...</p>
+      <DashboardLayout
+        title="Subscription Management"
+        subtitle="Loading subscription plans..."
+      >
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading subscription plans...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header 
-        title="Subscription Management"
-        subtitle="Create and manage SCIMS subscription plans"
-        showBackButton
-        onBack={onBack}
-        showLogout={false}
-      >
+    <DashboardLayout
+      title="Subscription Management"
+      subtitle="Create and manage SCIMS subscription plans"
+      headerActions={
         <Button onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Add Plan
         </Button>
-      </Header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      }
+    >
+      <div className="space-y-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
@@ -678,7 +676,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
             )}
           </DialogContent>
         </Dialog>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };

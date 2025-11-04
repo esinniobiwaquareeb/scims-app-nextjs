@@ -96,7 +96,7 @@ export default function BusinessDetailPage() {
   }, [params.id]);
 
   const handleBack = () => {
-    router.push('/business');
+    router.push('/businesses');
   };
 
   if (isLoading) {
@@ -131,9 +131,5 @@ export default function BusinessDetailPage() {
     );
   }
 
-  return (
-    <DashboardLayout>
-      <BusinessDetail onBack={handleBack} business={business} />
-    </DashboardLayout>
-  );
+  return <BusinessDetail business={business} />;
 }
