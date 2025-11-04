@@ -43,7 +43,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               ) : (
                 <button
                   onClick={() => router.push('/pos')}
-                  className="rounded-md px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-2.5 shrink-0 flex items-center gap-2 sm:gap-3 lg:gap-4 border border-border bg-background hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                  className="rounded-md px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-4.5 shrink-0 flex items-center gap-2 sm:gap-3 lg:gap-4 border border-border bg-background hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                 >
                   <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-4 lg:h-4 shrink-0" />
                   <span className="hidden sm:inline text-xs sm:text-sm font-medium text-foreground">Open POS</span>
