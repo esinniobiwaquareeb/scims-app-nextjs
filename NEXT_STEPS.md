@@ -122,31 +122,6 @@ If deploying to production:
 
 Or continue using in-memory rate limiting (works but won't persist across server restarts).
 
-## 🧪 Testing (This Week)
-
-### 7. Run Tests
-
-```bash
-# Install test dependencies if not already installed
-npm install -D vitest @vitest/ui
-
-# Run tests
-npm run test
-
-# Run tests with UI
-npm run test:ui
-
-# Run tests once
-npm run test:run
-```
-
-### 8. Add More Tests
-
-Create tests for critical utilities:
-- `src/test/utils/api-validation.test.ts`
-- `src/test/utils/rate-limit.test.ts`
-- `src/test/utils/logger.test.ts`
-
 ## 📋 Medium-term Tasks (This Month)
 
 ### 9. Audit All API Routes

@@ -24,7 +24,6 @@ A comprehensive inventory management system built with Next.js 15, TypeScript, a
 - **Form Handling**: React Hook Form
 - **Validation**: Zod
 - **Rate Limiting**: Upstash Redis (with in-memory fallback)
-- **Testing**: Vitest
 
 ## Getting Started
 
@@ -89,10 +88,6 @@ npm run dev
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
-- `npm run test` - Run tests in watch mode
-- `npm run test:ui` - Run tests with UI
-- `npm run test:coverage` - Run tests with coverage report
-- `npm run test:run` - Run tests once
 
 ## Project Structure
 
@@ -106,7 +101,6 @@ scims-nextjs/
 │   ├── contexts/         # React contexts
 │   ├── hooks/            # Custom React hooks
 │   ├── lib/              # Library configurations
-│   ├── test/             # Test files
 │   ├── types/            # TypeScript type definitions
 │   └── utils/            # Utility functions
 ├── database/              # Database SQL scripts
@@ -150,7 +144,6 @@ export const GET = handler;
 2. Add API routes in `src/app/api/`
 3. Create components in `src/components/`
 4. Add types in `src/types/`
-5. Write tests in `src/test/`
 
 ## Database
 
@@ -191,8 +184,7 @@ The application can be deployed to any platform that supports Next.js:
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+4. Submit a pull request
 
 ## License
 

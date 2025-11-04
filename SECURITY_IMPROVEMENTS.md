@@ -116,12 +116,6 @@ Centralized logging utility with log levels and context.
 ### `src/utils/rate-limit.ts`
 Rate limiting with Redis (production) and in-memory (development) support.
 
-## 🧪 Testing Infrastructure
-
-### Setup
-- Vitest configuration: `vitest.config.ts`
-- Test setup file: `src/test/setup.ts`
-- Sample test: `src/test/utils/api-errors.test.ts`
 
 ## 📋 Migration Guide
 
@@ -190,20 +184,8 @@ UPSTASH_REDIS_REST_TOKEN=your_redis_token
 1. **Update all API routes** to use the new wrapper (example provided in `src/app/api/products/route.ts`)
 2. **Add environment variables** to production environment
 3. **Set up Upstash Redis** for production rate limiting (optional, in-memory works for dev)
-4. **Add more tests** following the pattern in `src/test/utils/api-errors.test.ts`
 5. **Monitor rate limits** in production and adjust limits as needed
 
-## 🔍 Testing
-
-Run tests:
-```bash
-npm run test
-```
-
-Run tests with coverage:
-```bash
-npm run test:coverage
-```
 
 ## 📊 Impact
 
