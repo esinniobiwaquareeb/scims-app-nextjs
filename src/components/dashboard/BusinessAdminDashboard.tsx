@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { StatsGrid } from '@/components/dashboard/StatsGrid';
+import { WelcomeOnboarding } from '@/components/dashboard/WelcomeOnboarding';
 import { 
   Package, 
   BarChart3,
@@ -17,7 +18,8 @@ import {
   Loader2,
   AlertTriangle,
   DollarSign,
-  ShoppingCart
+  ShoppingCart,
+  Sparkles
 } from 'lucide-react';
 import { useBusinessDashboardStats, useStoreDashboardStats } from '@/utils/hooks/useStoreData';
 
@@ -64,21 +66,33 @@ export const BusinessAdminDashboard: React.FC = () => {
 
   const businessTypeDisplay = getBusinessTypeDisplay();
 
+  const handleShowOnboarding = () => {
+    // Clear dismissal flag to show onboarding again
+    if (currentBusiness?.id) {
+      localStorage.removeItem(`onboarding_dismissed_${currentBusiness.id}`);
+      // Reload page to show onboarding
+      window.location.reload();
+    }
+  };
+
   return (
-    <DashboardLayout
+    <>
+      <WelcomeOnboarding />
+      <DashboardLayout
         title="Business Admin Dashboard"
         subtitle={`Welcome back, ${user?.name || user?.username} • ${businessTypeDisplay.label}`}
-      headerActions={
+        headerActions={
         <>
-          {/* Business Type Indicator - Hidden on mobile */}
-        {/* {user?.role === 'business_admin' && currentBusiness && (
-            <div className="hidden md:flex items-center gap-2 sm:gap-3 lg:gap-4 bg-muted rounded-lg px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-2.5 border border-border">
-              <span className="text-base sm:text-lg">{businessTypeDisplay.icon}</span>
-              <span className="text-xs sm:text-sm font-medium text-foreground whitespace-nowrap">
-              {businessTypeDisplay.label}
-            </span>
-          </div>
-        )} */}
+          {/* Setup Guide Button - Always visible for business admins */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleShowOnboarding}
+            className="flex items-center gap-2"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span className="hidden sm:inline">Setup Guide</span>
+          </Button>
           <button
             onClick={() => router.push('/pos')}
             className="rounded-md px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-4.5 shrink-0 flex items-center gap-2 sm:gap-3 lg:gap-4 border border-border bg-background hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
@@ -237,6 +251,7 @@ export const BusinessAdminDashboard: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-    </DashboardLayout>
+      </DashboardLayout>
+    </>
   );
 };
