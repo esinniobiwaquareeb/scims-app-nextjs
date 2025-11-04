@@ -63,17 +63,17 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
       whileInView={animations[animation].animate}
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.6, delay, ease: "easeOut" }}
-      className={`text-center mb-20 ${className}`}
+      className={`text-center mb-12 sm:mb-16 lg:mb-20 ${className}`}
     >
       {badge && (
-        <Badge variant="outline" className="mb-4">
+        <Badge variant="outline" className="mb-3 sm:mb-4">
           {badge}
         </Badge>
       )}
-      <h2 className="text-4xl md:text-5xl font-bold mb-6">
+      <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 leading-tight">
         {title}
       </h2>
-      <p className={`text-xl text-muted-foreground mx-auto ${maxWidthClasses[maxWidth]}`}>
+      <p className={`text-base sm:text-lg lg:text-xl text-muted-foreground mx-auto ${maxWidthClasses[maxWidth]}`}>
         {description}
       </p>
     </motion.div>

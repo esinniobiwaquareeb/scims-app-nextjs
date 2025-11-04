@@ -12,7 +12,7 @@ export interface PricingTier {
   description: string;
   features: string[];
   popular?: boolean;
-  businessTypes: string[];
+  businessTypes?: string[];
 }
 
 export interface PricingCardProps {
@@ -86,13 +86,15 @@ export const PricingCard: React.FC<PricingCardProps> = ({
               </div>
             ))}
           </div>
-          <div className="space-y-2 mb-6">
-            {tier.businessTypes.map((type, i) => (
-              <Badge key={i} variant="secondary" className="text-xs mr-2">
-                {type}
-              </Badge>
-            ))}
-          </div>
+          {tier.businessTypes && tier.businessTypes.length > 0 && (
+            <div className="space-y-2 mb-6">
+              {tier.businessTypes.map((type, i) => (
+                <Badge key={i} variant="secondary" className="text-xs mr-2">
+                  {type}
+                </Badge>
+              ))}
+            </div>
+          )}
           <Button 
             className={`w-full ${tier.popular ? '' : 'variant-outline'}`}
             variant={tier.popular ? 'default' : 'outline'}
