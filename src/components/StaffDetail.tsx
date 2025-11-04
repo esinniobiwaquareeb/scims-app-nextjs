@@ -207,16 +207,18 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-full flex flex-col">
       <Header 
         title={`Staff Details: ${staffMember.name}`}
         subtitle={`Store: ${staffMember.storeName || 'Not assigned'}`}
         showBackButton
         onBack={onBack}
         showLogout={false}
+        simplified
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 overflow-y-auto pt-[73px] sm:pt-[81px] lg:pt-[89px]">
+        <div className="w-full max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {!staffMember.store_id && (
           <Card className="border-amber-200 bg-amber-50">
             <CardContent className="p-4">
@@ -427,6 +429,7 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
             }
           />
         )}
+        </div>
       </main>
     </div>
   );

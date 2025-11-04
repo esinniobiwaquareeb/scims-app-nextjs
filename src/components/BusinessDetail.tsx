@@ -461,21 +461,18 @@ export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full flex flex-col">
       <Header 
         title={business.name}
         subtitle={`${BUSINESS_TYPE_LABELS[business.business_type as keyof typeof BUSINESS_TYPE_LABELS] || 'Business'} • ${business.subscription_status} subscription`}
         showBackButton
         onBack={onBack}
         showLogout={false}
-      >
-        <Button onClick={exportBusinessData} variant="outline">
-          <Download className="w-4 h-4 mr-2" />
-          Export Data
-        </Button>
-      </Header>
+        simplified
+      />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <main className="flex-1 overflow-y-auto pt-[73px] sm:pt-[81px] lg:pt-[89px]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Business Overview */}
         <Card>
           <CardHeader>
@@ -925,6 +922,7 @@ export const BusinessDetail: React.FC<BusinessDetailProps> = ({ onBack, business
             </ScrollArea>
           </CardContent>
         </Card>
+        </div>
       </main>
     </div>
   );

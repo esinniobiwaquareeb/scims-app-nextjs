@@ -20,6 +20,7 @@ interface HeaderProps {
   onBack?: () => void;
   onNavigate?: (view: string) => void;
   showLogout?: boolean;
+  simplified?: boolean; // Simplified mode for detail pages - only shows back button, title, and subtitle
   children?: React.ReactNode;
 }
 
@@ -29,6 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   showBackButton, 
   onBack, 
   showLogout = true,
+  simplified = false,
   children 
 }) => {
   const { user, logout, currentBusiness, currentStore, switchStore } = useAuth();
@@ -41,12 +43,12 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const showStoreSelector = currentBusiness && 
+  const showStoreSelector = !simplified && currentBusiness && 
     currentBusiness.stores.length > 0 &&
     (user?.role === 'business_admin' || user?.role === 'admin');
 
   return (
-    <header className="bg-background shadow-sm border-b border-border sticky top-0 z-40">
+    <header className="bg-background shadow-sm border-b border-border fixed top-0 left-0 right-0 lg:left-64 xl:left-72 z-40">
       <div className="w-full px-3 sm:px-4 lg:px-6">
         <div className="flex items-center justify-between py-2.5 sm:py-3 lg:py-4 gap-2 sm:gap-3 lg:gap-4">
           {/* Left Section - Title */}
@@ -113,7 +115,7 @@ export const Header: React.FC<HeaderProps> = ({
             )}
 
             {/* Store display for store admins - Hidden on mobile */}
-            {user?.role === 'store_admin' && currentStore && (
+            {!simplified && user?.role === 'store_admin' && currentStore && (
               <div className="hidden sm:flex items-center gap-2 sm:gap-3 lg:gap-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-2.5 border border-blue-200 dark:border-blue-800">
                 <Store className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                 <span className="text-sm font-medium text-blue-700 dark:text-blue-300 truncate max-w-[120px] lg:max-w-none">
@@ -123,12 +125,14 @@ export const Header: React.FC<HeaderProps> = ({
             )}
             
             {/* Header Actions */}
-            <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 shrink-0">
-            {children}
-            </div>
+            {!simplified && (
+              <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 shrink-0">
+                {children}
+              </div>
+            )}
             
             {/* Profile Dropdown */}
-            {showLogout && user && (
+            {!simplified && showLogout && user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button 

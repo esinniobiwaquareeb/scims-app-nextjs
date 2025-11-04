@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { StaffDetail } from '@/components/StaffDetail';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { toast } from 'sonner';
 
 interface Staff {
@@ -83,35 +84,39 @@ export default function StaffDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading staff details...</p>
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading staff details...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   if (!staff) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Staff Not Found</h1>
-          <p className="text-gray-600 mb-4">The staff member you&apos;re looking for doesn&apos;t exist.</p>
-          <button
-            onClick={handleBack}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Go Back
-          </button>
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">Staff Not Found</h1>
+            <p className="text-muted-foreground mb-4">The staff member you&apos;re looking for doesn&apos;t exist.</p>
+            <button
+              onClick={handleBack}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+            >
+              Go Back
+            </button>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <DashboardLayout>
       <StaffDetail onBack={handleBack} staffMember={staff} />
-    </div>
+    </DashboardLayout>
   );
 }

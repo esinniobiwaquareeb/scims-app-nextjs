@@ -456,12 +456,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Fixed position on all screen sizes */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-full w-64 sm:w-72 bg-background border-r border-border z-50",
+          "fixed left-0 top-0 h-screen w-64 sm:w-72 bg-background border-r border-border z-50",
           "transition-transform duration-300 ease-in-out",
-          "lg:relative lg:translate-x-0 lg:z-auto",
+          "lg:translate-x-0",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           className
         )}

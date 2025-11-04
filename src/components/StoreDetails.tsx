@@ -121,7 +121,7 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
   if (isStoreAdmin && !hasAccessToStore) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header title="Access Denied" onBack={onBack} showLogout={false} />
+        <Header title="Access Denied" onBack={onBack} showLogout={false} simplified />
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
@@ -142,7 +142,7 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
   if (isLoadingSettings) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header title={`Store: ${storeName || 'Loading...'}`} onBack={onBack} showLogout={false} />
+        <Header title={`Store: ${storeName || 'Loading...'}`} onBack={onBack} showLogout={false} simplified />
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary mx-auto mb-4"></div>
@@ -169,7 +169,7 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
   if (!storeSettings) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header title="Store Not Found" onBack={onBack} showLogout={false} />
+        <Header title="Store Not Found" onBack={onBack} showLogout={false} simplified />
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <p className="text-gray-600 mb-4">Store not found</p>
@@ -209,7 +209,7 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
   const typedStats = calculatedStats;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-full flex flex-col">
       <Header 
         title={`Store: ${storeData?.name || store?.name || 'Loading...'}`}
         subtitle={storeData?.address || store?.address ? 
@@ -218,9 +218,11 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
         showBackButton
         onBack={onBack}
         showLogout={false}
+        simplified
       />
       
-      <main className="container mx-auto px-4 py-6">
+      <main className="flex-1 overflow-y-auto pt-[73px] sm:pt-[81px] lg:pt-[89px]">
+        <div className="container mx-auto px-4 py-6">
         {/* Store Header */}
         <div className="mb-6">
           <div className="flex items-center gap-4 mb-4">
@@ -782,6 +784,7 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
             }}
           />
         )}
+        </div>
       </main>
     </div>
   );

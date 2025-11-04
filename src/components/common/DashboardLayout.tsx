@@ -24,10 +24,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="h-screen bg-background flex overflow-hidden">
       <SidebarNavigation />
       
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* Main content area with header and scrollable content */}
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-64 xl:ml-72">
         {title && (
           <Header 
             title={title}
@@ -47,14 +48,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   size="sm"
                 >
                   <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Open <br /> POS</span>
+                  <span className="hidden sm:inline">Open POS</span>
                 </Button>
               )}
             </div>
           </Header>
         )}
         
-        <main className="flex-1 overflow-auto">
+        {/* Scrollable main content */}
+        <main className={`flex-1 overflow-y-auto overflow-x-hidden ${title ? 'pt-[73px] sm:pt-[81px] lg:pt-[89px]' : ''}`}>
           <div className="w-full max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
             {children}
           </div>

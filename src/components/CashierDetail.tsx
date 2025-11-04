@@ -287,16 +287,18 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-full flex flex-col">
       <Header 
         title={`Cashier: ${cashier.name}`}
         subtitle={`Store: ${cashier.storeName || 'Not assigned'}`}
         showBackButton
         onBack={onBack}
         showLogout={false}
+        simplified
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 overflow-y-auto pt-[73px] sm:pt-[81px] lg:pt-[89px]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
@@ -482,6 +484,7 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
             </ScrollArea>
           </CardContent>
         </Card>
+        </div>
       </main>
     </div>
   );
