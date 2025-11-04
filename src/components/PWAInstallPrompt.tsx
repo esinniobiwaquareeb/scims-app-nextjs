@@ -32,21 +32,51 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) =
       if (window.matchMedia('(display-mode: standalone)').matches || 
           (window.navigator as { standalone?: boolean }).standalone === true) {
         setIsInstalled(true);
-        return;
+        return true;
       }
+      return false;
     };
 
-    // Check if prompt was dismissed in this session
+    // Check if prompt was dismissed
     const checkDismissalStatus = () => {
-      const sessionDismissed = sessionStorage.getItem('pwa-prompt-dismissed-session');
+      // Check if permanently dismissed
       const permanentlyDismissed = localStorage.getItem('pwa-prompt-dismissed-permanent');
-      
-      // If dismissed in this session or permanently, don't show
-      if (sessionDismissed || permanentlyDismissed) {
+      if (permanentlyDismissed === 'true') {
         return false;
       }
-      
+
+      // Check if dismissed in this session
+      const sessionDismissed = sessionStorage.getItem('pwa-prompt-dismissed-session');
+      if (sessionDismissed === 'true') {
+        return false;
+      }
+
+      // Check if shown recently (within last 7 days)
+      const lastShown = localStorage.getItem('pwa-prompt-last-shown');
+      if (lastShown) {
+        const lastShownDate = new Date(lastShown);
+        const daysSinceLastShown = (Date.now() - lastShownDate.getTime()) / (1000 * 60 * 60 * 24);
+        if (daysSinceLastShown < 7) {
+          return false; // Don't show if shown within last 7 days
+        }
+      }
+
+      // Check if already shown in this session
+      const shownInSession = sessionStorage.getItem('pwa-prompt-shown-session');
+      if (shownInSession === 'true') {
+        return false;
+      }
+
       return true;
+    };
+
+    // Check if we should actually show the prompt
+    const shouldShowPrompt = () => {
+      if (isInstalled) return false;
+      // Check sessionStorage directly instead of state
+      const shownInSession = sessionStorage.getItem('pwa-prompt-shown-session');
+      if (shownInSession === 'true') return false;
+      return checkDismissalStatus();
     };
 
     // Listen for beforeinstallprompt event
@@ -54,9 +84,11 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) =
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       
-      // Only show if not dismissed
-      if (checkDismissalStatus()) {
+      // Only show if conditions are met
+      if (shouldShowPrompt()) {
         setShowPrompt(true);
+        sessionStorage.setItem('pwa-prompt-shown-session', 'true');
+        localStorage.setItem('pwa-prompt-last-shown', new Date().toISOString());
       }
     };
 
@@ -65,37 +97,50 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) =
       setIsInstalled(true);
       setShowPrompt(false);
       setDeferredPrompt(null);
+      // Clear dismissal flags since app is installed
+      localStorage.removeItem('pwa-prompt-dismissed-permanent');
+      sessionStorage.removeItem('pwa-prompt-dismissed-session');
+      sessionStorage.removeItem('pwa-prompt-shown-session');
     };
 
     // Check initial state
-    checkIfInstalled();
+    const installed = checkIfInstalled();
+    if (installed) {
+      return; // Don't set up listeners if already installed
+    }
+
+    // No need to check here - shouldShowPrompt will handle it
 
     // Add event listeners
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Check if we should show the prompt (e.g., user has been on site for a while)
-    // Only if not dismissed and not installed
-    if (!isInstalled && checkDismissalStatus()) {
-      const timer = setTimeout(() => {
-        if (!isInstalled && !showPrompt) {
-          // Show a gentle reminder after 30 seconds
+    // Delayed show (only if conditions are met and not already showing)
+    let timer: NodeJS.Timeout | null = null;
+    if (shouldShowPrompt()) {
+      // Wait longer before showing (2 minutes instead of 30 seconds)
+      timer = setTimeout(() => {
+        // Re-check conditions before showing
+        const sessionDismissed = sessionStorage.getItem('pwa-prompt-dismissed-session');
+        const permanentlyDismissed = localStorage.getItem('pwa-prompt-dismissed-permanent');
+        const shownInSession = sessionStorage.getItem('pwa-prompt-shown-session');
+        
+        if (!sessionDismissed && !permanentlyDismissed && !shownInSession && !isInstalled) {
           setShowPrompt(true);
+          sessionStorage.setItem('pwa-prompt-shown-session', 'true');
+          localStorage.setItem('pwa-prompt-last-shown', new Date().toISOString());
         }
-      }, 30000);
-
-      return () => {
-        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-        window.removeEventListener('appinstalled', handleAppInstalled);
-        clearTimeout(timer);
-      };
+      }, 120000); // 2 minutes
     }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
+      if (timer) {
+        clearTimeout(timer);
+      }
     };
-  }, [isInstalled, showPrompt]);
+  }, [isInstalled]); // Removed showPrompt and hasShownInSession from dependencies to prevent re-runs
 
   const handleInstall = async () => {
     if (!deferredPrompt) {
@@ -114,11 +159,16 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) =
       const { outcome } = await deferredPrompt.userChoice;
       
       if (outcome === 'accepted') {
-  
         setIsInstalled(true);
         setShowPrompt(false);
+        // Clear dismissal flags since user accepted
+        localStorage.removeItem('pwa-prompt-dismissed-permanent');
+        sessionStorage.removeItem('pwa-prompt-dismissed-session');
+        sessionStorage.removeItem('pwa-prompt-shown-session');
       } else {
-  
+        // User dismissed, mark as shown to prevent showing again soon
+        sessionStorage.setItem('pwa-prompt-shown-session', 'true');
+        localStorage.setItem('pwa-prompt-last-shown', new Date().toISOString());
       }
     } catch (error) {
       console.error('Error showing install prompt:', error);
@@ -160,12 +210,18 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) =
     setShowPrompt(false);
     // Store dismissal in sessionStorage to avoid showing again in this session
     sessionStorage.setItem('pwa-prompt-dismissed-session', 'true');
+    // Also mark as shown to prevent showing again
+    sessionStorage.setItem('pwa-prompt-shown-session', 'true');
+    onClose?.();
   };
 
   const handleDismissPermanently = () => {
     setShowPrompt(false);
     // Store permanent dismissal in localStorage
     localStorage.setItem('pwa-prompt-dismissed-permanent', 'true');
+    // Also mark as shown
+    sessionStorage.setItem('pwa-prompt-shown-session', 'true');
+    onClose?.();
   };
 
   // Don't render until mounted to avoid hydration mismatch
