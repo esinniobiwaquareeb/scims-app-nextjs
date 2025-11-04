@@ -961,17 +961,22 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="edit-name">Product Name</Label>
+                      <Label htmlFor="edit-name">
+                        Product Name <span className="text-red-500">*</span>
+                      </Label>
                       <Input
                         id="edit-name"
                         value={editingProduct.name}
                         onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
                         placeholder="Enter product name"
                         autoFocus
+                        required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="edit-price">Selling Price</Label>
+                      <Label htmlFor="edit-price">
+                        Selling Price <span className="text-red-500">*</span>
+                      </Label>
                       <Input
                         id="edit-price"
                         type="number"
@@ -979,6 +984,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
                         value={editingProduct.price}
                         onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })}
                         placeholder="0.00"
+                        required
                       />
                     </div>
                   </div>
@@ -994,7 +1000,9 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
                       />
                     </div>
                     <div>
-                      <Label htmlFor="edit-cost">Cost Price</Label>
+                      <Label htmlFor="edit-cost">
+                        Cost Price <span className="text-red-500">*</span>
+                      </Label>
                       <Input
                         id="edit-cost"
                         type="number"
@@ -1002,6 +1010,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
                         value={editingProduct.cost || 0}
                         onChange={(e) => setEditingProduct({ ...editingProduct, cost: parseFloat(e.target.value) || 0 })}
                         placeholder="0.00"
+                        required
                       />
                     </div>
                   </div>
@@ -1030,13 +1039,16 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
 
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <Label htmlFor="edit-stock">Current Stock</Label>
+                      <Label htmlFor="edit-stock">
+                        Current Stock <span className="text-red-500">*</span>
+                      </Label>
                       <Input
                         id="edit-stock"
                         type="number"
                         value={editingProduct.stock_quantity}
                         onChange={(e) => setEditingProduct({ ...editingProduct, stock_quantity: parseInt(e.target.value) || 0 })}
                         placeholder="0"
+                        required
                       />
                     </div>
                     <div>
@@ -1221,17 +1233,22 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="add-name">Product Name</Label>
+                    <Label htmlFor="add-name">
+                      Product Name <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="add-name"
                       value={newProduct.name || ''}
                       onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
                       placeholder="Enter product name"
                       autoFocus
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="add-price">Selling Price</Label>
+                    <Label htmlFor="add-price">
+                      Selling Price <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="add-price"
                       type="number"
@@ -1239,6 +1256,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
                       value={newProduct.price || 0}
                       onChange={(e) => setNewProduct({ ...newProduct, price: parseFloat(e.target.value) || 0 })}
                       placeholder="0.00"
+                      required
                     />
                   </div>
                 </div>
@@ -1254,7 +1272,9 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
                     />
                   </div>
                   <div>
-                    <Label htmlFor="add-cost">Cost Price</Label>
+                    <Label htmlFor="add-cost">
+                      Cost Price <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="add-cost"
                       type="number"
@@ -1262,6 +1282,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
                       value={newProduct.cost || 0}
                       onChange={(e) => setNewProduct({ ...newProduct, cost: parseFloat(e.target.value) || 0 })}
                       placeholder="0.00"
+                      required
                     />
                   </div>
                 </div>
@@ -1290,13 +1311,16 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
 
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="add-stock">Current Stock</Label>
+                    <Label htmlFor="add-stock">
+                      Current Stock <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="add-stock"
                       type="number"
                       value={newProduct.stock_quantity || 0}
                       onChange={(e) => setNewProduct({ ...newProduct, stock_quantity: parseInt(e.target.value) || 0 })}
                       placeholder="0"
+                      required
                     />
                   </div>
                   <div>

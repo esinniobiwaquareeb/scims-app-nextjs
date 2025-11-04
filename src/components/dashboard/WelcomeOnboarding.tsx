@@ -185,7 +185,7 @@ export const WelcomeOnboarding: React.FC<WelcomeOnboardingProps> = ({ onDismiss 
               <div>
                 <DialogTitle className="text-2xl">Welcome to SCIMS, {user?.name || user?.username}!</DialogTitle>
                 <DialogTitle className="text-sm font-normal text-muted-foreground mt-1">
-                  Let's get your business set up in just a few steps
+                  Let&apos;s get your business set up in just a few steps
                 </DialogTitle>
               </div>
             </div>
@@ -305,7 +305,7 @@ export const WelcomeOnboarding: React.FC<WelcomeOnboardingProps> = ({ onDismiss 
                       🎉 Setup Complete!
                     </h3>
                     <p className="text-sm text-green-700 dark:text-green-300">
-                      You're all set! Start managing your business with SCIMS.
+                      You&apos;re all set! Start managing your business with SCIMS.
                     </p>
                   </div>
                   <Button
