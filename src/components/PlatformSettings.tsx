@@ -30,7 +30,8 @@ import {
   RefreshCw,
   Phone,
   MessageCircle,
-  ShieldOff
+  ShieldOff,
+  Trash2
 } from 'lucide-react';
 
 interface Currency {
@@ -77,6 +78,8 @@ interface PlatformSettingsData {
 export const PlatformSettings: React.FC = () => {
   const { user } = useAuth();
   const [localSettings, setLocalSettings] = useState<PlatformSettingsData | null>(null);
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
+  const [showCleanupConfirm, setShowCleanupConfirm] = useState(false);
 
   // Use React Query hooks for data fetching
   const {
@@ -123,6 +126,40 @@ export const PlatformSettings: React.FC = () => {
     } catch (error) {
       console.error('Error saving platform settings:', error);
       // Error handling is done in the mutation hook
+    }
+  };
+
+  const handleDatabaseCleanup = async () => {
+    if (!confirm('Are you absolutely sure you want to delete all non-demo data? This action cannot be undone.')) {
+      setShowCleanupConfirm(false);
+      return;
+    }
+
+    setIsCleaningUp(true);
+    try {
+      const response = await fetch('/api/admin/cleanup-database', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(result.message || 'Database cleanup completed successfully');
+        setShowCleanupConfirm(false);
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        toast.error(result.error || 'Failed to cleanup database');
+      }
+    } catch (error: unknown) {
+      console.error('Database cleanup error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to cleanup database');
+    } finally {
+      setIsCleaningUp(false);
     }
   };
 
@@ -949,6 +986,102 @@ export const PlatformSettings: React.FC = () => {
                     This message will be displayed to users when they try to access the system during maintenance.
                   </p>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Database Cleanup Section */}
+            <Card className="border-red-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-red-600">
+                  <Trash2 className="w-5 h-5" />
+                  Database Cleanup
+                </CardTitle>
+                <CardDescription>
+                  Permanently delete all non-demo data from the database. This action cannot be undone.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-start gap-2 mb-2">
+                    <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+                    <div className="flex-1">
+                      <h4 className="font-medium text-red-800 mb-1">Warning: Destructive Action</h4>
+                      <p className="text-sm text-red-700 mb-2">
+                        This will permanently delete:
+                      </p>
+                      <ul className="text-sm text-red-700 list-disc list-inside space-y-1">
+                        <li>All businesses (except demo business)</li>
+                        <li>All stores (except demo stores)</li>
+                        <li>All products, categories, brands, suppliers</li>
+                        <li>All sales and transactions</li>
+                        <li>All customers</li>
+                        <li>All users (except demo users and superadmin)</li>
+                        <li>All activity logs</li>
+                      </ul>
+                      <p className="text-sm text-red-700 mt-2 font-medium">
+                        The following will be preserved:
+                      </p>
+                      <ul className="text-sm text-red-700 list-disc list-inside space-y-1">
+                        <li>Demo business and demo stores</li>
+                        <li>Demo users (is_demo = true)</li>
+                        <li>Superadmin users</li>
+                        <li>Platform settings and configuration</li>
+                        <li>Reference data (countries, currencies, languages, subscription plans)</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {!showCleanupConfirm ? (
+                  <Button
+                    variant="destructive"
+                    onClick={() => setShowCleanupConfirm(true)}
+                    disabled={isCleaningUp}
+                    className="w-full"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Clean Up Database
+                  </Button>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm font-medium text-yellow-800 mb-2">
+                        Are you absolutely sure? This action cannot be undone.
+                      </p>
+                      <p className="text-sm text-yellow-700">
+                        Type <strong>&quot;DELETE ALL&quot;</strong> in the field below to confirm.
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowCleanupConfirm(false)}
+                        disabled={isCleaningUp}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={handleDatabaseCleanup}
+                        disabled={isCleaningUp}
+                        className="flex-1"
+                      >
+                        {isCleaningUp ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Cleaning Up...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Confirm Cleanup
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
