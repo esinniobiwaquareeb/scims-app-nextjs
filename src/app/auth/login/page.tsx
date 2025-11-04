@@ -34,6 +34,12 @@ export default function LoginPage() {
   const { login, isLoading } = useAuth();
   const router = useRouter();
 
+  // Helper function to validate email format
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   // Load platform settings and demo users
   useEffect(() => {
     const loadPlatformSettings = async () => {
@@ -66,10 +72,27 @@ export default function LoginPage() {
   }, []);
 
   const validateForm = (username: string, password: string): string | null => {
-    if (!username.trim()) return "Username is required";
-    if (username.length < 3) return "Username must be at least 3 characters long";
+    const trimmedUsername = username.trim();
+    
+    if (!trimmedUsername) return "Username or Email is required";
+    
+    // Check if it's an email format
+    const isEmail = trimmedUsername.includes('@');
+    
+    if (isEmail) {
+      if (!isValidEmail(trimmedUsername)) {
+        return "Please enter a valid email address";
+      }
+    } else {
+      // Username validation
+      if (trimmedUsername.length < 3) {
+        return "Username must be at least 3 characters long";
+      }
+    }
+    
     if (!password) return "Password is required";
     if (password.length < 6) return "Password must be at least 6 characters long";
+    
     return null;
   };
 
@@ -144,11 +167,11 @@ export default function LoginPage() {
             noValidate
           >
             <div className="space-y-1">
-              <Label htmlFor="username" className="text-sm">Username</Label>
+              <Label htmlFor="username" className="text-sm">Username or Email</Label>
               <Input
                 id="username"
                 type="text"
-                placeholder="Enter your username"
+                placeholder="Enter your username or email"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required

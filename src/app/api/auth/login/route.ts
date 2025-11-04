@@ -8,18 +8,28 @@ export async function POST(request: NextRequest) {
 
     if (!username || !password) {
       return NextResponse.json(
-        { success: false, error: 'Username and password are required' },
+        { success: false, error: 'Username/Email and password are required' },
         { status: 400 }
       );
     }
 
-    // Find the user record
-    const { data: user, error: userError } = await supabase
+    // Determine if input is email or username
+    const identifier = username.trim().toLowerCase();
+    const isEmail = identifier.includes('@');
+
+    // Find the user record by username or email
+    let query = supabase
       .from('user')
       .select('*')
-      .eq('username', username.toLowerCase())
-      .eq('is_active', true)
-      .single();
+      .eq('is_active', true);
+
+    if (isEmail) {
+      query = query.eq('email', identifier);
+    } else {
+      query = query.eq('username', identifier);
+    }
+
+    const { data: user, error: userError } = await query.single();
 
     if (userError || !user) {
       return NextResponse.json(
@@ -86,7 +96,7 @@ export async function POST(request: NextRequest) {
         store_id: userRoles?.[0]?.store_id || null,
         activity_type: 'login',
         category: 'Authentication',
-        description: `User logged in: ${user.username}`,
+        description: `User logged in: ${user.username}${user.email ? ` (${user.email})` : ''}`,
         metadata: {
           username: user.username,
           role: user.role
