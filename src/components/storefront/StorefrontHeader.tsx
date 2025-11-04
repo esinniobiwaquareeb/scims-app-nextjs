@@ -155,7 +155,7 @@ export default function StorefrontHeader({ business }: StorefrontHeaderProps) {
       </header>
 
       {/* Banner */}
-      <div className="w-full relative overflow-hidden">
+      {/* <div className="w-full relative overflow-hidden">
         {business.settings.store_banner_url ? (
           <div className="relative w-full h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80">
             <Image 
@@ -168,10 +168,8 @@ export default function StorefrontHeader({ business }: StorefrontHeaderProps) {
                 e.currentTarget.style.display = 'none';
               }}
             />
-            {/* Modern gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent"></div>
             
-            {/* Store info overlay */}
             <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
               <div className="max-w-4xl mx-auto">
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
@@ -215,7 +213,7 @@ export default function StorefrontHeader({ business }: StorefrontHeaderProps) {
             </div>
           </div>
         )}
-      </div>
+      </div> */}
     </>
   );
 }
