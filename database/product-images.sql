@@ -9,7 +9,7 @@
 -- =====================================================
 
 -- Update products with generic product images based on name patterns
-UPDATE products 
+UPDATE product 
 SET image_url = CASE
   -- Electronics
   WHEN LOWER(name) LIKE '%phone%' OR LOWER(name) LIKE '%mobile%' THEN 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop'
@@ -75,7 +75,7 @@ SELECT
   COUNT(*) as total_products,
   COUNT(image_url) as products_with_images,
   COUNT(*) - COUNT(image_url) as products_without_images
-FROM products;
+FROM product;
 
 -- Show sample of updated products
 SELECT 
@@ -85,7 +85,7 @@ SELECT
     WHEN image_url IS NOT NULL THEN 'Has Image'
     ELSE 'No Image'
   END as status
-FROM products 
+FROM product 
 ORDER BY created_at DESC 
 LIMIT 10;
 

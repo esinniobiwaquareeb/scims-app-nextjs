@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { supabase } from '@/lib/supabase/config';
+import { supabase, supabaseAnon } from '@/lib/supabase/config';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -62,11 +62,14 @@ export async function middleware(request: NextRequest) {
     const platformAccessEnabled = platformSettings?.enable_platform_access !== false; // Default to true if not set
 
     // Check if user is superadmin
+    // Use anon client to validate user token (respects RLS)
     let isSuperAdmin = false;
     if (token) {
       try {
-        const { data: { user } } = await supabase.auth.getUser(token);
-        if (user) {
+        // Validate token with anon client (doesn't bypass RLS)
+        const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
+        if (user && !authError) {
+          // Check user role using service client (needed for role lookup)
           const { data: userPermissions } = await supabase
             .from('user_role_view')
             .select('role_name')
@@ -74,7 +77,10 @@ export async function middleware(request: NextRequest) {
             .single();
           isSuperAdmin = userPermissions?.role_name === 'superadmin';
         }
-      } catch {}
+      } catch {
+        // Token invalid or expired - user will be redirected to login
+        // Silently fail to allow normal flow
+      }
     }
 
     // Platform access control (affects everyone except superadmin)

@@ -1,19 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Missing Supabase environment variables');
-}
+import { env } from '@/lib/env';
 
 // Ensure the URL has the proper protocol
-const normalizedUrl = supabaseUrl.startsWith('http') 
-  ? supabaseUrl 
-  : `https://${supabaseUrl}`;
+const normalizedUrl = env.SUPABASE_URL.startsWith('http') 
+  ? env.SUPABASE_URL 
+  : `https://${env.SUPABASE_URL}`;
 
 // Server-side Supabase client with service role key for API routes
-export const supabase = createClient(normalizedUrl, supabaseServiceKey, {
+// WARNING: This client bypasses RLS - only use for server-side operations
+export const supabase = createClient(normalizedUrl, env.SUPABASE_SERVICE_ROLE_KEY, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
+
+// Client for user authentication (uses anon key, respects RLS)
+// Use this for validating user tokens in middleware
+export const supabaseAnon = createClient(normalizedUrl, env.SUPABASE_ANON_KEY, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
