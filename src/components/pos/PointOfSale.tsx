@@ -967,7 +967,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
     <div className={`min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
       <main className={`w-full ${isFullscreen ? 'h-screen' : 'h-screen'}`}>
         {/* Main POS Content */}
-        <div className={`h-full w-full flex flex-col lg:flex-row gap-3 lg:gap-6 p-3 lg:p-6 pb-20 ${isFullscreen ? 'h-[calc(100vh-20px)]' : 'h-[calc(100vh-20px)]'}`}>
+        <div className={`h-full w-full flex flex-col lg:flex-row gap-2 sm:gap-3 lg:gap-6 p-2 sm:p-3 lg:p-6 pb-16 sm:pb-20 ${isFullscreen ? 'h-[calc(100vh-20px)]' : 'h-[calc(100vh-20px)]'}`}>
           {/* Error Display - Removed as error state is commented out */}
 
           {/* Products Section - Left Side */}
@@ -1024,7 +1024,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
 
         {/* Comprehensive Bottom Navigation Bar - Responsive Footer */}
         <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-40 shadow-lg">
-          <div className="px-2 sm:px-3 lg:px-6 py-2 sm:py-1.5">
+          <div className="px-2 sm:px-3 lg:px-6 py-1.5 sm:py-2">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
               {/* Left Side - Store Info and User */}
               <div className="flex items-center justify-between sm:justify-start gap-2 lg:gap-4 order-2 sm:order-1">
