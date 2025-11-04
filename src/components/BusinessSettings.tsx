@@ -394,6 +394,16 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
     toast.success('Business logo removed successfully!');
   };
 
+  // Helper function to validate if logo URL is valid
+  const isValidLogoUrl = (url: string): boolean => {
+    if (!url || url.trim() === '') return false;
+    // Check if it's a base64 data URL
+    if (url.startsWith('data:image/')) return true;
+    // Check if it's a valid HTTP/HTTPS URL
+    if (url.startsWith('http://') || url.startsWith('https://')) return true;
+    return false;
+  };
+
   // Sound test function available for future use
   // const testSound = () => {
   //   playSound('click');
@@ -424,15 +434,21 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
     return (
       <div className="max-w-sm mx-auto bg-white p-6 border-2 border-dashed border-gray-300 rounded-lg font-mono text-sm">
         <div className="text-center mb-4">
-          {localSettings.logo_url && (
+          {localSettings.logo_url && isValidLogoUrl(localSettings.logo_url) && (
             <img 
               src={localSettings.logo_url} 
               alt="Business Logo" 
               className="w-16 h-16 mx-auto mb-2 object-contain" 
               onError={(e) => {
-                console.error('Error loading logo in receipt preview:', e);
+                const target = e.target as HTMLImageElement;
+                console.error('Error loading logo in receipt preview:', {
+                  src: target.src?.substring(0, 100), // Log first 100 chars to avoid huge base64 strings
+                  error: target.error,
+                  message: 'Failed to load image from URL',
+                  isValidUrl: isValidLogoUrl(localSettings.logo_url)
+                });
                 // Hide the image if it fails to load
-                (e.target as HTMLImageElement).style.display = 'none';
+                target.style.display = 'none';
               }}
             />
           )}
@@ -1063,17 +1079,23 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                        {localSettings.logo_url ? (
+                        {localSettings.logo_url && isValidLogoUrl(localSettings.logo_url) ? (
                           <div>
                             <img 
                               src={localSettings.logo_url} 
                               alt="Business Logo" 
                               className="w-24 h-24 mx-auto object-contain mb-4"
                               onError={(e) => {
-                                console.error('Error loading logo:', e);
+                                const target = e.target as HTMLImageElement;
+                                console.error('Error loading logo:', {
+                                  src: target.src?.substring(0, 100), // Log first 100 chars to avoid huge base64 strings
+                                  error: target.error,
+                                  message: 'Failed to load image from URL',
+                                  isValidUrl: isValidLogoUrl(localSettings.logo_url)
+                                });
                                 // If image fails to load, remove it from settings
                                 setLocalSettings(prev => ({...prev, logo_url: ''}));
-                                toast.error('Failed to load logo image');
+                                toast.error('Failed to load logo image. Please upload a new one.');
                               }}
                             />
                             <p className="text-sm text-muted-foreground mb-4">Current logo</p>
