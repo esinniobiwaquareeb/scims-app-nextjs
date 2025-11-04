@@ -443,7 +443,6 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
                 const target = e.target as HTMLImageElement;
                 console.error('Error loading logo in receipt preview:', {
                   src: target.src?.substring(0, 100), // Log first 100 chars to avoid huge base64 strings
-                  error: target.error,
                   message: 'Failed to load image from URL',
                   isValidUrl: isValidLogoUrl(localSettings.logo_url)
                 });
@@ -1089,7 +1088,6 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ onBack }) =>
                                 const target = e.target as HTMLImageElement;
                                 console.error('Error loading logo:', {
                                   src: target.src?.substring(0, 100), // Log first 100 chars to avoid huge base64 strings
-                                  error: target.error,
                                   message: 'Failed to load image from URL',
                                   isValidUrl: isValidLogoUrl(localSettings.logo_url)
                                 });
