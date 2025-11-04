@@ -59,7 +59,7 @@ export function handleApiError(error: unknown, context?: string): NextResponse<A
 
   // Handle validation errors (Zod)
   if (error && typeof error === 'object' && 'issues' in error) {
-    const zodError = error as { issues: Array<{ path: string[]; message: string }> };
+    const zodError = error as { issues: Array<{ path: (string | number)[]; message: string }> };
     const firstIssue = zodError.issues[0];
     return NextResponse.json(
       {

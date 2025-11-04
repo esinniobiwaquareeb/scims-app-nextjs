@@ -57,6 +57,9 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
     if (user?.role === 'superadmin') {
       return new Set(['overview', 'management']);
     }
+    if (user?.role === 'cashier') {
+      return new Set(['dashboard', 'sales']);
+    }
     return new Set(['dashboard', 'sales', 'inventory']);
   });
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -402,10 +405,40 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
     }
   ];
 
+  // Cashier Menu Groups (minimal - only essential features)
+  const cashierMenuGroups: MenuGroup[] = [
+    {
+      title: 'dashboard',
+      items: [
+        {
+          title: 'Dashboard',
+          href: '/dashboard',
+          icon: LayoutDashboard,
+          roles: ['cashier']
+        }
+      ]
+    },
+    {
+      title: 'sales',
+      items: [
+        {
+          title: 'Point of Sale',
+          href: '/pos',
+          icon: ShoppingCart,
+          roles: ['cashier']
+        }
+      ]
+    }
+  ];
+
   // Determine which menu groups to use based on user role
   const menuGroups = user?.role === 'superadmin' 
     ? superAdminMenuGroups 
-    : (user?.role === 'business_admin' ? businessAdminMenuGroups : storeAdminMenuGroups);
+    : user?.role === 'business_admin' 
+    ? businessAdminMenuGroups 
+    : user?.role === 'cashier'
+    ? cashierMenuGroups
+    : storeAdminMenuGroups;
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
@@ -431,35 +464,37 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
       {/* Navigation */}
       <ScrollArea className="flex-1">
         <nav className="p-3 sm:p-4 space-y-1.5 sm:space-y-2">
-          {menuGroups.map((group) => {
-            const groupHasActiveItem = group.items.some(item => 
-              hasAccess(item) && isActive(item.href)
-            );
-            const isExpanded = expandedGroups.has(group.title);
+          {menuGroups
+            .filter(group => {
+              // Only show groups that have at least one accessible item
+              return group.items.some(hasAccess);
+            })
+            .map((group) => {
+              const accessibleItems = group.items.filter(hasAccess);
+              const groupHasActiveItem = accessibleItems.some(item => isActive(item.href));
+              const isExpanded = expandedGroups.has(group.title);
 
-            return (
-              <div key={group.title} className="space-y-1">
-                <button
-                  onClick={() => toggleGroup(group.title)}
-                  className={cn(
-                    "w-full flex items-center justify-between px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors",
-                    "hover:bg-muted",
-                    groupHasActiveItem && "bg-muted"
-                  )}
-                >
-                  <span className="capitalize text-muted-foreground">{group.title}</span>
-                  {isExpanded ? (
-                    <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
-                  ) : (
-                    <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
-                  )}
-                </button>
+              return (
+                <div key={group.title} className="space-y-1">
+                  <button
+                    onClick={() => toggleGroup(group.title)}
+                    className={cn(
+                      "w-full flex items-center justify-between px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors",
+                      "hover:bg-muted",
+                      groupHasActiveItem && "bg-muted"
+                    )}
+                  >
+                    <span className="capitalize text-muted-foreground">{group.title}</span>
+                    {isExpanded ? (
+                      <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
+                    ) : (
+                      <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
+                    )}
+                  </button>
 
-                {isExpanded && (
-                  <div className="ml-3 sm:ml-4 space-y-0.5 sm:space-y-1 border-l border-border pl-3 sm:pl-4">
-                    {group.items
-                      .filter(hasAccess)
-                      .map((item) => {
+                  {isExpanded && (
+                    <div className="ml-3 sm:ml-4 space-y-0.5 sm:space-y-1 border-l border-border pl-3 sm:pl-4">
+                      {accessibleItems.map((item) => {
                         const active = isActive(item.href);
                         const Icon = item.icon;
 
@@ -492,11 +527,11 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
                           </Link>
                         );
                       })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
         </nav>
       </ScrollArea>
     </div>

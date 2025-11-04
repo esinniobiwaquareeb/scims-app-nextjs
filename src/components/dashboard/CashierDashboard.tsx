@@ -11,23 +11,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { Header } from '@/components/common/Header';
+import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { DataTable } from '@/components/common/DataTable';
 import { ImageWithFallback } from '@/components/common/ImageWithFallback';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
-import { Sale, SalesStats, ActivityLog } from '@/types/dashboard';
+import { Sale, ActivityLog } from '@/types/dashboard';
 import { calculateSalesStats, formatDateTime, formatTableDateTime } from '@/utils/dashboardUtils';
+import { logger } from '@/utils/logger';
+import { toast } from 'sonner';
 import { 
   ShoppingCart, 
   BarChart3, 
   TrendingUp,
-  Clock,
-  User,
   History,
   Receipt,
   Eye,
   DollarSign,
-  Plus,
   Package,
   Activity,
   RefreshCw
@@ -48,8 +47,12 @@ const useCashierSales = (cashierId: string, storeId: string) => {
 
     try {
       setIsLoading(true);
+      setError(null);
       const response = await fetch(`/api/sales?store_id=${storeId}&cashier_id=${cashierId}&status=completed`);
-      if (!response.ok) throw new Error('Failed to fetch cashier sales');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch cashier sales');
+      }
       const result = await response.json();
       
       if (result.success && Array.isArray(result.sales)) {
@@ -58,7 +61,9 @@ const useCashierSales = (cashierId: string, storeId: string) => {
         setData([]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
+      const error = err instanceof Error ? err : new Error('Unknown error');
+      logger.error('Error fetching cashier sales', { cashierId, storeId, error });
+      setError(error);
       setData([]);
     } finally {
       setIsLoading(false);
@@ -67,6 +72,7 @@ const useCashierSales = (cashierId: string, storeId: string) => {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cashierId, storeId]);
 
   return { data, isLoading, error, refetch: fetchData };
@@ -85,8 +91,12 @@ const useStoreSales = (storeId: string) => {
 
     try {
       setIsLoading(true);
+      setError(null);
       const response = await fetch(`/api/sales?store_id=${storeId}&status=completed`);
-      if (!response.ok) throw new Error('Failed to fetch store sales');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch store sales');
+      }
       const result = await response.json();
       
       if (result.success && Array.isArray(result.sales)) {
@@ -95,7 +105,9 @@ const useStoreSales = (storeId: string) => {
         setData([]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
+      const error = err instanceof Error ? err : new Error('Unknown error');
+      logger.error('Error fetching store sales', { storeId, error });
+      setError(error);
       setData([]);
     } finally {
       setIsLoading(false);
@@ -104,6 +116,7 @@ const useStoreSales = (storeId: string) => {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   return { data, isLoading, error, refetch: fetchData };
@@ -123,8 +136,12 @@ const useActivityLogs = (userId: string) => {
 
     try {
       setIsLoading(true);
+      setError(null);
       const response = await fetch(`/api/activity-logs?business_id=${currentBusiness.id}&user_id=${userId}&limit=100`);
-      if (!response.ok) throw new Error('Failed to fetch activity logs');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch activity logs');
+      }
       const result = await response.json();
       
       if (result.success && Array.isArray(result.logs)) {
@@ -133,7 +150,9 @@ const useActivityLogs = (userId: string) => {
         setData([]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
+      const error = err instanceof Error ? err : new Error('Unknown error');
+      logger.error('Error fetching activity logs', { userId, businessId: currentBusiness.id, error });
+      setError(error);
       setData([]);
     } finally {
       setIsLoading(false);
@@ -142,19 +161,18 @@ const useActivityLogs = (userId: string) => {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, currentBusiness?.id]);
 
   return { data, isLoading, error, refetch: fetchData };
 };
 
 export const CashierDashboard: React.FC = () => {
-  const { user, logout, currentStore } = useAuth();
+  const { user, currentStore } = useAuth();
   const router = useRouter();
   const { formatCurrency, printReceipt, getCurrentCurrency } = useSystem();
 
   // State management
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [loginTime] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('today');
   const [showSaleDetail, setShowSaleDetail] = useState(false);
@@ -226,22 +244,15 @@ export const CashierDashboard: React.FC = () => {
         refetchStoreSales(),
         refetchActivityLogs()
       ]);
+      toast.success('Data refreshed successfully');
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      logger.error('Error refreshing data', { error }, error instanceof Error ? error : new Error(String(error)));
+      toast.error('Failed to refresh data. Please try again.');
     }
   }, [refetchCashierSales, refetchStoreSales, refetchActivityLogs]);
 
-  // Update current time every second
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   // Calculate sales statistics
   const overviewStats = calculateSalesStats(salesData, '', 'today');
-  const salesStats = calculateSalesStats(salesData, searchTerm, dateFilter);
 
   // Filtered sales data for the sales tab
   const filteredSalesData = useMemo(() => {
@@ -354,13 +365,15 @@ export const CashierDashboard: React.FC = () => {
       // Actually print the receipt using the SystemContext printReceipt function
       printReceipt(receipt);
       
+      toast.success('Receipt sent to printer');
+      
       // Close the modal
       setShowSaleDetail(false);
       setSelectedSale(null);
       
     } catch (error) {
-      console.error('Error reprinting receipt:', error);
-      alert('Failed to reprint receipt. Please try again.');
+      logger.error('Error reprinting receipt', { saleId: sale.id, error }, error instanceof Error ? error : new Error(String(error)));
+      toast.error('Failed to reprint receipt. Please try again.');
     }
   };
 
@@ -530,39 +543,44 @@ export const CashierDashboard: React.FC = () => {
     }
   ];
 
-  // Handle logout
-  const handleLogout = async () => {
-    await logout(() => router.push('/auth/login'));
-  };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header 
-        title="Cashier Dashboard"
-        subtitle={`Welcome back, ${user?.name || user?.username}`}
-      >
+    <DashboardLayout
+      title="Cashier Dashboard"
+      subtitle={`Welcome back, ${user?.name || user?.username}`}
+      headerActions={
         <div className="flex items-center gap-2">
-          <NotificationBell className="mr-2" />
+          <NotificationBell />
           <Button 
             onClick={() => router.push('/pos')} 
-            variant="outline"
+            variant="default"
             className="flex items-center gap-2"
             size="sm"
           >
             <ShoppingCart className="w-4 h-4" />
-            Open POS
+            <span className="hidden sm:inline">Open POS</span>
           </Button>
         </div>
-      </Header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
+      }
+    >
+      <div className="space-y-8">
           {hasError && (
             <Card className="border-destructive/50 bg-destructive/10 dark:bg-destructive/20">
               <CardContent className="p-4">
-                <p className="text-destructive dark:text-destructive-foreground text-sm">
-                  {hasError.message || 'Failed to load dashboard data'}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-destructive dark:text-destructive-foreground text-sm">
+                    {hasError.message || 'Failed to load dashboard data'}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefresh}
+                    className="ml-4"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Retry
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -775,8 +793,7 @@ export const CashierDashboard: React.FC = () => {
               </Tabs>
             </>
           )}
-        </div>
-      </main>
+      </div>
 
       {/* Sale Detail Modal */}
       <Dialog open={showSaleDetail} onOpenChange={setShowSaleDetail}>
@@ -922,6 +939,6 @@ export const CashierDashboard: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </DashboardLayout>
   );
 };

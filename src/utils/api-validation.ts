@@ -20,10 +20,10 @@ export async function validateRequestBody<T>(
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new AppError(
-        `Validation error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`,
+        `Validation error: ${error.issues.map(e => `${e.path.map(String).join('.')}: ${e.message}`).join(', ')}`,
         400,
         'VALIDATION_ERROR',
-        error.errors
+        error.issues
       );
     }
     throw new AppError('Invalid request body', 400, 'INVALID_BODY');
@@ -46,10 +46,10 @@ export function validateQueryParams<T>(
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new AppError(
-        `Invalid query parameters: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`,
+        `Invalid query parameters: ${error.issues.map(e => `${e.path.map(String).join('.')}: ${e.message}`).join(', ')}`,
         400,
         'VALIDATION_ERROR',
-        error.errors
+        error.issues
       );
     }
     throw new AppError('Invalid query parameters', 400, 'INVALID_QUERY');
@@ -70,10 +70,10 @@ export function validatePathParams<T>(
     } catch (error) {
       if (error instanceof z.ZodError) {
         throw new AppError(
-          `Invalid path parameters: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`,
+          `Invalid path parameters: ${error.issues.map(e => `${e.path.map(String).join('.')}: ${e.message}`).join(', ')}`,
           400,
           'VALIDATION_ERROR',
-          error.errors
+          error.issues
         );
       }
       throw new AppError('Invalid path parameters', 400, 'INVALID_PATH');
