@@ -14,7 +14,6 @@ import { Separator } from '@/components/ui/separator';
 import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { DataTable } from '@/components/common/DataTable';
 import { ImageWithFallback } from '@/components/common/ImageWithFallback';
-import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { Sale, ActivityLog } from '@/types/dashboard';
 import { calculateSalesStats, formatDateTime, formatTableDateTime } from '@/utils/dashboardUtils';
 import { logger } from '@/utils/logger';
@@ -549,17 +548,13 @@ export const CashierDashboard: React.FC = () => {
       title="Cashier Dashboard"
       subtitle={`Welcome back, ${user?.name || user?.username}`}
       headerActions={
-        <div className="flex items-center gap-2">
-          <Button 
-            onClick={() => router.push('/pos')} 
-            variant="default"
-            className="flex items-center gap-2"
-            size="sm"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            <span className="hidden sm:inline">Open POS</span>
-          </Button>
-        </div>
+        <button
+          onClick={() => router.push('/pos')}
+          className="rounded-md px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-4.5 shrink-0 flex items-center gap-2 sm:gap-3 lg:gap-4 border border-border bg-background hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+        >
+          <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-4 lg:h-4 shrink-0" />
+          <span className="hidden sm:inline text-xs sm:text-sm font-medium text-foreground">Open POS</span>
+        </button>
       }
     >
       <div className="space-y-8">

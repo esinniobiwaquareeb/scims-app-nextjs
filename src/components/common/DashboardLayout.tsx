@@ -41,15 +41,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               {headerActions ? (
                 headerActions
               ) : (
-                <Button 
-                  onClick={() => router.push('/pos')} 
-                  variant="outline"
-                  className="h-8 sm:h-9 shrink-0"
-                  size="sm"
+                <button
+                  onClick={() => router.push('/pos')}
+                  className="rounded-md px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-2.5 shrink-0 flex items-center gap-2 sm:gap-3 lg:gap-4 border border-border bg-background hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                 >
-                  <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Open POS</span>
-                </Button>
+                  <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-4 lg:h-4 shrink-0" />
+                  <span className="hidden sm:inline text-xs sm:text-sm font-medium text-foreground">Open POS</span>
+                </button>
               )}
             </div>
           </Header>
