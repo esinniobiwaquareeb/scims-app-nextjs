@@ -116,7 +116,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   });
   
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
-  const [filterStore, setFilterStore] = useState<string>('all');
+  const [filterStore, setFilterStore] = useState<string>(currentStore?.id || 'all');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -408,6 +408,16 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
     setShowCustomerDetail(true);
     
     // The customer sales will be automatically fetched by the useCustomerSales hook
+  }, [currentStore?.id]);
+
+  // Sync filterStore with currentStore from header
+  useEffect(() => {
+    if (currentStore?.id) {
+      setFilterStore(currentStore.id);
+    } else {
+      // When "All Stores" is selected, customers query is disabled, so filterStore can stay as 'all'
+      setFilterStore('all');
+    }
   }, [currentStore?.id]);
 
   const openEditDialog = (customer: Customer) => {

@@ -379,7 +379,12 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
     if (user?.role === 'store_admin' && currentStore?.id) {
       setSelectedStoreFilter(currentStore.id);
     } else if (user?.role === 'business_admin') {
-      setSelectedStoreFilter("All");
+      // For business admin, sync with currentStore from header, or default to 'All'
+      if (currentStore?.id) {
+        setSelectedStoreFilter(currentStore.id);
+      } else {
+        setSelectedStoreFilter("All");
+      }
     }
   }, [user?.role, currentStore?.id]);
 

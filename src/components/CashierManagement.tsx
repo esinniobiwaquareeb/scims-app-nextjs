@@ -325,6 +325,20 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
     }));
   }, [currentStore?.id]);
 
+  // Sync store filter with currentStore from header
+  useEffect(() => {
+    if (user?.role === 'store_admin' && currentStore?.id) {
+      setSelectedStoreFilter(currentStore.id);
+    } else if (user?.role === 'business_admin') {
+      // For business admin, sync with currentStore from header, or default to 'All'
+      if (currentStore?.id) {
+        setSelectedStoreFilter(currentStore.id);
+      } else {
+        setSelectedStoreFilter('All');
+      }
+    }
+  }, [user?.role, currentStore?.id]);
+
   // Filter cashiers based on user role
   const accessibleCashiers = cashiers.filter((cashier: Cashier) => {
     if (user?.role === 'business_admin') {
