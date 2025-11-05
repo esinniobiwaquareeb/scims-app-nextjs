@@ -243,7 +243,7 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
         title="Supply Management"
         subtitle="Manage supply orders, returns, and payments"
       headerActions={
-        <Button onClick={handleCreateSupplyOrder} className="gap-2">
+        <Button onClick={handleCreateSupplyOrder} className="gap-2" title="Create a new supply order">
           <Plus className="h-4 w-4" />
           New Supply Order
         </Button>
@@ -365,6 +365,7 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
                               variant="outline"
                               size="sm"
                               onClick={() => handleViewDetails(order)}
+                              title="View supply order details"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -373,6 +374,7 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleCreateReturn(order)}
+                                title="Create return for this supply order"
                               >
                                 <RotateCcw className="h-4 w-4" />
                               </Button>
@@ -382,6 +384,7 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleCreatePayment(order)}
+                                title="Process payment for this supply order"
                               >
                                 <CreditCard className="h-4 w-4" />
                               </Button>
@@ -392,6 +395,7 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
                                 size="sm"
                                 onClick={() => handleDeleteSupplyOrder(order)}
                                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                title="Delete this supply order"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -470,6 +474,7 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
                                 const order = supplyOrders.find(o => o.id === returnItem.supply_order_id);
                                 if (order) handleViewDetails(order);
                               }}
+                              title="View supply order details"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -480,6 +485,7 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
                                 const order = supplyOrders.find(o => o.id === returnItem.supply_order_id);
                                 if (order) handleCreateReturn(order);
                               }}
+                              title="Create return for this supply order"
                             >
                               <RotateCcw className="h-4 w-4" />
                             </Button>
@@ -491,6 +497,7 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
                                 if (order) handleAcceptReturn(order);
                               }}
                               className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              title="Accept returned items"
                             >
                               <CheckCircle className="h-4 w-4" />
                             </Button>

@@ -100,7 +100,20 @@ export const SupplyReturnModal: React.FC<SupplyReturnModalProps> = ({
 
   const updateReturnQuantity = (index: number, quantity: number) => {
     const item = returnItems[index];
-    if (quantity < 0 || quantity > item.quantity_pending) return;
+    
+    // Validate: quantity must be non-negative and cannot exceed pending quantity
+    if (quantity < 0) {
+      toast.error('Return quantity cannot be negative');
+      return;
+    }
+    
+    // Calculate maximum returnable: quantity_supplied - quantity_returned - quantity_accepted
+    const maxReturnable = item.quantity_supplied - item.quantity_returned - item.quantity_accepted;
+    
+    if (quantity > maxReturnable) {
+      toast.error(`Cannot return ${quantity} items. Maximum returnable: ${maxReturnable} (Supplied: ${item.quantity_supplied} - Already Returned: ${item.quantity_returned} - Already Accepted: ${item.quantity_accepted})`);
+      return;
+    }
 
     setReturnItems(returnItems.map((returnItem, i) =>
       i === index ? { ...returnItem, return_quantity: quantity } : returnItem
@@ -125,6 +138,22 @@ export const SupplyReturnModal: React.FC<SupplyReturnModalProps> = ({
     if (itemsToReturn.length === 0) {
       toast.error('Please select items to return');
       return;
+    }
+
+    // Validate return quantities before submission
+    for (const item of itemsToReturn) {
+      // Calculate maximum returnable: quantity_supplied - quantity_returned - quantity_accepted
+      const maxReturnable = item.quantity_supplied - item.quantity_returned - item.quantity_accepted;
+      
+      if (item.return_quantity > maxReturnable) {
+        toast.error(`Cannot return ${item.return_quantity} units of ${item.product_name}. Maximum returnable: ${maxReturnable} (Supplied: ${item.quantity_supplied} - Already Returned: ${item.quantity_returned} - Already Accepted: ${item.quantity_accepted})`);
+        return;
+      }
+      
+      if (item.return_quantity <= 0) {
+        toast.error(`Return quantity must be greater than 0 for ${item.product_name}`);
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -359,6 +388,7 @@ export const SupplyReturnModal: React.FC<SupplyReturnModalProps> = ({
                               variant="outline"
                               onClick={() => updateReturnQuantity(index, item.return_quantity - 1)}
                               disabled={item.return_quantity <= 0}
+                              title="Decrease return quantity"
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
@@ -367,14 +397,27 @@ export const SupplyReturnModal: React.FC<SupplyReturnModalProps> = ({
                               min="0"
                               max={item.quantity_pending}
                               value={item.return_quantity}
-                              onChange={(e) => updateReturnQuantity(index, parseInt(e.target.value) || 0)}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value) || 0;
+                                updateReturnQuantity(index, value);
+                              }}
+                              onBlur={(e) => {
+                                // Ensure value doesn't exceed max on blur
+                                const value = parseInt(e.target.value) || 0;
+                                const maxReturnable = item.quantity_supplied - item.quantity_returned - item.quantity_accepted;
+                                if (value > maxReturnable) {
+                                  updateReturnQuantity(index, maxReturnable);
+                                }
+                              }}
                               className="w-20 text-center"
+                              title={`Return quantity (max: ${item.quantity_pending} pending)`}
                             />
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => updateReturnQuantity(index, item.return_quantity + 1)}
                               disabled={item.return_quantity >= item.quantity_pending}
+                              title="Increase return quantity"
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
@@ -468,6 +511,7 @@ export const SupplyReturnModal: React.FC<SupplyReturnModalProps> = ({
                 onClick={handleSubmit}
                 disabled={returnItems.filter(item => item.return_quantity > 0).length === 0 || submitting}
                 className="w-full"
+                title="Submit and process the return"
               >
                 {submitting ? (
                   <>

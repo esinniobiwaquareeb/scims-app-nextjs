@@ -122,6 +122,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           href: '/discounts',
           icon: Tag,
           roles: ['business_admin', 'store_admin']
+        },
+        {
+          title: 'Supply Management',
+          href: '/supply-management',
+          icon: RotateCcw,
+          roles: ['business_admin', 'store_admin']
         }
       ]
     },
@@ -226,12 +232,6 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           href: '/business-settings',
           icon: Settings,
           roles: ['business_admin']
-        },
-        {
-          title: 'Supply Management',
-          href: '/supply-management',
-          icon: RotateCcw,
-          roles: ['business_admin', 'store_admin']
         }
       ]
     }
