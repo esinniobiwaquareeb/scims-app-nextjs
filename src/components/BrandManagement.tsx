@@ -338,7 +338,7 @@ export const BrandManagement: React.FC<BrandManagementProps> = ({ onBack }) => {
       header: "Actions",
       accessorKey: "actions",
       cell: (brand: Brand) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Button
             variant="ghost"
             size="sm"

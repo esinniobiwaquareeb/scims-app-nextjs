@@ -476,14 +476,14 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
       key: 'name',
       label: 'Customer',
       render: (customer: Customer) => (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
             <User className="w-4 h-4 text-blue-600" />
           </div>
-          <div>
-            <p className="font-medium">{customer.name}</p>
-            <p className="text-sm text-muted-foreground flex items-center gap-1">
-              <Phone className="w-3 h-3" />
+          <div className="min-w-0">
+            <p className="font-medium break-words">{customer.name}</p>
+            <p className="text-sm text-muted-foreground flex items-center gap-1 break-words">
+              <Phone className="w-3 h-3 flex-shrink-0" />
               {customer.phone}
             </p>
           </div>
@@ -494,17 +494,17 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
       key: 'email',
       label: 'Contact',
       render: (customer: Customer) => (
-        <div className="space-y-1">
+        <div className="space-y-1 min-w-0">
           {customer.email && (
-            <p className="text-sm flex items-center gap-1">
-              <Mail className="w-3 h-3" />
-              {customer.email}
+            <p className="text-sm flex items-center gap-1 break-words">
+              <Mail className="w-3 h-3 flex-shrink-0" />
+              <span className="break-words">{customer.email}</span>
             </p>
           )}
           {customer.address && (
-            <p className="text-sm text-muted-foreground flex items-center gap-1">
-              <MapPin className="w-3 h-3" />
-              {customer.address}
+            <p className="text-sm text-muted-foreground flex items-center gap-1 break-words line-clamp-2">
+              <MapPin className="w-3 h-3 flex-shrink-0" />
+              <span className="break-words">{customer.address}</span>
             </p>
           )}
         </div>
@@ -556,7 +556,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
       key: 'actions',
       label: 'Actions',
       render: (customer: Customer) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Button variant="ghost" size="sm" onClick={() => handleViewCustomer(customer)}>
             <Eye className="w-4 h-4" />
           </Button>

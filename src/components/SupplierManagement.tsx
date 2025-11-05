@@ -332,13 +332,13 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
       key: 'name',
       label: translate('common.name'),
       render: (supplier: Supplier) => (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
             <Building className="w-4 h-4 text-blue-600" />
           </div>
-          <div>
-            <p className="font-medium">{supplier.name}</p>
-            <p className="text-sm text-muted-foreground">{supplier.contact_person}</p>
+          <div className="min-w-0">
+            <p className="font-medium break-words">{supplier.name}</p>
+            <p className="text-sm text-muted-foreground break-words">{supplier.contact_person}</p>
           </div>
         </div>
       )
@@ -347,14 +347,14 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
       key: 'contact',
       label: 'Contact Info',
       render: (supplier: Supplier) => (
-        <div className="space-y-1">
+        <div className="space-y-1 min-w-0">
           <div className="flex items-center gap-2 text-sm">
-            <Mail className="w-3 h-3" />
-            <span>{supplier.email}</span>
+            <Mail className="w-3 h-3 flex-shrink-0" />
+            <span className="break-words">{supplier.email}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <Phone className="w-3 h-3" />
-            <span>{supplier.phone}</span>
+            <Phone className="w-3 h-3 flex-shrink-0" />
+            <span className="break-words">{supplier.phone}</span>
           </div>
         </div>
       )
@@ -363,9 +363,9 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
       key: 'location',
       label: 'Location',
       render: (supplier: Supplier) => (
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-gray-400" />
-          <span className="text-sm">{supplier.address}</span>
+        <div className="flex items-center gap-2 min-w-0">
+          <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          <span className="text-sm break-words line-clamp-2">{supplier.address}</span>
         </div>
       )
     },
@@ -408,7 +408,7 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
       key: 'actions',
       label: translate('common.actions'),
       render: (supplier: Supplier) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Button
             variant="ghost"
             size="sm"

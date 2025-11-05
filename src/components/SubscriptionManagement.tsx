@@ -451,10 +451,12 @@ export const SubscriptionManagement: React.FC = () => {
       key: 'name',
       label: 'Plan',
       render: (plan: SubscriptionPlan) => (
-        <div className="flex items-center gap-2">
-          <div>
-            <p className="font-medium">{plan.name}</p>
-            <p className="text-sm text-muted-foreground">{plan.description}</p>
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="min-w-0">
+            <p className="font-medium break-words">{plan.name}</p>
+            {plan.description && (
+              <p className="text-sm text-muted-foreground break-words line-clamp-2">{plan.description}</p>
+            )}
           </div>
         </div>
       )

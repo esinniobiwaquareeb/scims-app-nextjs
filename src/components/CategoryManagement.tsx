@@ -299,14 +299,14 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
       key: 'category',
       header: 'Category',
       render: (category: Category) => (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <div 
-            className="w-4 h-4 rounded-lg"
+            className="w-4 h-4 rounded-lg flex-shrink-0"
             style={{ backgroundColor: category.color }}
           />
-          <div>
-            <p className="font-medium">{category.name}</p>
-            <p className="text-sm text-muted-foreground">ID: {category.id}</p>
+          <div className="min-w-0">
+            <p className="font-medium break-words">{category.name}</p>
+            <p className="text-sm text-muted-foreground break-words">ID: {category.id}</p>
           </div>
         </div>
       )
@@ -315,7 +315,9 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
       key: 'description',
       header: 'Description',
       render: (category: Category) => (
-        <p className="max-w-xs truncate">{category.description}</p>
+        <div className="min-w-0">
+          <p className="break-words line-clamp-2">{category.description || 'No description'}</p>
+        </div>
       )
     },
     {
@@ -361,7 +363,7 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
       key: 'actions',
       header: 'Actions',
       render: (category: Category) => (
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           <Button 
             size="sm" 
             variant="outline"

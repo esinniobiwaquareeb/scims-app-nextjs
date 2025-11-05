@@ -37,10 +37,10 @@ export const BRAND_TABLE_COLUMNS = [
     header: 'Name',
     accessorKey: 'name',
     cell: (brand: Brand) => (
-      <div>
-        <div className="font-medium">{brand.name}</div>
+      <div className="min-w-0">
+        <div className="font-medium break-words">{brand.name}</div>
         {brand.description && (
-          <div className="text-sm text-muted-foreground">{brand.description}</div>
+          <div className="text-sm text-muted-foreground break-words line-clamp-2">{brand.description}</div>
         )}
       </div>
     )

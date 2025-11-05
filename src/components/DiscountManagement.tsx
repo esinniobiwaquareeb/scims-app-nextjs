@@ -242,14 +242,26 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
 
     setIsMutating(true);
     try {
+      // Validate coupon code only for coupons
+      if (activeTab === 'coupons' && (!('code' in formData) || !formData.code)) {
+        toast.error('Coupon code is required');
+        setIsMutating(false);
+        return;
+      }
+
       const endpoint = activeTab === 'promotions' 
         ? `/api/discounts/promotions/${editingItem.id}`
         : `/api/discounts/coupons/${editingItem.id}`;
 
+      // Remove code field from formData when updating promotions
+      const updateData = activeTab === 'promotions' 
+        ? { ...formData, code: undefined }
+        : formData;
+
       const response = await fetch(endpoint, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(updateData)
       });
 
       if (!response.ok) {
@@ -387,9 +399,11 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
       key: 'name',
       header: 'Promotion',
       render: (promotion: Promotion) => (
-        <div>
-          <p className="font-medium">{promotion.name}</p>
-          <p className="text-sm text-muted-foreground">{promotion.description}</p>
+        <div className="min-w-0">
+          <p className="font-medium break-words">{promotion.name}</p>
+          {promotion.description && (
+            <p className="text-sm text-muted-foreground break-words line-clamp-2">{promotion.description}</p>
+          )}
         </div>
       )
     },
@@ -444,7 +458,7 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
       key: 'actions',
       header: 'Actions',
       render: (promotion: Promotion) => (
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           <Button
             variant="outline"
             size="sm"
@@ -470,9 +484,11 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
       key: 'code',
       header: 'Code',
       render: (coupon: Coupon) => (
-        <div>
-          <p className="font-mono font-medium">{coupon.code}</p>
-          <p className="text-sm text-muted-foreground">{coupon.name}</p>
+        <div className="min-w-0">
+          <p className="font-mono font-medium break-words">{coupon.code}</p>
+          {coupon.name && (
+            <p className="text-sm text-muted-foreground break-words line-clamp-2">{coupon.name}</p>
+          )}
         </div>
       )
     },
@@ -527,7 +543,7 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
       key: 'actions',
       header: 'Actions',
       render: (coupon: Coupon) => (
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           <Button
             variant="outline"
             size="sm"

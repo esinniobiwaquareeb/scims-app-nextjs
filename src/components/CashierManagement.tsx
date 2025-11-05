@@ -701,14 +701,14 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
       key: 'cashier',
       header: 'Cashier',
       render: (cashier: Cashier) => (
-        <div className="flex items-center gap-3">
-          <Avatar>
+        <div className="flex items-center gap-3 min-w-0">
+          <Avatar className="flex-shrink-0">
             <AvatarFallback>{getInitials(cashier.name)}</AvatarFallback>
           </Avatar>
-          <div>
-            <p className="font-medium">{cashier.name}</p>
-            <p className="text-sm text-muted-foreground">{cashier.email}</p>
-            <p className="text-xs text-muted-foreground">@{cashier.username}</p>
+          <div className="min-w-0">
+            <p className="font-medium break-words">{cashier.name}</p>
+            <p className="text-sm text-muted-foreground break-words">{cashier.email}</p>
+            <p className="text-xs text-muted-foreground break-words">@{cashier.username}</p>
           </div>
         </div>
       )
@@ -717,9 +717,9 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
       key: 'store',
       header: 'Store',
       render: (cashier: Cashier) => (
-        <div>
-          <p className="font-medium">{cashier.storeName || 'Not assigned'}</p>
-          <p className="text-sm text-muted-foreground">{cashier.phone || 'No phone'}</p>
+        <div className="min-w-0">
+          <p className="font-medium break-words">{cashier.storeName || 'Not assigned'}</p>
+          <p className="text-sm text-muted-foreground break-words">{cashier.phone || 'No phone'}</p>
         </div>
       )
     },
@@ -782,7 +782,7 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
       key: 'actions',
       header: 'Actions',
       render: (cashier: Cashier) => (
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           <Button 
             size="sm" 
             variant="outline" 

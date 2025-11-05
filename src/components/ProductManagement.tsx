@@ -586,11 +586,11 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
       key: 'product',
       label: 'Product',
       render: (product: Product) => (
-        <div>
-          <p className="font-medium">{product.name}</p>
-          <p className="text-sm text-muted-foreground">{product.sku}</p>
+        <div className="min-w-0">
+          <p className="font-medium break-words">{product.name}</p>
+          <p className="text-sm text-muted-foreground break-words">{product.sku}</p>
           {product.barcode && (
-            <p className="text-xs text-muted-foreground">Barcode: {product.barcode}</p>
+            <p className="text-xs text-muted-foreground break-words">Barcode: {product.barcode}</p>
           )}
         </div>
       )
@@ -703,7 +703,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
       label: 'Actions',
       render: (product: Product) => {
         return (
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           <Button size="sm" variant="outline" onClick={() => {
             // Clear any previous editing state first
             setEditingImageFile(null);

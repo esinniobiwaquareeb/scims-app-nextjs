@@ -338,32 +338,32 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
       key: 'store',
       label: 'Store',
       render: (store: Store) => (
-        <div className="flex items-center gap-3">
-          <StoreIcon className="w-8 h-8 text-brand-primary" />
-          <div>
-            <p className="font-medium">{store.name}</p>
+        <div className="flex items-center gap-3 min-w-0">
+          <StoreIcon className="w-8 h-8 text-brand-primary flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="font-medium break-words">{store.name}</p>
             <div className="text-sm text-muted-foreground space-y-1">
               {store.address && (
                 <div className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  <span>{store.address}, {store.city}, {store.state}</span>
+                  <MapPin className="w-3 h-3 flex-shrink-0" />
+                  <span className="break-words line-clamp-1">{store.address}, {store.city}, {store.state}</span>
                 </div>
               )}
               {store.phone && (
                 <div className="flex items-center gap-1">
-                  <Phone className="w-3 h-3" />
-                  <span>{store.phone}</span>
+                  <Phone className="w-3 h-3 flex-shrink-0" />
+                  <span className="break-words">{store.phone}</span>
                 </div>
               )}
               {store.email && (
                 <div className="flex items-center gap-1">
-                  <Mail className="w-3 h-3" />
-                  <span>{store.email}</span>
+                  <Mail className="w-3 h-3 flex-shrink-0" />
+                  <span className="break-words">{store.email}</span>
                 </div>
               )}
               <div className="flex items-center gap-1">
-                <Users className="w-3 h-3" />
-                <span>{getManagerName(store.manager_name || '')}</span>
+                <Users className="w-3 h-3 flex-shrink-0" />
+                <span className="break-words">{getManagerName(store.manager_name || '')}</span>
               </div>
             </div>
           </div>
@@ -396,7 +396,7 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
         const currentStore = selectedStore; // Assuming selectedStore is the one being edited
 
         return (
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             <Button
               size="sm"
               variant="outline"

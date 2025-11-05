@@ -913,16 +913,16 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
               key: "staff",
               label: "Staff Member",
               render: (staff: Staff) => (
-                <div className="flex items-center gap-3">
-                  <Avatar>
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar className="flex-shrink-0">
                     <AvatarFallback>{getInitials(staff.name)}</AvatarFallback>
                   </Avatar>
-                  <div>
-                    <p className="font-medium">{staff.name}</p>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="min-w-0">
+                    <p className="font-medium break-words">{staff.name}</p>
+                    <p className="text-sm text-muted-foreground break-words">
                       {staff.email}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground break-words">
                       @{staff.username}
                     </p>
                   </div>
@@ -933,11 +933,11 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
               key: "store",
               label: "Store",
               render: (staff: Staff) => (
-                <div>
-                  <p className="font-medium">
+                <div className="min-w-0">
+                  <p className="font-medium break-words">
                     {staff.storeName || "Not assigned"}
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground break-words">
                     {staff.store_id ? `ID: ${staff.store_id}` : "No store assigned"}
                   </p>
                 </div>
@@ -947,11 +947,11 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
               key: "contact",
               label: "Contact",
               render: (staff: Staff) => (
-                <div>
-                  <p className="text-sm font-medium">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium break-words">
                     {staff.phone || "No phone"}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground break-words">
                     {staff.email}
                   </p>
                 </div>
@@ -1047,7 +1047,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
               key: "actions",
               label: "Actions",
               render: (staff: Staff) => (
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-shrink-0">
                   <Button
                     size="sm"
                     variant="outline"
