@@ -61,7 +61,7 @@ export async function GET(
         converted: referrals?.filter((r: any) => r.status === 'converted').length || 0,
         expired: referrals?.filter((r: any) => r.status === 'expired').length || 0,
         businesses: referrals?.filter((r: any) => r.business_id).length || 0,
-        conversion_rate: referrals?.length > 0 
+        conversion_rate: referrals && referrals.length > 0 
           ? ((referrals.filter((r: any) => r.status === 'converted').length / referrals.length) * 100).toFixed(2)
           : '0.00'
       },
@@ -78,9 +78,12 @@ export async function GET(
       subscriptions: {
         total_revenue: commissions?.filter((c: any) => c.commission_type === 'subscription').reduce((sum: number, c: any) => sum + parseFloat(c.amount || 0), 0) || 0,
         total_payments: commissions?.filter((c: any) => c.commission_type === 'subscription').length || 0,
-        average_subscription_value: commissions?.filter((c: any) => c.commission_type === 'subscription').length > 0
-          ? (commissions.filter((c: any) => c.commission_type === 'subscription').reduce((sum: number, c: any) => sum + parseFloat(c.amount || 0), 0) / commissions.filter((c: any) => c.commission_type === 'subscription').length).toFixed(2)
-          : '0.00'
+        average_subscription_value: (() => {
+          const subscriptionCommissions = commissions?.filter((c: any) => c.commission_type === 'subscription') || [];
+          return subscriptionCommissions.length > 0
+            ? (subscriptionCommissions.reduce((sum: number, c: any) => sum + parseFloat(c.amount || 0), 0) / subscriptionCommissions.length).toFixed(2)
+            : '0.00';
+        })()
       }
     };
 

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { DataTable } from '@/components/common/DataTable';
@@ -12,23 +11,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
-  Users, 
   Plus, 
   Edit, 
-  Trash2, 
   Copy, 
   Check, 
   TrendingUp, 
-  DollarSign,
   Search,
-  Filter,
-  Eye,
-  Download,
   Share2,
-  ExternalLink,
   CheckCircle,
   XCircle
 } from 'lucide-react';
@@ -65,17 +56,34 @@ interface AffiliateManagementProps {
   onBack?: () => void;
 }
 
+interface ApplicationData {
+  why_affiliate?: string;
+  [key: string]: unknown;
+}
+
 export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack }) => {
   const { formatCurrency } = useSystem();
   const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [applicationFilter, setApplicationFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedAffiliate, setSelectedAffiliate] = useState<Affiliate | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [approveFormData, setApproveFormData] = useState({
+    signup_commission_type: 'percentage' as 'percentage' | 'fixed',
+    signup_commission_rate: 10,
+    signup_commission_fixed: 0,
+    subscription_commission_rate: 10,
+    set_password: false,
+    password: ''
+  });
+  const [rejectReason, setRejectReason] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -376,7 +384,7 @@ export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack
                 onClick={() => {
                   setSelectedAffiliate(affiliate);
                   setApproveFormData({
-                    signup_commission_type: (affiliate as Affiliate & { signup_commission_type?: string }).signup_commission_type || 'percentage',
+                    signup_commission_type: ((affiliate as Affiliate & { signup_commission_type?: string }).signup_commission_type || 'percentage') as 'percentage' | 'fixed',
                     signup_commission_rate: (affiliate as Affiliate & { signup_commission_rate?: number }).signup_commission_rate || 10,
                     signup_commission_fixed: (affiliate as Affiliate & { signup_commission_fixed?: number }).signup_commission_fixed || 0,
                     subscription_commission_rate: (affiliate as Affiliate & { subscription_commission_rate?: number }).subscription_commission_rate || affiliate.commission_rate || 10,
@@ -511,6 +519,7 @@ export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack
                 data={affiliates}
                 columns={columns}
                 searchable={false}
+                title="Affiliates"
               />
             )}
           </CardContent>
@@ -559,8 +568,8 @@ export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack
                   <Label>Commission Type <span className="text-red-500">*</span></Label>
                   <Select
                     value={formData.commission_type}
-                    onValueChange={(value: 'percentage' | 'fixed') => 
-                      setFormData({ ...formData, commission_type: value })
+                    onValueChange={(value: string) => 
+                      setFormData({ ...formData, commission_type: value as 'percentage' | 'fixed' })
                     }
                   >
                     <SelectTrigger>
@@ -674,8 +683,8 @@ export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack
                   <Label>Commission Type <span className="text-red-500">*</span></Label>
                   <Select
                     value={formData.commission_type}
-                    onValueChange={(value: 'percentage' | 'fixed') => 
-                      setFormData({ ...formData, commission_type: value })
+                    onValueChange={(value: string) => 
+                      setFormData({ ...formData, commission_type: value as 'percentage' | 'fixed' })
                     }
                   >
                     <SelectTrigger>
@@ -789,10 +798,10 @@ export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack
                 <div className="p-4 bg-muted rounded-lg">
                   <p className="font-medium">{selectedAffiliate.name}</p>
                   <p className="text-sm text-muted-foreground">{selectedAffiliate.email}</p>
-                  {selectedAffiliate.application_data?.why_affiliate && (
+                  {selectedAffiliate.application_data && typeof selectedAffiliate.application_data === 'object' && 'why_affiliate' in selectedAffiliate.application_data && (
                     <div className="mt-2">
                       <p className="text-xs font-medium">Application Reason:</p>
-                      <p className="text-xs text-muted-foreground">{selectedAffiliate.application_data.why_affiliate}</p>
+                      <p className="text-xs text-muted-foreground">{(selectedAffiliate.application_data as ApplicationData).why_affiliate}</p>
                     </div>
                   )}
                 </div>
@@ -804,8 +813,8 @@ export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack
                       <Label>Commission Type</Label>
                       <Select
                         value={approveFormData.signup_commission_type}
-                        onValueChange={(value: 'percentage' | 'fixed') =>
-                          setApproveFormData({ ...approveFormData, signup_commission_type: value })
+                        onValueChange={(value: string) =>
+                          setApproveFormData({ ...approveFormData, signup_commission_type: value as 'percentage' | 'fixed' })
                         }
                       >
                         <SelectTrigger>
@@ -912,8 +921,7 @@ export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
-                            ...approveFormData,
-                            reviewed_by: user?.id
+                            ...approveFormData
                           })
                         });
                         const data = await response.json();
@@ -982,8 +990,7 @@ export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack
                           method: 'PUT',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
-                            rejection_reason: rejectReason,
-                            reviewed_by: user?.id
+                            rejection_reason: rejectReason
                           })
                         });
                         const data = await response.json();
@@ -1033,19 +1040,39 @@ interface CommissionData {
   created_at: string;
 }
 
+interface AffiliateStatsModalData {
+  referrals: {
+    total: number;
+    pending: number;
+    converted: number;
+    expired: number;
+    businesses: number;
+    conversion_rate: string;
+  };
+  commissions: {
+    total_earned: number;
+    signup_commissions: number;
+    subscription_commissions: number;
+    total_subscriptions: number;
+    pending: number;
+    approved: number;
+    paid: number;
+    cancelled: number;
+  };
+  subscriptions: {
+    total_revenue: number;
+    total_payments: number;
+    average_subscription_value: string;
+  };
+}
+
 const AffiliateStatsModal: React.FC<AffiliateStatsModalProps> = ({ open, onOpenChange, affiliate }) => {
   const { formatCurrency } = useSystem();
-  const [stats, setStats] = useState<AffiliateStats | null>(null);
+  const [stats, setStats] = useState<AffiliateStatsModalData | null>(null);
   const [loading, setLoading] = useState(false);
   const [commissions, setCommissions] = useState<CommissionData[]>([]);
 
-  useEffect(() => {
-    if (open && affiliate.id) {
-      fetchStats();
-    }
-  }, [open, affiliate.id]);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     setLoading(true);
     try {
       const [statsResponse, commissionsResponse] = await Promise.all([
@@ -1067,7 +1094,13 @@ const AffiliateStatsModal: React.FC<AffiliateStatsModalProps> = ({ open, onOpenC
     } finally {
       setLoading(false);
     }
-  };
+  }, [affiliate.id]);
+
+  useEffect(() => {
+    if (open && affiliate.id) {
+      fetchStats();
+    }
+  }, [open, affiliate.id, fetchStats]);
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const affiliateLink = getAffiliateLink(baseUrl, affiliate.affiliate_code);
@@ -1186,7 +1219,7 @@ const AffiliateStatsModal: React.FC<AffiliateStatsModalProps> = ({ open, onOpenC
                         </div>
                         <div className="text-right">
                           <p className="font-semibold">{formatCurrency(commission.commission_amount)}</p>
-                          <p className="text-xs text-muted-foreground">From {formatCurrency(commission.subscription_amount)}</p>
+                          <p className="text-xs text-muted-foreground">From {formatCurrency(commission.amount || commission.subscription_amount || 0)}</p>
                           <Badge variant="outline" className="mt-1">{commission.status}</Badge>
                         </div>
                       </div>
