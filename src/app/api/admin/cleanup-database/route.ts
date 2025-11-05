@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 import { cookies } from 'next/headers';
 
+// Force dynamic rendering for API routes
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // Demo business ID from sample data
 const DEMO_BUSINESS_ID = '550e8400-e29b-41d4-a716-446655440062';
 const DEMO_STORE_ID = '550e8400-e29b-41d4-a716-446655440072';

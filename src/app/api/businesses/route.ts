@@ -4,6 +4,10 @@ import bcrypt from 'bcryptjs';
 import { EmailService } from '@/lib/email/emailService';
 import { generateSecurePassword } from '@/utils/passwordGenerator';
 
+// Force dynamic rendering for API routes
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // GET - Fetch all businesses (for superadmin)
 export async function GET(request: NextRequest) {
   try {

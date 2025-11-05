@@ -3,6 +3,10 @@ import { supabase } from '@/lib/supabase/config';
 import { EmailService } from '@/lib/email/emailService';
 import crypto from 'crypto';
 
+// Force dynamic rendering for API routes
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     const { identifier } = await request.json();

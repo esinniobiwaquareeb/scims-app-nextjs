@@ -4,6 +4,10 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { EmailService } from '@/lib/email/emailService';
 
+// Force dynamic rendering for API routes
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     const { 
