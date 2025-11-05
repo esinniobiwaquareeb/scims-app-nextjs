@@ -120,7 +120,17 @@ export async function GET(
       store_banner_url: settings?.store_banner_url || '',
       store_description: settings?.store_description || '',
       whatsapp_phone: settings?.whatsapp_phone || '',
-      whatsapp_message_template: settings?.whatsapp_message_template || 'New order received from {customer_name}!\n\nOrder Details:\n{order_items}\n\nTotal: {total_amount}\n\nCustomer: {customer_name}\nPhone: {customer_phone}\nAddress: {customer_address}'
+      whatsapp_message_template: settings?.whatsapp_message_template || 'New order received from {customer_name}!\n\nOrder Details:\n{order_items}\n\nTotal: {total_amount}\n\nCustomer: {customer_name}\nPhone: {customer_phone}\nAddress: {customer_address}',
+      // AI Agent settings
+      enable_ai_agent: settings?.enable_ai_agent ?? false,
+      ai_agent_provider: settings?.ai_agent_provider || 'openai',
+      ai_agent_api_key: settings?.ai_agent_api_key || '',
+      ai_agent_model: settings?.ai_agent_model || 'gpt-4',
+      ai_agent_temperature: settings?.ai_agent_temperature !== null && settings?.ai_agent_temperature !== undefined ? Number(settings.ai_agent_temperature) : 0.7,
+      ai_agent_system_prompt: settings?.ai_agent_system_prompt || 'You are a helpful customer service agent for a retail business. You help customers find products, check availability, get pricing, and answer questions about the business.',
+      ai_agent_enabled_platforms: settings?.ai_agent_enabled_platforms || ['whatsapp'],
+      ai_agent_auto_order: settings?.ai_agent_auto_order ?? false,
+      ai_agent_response_delay_ms: settings?.ai_agent_response_delay_ms !== null && settings?.ai_agent_response_delay_ms !== undefined ? Number(settings.ai_agent_response_delay_ms) : 1000
     };
 
 

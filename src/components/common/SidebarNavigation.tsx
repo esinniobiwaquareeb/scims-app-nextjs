@@ -241,12 +241,6 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           href: '/ai-agent-settings',
           icon: Bot,
           roles: ['business_admin']
-        },
-        {
-          title: 'Affiliates',
-          href: '/affiliates',
-          icon: UserPlus,
-          roles: ['business_admin']
         }
       ]
     }

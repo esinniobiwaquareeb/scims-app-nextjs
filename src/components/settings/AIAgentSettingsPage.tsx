@@ -49,15 +49,15 @@ export const AIAgentSettingsPage: React.FC = () => {
   useEffect(() => {
     if (currentSettings) {
       setLocalSettings({
-        enable_ai_agent: currentSettings.enable_ai_agent || false,
+        enable_ai_agent: currentSettings.enable_ai_agent ?? false,
         ai_agent_provider: currentSettings.ai_agent_provider || 'openai',
         ai_agent_api_key: currentSettings.ai_agent_api_key || '',
         ai_agent_model: currentSettings.ai_agent_model || 'gpt-4',
-        ai_agent_temperature: currentSettings.ai_agent_temperature || 0.7,
+        ai_agent_temperature: currentSettings.ai_agent_temperature !== null && currentSettings.ai_agent_temperature !== undefined ? Number(currentSettings.ai_agent_temperature) : 0.7,
         ai_agent_system_prompt: currentSettings.ai_agent_system_prompt || 'You are a helpful customer service agent for a retail business. You help customers find products, check availability, get pricing, and answer questions about the business.',
         ai_agent_enabled_platforms: currentSettings.ai_agent_enabled_platforms || ['whatsapp'],
-        ai_agent_auto_order: currentSettings.ai_agent_auto_order || false,
-        ai_agent_response_delay_ms: currentSettings.ai_agent_response_delay_ms || 1000
+        ai_agent_auto_order: currentSettings.ai_agent_auto_order ?? false,
+        ai_agent_response_delay_ms: currentSettings.ai_agent_response_delay_ms !== null && currentSettings.ai_agent_response_delay_ms !== undefined ? Number(currentSettings.ai_agent_response_delay_ms) : 1000
       });
     }
   }, [currentSettings]);

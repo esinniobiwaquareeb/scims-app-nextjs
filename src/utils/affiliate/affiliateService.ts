@@ -6,8 +6,7 @@ export interface AffiliateCommissionData {
   subscriptionPlanId?: string;
   amount: number; // Subscription payment amount or signup value
   commissionType: 'signup' | 'subscription';
-  affiliateCode?: string;
-  referralId?: string;
+  referralId: string;
 }
 
 /**
