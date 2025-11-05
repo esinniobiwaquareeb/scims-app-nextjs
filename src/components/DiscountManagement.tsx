@@ -48,6 +48,10 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
   const [editingItem, setEditingItem] = useState<Promotion | Coupon | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Promotion | Coupon | null>(null);
   
+  // Search state
+  const [promotionSearchTerm, setPromotionSearchTerm] = useState('');
+  const [couponSearchTerm, setCouponSearchTerm] = useState('');
+  
   // Data states
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -678,6 +682,8 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
               searchable={true}
               title="Promotions"
               searchPlaceholder="Search promotions..."
+              searchValue={promotionSearchTerm}
+              onSearchChange={setPromotionSearchTerm}
               pagination={{
                 enabled: true,
                 pageSize: 10,
@@ -713,6 +719,8 @@ export const DiscountManagement: React.FC<DiscountManagementProps> = ({ onBack }
               searchable={true}
               title="Coupons"
               searchPlaceholder="Search coupons..."
+              searchValue={couponSearchTerm}
+              onSearchChange={setCouponSearchTerm}
               pagination={{
                 enabled: true,
                 pageSize: 10,
