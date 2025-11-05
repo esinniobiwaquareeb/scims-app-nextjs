@@ -117,6 +117,7 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [filterStore, setFilterStore] = useState<string>(currentStore?.id || 'all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -729,6 +730,8 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
           data={filteredCustomers}
           searchable={true}
           searchPlaceholder="Search customers by name, phone, or email..."
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
           emptyMessage="Start by adding your first customer to the system"
           tableName="customers"
           userRole={user?.role}

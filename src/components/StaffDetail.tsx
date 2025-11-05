@@ -64,6 +64,7 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
   const [salesDateFilter, setSalesDateFilter] = useState('all');
   const [salesStatusFilter, setSalesStatusFilter] = useState('all');
   const [salesPaymentFilter, setSalesPaymentFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const {
     data: staffSales,
@@ -415,6 +416,8 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
             columns={salesColumns}
             searchable={true}
             searchPlaceholder="Search receipt or customer..."
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
             pagination={{
               enabled: true,
               pageSize: 15,

@@ -80,6 +80,7 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
   const [dateFilter, setDateFilter] = useState('all');
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [activityType, setActivityType] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -393,6 +394,8 @@ export const CashierDetail: React.FC<CashierDetailProps> = ({ onBack, cashier })
           columns={salesColumns}
           searchable={true}
           searchPlaceholder="Search receipt or customer..."
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
           pagination={{
             enabled: true,
             pageSize: 15,

@@ -173,6 +173,7 @@ export const CashierDashboard: React.FC = () => {
 
   // State management
   const [searchTerm, setSearchTerm] = useState('');
+  const [activitySearchTerm, setActivitySearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('today');
   const [showSaleDetail, setShowSaleDetail] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
@@ -770,6 +771,8 @@ export const CashierDashboard: React.FC = () => {
                         columns={activityColumns}
                         searchable={true}
                         searchPlaceholder="Search activities..."
+                        searchValue={activitySearchTerm}
+                        onSearchChange={setActivitySearchTerm}
                         emptyMessage="No activity recorded yet"
                         tableName="activityLogs"
                         userRole={user?.role}
