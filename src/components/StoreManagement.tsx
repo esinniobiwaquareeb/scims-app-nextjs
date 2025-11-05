@@ -146,9 +146,33 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
   }, []);
 
   const handleAddStore = async () => {
-    if (!newStore.name.trim()) {
-      toast.error('Please fill in required fields');
+    // Validate required fields
+    if (!newStore.name || !newStore.name.trim()) {
+      toast.error('Store name is required');
       return;
+    }
+
+    if (newStore.name.trim().length < 2) {
+      toast.error('Store name must be at least 2 characters long');
+      return;
+    }
+
+    // Validate email format if provided
+    if (newStore.email && newStore.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newStore.email.trim())) {
+        toast.error('Please enter a valid email address');
+        return;
+      }
+    }
+
+    // Validate phone format if provided
+    if (newStore.phone && newStore.phone.trim()) {
+      const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
+      if (!phoneRegex.test(newStore.phone.trim())) {
+        toast.error('Please enter a valid phone number');
+        return;
+      }
     }
 
     try {
@@ -208,6 +232,35 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
 
   const handleUpdateStore = async () => {
     if (!selectedStore) return;
+
+    // Validate required fields
+    if (!newStore.name || !newStore.name.trim()) {
+      toast.error('Store name is required');
+      return;
+    }
+
+    if (newStore.name.trim().length < 2) {
+      toast.error('Store name must be at least 2 characters long');
+      return;
+    }
+
+    // Validate email format if provided
+    if (newStore.email && newStore.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newStore.email.trim())) {
+        toast.error('Please enter a valid email address');
+        return;
+      }
+    }
+
+    // Validate phone format if provided
+    if (newStore.phone && newStore.phone.trim()) {
+      const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
+      if (!phoneRegex.test(newStore.phone.trim())) {
+        toast.error('Please enter a valid phone number');
+        return;
+      }
+    }
 
     try {
       setSubmitting(true);

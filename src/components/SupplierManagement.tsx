@@ -101,9 +101,41 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
 
   const handleAddSupplier = (updatedSupplier: Supplier) => {
     try {
-      if (!updatedSupplier.name.trim() || !updatedSupplier.contact_person?.trim() || !updatedSupplier.email?.trim()) {
-        toast.error(translate('validation.requiredFields'));
+      // Validate required fields
+      if (!updatedSupplier.name || !updatedSupplier.name.trim()) {
+        toast.error('Supplier name is required');
         return;
+      }
+
+      if (updatedSupplier.name.trim().length < 2) {
+        toast.error('Supplier name must be at least 2 characters long');
+        return;
+      }
+
+      if (!updatedSupplier.contact_person || !updatedSupplier.contact_person.trim()) {
+        toast.error('Contact person is required');
+        return;
+      }
+
+      if (!updatedSupplier.email || !updatedSupplier.email.trim()) {
+        toast.error('Email is required');
+        return;
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(updatedSupplier.email.trim())) {
+        toast.error('Please enter a valid email address');
+        return;
+      }
+
+      // Validate phone format if provided
+      if (updatedSupplier.phone && updatedSupplier.phone.trim()) {
+        const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
+        if (!phoneRegex.test(updatedSupplier.phone.trim())) {
+          toast.error('Please enter a valid phone number');
+          return;
+        }
       }
 
       const supplierData = {
@@ -167,6 +199,43 @@ export const SupplierManagement: React.FC<SupplierManagementProps> = ({ onBack }
         console.error('No editing supplier found');
         toast.error('No supplier selected for editing');
         return;
+      }
+
+      // Validate required fields
+      if (!updatedSupplier.name || !updatedSupplier.name.trim()) {
+        toast.error('Supplier name is required');
+        return;
+      }
+
+      if (updatedSupplier.name.trim().length < 2) {
+        toast.error('Supplier name must be at least 2 characters long');
+        return;
+      }
+
+      if (!updatedSupplier.contact_person || !updatedSupplier.contact_person.trim()) {
+        toast.error('Contact person is required');
+        return;
+      }
+
+      if (!updatedSupplier.email || !updatedSupplier.email.trim()) {
+        toast.error('Email is required');
+        return;
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(updatedSupplier.email.trim())) {
+        toast.error('Please enter a valid email address');
+        return;
+      }
+
+      // Validate phone format if provided
+      if (updatedSupplier.phone && updatedSupplier.phone.trim()) {
+        const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
+        if (!phoneRegex.test(updatedSupplier.phone.trim())) {
+          toast.error('Please enter a valid phone number');
+          return;
+        }
       }
 
   

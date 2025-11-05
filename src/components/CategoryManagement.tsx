@@ -121,7 +121,26 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
 
   // Handlers
   const handleAddCategory = useCallback(async () => {
-    if (!currentBusiness?.id || !newCategory.name) return;
+    if (!currentBusiness?.id) {
+      toast.error('Business context is missing');
+      return;
+    }
+
+    // Validate required fields
+    if (!newCategory.name || !newCategory.name.trim()) {
+      toast.error('Category name is required');
+      return;
+    }
+
+    if (newCategory.name.trim().length < 2) {
+      toast.error('Category name must be at least 2 characters long');
+      return;
+    }
+
+    if (newCategory.name.trim().length > 100) {
+      toast.error('Category name must be less than 100 characters');
+      return;
+    }
 
     try {
       const categoryData = {
@@ -150,7 +169,26 @@ export const CategoryManagement: React.FC<CategoryManagementProps> = ({ onBack }
   }, [newCategory, currentBusiness, createCategoryMutation]);
 
   const handleEditCategory = useCallback(async () => {
-    if (!editingCategory || !currentBusiness?.id) return;
+    if (!editingCategory || !currentBusiness?.id) {
+      toast.error('Category or business context is missing');
+      return;
+    }
+
+    // Validate required fields
+    if (!editingCategory.name || !editingCategory.name.trim()) {
+      toast.error('Category name is required');
+      return;
+    }
+
+    if (editingCategory.name.trim().length < 2) {
+      toast.error('Category name must be at least 2 characters long');
+      return;
+    }
+
+    if (editingCategory.name.trim().length > 100) {
+      toast.error('Category name must be less than 100 characters');
+      return;
+    }
 
     try {
       const updateData = {

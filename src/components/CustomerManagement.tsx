@@ -223,9 +223,31 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   };
 
   const handleAddCustomer = async () => {
-    if (!formData.name.trim() || !formData.phone.trim()) {
-      toast.error('Name and phone number are required');
+    // Validate required fields
+    if (!formData.name.trim()) {
+      toast.error('Customer name is required');
       return;
+    }
+
+    if (!formData.phone.trim()) {
+      toast.error('Phone number is required');
+      return;
+    }
+
+    // Validate phone format
+    const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
+    if (!phoneRegex.test(formData.phone.trim())) {
+      toast.error('Please enter a valid phone number');
+      return;
+    }
+
+    // Validate email format if provided
+    if (formData.email && formData.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        toast.error('Please enter a valid email address');
+        return;
+      }
     }
 
     // Check if phone number already exists
@@ -274,9 +296,36 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   };
 
   const handleEditCustomer = async () => {
-    if (!selectedCustomer || !formData.name.trim() || !formData.phone.trim()) {
-      toast.error('Name and phone number are required');
+    if (!selectedCustomer) {
+      toast.error('No customer selected');
       return;
+    }
+
+    // Validate required fields
+    if (!formData.name.trim()) {
+      toast.error('Customer name is required');
+      return;
+    }
+
+    if (!formData.phone.trim()) {
+      toast.error('Phone number is required');
+      return;
+    }
+
+    // Validate phone format
+    const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
+    if (!phoneRegex.test(formData.phone.trim())) {
+      toast.error('Please enter a valid phone number');
+      return;
+    }
+
+    // Validate email format if provided
+    if (formData.email && formData.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        toast.error('Please enter a valid email address');
+        return;
+      }
     }
 
     // Check if phone number already exists (excluding current customer)

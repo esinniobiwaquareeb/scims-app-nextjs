@@ -109,41 +109,45 @@ const CashierForm = ({
   <div className="space-y-4">
     <div className="grid grid-cols-2 gap-4">
       <div>
-        <Label htmlFor="name">Full Name</Label>
+        <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
         <Input
           id="name"
           value={cashier.name || ''}
           onChange={(e) => onChange({ ...cashier, name: e.target.value })}
           placeholder="Enter full name"
           autoFocus
+          required
         />
       </div>
       <div>
-        <Label htmlFor="username">Username</Label>
+        <Label htmlFor="username">Username <span className="text-red-500">*</span></Label>
         <Input
           id="username"
           value={cashier.username || ''}
           onChange={(e) => onChange({ ...cashier, username: e.target.value })}
-          placeholder="Enter username"
+          placeholder="Enter username (min 3 characters)"
+          required
         />
       </div>
     </div>
 
     <div className="grid grid-cols-2 gap-4">
       <div>
-        <Label htmlFor="email">Email (Optional)</Label>
+        <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
         <Input
           id="email"
           type="email"
           value={cashier.email || ''}
           onChange={(e) => onChange({ ...cashier, email: e.target.value })}
-          placeholder="Enter email address (optional)"
+          placeholder="Enter email address"
+          required
         />
       </div>
       <div>
-        <Label htmlFor="phone">Phone (Optional)</Label>
+        <Label htmlFor="phone">Phone</Label>
         <Input
           id="phone"
+          type="tel"
           value={cashier.phone || ''}
           onChange={(e) => onChange({ ...cashier, phone: e.target.value })}
           placeholder="Enter phone number (optional)"
@@ -217,7 +221,7 @@ const CashierForm = ({
       <Button variant="outline" onClick={onCancel} disabled={isSaving}>
         Cancel
       </Button>
-      <Button onClick={onSave} disabled={isSaving || !cashier.name || !cashier.username}>
+      <Button onClick={onSave} disabled={isSaving || !cashier.name?.trim() || !cashier.username?.trim() || !cashier.email?.trim()}>
         {isSaving ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -383,7 +387,53 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
   const avgTransactionValue = totalTransactions > 0 ? totalSalesAmount / totalTransactions : 0;
 
   const handleAddCashier = useCallback(async () => {
-    if (!currentBusiness?.id || !newCashier.username) return;
+    // Validate required fields
+    if (!currentBusiness?.id) {
+      toast.error('Business context is missing');
+      return;
+    }
+
+    if (!newCashier.name || !newCashier.name.trim()) {
+      toast.error('Full name is required');
+      return;
+    }
+
+    if (!newCashier.username || !newCashier.username.trim()) {
+      toast.error('Username is required');
+      return;
+    }
+
+    if (newCashier.username.trim().length < 3) {
+      toast.error('Username must be at least 3 characters long');
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(newCashier.username.trim())) {
+      toast.error('Username can only contain letters, numbers, and underscores');
+      return;
+    }
+
+    // Email is required by the API
+    if (!newCashier.email || !newCashier.email.trim()) {
+      toast.error('Email is required');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newCashier.email.trim())) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    // Validate phone format if provided
+    if (newCashier.phone && newCashier.phone.trim()) {
+      const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
+      if (!phoneRegex.test(newCashier.phone.trim())) {
+        toast.error('Please enter a valid phone number');
+        return;
+      }
+    }
 
     try {
       const cashierData = {
@@ -430,6 +480,49 @@ export const CashierManagement: React.FC<CashierManagementProps> = ({ onBack }) 
 
   const handleUpdateCashier = useCallback(async () => {
     if (!selectedCashier || !currentBusiness?.id || !originalCashier) return;
+
+    // Validate required fields
+    if (!selectedCashier.name || !selectedCashier.name.trim()) {
+      toast.error('Full name is required');
+      return;
+    }
+
+    if (!selectedCashier.username || !selectedCashier.username.trim()) {
+      toast.error('Username is required');
+      return;
+    }
+
+    if (selectedCashier.username.trim().length < 3) {
+      toast.error('Username must be at least 3 characters long');
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(selectedCashier.username.trim())) {
+      toast.error('Username can only contain letters, numbers, and underscores');
+      return;
+    }
+
+    // Email is required by the API
+    if (!selectedCashier.email || !selectedCashier.email.trim()) {
+      toast.error('Email is required');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(selectedCashier.email.trim())) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    // Validate phone format if provided
+    if (selectedCashier.phone && selectedCashier.phone.trim()) {
+      const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
+      if (!phoneRegex.test(selectedCashier.phone.trim())) {
+        toast.error('Please enter a valid phone number');
+        return;
+      }
+    }
 
     try {
       // First update the cashier basic info

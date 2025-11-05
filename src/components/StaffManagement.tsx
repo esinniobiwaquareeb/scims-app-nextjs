@@ -122,24 +122,26 @@ const StaffForm = ({
   <div className="space-y-4">
     <div className="grid grid-cols-2 gap-4">
       <div>
-        <Label htmlFor="name">Full Name</Label>
+        <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
         <Input
           id="name"
           value={staffMember.name || ""}
           onChange={(e) => onChange({ ...staffMember, name: e.target.value })}
           placeholder="Enter full name"
           autoFocus
+          required
         />
       </div>
       <div>
-        <Label htmlFor="username">Username</Label>
+        <Label htmlFor="username">Username <span className="text-red-500">*</span></Label>
         <Input
           id="username"
           value={staffMember.username || ""}
           onChange={(e) =>
             onChange({ ...staffMember, username: e.target.value })
           }
-          placeholder="Enter username"
+          placeholder="Enter username (min 3 characters)"
+          required
         />
       </div>
     </div>
@@ -157,9 +159,10 @@ const StaffForm = ({
         />
       </div>
       <div>
-        <Label htmlFor="phone">Phone (Optional)</Label>
+        <Label htmlFor="phone">Phone</Label>
         <Input
           id="phone"
+          type="tel"
           value={staffMember.phone || ""}
           onChange={(e) => onChange({ ...staffMember, phone: e.target.value })}
           placeholder="Enter phone number (optional)"
@@ -267,7 +270,7 @@ const StaffForm = ({
       </Button>
       <Button
         onClick={onSave}
-        disabled={isSaving || !staffMember.name || !staffMember.username}
+        disabled={isSaving || !staffMember.name?.trim() || !staffMember.username?.trim() || !staffMember.email?.trim()}
       >
         {isSaving ? (
           <>
@@ -420,9 +423,51 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   );
 
   const handleAddStaff = useCallback(async () => {
-    if (!currentBusiness?.id || !newStaff.name || !newStaff.username || !newStaff.email) {
-      toast.error('Please fill in all required fields (Name, Username, and Email)');
+    // Validate required fields
+    if (!currentBusiness?.id) {
+      toast.error('Business context is missing');
       return;
+    }
+
+    if (!newStaff.name || !newStaff.name.trim()) {
+      toast.error('Full name is required');
+      return;
+    }
+
+    if (!newStaff.username || !newStaff.username.trim()) {
+      toast.error('Username is required');
+      return;
+    }
+
+    if (newStaff.username.trim().length < 3) {
+      toast.error('Username must be at least 3 characters long');
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(newStaff.username.trim())) {
+      toast.error('Username can only contain letters, numbers, and underscores');
+      return;
+    }
+
+    if (!newStaff.email || !newStaff.email.trim()) {
+      toast.error('Email is required');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newStaff.email.trim())) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    // Validate phone format if provided
+    if (newStaff.phone && newStaff.phone.trim()) {
+      const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
+      if (!phoneRegex.test(newStaff.phone.trim())) {
+        toast.error('Please enter a valid phone number');
+        return;
+      }
     }
 
     try {
@@ -469,6 +514,48 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   const handleEditStaff = useCallback(async () => {
     if (!selectedStaff || !selectedStaff.id || !currentBusiness?.id) {
       return;
+    }
+
+    // Validate required fields
+    if (!selectedStaff.name || !selectedStaff.name.trim()) {
+      toast.error('Full name is required');
+      return;
+    }
+
+    if (!selectedStaff.username || !selectedStaff.username.trim()) {
+      toast.error('Username is required');
+      return;
+    }
+
+    if (selectedStaff.username.trim().length < 3) {
+      toast.error('Username must be at least 3 characters long');
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(selectedStaff.username.trim())) {
+      toast.error('Username can only contain letters, numbers, and underscores');
+      return;
+    }
+
+    if (!selectedStaff.email || !selectedStaff.email.trim()) {
+      toast.error('Email is required');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(selectedStaff.email.trim())) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    // Validate phone format if provided
+    if (selectedStaff.phone && selectedStaff.phone.trim()) {
+      const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
+      if (!phoneRegex.test(selectedStaff.phone.trim())) {
+        toast.error('Please enter a valid phone number');
+        return;
+      }
     }
 
     try {
