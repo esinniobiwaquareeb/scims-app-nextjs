@@ -369,25 +369,34 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
 
   // Transform roles data for the form
   const roleOptions = useMemo(() => {
-    if (!rolesData?.roles || rolesData.roles.length === 0) {
-      return DEFAULT_ROLE_OPTIONS;
+    // Always include default roles first
+    const defaultRoles = [...DEFAULT_ROLE_OPTIONS];
+    
+    // Then add API roles (custom roles) if available
+    if (rolesData?.roles && rolesData.roles.length > 0) {
+      // Map API roles to form options
+      // Include both API roles and default system roles
+      const apiRoles = rolesData.roles
+        .filter((role: { is_system_role?: boolean }) => !role.is_system_role) // Only show custom roles
+        .map((role: { id: string; name: string }) => {
+          const normalizedValue = role.name.toLowerCase().replace(/\s+/g, '_');
+          // Check if this role name matches a default role
+          const matchesDefault = DEFAULT_ROLE_OPTIONS.some(r => r.value === normalizedValue);
+          if (matchesDefault) return null; // Skip if it matches a default role
+          
+          return {
+            id: role.id,
+            value: normalizedValue,
+            label: role.name,
+            color: "bg-gray-500"
+          };
+        })
+        .filter((role: unknown) => role !== null); // Remove null entries
+      
+      return [...defaultRoles, ...apiRoles];
     }
     
-    // Map API roles to form options
-    // Include both API roles and default system roles
-    const apiRoles = rolesData.roles.map((role: { id: string; name: string }) => ({
-      id: role.id,
-      value: role.name.toLowerCase().replace(/\s+/g, '_'),
-      label: role.name,
-      color: DEFAULT_ROLE_OPTIONS.find(r => r.value === role.name.toLowerCase().replace(/\s+/g, '_'))?.color || "bg-gray-500"
-    }));
-    
-    // Combine with default roles, avoiding duplicates
-    const defaultRoles = DEFAULT_ROLE_OPTIONS.filter(
-      defaultRole => !apiRoles.some((apiRole: { value: string }) => apiRole.value === defaultRole.value)
-    );
-    
-    return [...apiRoles, ...defaultRoles];
+    return defaultRoles;
   }, [rolesData]);
 
   // React Query mutations

@@ -36,8 +36,18 @@ export async function PUT(
       );
     }
 
-    // Prevent editing system roles (unless explicitly allowed)
-    // Business admins can edit system roles, but we'll let the frontend handle this check
+    // Prevent editing system roles unless explicitly allowed (frontend should check this)
+    // But we'll add a safety check here - if it's a system role and no explicit override, prevent editing name
+    if (existingRole.is_system_role && body.allow_system_edit !== true) {
+      // Allow updating permissions and description for system roles, but not name
+      if (body.name !== undefined && body.name !== existingRole.name) {
+        return NextResponse.json(
+          { error: 'Cannot modify name of system roles' },
+          { status: 403 }
+        );
+      }
+    }
+    
     const updateData: {
       name?: string;
       description?: string;

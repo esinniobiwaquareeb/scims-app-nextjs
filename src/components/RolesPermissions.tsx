@@ -234,6 +234,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
       // Invalidate React Query cache to refresh roles list
       if (currentBusiness?.id) {
         queryClient.invalidateQueries({ queryKey: ['roles', currentBusiness.id] });
+        queryClient.invalidateQueries({ queryKey: ['roles'] }); // Also invalidate general roles query
       }
       // Refresh data to show newly created role
       await loadData();
@@ -263,7 +264,8 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
           business_id: currentBusiness.id,
           name: newRole.name,
           description: newRole.description,
-          permissions: newRole.permissions
+          permissions: newRole.permissions,
+          allow_system_edit: selectedRole.is_system_role && canEditRole(selectedRole) // Allow business admins to edit system roles
         })
       });
 
@@ -279,6 +281,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
       // Invalidate React Query cache to refresh roles list
       if (currentBusiness?.id) {
         queryClient.invalidateQueries({ queryKey: ['roles', currentBusiness.id] });
+        queryClient.invalidateQueries({ queryKey: ['roles'] }); // Also invalidate general roles query
       }
       // Refresh data to show updated role
       await loadData();
@@ -328,6 +331,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
       // Invalidate React Query cache to refresh roles list
       if (currentBusiness?.id) {
         queryClient.invalidateQueries({ queryKey: ['roles', currentBusiness.id] });
+        queryClient.invalidateQueries({ queryKey: ['roles'] }); // Also invalidate general roles query
       }
       await loadData();
       
