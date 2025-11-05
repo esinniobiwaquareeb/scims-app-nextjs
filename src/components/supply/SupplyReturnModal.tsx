@@ -65,19 +65,43 @@ export const SupplyReturnModal: React.FC<SupplyReturnModalProps> = ({
       if (data.success && data.supply_order.items) {
         setSupplyOrderItems(data.supply_order.items);
         
-        // Initialize return items
-        const initialReturnItems: ReturnItem[] = data.supply_order.items.map((item: SupplyOrderItem) => ({
-          supply_order_item_id: item.id,
-          product_name: item.product?.name || 'Unknown Product',
-          quantity_supplied: item.quantity_supplied,
-          quantity_returned: item.quantity_returned,
-          quantity_accepted: item.quantity_accepted,
-          quantity_pending: item.quantity_supplied - item.quantity_returned - item.quantity_accepted,
-          unit_price: item.unit_price,
-          return_quantity: 0,
-          return_reason: '',
-          condition: 'good'
-        }));
+        // Fetch existing returns for all items to get accurate return counts
+        const returnsResponse = await fetch(`/api/supply-returns?supply_order_id=${supplyOrder.id}`);
+        const returnsData = await returnsResponse.json();
+        
+        // Calculate total returned per item from all return records
+        const returnsByItem: Record<string, number> = {};
+        if (returnsData.success && returnsData.supply_returns) {
+          for (const returnRecord of returnsData.supply_returns) {
+            if (returnRecord.items && Array.isArray(returnRecord.items)) {
+              for (const returnItem of returnRecord.items) {
+                const itemId = returnItem.supply_order_item?.id || returnItem.supply_order_item_id;
+                if (itemId) {
+                  returnsByItem[itemId] = (returnsByItem[itemId] || 0) + (returnItem.quantity_returned || 0);
+                }
+              }
+            }
+          }
+        }
+        
+        // Initialize return items with accurate return counts
+        const initialReturnItems: ReturnItem[] = data.supply_order.items.map((item: SupplyOrderItem) => {
+          const totalReturned = returnsByItem[item.id] || item.quantity_returned || 0;
+          const quantityPending = item.quantity_supplied - totalReturned - (item.quantity_accepted || 0);
+          
+          return {
+            supply_order_item_id: item.id,
+            product_name: item.product?.name || 'Unknown Product',
+            quantity_supplied: item.quantity_supplied,
+            quantity_returned: totalReturned,
+            quantity_accepted: item.quantity_accepted || 0,
+            quantity_pending: quantityPending,
+            unit_price: item.unit_price,
+            return_quantity: 0,
+            return_reason: '',
+            condition: 'good'
+          };
+        });
         
         setReturnItems(initialReturnItems);
       } else {

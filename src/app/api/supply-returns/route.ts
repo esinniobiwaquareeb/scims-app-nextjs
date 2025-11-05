@@ -166,6 +166,7 @@ export async function POST(request: NextRequest) {
     // Create supply return items and calculate total
     let calculatedTotal = 0;
     const returnItems = [];
+    const itemsToUpdate: Array<{ id: string; newQuantityReturned: number }> = [];
 
     for (const item of returnData.items) {
       // Get the supply order item details
@@ -180,14 +181,44 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Validate return quantity
+      // Check for existing returns for this supply order item
+      const { data: existingReturns, error: returnsError } = await supabase
+        .from('supply_return_item')
+        .select('quantity_returned')
+        .eq('supply_order_item_id', item.supply_order_item_id);
+
+      if (returnsError) {
+        console.error('Error fetching existing returns:', returnsError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to validate existing returns' },
+          { status: 500 }
+        );
+      }
+
+      // Calculate total already returned from all return records
+      const totalAlreadyReturned = existingReturns?.reduce(
+        (sum, ret) => sum + (ret.quantity_returned || 0), 
+        0
+      ) || 0;
+
+      // Validate return quantity against what's actually available
       const maxReturnable = supplyOrderItem.quantity_supplied - 
-                           supplyOrderItem.quantity_returned - 
+                           totalAlreadyReturned - 
                            supplyOrderItem.quantity_accepted;
 
       if (item.quantity_returned > maxReturnable) {
         return NextResponse.json(
-          { success: false, error: `Cannot return ${item.quantity_returned} items. Maximum returnable: ${maxReturnable}` },
+          { 
+            success: false, 
+            error: `Cannot return ${item.quantity_returned} items. Maximum returnable: ${maxReturnable} (Supplied: ${supplyOrderItem.quantity_supplied} - Already Returned: ${totalAlreadyReturned} - Already Accepted: ${supplyOrderItem.quantity_accepted})` 
+          },
+          { status: 400 }
+        );
+      }
+
+      if (item.quantity_returned <= 0) {
+        return NextResponse.json(
+          { success: false, error: 'Return quantity must be greater than 0' },
           { status: 400 }
         );
       }
@@ -195,12 +226,20 @@ export async function POST(request: NextRequest) {
       const itemTotal = item.quantity_returned * supplyOrderItem.unit_price;
       calculatedTotal += itemTotal;
 
+      // Calculate new total quantity returned for this item
+      const newQuantityReturned = totalAlreadyReturned + item.quantity_returned;
+
       returnItems.push({
         supply_return_id: supplyReturn.id,
         supply_order_item_id: item.supply_order_item_id,
         quantity_returned: item.quantity_returned,
         return_reason: item.return_reason,
         condition: item.condition
+      });
+
+      itemsToUpdate.push({
+        id: item.supply_order_item_id,
+        newQuantityReturned: newQuantityReturned
       });
     }
 
@@ -217,6 +256,22 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Failed to create supply return items' },
         { status: 500 }
       );
+    }
+
+    // Update quantity_returned in supply_order_item for each item
+    for (const itemUpdate of itemsToUpdate) {
+      const { error: updateItemError } = await supabase
+        .from('supply_order_item')
+        .update({ 
+          quantity_returned: itemUpdate.newQuantityReturned,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', itemUpdate.id);
+
+      if (updateItemError) {
+        console.error('Error updating supply order item quantity_returned:', updateItemError);
+        // Don't fail the request, but log the error
+      }
     }
 
     // Update supply return with calculated total
