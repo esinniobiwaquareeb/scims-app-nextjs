@@ -35,6 +35,7 @@ import {
   FileText,
   Search,
   RefreshCw,
+  AlertCircle,
   Store,
   Building2
 } from 'lucide-react';
@@ -62,11 +63,14 @@ interface RawSalesData {
   id: string;
   created_at?: string;
   transaction_date?: string;
-  customers?: { name: string };
-  sale_items?: Array<{ products?: { name: string } }>;
+  customer?: { name: string; phone?: string };
+  customers?: { name: string; phone?: string };
+  sale_item?: Array<{ product?: { name: string }; quantity?: number; total_price?: number }>;
+  sale_items?: Array<{ products?: { name: string }; product?: { name: string }; quantity?: number }>;
   total_amount?: string | number;
   payment_method?: string;
-  users?: { username: string };
+  cashier?: { username: string; name?: string };
+  users?: { username: string; name?: string };
   store_id?: string;
 }
 
@@ -138,7 +142,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
     isLoading: isLoadingProducts,
     error: productsError,
     refetch: refetchProducts
-  } = useReportingProductPerformance(currentBusiness?.id || '', reportingStoreId || '');
+  } = useReportingProductPerformance(currentBusiness?.id || '', reportingStoreId || '', startDate, endDate);
 
   const {
     data: customerResponse = { customers: [] },
@@ -194,6 +198,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
   const productPerformance = productResponse?.products || [];
   const customerData = customerResponse?.customers || [];
   const inventoryStats = inventoryResponse?.summary || { inStock: 0, lowStock: 0, outOfStock: 0 };
+  const inventoryProducts = inventoryResponse?.products || [];
   const financialStats = financialResponse?.summary || {
     totalProfit: 0,
     operatingExpenses: 0,
@@ -296,24 +301,30 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
 
     
     return salesData.map((sale: RawSalesData) => {
-      // Ensure products array is always defined
+      // Extract sale items - API returns it as sale_item (singular) not sale_items (plural)
       let products: string[] = [];
-      if (sale.sale_items && Array.isArray(sale.sale_items)) {
-        products = sale.sale_items.map((item: { products?: { name: string } }) => 
-          item.products?.name || 'Unknown Product'
-        );
+      let itemsCount = 0;
+      if (sale.sale_item && Array.isArray(sale.sale_item)) {
+        products = sale.sale_item.map((item: { product?: { name: string }; quantity?: number }) => {
+          itemsCount += item.quantity || 0;
+          return item.product?.name || 'Unknown Product';
+        });
+      } else if (sale.sale_items && Array.isArray(sale.sale_items)) {
+        products = sale.sale_items.map((item: { products?: { name: string }; product?: { name: string }; quantity?: number }) => {
+          itemsCount += item.quantity || 0;
+          return item.product?.name || item.products?.name || 'Unknown Product';
+        });
       }
-      
-
       
       return {
         id: sale.id,
         date: new Date(sale.created_at || sale.transaction_date || ''),
-        customerName: sale.customers?.name || 'Walk-in Customer',
+        customerName: sale.customer?.name || sale.customers?.name || 'Walk-in Customer',
         products: products,
+        itemsCount: itemsCount,
         total: parseFloat(String(sale.total_amount || 0)),
         payment: sale.payment_method || 'cash',
-        cashier: sale.users?.username || 'Unknown',
+        cashier: sale.cashier?.username || sale.cashier?.name || sale.users?.username || sale.users?.name || 'Unknown',
         storeId: sale.store_id || ''
       };
     });
@@ -341,8 +352,8 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
 
   const topSales = useMemo(() => {
     const sales = filteredSales.map((sale: TransformedSalesData) => {
-      // Ensure products array is safe to access
-      const itemsCount = sale.products && Array.isArray(sale.products) ? sale.products.length : 0;
+      // Use itemsCount from transformed data, or fallback to products array length
+      const itemsCount = sale.itemsCount || (sale.products && Array.isArray(sale.products) ? sale.products.length : 0);
       
       return {
         id: sale.id,
@@ -350,7 +361,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
         customerName: sale.customerName,
         amount: sale.total,
         itemsCount: itemsCount,
-        paymentMethod: sale.payment.charAt(0).toUpperCase() + sale.payment.slice(1),
+        paymentMethod: sale.payment ? sale.payment.charAt(0).toUpperCase() + sale.payment.slice(1) : 'Cash',
         cashier: sale.cashier,
         storeId: sale.storeId
       };
@@ -814,6 +825,17 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
                     <p className="text-muted-foreground">Loading product performance data...</p>
                   </div>
+                ) : productsError ? (
+                  <div className="text-center py-8">
+                    <p className="text-destructive mb-2">Error loading product performance data</p>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {productsError instanceof Error ? productsError.message : 'Something went wrong'}
+                    </p>
+                    <Button variant="outline" onClick={() => refetchProducts()}>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Retry
+                    </Button>
+                  </div>
                 ) : (
                   <DataTable
                     title=""
@@ -823,7 +845,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                         key: 'product',
                         header: 'Product',
                         render: (product: Product) => (
-                          <div className="font-medium">{product.name}</div>
+                          <div className="font-medium">{product.name || 'Unknown Product'}</div>
                         )
                       },
                       {
@@ -930,14 +952,14 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                         key: 'totalSpent',
                         header: 'Total Spent',
                         render: (customer: CustomerType) => (
-                          <div className="font-medium">{formatCurrency(customer?.total_purchases || 0)}</div>
+                          <div className="font-medium">{formatCurrency(customer?.total_spent || 0)}</div>
                         )
                       },
                       {
                         key: 'avgOrderValue',
                         header: 'Avg Order Value',
                         render: (customer: CustomerType) => (
-                          <div>{formatCurrency((customer?.total_purchases || 0) > 0 ? ((customer?.total_purchases || 0) / (customer?.total_purchases || 1)) : 0)}</div>
+                          <div>{formatCurrency(customer?.average_order_value || 0)}</div>
                         )
                       },
                       {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 
@@ -28,6 +29,8 @@ export async function GET(request: NextRequest) {
         return await getBusinessSalesReport(businessId, searchParams);
       case 'inventory':
         return await getBusinessInventoryReport(businessId);
+      case 'products':
+        return await getBusinessProductsReport(businessId, searchParams);
       case 'customers':
         return await getBusinessCustomersReport(businessId);
       default:
@@ -197,6 +200,7 @@ async function getBusinessSalesReport(businessId: string, searchParams: URLSearc
           product(
             id,
             name,
+            cost,
             category:category_id(name)
           )
         ),
@@ -241,13 +245,48 @@ async function getBusinessSalesReport(businessId: string, searchParams: URLSearc
     const totalTransactions = sales?.length || 0;
     const averageOrderValue = totalTransactions > 0 ? totalSales / totalTransactions : 0;
 
+    // Calculate financial metrics from sales
+    let totalProfit = 0;
+    
+    (sales || []).forEach((sale: any) => {
+      (sale.sale_item || []).forEach((item: any) => {
+        // Get product cost from product table
+        const itemCost = parseFloat(item.product?.cost || 0);
+        const itemRevenue = parseFloat(item.total_price || 0);
+        const itemQuantity = item.quantity || 0;
+        const itemProfit = itemRevenue - (itemCost * itemQuantity);
+        totalProfit += itemProfit;
+      });
+    });
+
+    const profitMargin = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
+    const operatingExpenses = 0; // This would need to come from a separate expenses table
+    const netProfit = totalProfit - operatingExpenses;
+    
+    // Calculate return rate (would need supply return data)
+    const returnRate = 0;
+    
+    // Calculate customer retention (would need customer purchase history)
+    const uniqueCustomers = new Set((sales || []).map((s: any) => s.customer_id).filter(Boolean)).size;
+    const customerRetention = uniqueCustomers > 0 ? (uniqueCustomers / uniqueCustomers) * 100 : 0;
+    
+    // Calculate inventory turnover (would need inventory data)
+    const inventoryTurnover = 0;
+
     return NextResponse.json({
       success: true,
       sales: sales || [],
       summary: {
         total_sales: totalSales,
         total_transactions: totalTransactions,
-        average_order_value: averageOrderValue
+        average_order_value: averageOrderValue,
+        totalProfit,
+        operatingExpenses,
+        netProfit,
+        profitMargin,
+        returnRate,
+        customerRetention,
+        inventoryTurnover
       }
     });
   } catch (error) {
@@ -406,19 +445,60 @@ async function getBusinessCustomersReport(businessId: string) {
       );
     }
 
+    // Get sales data for customers to calculate actual spending
+    const { data: sales, error: salesError } = await supabase
+      .from('sale')
+      .select('customer_id, total_amount, transaction_date')
+      .in('store_id', storeIds)
+      .eq('status', 'completed')
+      .not('customer_id', 'is', null);
+
+    if (salesError) {
+      console.error('Error fetching sales for customers:', salesError);
+    }
+
+    // Calculate customer statistics from sales
+    const customerStats: { [key: string]: { totalSpent: number; orderCount: number; lastVisit: Date | null } } = {};
+    (sales || []).forEach((sale: any) => {
+      const customerId = sale.customer_id;
+      if (!customerStats[customerId]) {
+        customerStats[customerId] = { totalSpent: 0, orderCount: 0, lastVisit: null };
+      }
+      customerStats[customerId].totalSpent += parseFloat(sale.total_amount || 0);
+      customerStats[customerId].orderCount += 1;
+      const saleDate = new Date(sale.transaction_date);
+      if (!customerStats[customerId].lastVisit || saleDate > customerStats[customerId].lastVisit!) {
+        customerStats[customerId].lastVisit = saleDate;
+      }
+    });
+
+    // Merge customer data with sales stats
+    const customersWithStats = (customers || []).map((customer: any) => {
+      const stats = customerStats[customer.id] || { totalSpent: 0, orderCount: 0, lastVisit: null };
+      const avgOrderValue = stats.orderCount > 0 ? stats.totalSpent / stats.orderCount : 0;
+      
+      return {
+        ...customer,
+        total_purchases: stats.orderCount, // Actual purchase count from sales
+        total_spent: stats.totalSpent, // Actual total spent
+        average_order_value: avgOrderValue,
+        last_purchase_at: stats.lastVisit || customer.last_purchase_at
+      };
+    });
+
     // Calculate customer statistics
-    const totalCustomers = customers?.length || 0;
-    const activeCustomers = customers?.filter(c => c.last_purchase_at).length || 0;
-    const newCustomersThisMonth = customers?.filter(c => {
+    const totalCustomers = customersWithStats.length;
+    const activeCustomers = customersWithStats.filter(c => c.last_purchase_at).length;
+    const newCustomersThisMonth = customersWithStats.filter(c => {
       const createdDate = new Date(c.created_at);
       const monthAgo = new Date();
       monthAgo.setMonth(monthAgo.getMonth() - 1);
       return createdDate >= monthAgo;
-    }).length || 0;
+    }).length;
 
     return NextResponse.json({
       success: true,
-      customers: customers || [],
+      customers: customersWithStats,
       summary: {
         total_customers: totalCustomers,
         active_customers: activeCustomers,
@@ -429,6 +509,140 @@ async function getBusinessCustomersReport(businessId: string) {
     console.error('Error in getBusinessCustomersReport:', error);
     return NextResponse.json(
       { error: 'Failed to generate customers report' },
+      { status: 500 }
+    );
+  }
+}
+
+async function getBusinessProductsReport(businessId: string, searchParams: URLSearchParams) {
+  try {
+    const startDate = searchParams.get('start_date');
+    const endDate = searchParams.get('end_date');
+    const storeId = searchParams.get('store_id');
+
+    // Get all stores for the business
+    const { data: stores, error: storesError } = await supabase
+      .from('store')
+      .select('id')
+      .eq('business_id', businessId)
+      .eq('is_active', true);
+
+    if (storesError) {
+      console.error('Error fetching stores:', storesError);
+      return NextResponse.json(
+        { error: 'Failed to fetch stores' },
+        { status: 500 }
+      );
+    }
+
+    if (!stores || stores.length === 0) {
+      return NextResponse.json({
+        success: true,
+        products: [],
+        summary: {
+          total_products: 0,
+          total_sold: 0,
+          total_revenue: 0
+        }
+      });
+    }
+
+    const storeIds = storeId ? [storeId] : stores.map(store => store.id);
+
+    // Get products
+    const { data: products, error: productsError } = await supabase
+      .from('product')
+      .select(`
+        id,
+        name,
+        sku,
+        price,
+        cost,
+        category:category_id(name),
+        store_id
+      `)
+      .in('store_id', storeIds)
+      .eq('is_active', true);
+
+    if (productsError) {
+      console.error('Error fetching products:', productsError);
+      return NextResponse.json(
+        { error: 'Failed to fetch products' },
+        { status: 500 }
+      );
+    }
+
+    // Get sales data for these products
+    let salesQuery = supabase
+      .from('sale_item')
+      .select(`
+        product_id,
+        quantity,
+        total_price,
+        sale!inner(
+          id,
+          transaction_date,
+          status,
+          store_id
+        )
+      `)
+      .eq('sale.status', 'completed')
+      .in('sale.store_id', storeIds);
+
+    if (startDate) {
+      salesQuery = salesQuery.gte('sale.transaction_date', startDate);
+    }
+    if (endDate) {
+      salesQuery = salesQuery.lte('sale.transaction_date', endDate);
+    }
+
+    const { data: salesItems, error: salesError } = await salesQuery;
+
+    if (salesError) {
+      console.error('Error fetching sales items:', salesError);
+    }
+
+    // Calculate product performance
+    const productStats: { [key: string]: { quantity: number; revenue: number } } = {};
+    (salesItems || []).forEach((item: any) => {
+      const productId = item.product_id;
+      if (!productStats[productId]) {
+        productStats[productId] = { quantity: 0, revenue: 0 };
+      }
+      productStats[productId].quantity += item.quantity || 0;
+      productStats[productId].revenue += parseFloat(item.total_price || 0);
+    });
+
+    // Merge product data with sales stats
+    const productsWithStats = (products || []).map((product: any) => {
+      const stats = productStats[product.id] || { quantity: 0, revenue: 0 };
+      const cost = parseFloat(product.cost || 0);
+      const profit = stats.revenue - (stats.quantity * cost);
+      
+      return {
+        id: product.id,
+        name: product.name || 'Unknown Product',
+        sku: product.sku || 'N/A',
+        category: product.category?.name || 'Uncategorized',
+        soldQuantity: stats.quantity,
+        revenue: stats.revenue,
+        profit: profit
+      };
+    }).filter((p: any) => p.soldQuantity > 0); // Only show products that have been sold
+
+    return NextResponse.json({
+      success: true,
+      products: productsWithStats,
+      summary: {
+        total_products: productsWithStats.length,
+        total_sold: productsWithStats.reduce((sum: number, p: any) => sum + p.soldQuantity, 0),
+        total_revenue: productsWithStats.reduce((sum: number, p: any) => sum + p.revenue, 0)
+      }
+    });
+  } catch (error) {
+    console.error('Error in getBusinessProductsReport:', error);
+    return NextResponse.json(
+      { error: 'Failed to generate products report' },
       { status: 500 }
     );
   }
