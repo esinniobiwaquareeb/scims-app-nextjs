@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       case 'sales':
         return await getBusinessSalesReport(businessId, searchParams);
       case 'inventory':
-        return await getBusinessInventoryReport(businessId);
+        return await getBusinessInventoryReport(businessId, searchParams);
       case 'products':
         return await getBusinessProductsReport(businessId, searchParams);
       case 'customers':
@@ -158,35 +158,46 @@ async function getBusinessSalesReport(businessId: string, searchParams: URLSearc
   try {
     const startDate = searchParams.get('start_date');
     const endDate = searchParams.get('end_date');
+    const storeId = searchParams.get('store_id');
 
-    // Get all stores for the business
-    const { data: stores, error: storesError } = await supabase
-      .from('store')
-      .select('id')
-      .eq('business_id', businessId)
-      .eq('is_active', true);
+    let storeIds: string[];
 
-    if (storesError) {
-      console.error('Error fetching stores:', storesError);
-      return NextResponse.json(
-        { error: 'Failed to fetch stores' },
-        { status: 500 }
-      );
+    if (storeId) {
+      // If store_id is provided, filter by that specific store
+      storeIds = [storeId];
+    } else {
+      // Otherwise, get all stores for the business
+      const { data: stores, error: storesError } = await supabase
+        .from('store')
+        .select('id')
+        .eq('business_id', businessId)
+        .eq('is_active', true);
+
+      if (storesError) {
+        console.error('Error fetching stores:', storesError);
+        return NextResponse.json(
+          { error: 'Failed to fetch stores' },
+          { status: 500 }
+        );
+      }
+
+      if (!stores || stores.length === 0) {
+        return NextResponse.json({
+          success: true,
+          sales: [],
+          summary: {
+            total_sales: 0,
+            total_transactions: 0,
+            average_order_value: 0
+          },
+          revenueData: [],
+          categoryData: [],
+          paymentData: []
+        });
+      }
+
+      storeIds = stores.map(store => store.id);
     }
-
-    if (!stores || stores.length === 0) {
-      return NextResponse.json({
-        success: true,
-        sales: [],
-        summary: {
-          total_sales: 0,
-          total_transactions: 0,
-          average_order_value: 0
-        }
-      });
-    }
-
-    const storeIds = stores.map(store => store.id);
 
     // Build sales query
     let salesQuery = supabase
@@ -273,6 +284,76 @@ async function getBusinessSalesReport(businessId: string, searchParams: URLSearc
     // Calculate inventory turnover (would need inventory data)
     const inventoryTurnover = 0;
 
+    // Generate chart data
+    // 1. Revenue & Profit Trend (grouped by date)
+    const revenueDataMap: { [key: string]: { revenue: number; profit: number } } = {};
+    (sales || []).forEach((sale: any) => {
+      const saleDate = sale.transaction_date ? new Date(sale.transaction_date).toISOString().split('T')[0] : null;
+      if (!saleDate) return;
+
+      if (!revenueDataMap[saleDate]) {
+        revenueDataMap[saleDate] = { revenue: 0, profit: 0 };
+      }
+
+      const saleRevenue = parseFloat(sale.total_amount || 0);
+      revenueDataMap[saleDate].revenue += saleRevenue;
+
+      // Calculate profit for this sale
+      let saleProfit = 0;
+      (sale.sale_item || []).forEach((item: any) => {
+        const itemCost = parseFloat(item.product?.cost || 0);
+        const itemRevenue = parseFloat(item.total_price || 0);
+        const itemQuantity = item.quantity || 0;
+        saleProfit += itemRevenue - (itemCost * itemQuantity);
+      });
+      revenueDataMap[saleDate].profit += saleProfit;
+    });
+
+    // Convert to array format for chart
+    const revenueData = Object.entries(revenueDataMap)
+      .map(([date, data]) => ({
+        date,
+        revenue: Number(data.revenue.toFixed(2)),
+        profit: Number(data.profit.toFixed(2))
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // 2. Sales by Category (for pie chart)
+    const categoryDataMap: { [key: string]: number } = {};
+    (sales || []).forEach((sale: any) => {
+      (sale.sale_item || []).forEach((item: any) => {
+        const categoryName = item.product?.category?.name || 'Uncategorized';
+        const itemRevenue = parseFloat(item.total_price || 0);
+        categoryDataMap[categoryName] = (categoryDataMap[categoryName] || 0) + itemRevenue;
+      });
+    });
+
+    // Convert to array format with colors for pie chart
+    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'];
+    const categoryData = Object.entries(categoryDataMap)
+      .map(([name, value], index) => ({
+        name,
+        value: Number(value.toFixed(2)),
+        color: colors[index % colors.length]
+      }))
+      .sort((a, b) => b.value - a.value); // Sort by value descending
+
+    // 3. Payment Method Breakdown
+    const paymentDataMap: { [key: string]: number } = {};
+    (sales || []).forEach((sale: any) => {
+      const paymentMethod = sale.payment_method || 'Unknown';
+      paymentDataMap[paymentMethod] = (paymentDataMap[paymentMethod] || 0) + 1;
+    });
+
+    const totalPayments = Object.values(paymentDataMap).reduce((sum, count) => sum + count, 0);
+    const paymentData = Object.entries(paymentDataMap)
+      .map(([method, count]) => ({
+        method,
+        count,
+        percentage: totalPayments > 0 ? Number(((count / totalPayments) * 100).toFixed(1)) : 0
+      }))
+      .sort((a, b) => b.count - a.count);
+
     return NextResponse.json({
       success: true,
       sales: sales || [],
@@ -287,7 +368,10 @@ async function getBusinessSalesReport(businessId: string, searchParams: URLSearc
         returnRate,
         customerRetention,
         inventoryTurnover
-      }
+      },
+      revenueData,
+      categoryData,
+      paymentData
     });
   } catch (error) {
     console.error('Error in getBusinessSalesReport:', error);
@@ -298,40 +382,49 @@ async function getBusinessSalesReport(businessId: string, searchParams: URLSearc
   }
 }
 
-async function getBusinessInventoryReport(businessId: string) {
+async function getBusinessInventoryReport(businessId: string, searchParams: URLSearchParams) {
   try {
-    // First get all stores for the business
-    const { data: stores, error: storesError } = await supabase
-      .from('store')
-      .select('id')
-      .eq('business_id', businessId)
-      .eq('is_active', true);
+    const storeId = searchParams.get('store_id');
 
-    if (storesError) {
-      console.error('Error fetching stores:', storesError);
-      return NextResponse.json(
-        { error: 'Failed to fetch stores' },
-        { status: 500 }
-      );
+    let storeIds: string[];
+
+    if (storeId) {
+      // If store_id is provided, filter by that specific store
+      storeIds = [storeId];
+    } else {
+      // Otherwise, get all stores for the business
+      const { data: stores, error: storesError } = await supabase
+        .from('store')
+        .select('id')
+        .eq('business_id', businessId)
+        .eq('is_active', true);
+
+      if (storesError) {
+        console.error('Error fetching stores:', storesError);
+        return NextResponse.json(
+          { error: 'Failed to fetch stores' },
+          { status: 500 }
+        );
+      }
+
+      if (!stores || stores.length === 0) {
+        return NextResponse.json({
+          success: true,
+          products: [],
+          summary: {
+            totalProducts: 0,
+            inStock: 0,
+            lowStock: 0,
+            outOfStock: 0,
+            totalInventoryValue: 0
+          }
+        });
+      }
+
+      storeIds = stores.map(store => store.id);
     }
 
-    if (!stores || stores.length === 0) {
-      return NextResponse.json({
-        success: true,
-        products: [],
-        summary: {
-          total_products: 0,
-          in_stock: 0,
-          low_stock: 0,
-          out_of_stock: 0,
-          total_inventory_value: 0
-        }
-      });
-    }
-
-    const storeIds = stores.map(store => store.id);
-
-    // Get all products for all stores in the business
+    // Get all products for the specified stores
     const { data: products, error: productsError } = await supabase
       .from('product')
       .select(`
@@ -374,11 +467,11 @@ async function getBusinessInventoryReport(businessId: string) {
       success: true,
       products: products || [],
       summary: {
-        total_products: totalProducts,
-        in_stock: inStock,
-        low_stock: lowStock,
-        out_of_stock: outOfStock,
-        total_inventory_value: totalValue
+        totalProducts: totalProducts,
+        inStock: inStock,
+        lowStock: lowStock,
+        outOfStock: outOfStock,
+        totalInventoryValue: totalValue
       }
     });
   } catch (error) {

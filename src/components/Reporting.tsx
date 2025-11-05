@@ -144,7 +144,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
   } = useReportingCustomerAnalytics(currentBusiness?.id || '', reportingStoreId || '');
 
   const {
-    data: inventoryResponse = { summary: { inStock: 0, lowStock: 0, outOfStock: 0 } },
+    data: inventoryResponse = { summary: { inStock: 0, lowStock: 0, outOfStock: 0 }, products: [] },
     isLoading: isLoadingInventory,
     error: inventoryError,
     refetch: refetchInventory
@@ -190,6 +190,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
   const productPerformance = productResponse?.products || [];
   const customerData = customerResponse?.customers || [];
   const inventoryStats = inventoryResponse?.summary || { inStock: 0, lowStock: 0, outOfStock: 0 };
+  const inventoryProducts = inventoryResponse?.products || [];
   const financialStats = financialResponse?.summary || {
     totalProfit: 0,
     operatingExpenses: 0,
@@ -1151,35 +1152,68 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Payment Method Breakdown</CardTitle>
+                  <CardTitle className="text-lg">Inventory Products</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {isLoadingCharts ? (
+                  {isLoadingInventory ? (
                     <div className="text-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                      <p className="text-muted-foreground">Loading payment data...</p>
+                      <p className="text-muted-foreground">Loading inventory products...</p>
                     </div>
-                  ) : safeChartData.paymentData.length === 0 ? (
+                  ) : inventoryProducts.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
-                      No payment method data available
+                      No inventory products found
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {safeChartData.paymentData.map((payment: { method: string; count: number; percentage: number }, index: number) => (
-                        <div key={index} className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-4 h-4 rounded-full ${
-                              payment.method === 'Card' ? 'bg-blue-500' :
-                              payment.method === 'Cash' ? 'bg-green-500' : 'bg-purple-500'
-                            }`} />
-                            <span className="font-medium">{payment.method}</span>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {inventoryProducts.map((product: {
+                        id: string;
+                        name: string;
+                        sku?: string;
+                        stock_quantity?: number;
+                        reorder_level?: number;
+                        category?: { name: string };
+                        brand?: { name: string };
+                      }) => {
+                        const stockStatus = 
+                          (product.stock_quantity || 0) <= 0 ? 'outOfStock' :
+                          (product.stock_quantity || 0) <= (product.reorder_level || 0) ? 'lowStock' :
+                          'inStock';
+                        
+                        const statusColor = 
+                          stockStatus === 'outOfStock' ? 'text-red-600' :
+                          stockStatus === 'lowStock' ? 'text-orange-600' :
+                          'text-green-600';
+                        
+                        const statusLabel = 
+                          stockStatus === 'outOfStock' ? 'Out of Stock' :
+                          stockStatus === 'lowStock' ? 'Low Stock' :
+                          'In Stock';
+
+                        return (
+                          <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3">
+                                <p className="font-medium">{product.name}</p>
+                                <Badge variant="outline" className={statusColor}>
+                                  {statusLabel}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                                <span>SKU: {product.sku || 'N/A'}</span>
+                                {product.category?.name && <span>Category: {product.category.name}</span>}
+                                {product.brand?.name && <span>Brand: {product.brand.name}</span>}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold">Stock: {product.stock_quantity || 0}</p>
+                              {product.reorder_level && (
+                                <p className="text-xs text-muted-foreground">Reorder: {product.reorder_level}</p>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-semibold">{payment.count} transactions</p>
-                            <p className="text-sm text-muted-foreground">{payment.percentage}%</p>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
