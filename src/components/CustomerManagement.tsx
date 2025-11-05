@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { useActivityLogger } from '@/contexts/ActivityLogger';
@@ -377,6 +377,13 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   const handleDeleteCustomer = async (customer: Customer) => {
     if (!currentStore?.id) return;
     
+    // Prevent deletion if customer has purchase history
+    if (customer.totalPurchases > 0) {
+      toast.error('Cannot delete customer with purchase history. Customers with purchases cannot be deleted.');
+      setIsDeleteDialogOpen(false);
+      return;
+    }
+    
     // setIsLoading(true); // This line is removed
     try {
       // Delete customer from database
@@ -559,12 +566,19 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
           <Button 
             variant="ghost" 
             size="sm"
+            disabled={customer.totalPurchases > 0}
             onClick={() => {
+              if (customer.totalPurchases > 0) {
+                toast.error('Cannot delete customer with purchase history');
+                return;
+              }
               setSelectedCustomer(customer);
               setIsDeleteDialogOpen(true);
             }}
+            title={customer.totalPurchases > 0 ? 'Cannot delete customer with purchase history' : 'Delete customer'}
+            className={customer.totalPurchases > 0 ? 'opacity-50 cursor-not-allowed' : ''}
           >
-            <Trash2 className="w-4 h-4 text-red-600" />
+            <Trash2 className={`w-4 h-4 ${customer.totalPurchases > 0 ? 'text-gray-400' : 'text-red-600'}`} />
           </Button>
         </div>
       )
@@ -1032,21 +1046,36 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Customer</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {selectedCustomer?.name}? This action cannot be undone.
-              Their purchase history will be preserved but they will no longer appear in the customer list.
+              {selectedCustomer && selectedCustomer.totalPurchases > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-destructive font-medium">
+                    Cannot delete customer with purchase history
+                  </p>
+                  <p>
+                    {selectedCustomer.name} has {selectedCustomer.totalPurchases} purchase{selectedCustomer.totalPurchases !== 1 ? 's' : ''} and cannot be deleted to maintain data integrity.
+                  </p>
+                </div>
+              ) : (
+                <p>Are you sure you want to delete {selectedCustomer?.name}? This action cannot be undone.</p>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-              if (selectedCustomer) {
-                handleDeleteCustomer(selectedCustomer);
-                setIsDeleteDialogOpen(false);
-                setSelectedCustomer(null);
-              }
-            }}>
-              Delete
-            </AlertDialogAction>
+            {selectedCustomer && selectedCustomer.totalPurchases === 0 && (
+              <AlertDialogAction 
+                onClick={() => {
+                  if (selectedCustomer && selectedCustomer.totalPurchases === 0) {
+                    handleDeleteCustomer(selectedCustomer);
+                    setIsDeleteDialogOpen(false);
+                    setSelectedCustomer(null);
+                  }
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 
+// Force dynamic rendering for API routes
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

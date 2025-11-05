@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // PWA optimizations
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
+  
   // Security headers
   async headers() {
     return [
@@ -29,28 +37,65 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
+          },
+          {
+            key: 'Service-Worker-Allowed',
+            value: '/',
+          },
+        ],
+      },
+      {
+        source: '/manifest.json',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
+          },
+        ],
+      },
     ];
   },
   
-  // Image optimization
+  // Image optimization - Allow all domains
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**.supabase.co',
+        hostname: '**',
       },
       {
-        protocol: 'https',
-        hostname: '**.supabase.in',
+        protocol: 'http',
+        hostname: '**',
       },
     ],
   },
   
-  // Request size limit (for API routes)
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '2mb',
-    },
+  // PWA asset optimization
+  async rewrites() {
+    return [
+      {
+        source: '/icons/:path*',
+        destination: '/icons/:path*',
+      },
+    ];
+  },
+
+  // Enable PWA features
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Enable service worker in development
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+      };
+    }
+    return config;
   },
 };
 
