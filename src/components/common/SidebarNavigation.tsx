@@ -28,7 +28,8 @@ import {
   X,
   Building2,
   CreditCard,
-  Menu as MenuIcon
+  Menu as MenuIcon,
+  Bot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/common/Logo';
@@ -231,6 +232,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           title: 'Business Settings',
           href: '/business-settings',
           icon: Settings,
+          roles: ['business_admin']
+        },
+        {
+          title: 'AI Agent Assistant',
+          href: '/ai-agent-settings',
+          icon: Bot,
           roles: ['business_admin']
         }
       ]
