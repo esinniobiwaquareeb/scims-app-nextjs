@@ -154,9 +154,10 @@ export async function PUT(
 
     // Prepare business data (currency_id and language_id belong to business table)
     const businessData: Partial<BusinessUpdateData> = {};
-    if (body.currency_id !== undefined) businessData.currency_id = body.currency_id;
-    if (body.language_id !== undefined) businessData.language_id = body.language_id;
-    if (body.country_id !== undefined) businessData.country_id = body.country_id;
+    // Convert empty strings to null for UUID fields (PostgreSQL requirement)
+    if (body.currency_id !== undefined) businessData.currency_id = body.currency_id === '' ? null : body.currency_id;
+    if (body.language_id !== undefined) businessData.language_id = body.language_id === '' ? null : body.language_id;
+    if (body.country_id !== undefined) businessData.country_id = body.country_id === '' ? null : body.country_id;
     if (body.business_type !== undefined) businessData.business_type = body.business_type;
     if (body.name !== undefined) businessData.name = body.name;
     if (body.description !== undefined) businessData.description = body.description;
