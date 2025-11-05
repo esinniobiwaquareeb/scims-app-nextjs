@@ -203,7 +203,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
     error: productsError,
     refetch: refetchProducts
   } = useStoreProducts(selectedStoreFilter, { 
-    enabled: !!selectedStoreFilter && selectedStoreFilter !== '',
+    enabled: !!selectedStoreFilter && selectedStoreFilter !== '' && !!currentBusiness?.id,
     businessId: currentBusiness?.id
   });
 
@@ -237,7 +237,12 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
     if (user?.role === 'store_admin' && currentStore?.id) {
       setSelectedStoreFilter(currentStore.id);
     } else if (user?.role === 'business_admin') {
-      setSelectedStoreFilter('All');
+      // For business admin, sync with currentStore from header, or default to 'All'
+      if (currentStore?.id) {
+        setSelectedStoreFilter(currentStore.id);
+      } else {
+        setSelectedStoreFilter('All');
+      }
     }
   }, [user?.role, currentStore?.id]);
 
