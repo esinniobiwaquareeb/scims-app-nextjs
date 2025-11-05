@@ -138,7 +138,7 @@ export async function PUT(
   }
 }
 
-// DELETE - Delete affiliate (soft delete by setting status to inactive)
+// DELETE - Delete affiliate and all associated data (hard delete)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -146,22 +146,41 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    const { error } = await supabase
+    // First, verify the affiliate exists
+    const { data: affiliate, error: fetchError } = await supabase
       .from('affiliate')
-      .update({ status: 'inactive', updated_at: new Date().toISOString() })
+      .select('id, name, email')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !affiliate) {
+      return NextResponse.json(
+        { success: false, error: 'Affiliate not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete affiliate (cascade will handle related records)
+    // The database schema has ON DELETE CASCADE for:
+    // - affiliate_referral (affiliate_id)
+    // - affiliate_commission (affiliate_id)
+    // - affiliate_payout (affiliate_id)
+    const { error: deleteError } = await supabase
+      .from('affiliate')
+      .delete()
       .eq('id', id);
 
-    if (error) {
-      console.error('Error deleting affiliate:', error);
+    if (deleteError) {
+      console.error('Error deleting affiliate:', deleteError);
       return NextResponse.json(
-        { success: false, error: 'Failed to delete affiliate' },
+        { success: false, error: 'Failed to delete affiliate and associated data' },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Affiliate deactivated successfully'
+      message: `Affiliate "${affiliate.name}" and all associated data have been permanently deleted`
     });
   } catch (error) {
     console.error('Error in DELETE /api/affiliates/[id]:', error);

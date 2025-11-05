@@ -12,6 +12,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { 
   Plus, 
   Edit, 
@@ -21,7 +31,8 @@ import {
   Search,
   Share2,
   CheckCircle,
-  XCircle
+  XCircle,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAffiliateLink } from '@/utils/affiliate/affiliateService';
@@ -73,7 +84,10 @@ export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [selectedAffiliate, setSelectedAffiliate] = useState<Affiliate | null>(null);
+  const [affiliateToDelete, setAffiliateToDelete] = useState<{ id: string; name: string } | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [approveFormData, setApproveFormData] = useState({
     signup_commission_type: 'percentage' as 'percentage' | 'fixed',
@@ -221,25 +235,35 @@ export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack
     }
   };
 
-  const handleDeleteAffiliate = async (affiliateId: string) => {
-    if (!confirm('Are you sure you want to deactivate this affiliate?')) return;
+  const handleDeleteClick = (affiliate: Affiliate) => {
+    setAffiliateToDelete({ id: affiliate.id, name: affiliate.name });
+    setShowDeleteDialog(true);
+  };
 
+  const handleDeleteAffiliate = async () => {
+    if (!affiliateToDelete) return;
+
+    setDeleteLoading(true);
     try {
-      const response = await fetch(`/api/affiliates/${affiliateId}`, {
+      const response = await fetch(`/api/affiliates/${affiliateToDelete.id}`, {
         method: 'DELETE'
       });
 
       const data = await response.json();
 
       if (data.success) {
-        toast.success('Affiliate deactivated');
+        toast.success(data.message || 'Affiliate and all associated data deleted successfully');
         fetchAffiliates();
+        setShowDeleteDialog(false);
+        setAffiliateToDelete(null);
       } else {
-        toast.error(data.error || 'Failed to deactivate affiliate');
+        toast.error(data.error || 'Failed to delete affiliate');
       }
     } catch (error) {
       console.error('Error deleting affiliate:', error);
-      toast.error('Failed to deactivate affiliate');
+      toast.error('Failed to delete affiliate');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -447,6 +471,15 @@ export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack
                 title="Edit"
               >
                 <Edit className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleDeleteClick(affiliate)}
+                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                title="Delete Affiliate"
+              >
+                <Trash2 className="w-4 h-4" />
               </Button>
             </>
           )}
@@ -1017,6 +1050,57 @@ export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent className="max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-destructive">Delete Affiliate</AlertDialogTitle>
+              <AlertDialogDescription className="space-y-3">
+                <p>
+                  Are you sure you want to permanently delete <strong>&quot;{affiliateToDelete?.name}&quot;</strong>?
+                </p>
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 space-y-2">
+                  <p className="font-semibold text-sm text-destructive">This will permanently delete:</p>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                    <li>The affiliate account</li>
+                    <li>All referrals</li>
+                    <li>All commissions</li>
+                    <li>All payouts</li>
+                  </ul>
+                </div>
+                <p className="font-semibold text-destructive">
+                  ⚠️ This action cannot be undone!
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel 
+                onClick={() => {
+                  setShowDeleteDialog(false);
+                  setAffiliateToDelete(null);
+                }}
+                disabled={deleteLoading}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAffiliate}
+                disabled={deleteLoading}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleteLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Deleting...
+                  </div>
+                ) : (
+                  'Delete Permanently'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );
