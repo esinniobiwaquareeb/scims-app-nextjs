@@ -68,6 +68,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Convert empty strings to null for optional fields
+    const expectedDeliveryValue = expected_delivery && expected_delivery.trim() !== '' 
+      ? expected_delivery 
+      : null;
+    const notesValue = notes && notes.trim() !== '' ? notes : null;
+
     // Create the restock order
     const { data: order, error: orderError } = await supabase
       .from('restock_order')
@@ -76,8 +82,8 @@ export async function POST(request: NextRequest) {
         supplier_id,
         status,
         total_amount,
-        notes,
-        expected_delivery,
+        notes: notesValue,
+        expected_delivery: expectedDeliveryValue,
         created_by
       })
       .select()
