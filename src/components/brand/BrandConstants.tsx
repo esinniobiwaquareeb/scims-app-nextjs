@@ -13,6 +13,9 @@ export const BRAND_TABLE_COLUMNS = [
   {
     header: 'Logo',
     accessorKey: 'logo',
+    width: '80px',
+    minWidth: '80px',
+    maxWidth: '80px',
     cell: (brand: Brand) => (
       <div className="w-12 h-12 rounded-lg overflow-hidden border bg-gray-100 flex items-center justify-center">
         {brand.logo_url ? (
@@ -36,11 +39,14 @@ export const BRAND_TABLE_COLUMNS = [
   {
     header: 'Name',
     accessorKey: 'name',
+    width: '250px',
+    minWidth: '200px',
+    maxWidth: '300px',
     cell: (brand: Brand) => (
-      <div className="min-w-0">
-        <div className="font-medium break-words">{brand.name}</div>
+      <div className="min-w-0 max-w-full">
+        <div className="font-medium break-words line-clamp-1">{brand.name}</div>
         {brand.description && (
-          <div className="text-sm text-muted-foreground break-words line-clamp-2">{brand.description}</div>
+          <div className="text-sm text-muted-foreground break-words line-clamp-1 mt-1">{brand.description}</div>
         )}
       </div>
     )
@@ -48,19 +54,23 @@ export const BRAND_TABLE_COLUMNS = [
   {
     header: 'Contact',
     accessorKey: 'contact',
+    width: '200px',
+    minWidth: '150px',
     cell: (brand: Brand) => (
-      <div className="text-sm">
-        {brand.contact_person && <div>{brand.contact_person}</div>}
-        {brand.contact_email && <div className="text-muted-foreground">{brand.contact_email}</div>}
-        {brand.contact_phone && <div className="text-muted-foreground">{brand.contact_phone}</div>}
+      <div className="text-sm min-w-0">
+        {brand.contact_person && <div className="break-words line-clamp-1">{brand.contact_person}</div>}
+        {brand.contact_email && <div className="text-muted-foreground break-words line-clamp-1">{brand.contact_email}</div>}
+        {brand.contact_phone && <div className="text-muted-foreground break-words line-clamp-1">{brand.contact_phone}</div>}
       </div>
     )
   },
   {
     header: 'Website',
     accessorKey: 'website',
+    width: '200px',
+    minWidth: '150px',
     cell: (brand: Brand) => brand.website ? (
-      <a href={brand.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+      <a href={brand.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-words line-clamp-1 block">
         {brand.website}
       </a>
     ) : null
@@ -68,6 +78,9 @@ export const BRAND_TABLE_COLUMNS = [
   {
     header: 'Created',
     accessorKey: 'created_at',
+    width: '120px',
+    minWidth: '120px',
+    maxWidth: '120px',
     cell: (brand: Brand) => new Date(brand.created_at).toLocaleDateString()
   }
 ];

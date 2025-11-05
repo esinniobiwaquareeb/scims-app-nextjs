@@ -787,23 +787,26 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Date Range */}
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0 md:col-span-2 lg:col-span-1">
                 <Label>{translate('sales.dateRange') || 'Date Range'}</Label>
-                <DatePickerWithRange
-                  date={filters.dateRange}
-                  onDateChange={(range) => {
-                    if (range?.from && range?.to) {
-                      setFilters(prev => ({ ...prev, dateRange: { from: range.from, to: range.to } }));
-                    }
-                  }}
-                />
+                <div className="w-full min-w-0">
+                  <DatePickerWithRange
+                    date={filters.dateRange}
+                    onDateChange={(range) => {
+                      if (range?.from && range?.to) {
+                        setFilters(prev => ({ ...prev, dateRange: { from: range.from, to: range.to } }));
+                      }
+                    }}
+                    className="w-full min-w-0"
+                  />
+                </div>
               </div>
 
               {/* Payment Method */}
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <Label>{translate('sales.paymentMethod') || 'Payment Method'}</Label>
                 <Select value={filters.paymentMethod} onValueChange={(value) => setFilters(prev => ({ ...prev, paymentMethod: value }))}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -817,10 +820,10 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
               </div>
 
               {/* Status */}
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <Label>{translate('sales.status') || 'Status'}</Label>
                 <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -834,10 +837,10 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
               </div>
 
               {/* Cashier */}
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <Label>{translate('sales.cashier') || 'Cashier'}</Label>
                 <Select value={filters.cashier} onValueChange={(value) => setFilters(prev => ({ ...prev, cashier: value }))}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -853,36 +856,38 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
 
             {/* Search and Amount Range */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <Label>{translate('sales.search') || 'Search'}</Label>
-                <div className="relative">
+                <div className="relative w-full">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     placeholder="Receipt, customer, product..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 w-full"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <Label>{translate('sales.minAmount') || 'Min Amount'}</Label>
                 <Input
                   type="number"
                   value={filters.minAmount}
                   onChange={(e) => setFilters(prev => ({ ...prev, minAmount: parseFloat(e.target.value) || 0 }))}
                   placeholder="0.00"
+                  className="w-full"
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <Label>{translate('sales.maxAmount') || 'Max Amount'}</Label>
                 <Input
                   type="number"
                   value={filters.maxAmount}
                   onChange={(e) => setFilters(prev => ({ ...prev, maxAmount: parseFloat(e.target.value) || 999999 }))}
                   placeholder="999999.00"
+                  className="w-full"
                 />
               </div>
             </div>
