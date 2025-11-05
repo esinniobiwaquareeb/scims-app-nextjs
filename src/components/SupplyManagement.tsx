@@ -243,38 +243,51 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
         title="Supply Management"
         subtitle="Manage supply orders, returns, and payments"
       headerActions={
-        <Button onClick={handleCreateSupplyOrder} className="gap-2" title="Create a new supply order">
+        <Button onClick={handleCreateSupplyOrder} className="gap-2 font-semibold">
           <Plus className="h-4 w-4" />
-          New Supply Order
+          <span className="hidden sm:inline">Create Supply Order</span>
+          <span className="sm:hidden">New Order</span>
         </Button>
       }
     >
 
         {/* Search and Filter */}
         <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex gap-4">
-              <div className="relative flex-1">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Search & Filter
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Search by supply number, customer name, or phone..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 w-full"
                 />
               </div>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-input rounded-md bg-background min-w-[150px]"
-              >
-                <option value="all">All Status</option>
-                <option value="supplied">Supplied</option>
-                <option value="partially_returned">Partially Returned</option>
-                <option value="fully_returned">Fully Returned</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
+              <div className="flex items-center gap-2 min-w-0 sm:min-w-[180px]">
+                <label htmlFor="status-filter" className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+                  Status:
+                </label>
+                <select
+                  id="status-filter"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-3 py-2 border border-input rounded-md bg-background text-sm flex-1 min-w-0"
+                >
+                  <option value="all">All Status</option>
+                  <option value="supplied">Supplied</option>
+                  <option value="partially_returned">Partially Returned</option>
+                  <option value="fully_returned">Fully Returned</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -325,58 +338,65 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
                   {filteredSupplyOrders.map((order) => (
                     <Card key={order.id} className="hover:shadow-md transition-shadow">
                       <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
+                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3 mb-3">
                               <h3 className="text-lg font-semibold">{order.supply_number}</h3>
                               <Badge className={getStatusColor(order.status)}>
                                 {order.status.replace('_', ' ').toUpperCase()}
                               </Badge>
                             </div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-2">
-                                <User className="h-4 w-4" />
-                                <span>{order.customer_name}</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm mb-3">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <User className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                <span className="truncate" title={order.customer_name}>{order.customer_name}</span>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Phone className="h-4 w-4" />
-                                <span>{order.customer_phone}</span>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                <span className="truncate">{order.customer_phone}</span>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4" />
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
                                 <span>{new Date(order.supply_date).toLocaleDateString()}</span>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Package className="h-4 w-4" />
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Package className="h-4 w-4 shrink-0 text-muted-foreground" />
                                 <span>{order.total_items} items</span>
                               </div>
                             </div>
-                            <div className="mt-3 text-sm">
-                              <span className="font-medium">Total: {formatCurrency(order.total_amount)}</span>
-                              <span className="text-muted-foreground ml-4">
-                                Supplied: {order.total_quantity_supplied} | 
-                                Returned: {order.total_quantity_returned} | 
-                                Accepted: {order.total_quantity_accepted}
-                              </span>
+                            <div className="flex flex-wrap items-center gap-4 text-sm">
+                              <div>
+                                <span className="font-medium text-foreground">Total: </span>
+                                <span className="font-semibold text-primary">{formatCurrency(order.total_amount)}</span>
+                              </div>
+                              <div className="flex flex-wrap gap-3 text-muted-foreground">
+                                <span>Supplied: <span className="font-medium">{order.total_quantity_supplied}</span></span>
+                                <span>Returned: <span className="font-medium">{order.total_quantity_returned}</span></span>
+                                <span>Accepted: <span className="font-medium">{order.total_quantity_accepted}</span></span>
+                              </div>
                             </div>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleViewDetails(order)}
-                              title="View supply order details"
+                              className="gap-2"
                             >
                               <Eye className="h-4 w-4" />
+                              <span className="hidden sm:inline">View Details</span>
+                              <span className="sm:hidden">View</span>
                             </Button>
                             {order.status === 'supplied' && (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleCreateReturn(order)}
-                                title="Create return for this supply order"
+                                className="gap-2"
                               >
                                 <RotateCcw className="h-4 w-4" />
+                                <span className="hidden sm:inline">Create Return</span>
+                                <span className="sm:hidden">Return</span>
                               </Button>
                             )}
                             {order.status !== 'completed' && order.status !== 'cancelled' && (
@@ -384,9 +404,11 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleCreatePayment(order)}
-                                title="Process payment for this supply order"
+                                className="gap-2"
                               >
                                 <CreditCard className="h-4 w-4" />
+                                <span className="hidden sm:inline">Process Payment</span>
+                                <span className="sm:hidden">Payment</span>
                               </Button>
                             )}
                             {(canDelete('supply_order') || user?.role === 'business_admin') && order.status !== 'completed' && (
@@ -394,10 +416,11 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDeleteSupplyOrder(order)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                title="Delete this supply order"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 gap-2"
                               >
                                 <Trash2 className="h-4 w-4" />
+                                <span className="hidden sm:inline">Delete</span>
+                                <span className="sm:hidden">Delete</span>
                               </Button>
                             )}
                           </div>
@@ -426,47 +449,51 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
               ) : (
                 <div className="grid gap-4">
                   {filteredPendingReturns.map((returnItem) => (
-                    <Card key={returnItem.supply_order_id} className="hover:shadow-md transition-shadow">
+                    <Card key={returnItem.supply_order_id} className="hover:shadow-md transition-shadow border-orange-200">
                       <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
+                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3 mb-3">
                               <h3 className="text-lg font-semibold">{returnItem.supply_number}</h3>
-                              <Badge className="bg-orange-100 text-orange-800">
+                              <Badge className="bg-orange-100 text-orange-800 border-orange-300">
                                 PENDING RETURN
                               </Badge>
                             </div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-2">
-                                <User className="h-4 w-4" />
-                                <span>{returnItem.customer_name}</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm mb-3">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <User className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                <span className="truncate" title={returnItem.customer_name}>{returnItem.customer_name}</span>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Phone className="h-4 w-4" />
-                                <span>{returnItem.customer_phone}</span>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                <span className="truncate">{returnItem.customer_phone}</span>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4" />
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
                                 <span>{new Date(returnItem.supply_date).toLocaleDateString()}</span>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Package className="h-4 w-4" />
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Package className="h-4 w-4 shrink-0 text-muted-foreground" />
                                 <span>{returnItem.items_pending_return} items</span>
                               </div>
                             </div>
-                            <div className="mt-3 text-sm">
-                              <span className="text-muted-foreground">
-                                Expected Return: {returnItem.expected_return_date ? 
-                                  new Date(returnItem.expected_return_date).toLocaleDateString() : 
-                                  'Not set'
-                                }
-                              </span>
-                              <span className="text-muted-foreground ml-4">
-                                Quantity Pending: {returnItem.total_quantity_pending}
-                              </span>
+                            <div className="flex flex-wrap items-center gap-4 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">Expected Return: </span>
+                                <span className="font-medium text-foreground">
+                                  {returnItem.expected_return_date ? 
+                                    new Date(returnItem.expected_return_date).toLocaleDateString() : 
+                                    'Not set'
+                                  }
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Quantity Pending: </span>
+                                <span className="font-medium text-orange-600">{returnItem.total_quantity_pending}</span>
+                              </div>
                             </div>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <Button
                               variant="outline"
                               size="sm"
@@ -474,9 +501,11 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
                                 const order = supplyOrders.find(o => o.id === returnItem.supply_order_id);
                                 if (order) handleViewDetails(order);
                               }}
-                              title="View supply order details"
+                              className="gap-2"
                             >
                               <Eye className="h-4 w-4" />
+                              <span className="hidden sm:inline">View Details</span>
+                              <span className="sm:hidden">View</span>
                             </Button>
                             <Button
                               variant="outline"
@@ -485,9 +514,11 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
                                 const order = supplyOrders.find(o => o.id === returnItem.supply_order_id);
                                 if (order) handleCreateReturn(order);
                               }}
-                              title="Create return for this supply order"
+                              className="gap-2"
                             >
                               <RotateCcw className="h-4 w-4" />
+                              <span className="hidden sm:inline">Create Return</span>
+                              <span className="sm:hidden">Return</span>
                             </Button>
                             <Button
                               variant="outline"
@@ -496,10 +527,11 @@ export const SupplyManagement: React.FC<SupplyManagementProps> = ({ onBack }) =>
                                 const order = supplyOrders.find(o => o.id === returnItem.supply_order_id);
                                 if (order) handleAcceptReturn(order);
                               }}
-                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                              title="Accept returned items"
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50 gap-2"
                             >
                               <CheckCircle className="h-4 w-4" />
+                              <span className="hidden sm:inline">Accept Return</span>
+                              <span className="sm:hidden">Accept</span>
                             </Button>
                           </div>
                         </div>
