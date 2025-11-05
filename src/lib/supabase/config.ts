@@ -1,25 +1,82 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { env } from '@/lib/env';
 
-// Ensure the URL has the proper protocol
-const normalizedUrl = env.SUPABASE_URL.startsWith('http') 
-  ? env.SUPABASE_URL 
-  : `https://${env.SUPABASE_URL}`;
+// Lazy initialization to avoid accessing env vars during build
+let supabaseClient: SupabaseClient | null = null;
+let supabaseAnonClient: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient {
+  if (supabaseClient) {
+    return supabaseClient;
+  }
+  
+  const supabaseUrl = env.SUPABASE_URL;
+  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error(
+      'Missing required Supabase environment variables. ' +
+      'Please ensure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in your .env file.'
+    );
+  }
+  
+  // Ensure the URL has the proper protocol
+  const normalizedUrl = supabaseUrl.startsWith('http') 
+    ? supabaseUrl 
+    : `https://${supabaseUrl}`;
+    
+  supabaseClient = createClient(normalizedUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+  
+  return supabaseClient;
+}
+
+function getSupabaseAnonClient(): SupabaseClient {
+  if (supabaseAnonClient) {
+    return supabaseAnonClient;
+  }
+  
+  const supabaseUrl = env.SUPABASE_URL;
+  const anonKey = env.SUPABASE_ANON_KEY;
+  
+  if (!supabaseUrl || !anonKey) {
+    throw new Error(
+      'Missing required Supabase environment variables. ' +
+      'Please ensure SUPABASE_URL and SUPABASE_ANON_KEY are set in your .env file.'
+    );
+  }
+  
+  // Ensure the URL has the proper protocol
+  const normalizedUrl = supabaseUrl.startsWith('http') 
+    ? supabaseUrl 
+    : `https://${supabaseUrl}`;
+    
+  supabaseAnonClient = createClient(normalizedUrl, anonKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+  
+  return supabaseAnonClient;
+}
 
 // Server-side Supabase client with service role key for API routes
 // WARNING: This client bypasses RLS - only use for server-side operations
-export const supabase = createClient(normalizedUrl, env.SUPABASE_SERVICE_ROLE_KEY, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    return (getSupabaseClient() as any)[prop];
   }
 });
 
 // Client for user authentication (uses anon key, respects RLS)
 // Use this for validating user tokens in middleware
-export const supabaseAnon = createClient(normalizedUrl, env.SUPABASE_ANON_KEY, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
+export const supabaseAnon = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    return (getSupabaseAnonClient() as any)[prop];
   }
 });

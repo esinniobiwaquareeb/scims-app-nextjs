@@ -4,14 +4,11 @@
  * Edge Runtime compatible - uses direct property access
  */
 
-function getEnvVar(name: string, required = true): string {
+function getEnvVar(name: string, _required = true): string {
   const value = process.env[name];
-  if (required && !value) {
-    throw new Error(
-      `Missing required environment variable: ${name}. ` +
-      `Please check your .env file and ensure ${name} is set.`
-    );
-  }
+  // Don't throw during module evaluation/build time
+  // Validation will happen when the Supabase client is actually created (at runtime)
+  // This allows the build to complete even if .env is not present
   return value || '';
 }
 
