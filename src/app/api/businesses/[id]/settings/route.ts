@@ -153,24 +153,52 @@ export async function PUT(
     }
 
     // Prepare business data (currency_id and language_id belong to business table)
-    const businessData: Partial<BusinessUpdateData> = {};
+    const businessData: Partial<BusinessUpdateData> & { 
+      subscription_expires_at?: string | null;
+      subscription_plan_id?: string | null;
+      industry?: string | null;
+    } = {};
+    
     // Convert empty strings to null for UUID fields (PostgreSQL requirement)
     if (body.currency_id !== undefined) businessData.currency_id = body.currency_id === '' ? null : body.currency_id;
     if (body.language_id !== undefined) businessData.language_id = body.language_id === '' ? null : body.language_id;
     if (body.country_id !== undefined) businessData.country_id = body.country_id === '' ? null : body.country_id;
+    if (body.subscription_plan_id !== undefined) businessData.subscription_plan_id = body.subscription_plan_id === '' ? null : body.subscription_plan_id;
+    
+    // Convert empty strings to null for timestamp fields (PostgreSQL requirement)
+    if (body.subscription_expires_at !== undefined) {
+      businessData.subscription_expires_at = body.subscription_expires_at === '' || body.subscription_expires_at === null 
+        ? null 
+        : body.subscription_expires_at;
+    }
+    
+    // Convert empty strings to null for optional text fields
+    if (body.industry !== undefined) businessData.industry = body.industry === '' ? null : body.industry;
+    if (body.website !== undefined) businessData.website = body.website === '' ? null : body.website;
+    if (body.username !== undefined) businessData.username = body.username === '' ? null : body.username;
+    if (body.slug !== undefined) businessData.slug = body.slug === '' ? null : body.slug;
+    
+    // Handle other fields
     if (body.business_type !== undefined) businessData.business_type = body.business_type;
     if (body.name !== undefined) businessData.name = body.name;
     if (body.description !== undefined) businessData.description = body.description;
     if (body.email !== undefined) businessData.email = body.email;
     if (body.phone !== undefined) businessData.phone = body.phone;
-    if (body.website !== undefined) businessData.website = body.website;
     if (body.address !== undefined) businessData.address = body.address;
     if (body.timezone !== undefined) businessData.timezone = body.timezone;
-    if (body.username !== undefined) businessData.username = body.username;
-    if (body.slug !== undefined) businessData.slug = body.slug;
     
-    // Validate unique constraints before updating
-    if (businessData.username) {
+    // Handle subscription_status if provided
+    if (body.subscription_status !== undefined) {
+      (businessData as any).subscription_status = body.subscription_status;
+    }
+    
+    // Handle is_active if provided
+    if (body.is_active !== undefined) {
+      (businessData as any).is_active = body.is_active;
+    }
+    
+    // Validate unique constraints before updating (only if username/slug are not null)
+    if (businessData.username !== undefined && businessData.username !== null && businessData.username.trim() !== '') {
       const { data: existingUser } = await supabase
         .from('business')
         .select('id')
@@ -186,7 +214,7 @@ export async function PUT(
       }
     }
     
-    if (businessData.slug) {
+    if (businessData.slug !== undefined && businessData.slug !== null && businessData.slug.trim() !== '') {
       const { data: existingSlug } = await supabase
         .from('business')
         .select('id')
@@ -252,8 +280,9 @@ export async function PUT(
 
       if (businessError) {
         console.error('Error updating business:', businessError);
+        console.error('Business data being updated:', JSON.stringify(businessData, null, 2));
         return NextResponse.json(
-          { success: false, error: 'Failed to update business information' },
+          { success: false, error: `Failed to update business information: ${businessError.message}` },
           { status: 500 }
         );
       }
