@@ -478,6 +478,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
         // The 'selectedCustomer' state expects a 'Customer' object, not 'null'.
         // Setting it to a default 'walk-in' customer to clear the selection.
         setSelectedCustomer({ id: 'walk-in', name: 'Walk-in Customer', phone: '', created_at: new Date().toISOString() });
+        setAppliedDiscount(null); // Clear any applied discounts
         
         // Call completion callback
         if (onPaymentComplete) {
@@ -502,6 +503,14 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
   // Payment processing
   const processPayment = useCallback(async (onPaymentComplete?: () => void) => {
     if (!currentStore?.id || cart.length === 0) return;
+    
+    // Validate that no products have zero or negative price
+    const productsWithZeroPrice = cart.filter(item => !item.product.price || item.product.price <= 0);
+    if (productsWithZeroPrice.length > 0) {
+      const productNames = productsWithZeroPrice.map(item => item.product.name).join(', ');
+      toast.error(`Cannot checkout: Products with zero or invalid price detected: ${productNames}. Please set a valid price for these products.`);
+      return;
+    }
     
     setIsProcessing(true);
     
@@ -680,6 +689,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
       setSelectedCustomer(WALK_IN_CUSTOMER);
       setCashAmount('');
       setCardAmount('');
+      setAppliedDiscount(null); // Clear any applied discounts
       
       // Immediately refresh product stock to show updated quantities
       refetchProducts();
@@ -783,6 +793,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
 
   const clearCustomer = useCallback(() => {
     setSelectedCustomer(WALK_IN_CUSTOMER);
+    setAppliedDiscount(null); // Clear discounts when customer is cleared
   }, []);
 
   const handleCustomerDialogChange = useCallback((open: boolean) => {
@@ -1001,7 +1012,10 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
             onCartSearchChange={setCartSearchTerm}
             onUpdateQuantity={updateQuantity}
             onRemoveFromCart={removeFromCart}
-            onClearCart={() => setCart([])}
+            onClearCart={() => {
+              setCart([]);
+              setAppliedDiscount(null); // Clear discounts when cart is cleared
+            }}
             onPaymentMethodChange={setPaymentMethod}
             onCashAmountChange={setCashAmount}
             onCardAmountChange={setCardAmount}
@@ -1011,6 +1025,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
             onSelectCustomer={() => setShowCustomerDialog(true)}
             onClearCustomer={clearCustomer}
             onDiscountApplied={setAppliedDiscount}
+            onClearDiscount={() => setAppliedDiscount(null)}
             calculateSubtotal={calculateSubtotal}
             calculateDiscount={calculateDiscount}
             calculateTax={calculateTax}

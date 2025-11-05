@@ -78,6 +78,7 @@ interface ShoppingCartProps {
   onSelectCustomer: () => void;
   onClearCustomer: () => void;
   onDiscountApplied: (discount: any) => void;
+  onClearDiscount?: () => void;
   calculateSubtotal: () => number;
   calculateDiscount: () => number;
   calculateTax: () => number;
@@ -122,6 +123,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   onSelectCustomer,
   onClearCustomer,
   onDiscountApplied,
+  onClearDiscount,
   calculateSubtotal,
   calculateDiscount,
   calculateTax,
@@ -425,7 +427,13 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
       {/* Payment Modal */}
       <PaymentModal
         open={showPaymentModal}
-        onOpenChange={setShowPaymentModal}
+        onOpenChange={(open) => {
+          setShowPaymentModal(open);
+          // Clear discounts when modal is closed without processing payment
+          if (!open && !showSaleSuccess && onClearDiscount) {
+            onClearDiscount();
+          }
+        }}
         selectedCustomer={selectedCustomer}
         paymentMethod={paymentMethod}
         cashAmount={cashAmount}
