@@ -134,6 +134,7 @@ export default function StorefrontPage() {
   
   // Wishlist
   const [wishlist, setWishlist] = useState<string[]>([]);
+  
 
   const fetchPlatformSettings = useCallback(async () => {
     try {

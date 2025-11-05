@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
+import { createAffiliateCommission } from '@/utils/affiliate/affiliateService';
 
 interface BusinessUpdateData {
   currency_id?: string | null;
@@ -282,6 +283,15 @@ export async function PUT(
       updated_at: new Date().toISOString()
     };
 
+    // Check if subscription_plan_id is being updated (new subscription payment)
+    const oldBusinessData = businessData.subscription_plan_id !== undefined 
+      ? await supabase.from('business').select('subscription_plan_id').eq('id', businessId).single()
+      : null;
+    
+    const isNewSubscription = oldBusinessData?.data && 
+      oldBusinessData.data.subscription_plan_id !== businessData.subscription_plan_id &&
+      businessData.subscription_plan_id !== null;
+
     // Update business table if there's business data to update
     if (Object.keys(businessData).length > 0) {
       const { error: businessError } = await supabase
@@ -296,6 +306,48 @@ export async function PUT(
           { success: false, error: `Failed to update business information: ${businessError.message}` },
           { status: 500 }
         );
+      }
+
+      // Handle affiliate commission if this is a new subscription payment
+      if (isNewSubscription && businessData.subscription_plan_id) {
+        try {
+          // Get subscription plan details
+          const { data: subscriptionPlan } = await supabase
+            .from('subscription_plan')
+            .select('id, name, price_monthly, price_yearly')
+            .eq('id', businessData.subscription_plan_id)
+            .single();
+
+          if (subscriptionPlan) {
+            // Get referral for this business
+            const { data: referral } = await supabase
+              .from('affiliate_referral')
+              .select('id, affiliate_id')
+              .eq('business_id', businessId)
+              .eq('status', 'converted')
+              .order('converted_at', { ascending: false })
+              .limit(1)
+              .single();
+
+            if (referral) {
+              // Calculate subscription amount (use monthly for now, can be enhanced)
+              const subscriptionAmount = parseFloat(subscriptionPlan.price_monthly || subscriptionPlan.price_yearly || '0');
+              
+              if (subscriptionAmount > 0) {
+                await createAffiliateCommission({
+                  businessId,
+                  subscriptionPlanId: subscriptionPlan.id,
+                  amount: subscriptionAmount,
+                  commissionType: 'subscription',
+                  referralId: referral.id
+                });
+              }
+            }
+          }
+        } catch (affiliateError) {
+          console.error('Error creating affiliate commission for subscription:', affiliateError);
+          // Don't fail the business update if commission fails
+        }
       }
     }
 

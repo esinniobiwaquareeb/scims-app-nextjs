@@ -29,7 +29,9 @@ import {
   Building2,
   CreditCard,
   Menu as MenuIcon,
-  Bot
+  Bot,
+  UserPlus,
+  Handshake
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/common/Logo';
@@ -239,6 +241,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           href: '/ai-agent-settings',
           icon: Bot,
           roles: ['business_admin']
+        },
+        {
+          title: 'Affiliates',
+          href: '/affiliates',
+          icon: UserPlus,
+          roles: ['business_admin']
         }
       ]
     }
@@ -407,6 +415,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           title: 'Activity Logs',
           href: '/activity-logs',
           icon: Activity,
+          roles: ['superadmin']
+        },
+        {
+          title: 'Affiliates',
+          href: '/affiliates',
+          icon: Handshake,
           roles: ['superadmin']
         }
       ]

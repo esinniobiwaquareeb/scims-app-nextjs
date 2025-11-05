@@ -1,5 +1,6 @@
 // Landing Page Components
 export { AnimatedSection } from './AnimatedSection';
+export { AffiliateApplicationSection } from './AffiliateApplicationSection';
 export { AnimatedCounter } from './AnimatedCounter';
 export { DeviceShowcase, DeviceInterface } from './DeviceShowcase';
 export { CommunicationShowcase } from './CommunicationShowcase';

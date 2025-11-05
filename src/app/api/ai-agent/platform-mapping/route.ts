@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase/config';
 import { upsertPlatformMapping, getBusinessPlatformMappings, deletePlatformMapping } from '@/utils/ai-agent/platformMapping';
 
 export const dynamic = 'force-dynamic';

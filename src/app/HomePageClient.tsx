@@ -11,6 +11,7 @@ import {
   TestimonialCard,
   PricingCard,
   AnimatedSection,
+  AffiliateApplicationSection,
 } from '@/components/landing';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -447,6 +448,9 @@ export default function HomePageClient() {
           </AnimatedSection>
         </div>
       </section>
+
+      {/* Affiliate Section */}
+      <AffiliateApplicationSection />
 
       {/* FAQ Section */}
       <section id="faq" className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">

@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase/config';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { EmailService } from '@/lib/email/emailService';
+import { trackBusinessReferral, markReferralAsConverted } from '@/utils/affiliate/affiliateService';
 
 // Force dynamic rendering for API routes
 export const dynamic = 'force-dynamic';
@@ -24,7 +25,9 @@ export async function POST(request: NextRequest) {
       businessEmail,
       countryId,
       currencyId,
-      languageId
+      languageId,
+      affiliate_code,
+      referral_id
     } = await request.json();
 
     // Validation
@@ -144,6 +147,18 @@ export async function POST(request: NextRequest) {
         // Don't fail the entire operation if business creation fails
       } else {
         business = businessData;
+
+        // Handle affiliate referral tracking
+        if (referral_id) {
+          // Mark referral as converted
+          await markReferralAsConverted(referral_id, business.id);
+        } else if (affiliate_code) {
+          // Track new referral and mark as converted
+          const newReferralId = await trackBusinessReferral(affiliate_code, email, phone, 'registration');
+          if (newReferralId) {
+            await markReferralAsConverted(newReferralId, business.id);
+          }
+        }
 
         // Create default store for the business
         const { data: store, error: storeError } = await supabase
