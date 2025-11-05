@@ -182,6 +182,8 @@ export const SupplyReturnModal: React.FC<SupplyReturnModalProps> = ({
 
       if (data.success) {
         toast.success('Return processed successfully');
+        // Refresh supply order items to get updated quantities
+        await fetchSupplyOrderItems();
         onSuccess();
         handleClose();
       } else {

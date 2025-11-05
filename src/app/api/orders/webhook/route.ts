@@ -72,19 +72,46 @@ export async function POST(request: NextRequest) {
     }
 
     // Create notification for the order
-    await createOrderNotification(
-      {
-        orderId: validOrderId,
-        customerName: orderData.customer_name,
-        customerPhone: orderData.customer_phone || '',
-        customerAddress: orderData.customer_address,
-        customerEmail: orderData.customer_email,
-        totalAmount: orderData.total_amount,
-        orderItems: orderData.order_items || [],
-      },
-      storeId,
-      businessId
-    );
+    // Transform order_items to match the expected format
+    // order_items can have different structures:
+    // - From storefront: { product_id, name, price, quantity, total_price }
+    // - From other sources: { product_name, quantity_ordered, unit_price, ... }
+    const transformedOrderItems = (orderData.order_items || []).map((item: any) => {
+      // Handle storefront format (name, price, quantity, total_price)
+      if (item.name && item.price !== undefined) {
+        return {
+          name: item.name,
+          quantity: item.quantity || 1,
+          price: item.price
+        };
+      }
+      // Handle alternative format
+      return {
+        name: item.product_name || item.name || 'Unknown Product',
+        quantity: item.quantity || item.quantity_ordered || 1,
+        price: item.price || item.unit_price || item.total_price || 0
+      };
+    });
+
+    try {
+      await createOrderNotification(
+        {
+          orderId: validOrderId,
+          customerName: orderData.customer_name,
+          customerPhone: orderData.customer_phone || '',
+          customerAddress: orderData.customer_address,
+          customerEmail: orderData.customer_email,
+          totalAmount: orderData.total_amount,
+          orderItems: transformedOrderItems,
+        },
+        storeId,
+        businessId
+      );
+      console.log('Order notification created successfully');
+    } catch (notificationError) {
+      console.error('Error creating order notification:', notificationError);
+      // Don't fail the webhook if notification fails
+    }
 
 
     return NextResponse.json({ 

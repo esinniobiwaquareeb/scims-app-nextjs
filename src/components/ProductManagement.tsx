@@ -415,6 +415,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
       const productData = {
         name: cleanedUpdateFields.name,
         price: cleanedUpdateFields.price,
+        cost: cleanedUpdateFields.cost,
         sku: cleanedUpdateFields.sku,
         barcode: cleanedUpdateFields.barcode,
         description: cleanedUpdateFields.description,
