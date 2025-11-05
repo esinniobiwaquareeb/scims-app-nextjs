@@ -58,7 +58,13 @@ export const useUpdateStaff = (businessId: string, storeId?: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ staffId, staffData }: { staffId: string; staffData: StaffFormData }) => {
-      const requestData = { ...staffData, business_id: businessId, store_id: storeId || staffData.store_id };
+      // Always use staffData.store_id (user's selection from the form)
+      // The storeId parameter is only for context (currentStore), not for overriding user selection
+      const requestData = { 
+        ...staffData, 
+        business_id: businessId, 
+        store_id: staffData.store_id || null // Use the store_id from the form, or null if empty
+      };
       const response = await fetch(`/api/staff/${staffId}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestData),
       });
@@ -67,8 +73,11 @@ export const useUpdateStaff = (businessId: string, storeId?: string) => {
     },
     onSuccess: (_data, variables: any) => {
       queryClient.invalidateQueries({ queryKey: ['businessStaff', businessId] });
-      const targetStoreId = storeId || variables.staffData.store_id;
-      if (targetStoreId) queryClient.invalidateQueries({ queryKey: ['storeStaff', targetStoreId] });
+      // Invalidate both old and new store staff queries
+      const newStoreId = variables.staffData.store_id;
+      const oldStoreId = storeId;
+      if (newStoreId) queryClient.invalidateQueries({ queryKey: ['storeStaff', newStoreId] });
+      if (oldStoreId && oldStoreId !== newStoreId) queryClient.invalidateQueries({ queryKey: ['storeStaff', oldStoreId] });
       queryClient.invalidateQueries({ queryKey: ['storeStaff'] });
       toast.success('Staff member updated successfully');
     },

@@ -121,10 +121,13 @@ export async function PUT(
 
     // Update the user_business_role store assignment
     // Filter by both user_id and business_id to ensure we're updating the correct record
+    // Convert empty string to null for store_id
+    const storeIdValue = body.store_id && body.store_id.trim() !== '' ? body.store_id : null;
+    
     const { data: updateResult, error: roleError } = await supabase
       .from('user_business_role')
       .update({
-        store_id: body.store_id || null,
+        store_id: storeIdValue,
         updated_at: new Date().toISOString()
       })
       .eq('user_id', staffId)
@@ -142,7 +145,7 @@ export async function PUT(
     // Debug logging
     console.log('Staff store assignment updated:', {
       staffId,
-      storeId: body.store_id,
+      storeId: storeIdValue,
       businessId: body.business_id,
       updateResult
     });
