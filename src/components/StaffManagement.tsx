@@ -44,6 +44,7 @@ import {
 } from "@/utils/hooks/useStoreData";
 import {useStoreStaff, useCreateStaff, useUpdateStaff, useDeleteStaff,  useBusinessStaff} from '@/utils/hooks/staff';
 import {useBusinessStores} from '@/utils/hooks/stores';
+import { useRoles } from '@/utils/hooks/roles';
 import { toast } from "sonner";
 import {
   Edit,
@@ -86,7 +87,8 @@ interface Store {
   is_active?: boolean;
 }
 
-const ROLE_OPTIONS = [
+// ROLE_OPTIONS will be fetched from API - keeping as fallback for initial render
+const DEFAULT_ROLE_OPTIONS = [
   { value: "business_admin", label: "Business Admin", color: "bg-red-500" },
   { value: "store_admin", label: "Store Admin", color: "bg-blue-500" },
   { value: "cashier", label: "Cashier", color: "bg-green-500" },
@@ -110,6 +112,7 @@ const StaffForm = ({
   onSave,
   onCancel,
   stores,
+  roles,
   isSaving,
 }: {
   staffMember: Partial<Staff> | Staff;
@@ -117,8 +120,13 @@ const StaffForm = ({
   onSave: () => void;
   onCancel: () => void;
   stores: Store[];
+  roles: Array<{ id: string; name: string; value: string; label: string }>;
   isSaving: boolean;
-}) => (
+}) => {
+  // Use roles from API, fallback to default if not loaded
+  const roleOptions = roles.length > 0 ? roles : DEFAULT_ROLE_OPTIONS;
+  
+  return (
   <div className="space-y-4">
     <div className="grid grid-cols-2 gap-4">
       <div>
@@ -182,13 +190,13 @@ const StaffForm = ({
           <SelectTrigger>
             <SelectValue placeholder="Select role">
               {staffMember.role ? 
-                ROLE_OPTIONS.find(r => r.value === staffMember.role)?.label || "Unknown Role"
+                roleOptions.find(r => r.value === staffMember.role)?.label || "Unknown Role"
                 : "Select role"
               }
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {ROLE_OPTIONS.map((role) => (
+            {roleOptions.map((role) => (
               <SelectItem key={role.value} value={role.value}>
                 {role.label}
               </SelectItem>
@@ -283,7 +291,8 @@ const StaffForm = ({
       </Button>
     </div>
   </div>
-);
+  );
+};
 
 export const StaffManagement: React.FC<StaffManagementProps> = ({
   onBack,
@@ -352,6 +361,35 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
     enabled: !!currentBusiness?.id,
   });
 
+  // Fetch roles from API
+  const {
+    data: rolesData,
+    isLoading: isLoadingRoles,
+  } = useRoles(currentBusiness?.id || "");
+
+  // Transform roles data for the form
+  const roleOptions = useMemo(() => {
+    if (!rolesData?.roles || rolesData.roles.length === 0) {
+      return DEFAULT_ROLE_OPTIONS;
+    }
+    
+    // Map API roles to form options
+    // Include both API roles and default system roles
+    const apiRoles = rolesData.roles.map((role: { id: string; name: string }) => ({
+      id: role.id,
+      value: role.name.toLowerCase().replace(/\s+/g, '_'),
+      label: role.name,
+      color: DEFAULT_ROLE_OPTIONS.find(r => r.value === role.name.toLowerCase().replace(/\s+/g, '_'))?.color || "bg-gray-500"
+    }));
+    
+    // Combine with default roles, avoiding duplicates
+    const defaultRoles = DEFAULT_ROLE_OPTIONS.filter(
+      defaultRole => !apiRoles.some((apiRole: { value: string }) => apiRole.value === defaultRole.value)
+    );
+    
+    return [...apiRoles, ...defaultRoles];
+  }, [rolesData]);
+
   // React Query mutations
   const createStaffMutation = useCreateStaff(currentBusiness?.id || "", currentStore?.id);
   const updateStaffMutation = useUpdateStaff(currentBusiness?.id || "", currentStore?.id);
@@ -359,7 +397,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   const resetUserPasswordMutation = useResetUserPassword();
 
   // Loading states
-  const isLoading = isLoadingStaff || isLoadingStores;
+  const isLoading = isLoadingStaff || isLoadingStores || isLoadingRoles;
   const isSaving =
     createStaffMutation.isPending ||
     updateStaffMutation.isPending ||
@@ -927,11 +965,11 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                   <Badge
                     variant="outline"
                     className={`${
-                      ROLE_OPTIONS.find((r) => r.value === staff.role)?.color ||
+                      roleOptions.find((r) => r.value === staff.role)?.color ||
                       "bg-gray-500"
                     } text-white`}
                   >
-                    {ROLE_OPTIONS.find((r) => r.value === staff.role)?.label ||
+                    {roleOptions.find((r) => r.value === staff.role)?.label ||
                       staff.role}
                   </Badge>
                 </div>
@@ -1101,6 +1139,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                 onSave={handleEditStaff}
                 onCancel={closeEditDialog}
                 stores={stores}
+                roles={roleOptions}
                 isSaving={isSaving}
               />
             )}
@@ -1122,6 +1161,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
               onSave={handleAddStaff}
               onCancel={closeAddDialog}
               stores={stores}
+              roles={roleOptions}
               isSaving={isSaving}
             />
           </DialogContent>

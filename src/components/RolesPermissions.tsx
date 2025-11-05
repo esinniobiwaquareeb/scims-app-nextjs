@@ -28,6 +28,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { useActivityLogger } from '@/contexts/ActivityLogger';
 import { usePermissions } from '@/contexts/PermissionsContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface RolesPermissionsProps {
   onBack?: () => void; // Optional for backward compatibility
@@ -77,6 +78,7 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
   const { user, currentBusiness } = useAuth();
   const { hasPermission } = usePermissions();
   const { logActivity } = useActivityLogger();
+  const queryClient = useQueryClient();
   
   // State
   const [searchTerm, setSearchTerm] = useState('');
@@ -229,7 +231,12 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
       toast.success('Role created successfully');
       setIsAddRoleDialogOpen(false);
       setNewRole({ name: '', description: '', permissions: [] });
-      loadData();
+      // Invalidate React Query cache to refresh roles list
+      if (currentBusiness?.id) {
+        queryClient.invalidateQueries({ queryKey: ['roles', currentBusiness.id] });
+      }
+      // Refresh data to show newly created role
+      await loadData();
       
       logActivity('user_create', 'roles', `Role "${newRole.name}" created`, {
         role_name: newRole.name,
@@ -269,7 +276,12 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
       setIsEditRoleDialogOpen(false);
       setSelectedRole(null);
       setNewRole({ name: '', description: '', permissions: [] });
-      loadData();
+      // Invalidate React Query cache to refresh roles list
+      if (currentBusiness?.id) {
+        queryClient.invalidateQueries({ queryKey: ['roles', currentBusiness.id] });
+      }
+      // Refresh data to show updated role
+      await loadData();
       
       logActivity('user_update', 'roles', `Role "${selectedRole.name}" updated`, {
         role_name: selectedRole.name,
@@ -313,7 +325,11 @@ export const RolesPermissions: React.FC<RolesPermissionsProps> = ({ onBack }) =>
       }
       
       toast.success('Role deleted successfully');
-      loadData();
+      // Invalidate React Query cache to refresh roles list
+      if (currentBusiness?.id) {
+        queryClient.invalidateQueries({ queryKey: ['roles', currentBusiness.id] });
+      }
+      await loadData();
       
       logActivity('user_delete', 'roles', `Role "${role.name}" deleted`, {
         role_name: role.name

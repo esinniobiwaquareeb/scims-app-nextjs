@@ -21,7 +21,10 @@ export const useCreateRole = (businessId: string) => {
       const response = await fetch('/api/roles', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(roleData),
       });
-      if (!response.ok) throw new Error('Failed to create role');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to create role');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -29,8 +32,56 @@ export const useCreateRole = (businessId: string) => {
       toast.success('Role created successfully');
     },
     onError: (error) => {
-      toast.error('Failed to create role');
+      toast.error(error instanceof Error ? error.message : 'Failed to create role');
       console.error('Create role error:', error);
+    },
+  });
+};
+
+export const useUpdateRole = (businessId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ roleId, roleData }: { roleId: string; roleData: any }) => {
+      const response = await fetch(`/api/roles/${roleId}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(roleData),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update role');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles', businessId] });
+      toast.success('Role updated successfully');
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Failed to update role');
+      console.error('Update role error:', error);
+    },
+  });
+};
+
+export const useDeleteRole = (businessId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ roleId, businessId: bid }: { roleId: string; businessId: string }) => {
+      const response = await fetch(`/api/roles/${roleId}`, {
+        method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ business_id: bid }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to delete role');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles', businessId] });
+      toast.success('Role deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Failed to delete role');
+      console.error('Delete role error:', error);
     },
   });
 };
