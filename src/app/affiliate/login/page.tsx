@@ -132,7 +132,7 @@ export default function AffiliateLoginPage() {
           <div className="mt-6 text-center text-sm text-muted-foreground">
             <p>
               Not an affiliate yet?{' '}
-              <Link href="/#affiliate" className="text-primary hover:underline">
+              <Link href="/affiliate/apply" className="text-primary hover:underline">
                 Apply to become one
               </Link>
             </p>
