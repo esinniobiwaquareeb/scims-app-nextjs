@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { 
   useReportingSales,
   useReportingProductPerformance,
@@ -21,30 +22,29 @@ import {
 import { toast } from 'sonner';
 import { 
   TrendingUp, 
-  TrendingDown, 
   DollarSign, 
   ShoppingCart, 
-  Users, 
   Package,
-  Calendar,
   Download,
   Loader2,
   BarChart3,
-  PieChart,
-  ArrowLeft,
   FileText,
   Search,
   RefreshCw,
-  AlertCircle,
   Store,
-  Building2
+  Building2,
+  Filter,
+  X,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
-import { Product, Sale, SaleType, CustomerType } from '@/types';
+import { Product, CustomerType } from '@/types';
 
 interface ReportingProps {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onBack?: () => void; // Optional for backward compatibility
 }
 
@@ -53,6 +53,7 @@ interface TransformedSalesData {
   date: Date;
   customerName: string;
   products: string[];
+  itemsCount?: number;
   total: number;
   payment: string;
   cashier: string;
@@ -83,16 +84,6 @@ interface ProductPerformance {
   profit: number;
 }
 
-interface CustomerData {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  totalPurchases: number;
-  totalSpent: number;
-  lastVisit: Date;
-}
-
 interface TopSaleData {
   id: string;
   date: Date;
@@ -111,6 +102,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
   const [dateRange, setDateRange] = useState<DateRange>({ from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), to: new Date() });
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedPayment, setSelectedPayment] = useState('All');
+  const [filtersOpen, setFiltersOpen] = useState(true);
   
   // Local store state for reporting (can be different from global currentStore)
   const [reportingStoreId, setReportingStoreId] = useState<string>(currentStore?.id || '');
@@ -198,7 +190,6 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
   const productPerformance = productResponse?.products || [];
   const customerData = customerResponse?.customers || [];
   const inventoryStats = inventoryResponse?.summary || { inStock: 0, lowStock: 0, outOfStock: 0 };
-  const inventoryProducts = inventoryResponse?.products || [];
   const financialStats = financialResponse?.summary || {
     totalProfit: 0,
     operatingExpenses: 0,
@@ -351,7 +342,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
   const averageOrderValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
 
   const topSales = useMemo(() => {
-    const sales = filteredSales.map((sale: TransformedSalesData) => {
+    const sales = filteredSales.map((sale: TransformedSalesData & { itemsCount?: number }) => {
       // Use itemsCount from transformed data, or fallback to products array length
       const itemsCount = sale.itemsCount || (sale.products && Array.isArray(sale.products) ? sale.products.length : 0);
       
@@ -369,6 +360,32 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
 
     return sales.sort((a: TopSaleData, b: TopSaleData) => b.amount - a.amount).slice(0, 10);
   }, [filteredSales]);
+
+  // Quick date range presets
+  const setQuickDateRange = useCallback((days: number) => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - days);
+    setDateRange({ from: start, to: end });
+  }, []);
+
+  // Count active filters
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (searchTerm) count++;
+    if (selectedCategory !== 'All') count++;
+    if (selectedPayment !== 'All') count++;
+    if (dateRange.from || dateRange.to) count++;
+    return count;
+  }, [searchTerm, selectedCategory, selectedPayment, dateRange]);
+
+  // Clear all filters
+  const clearFilters = useCallback(() => {
+    setSearchTerm('');
+    setSelectedCategory('All');
+    setSelectedPayment('All');
+    setDateRange({ from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), to: new Date() });
+  }, []);
 
   // Show loading state for initial data fetch
   if (isLoading && (!salesData.length && !productPerformance.length && !customerData.length)) {
@@ -392,87 +409,73 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
       title="Reports & Analytics"
       subtitle={
         reportingStoreId ? 
-          `${currentBusiness?.stores?.find(s => s.id === reportingStoreId)?.name || 'Store'} - Comprehensive business insights` : 
-          'All Stores - Comprehensive business insights'
+          `${currentBusiness?.stores?.find(s => s.id === reportingStoreId)?.name || 'Store'} insights` : 
+          'Comprehensive business insights'
       }
       headerActions={
-            <div className="flex gap-2">
-              {/* Store Selector */}
-              {currentBusiness && currentBusiness.stores.length > 0 && user?.role !== 'cashier' && user?.role !== 'store_admin' && (
-                <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2 border border-border">
-                  <Store className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <Select 
-                    value={reportingStoreId || 'all'} 
-                    onValueChange={(value) => {
-                      if (value === 'all') {
-                        // Clear current store selection to show all stores combined
-                        setReportingStoreId('');
-                      } else {
-                        // Switch to specific store
-                        setReportingStoreId(value);
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="border-0 shadow-none h-auto p-0 font-medium bg-transparent">
-                      <SelectValue placeholder="Select Store">
-                        <span className="truncate max-w-32 sm:max-w-none">
-                          {currentStore?.name || (
-                            <span className="flex items-center gap-2 text-blue-600">
-                              <Building2 className="w-4 h-4" />
-                              All Stores
-                            </span>
-                          )}
-                        </span>
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-blue-600" />
-                          <div>
-                            <p className="font-medium">All Stores</p>
-                            <p className="text-sm text-muted-foreground">Combined view</p>
-                          </div>
-                        </div>
-                      </SelectItem>
-                      {currentBusiness.stores.map((store: { id: string; name: string; address?: string }) => (
-                        <SelectItem key={store.id} value={store.id}>
-                          <div>
-                            <p className="font-medium">{store.name}</p>
-                            <p className="text-sm text-muted-foreground truncate max-w-60">
-                              {store.address}
-                            </p>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+            <>
 
               {/* Store display for store admins (read-only) */}
               {user?.role === 'store_admin' && currentStore && (
-                <div className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2 border border-blue-200">
-                  <Store className="w-4 h-4 text-blue-600 shrink-0" />
-                  <span className="text-sm font-medium text-blue-700">
+                <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800">
+                  <Store className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium text-blue-700 dark:text-blue-300 truncate max-w-[100px] sm:max-w-none">
                     {currentStore.name}
                   </span>
                 </div>
               )}
 
-              <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
-                <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-              <Button variant="outline" onClick={() => exportToPDF('Complete Report')}>
-                <FileText className="w-4 h-4 mr-2" />
-                Export PDF
-              </Button>
-              <Button variant="outline" onClick={() => exportToCSV('All Data', [...filteredSales, ...filteredProducts])}>
-                <Download className="w-4 h-4 mr-2" />
-                Export CSV
-              </Button>
-            </div>
+              {/* Action Buttons Group */}
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleRefresh} 
+                  disabled={isLoading}
+                  className="h-8 sm:h-9 px-2 sm:px-3"
+                  title="Refresh data"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline ml-1.5 sm:ml-2 text-xs sm:text-sm">Refresh</span>
+                </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-8 sm:h-9 px-2 sm:px-3"
+                      title="Export reports"
+                    >
+                      <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline ml-1.5 sm:ml-2 text-xs sm:text-sm">Export</span>
+                      <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 hidden sm:inline ml-1 sm:ml-1.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuLabel className="text-xs">Export Reports</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => exportToCSV('Sales Report', filteredSales)} className="text-sm">
+                      <FileText className="w-4 h-4 mr-2" />
+                      Sales as CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportToCSV('Product Performance', filteredProducts)} className="text-sm">
+                      <FileText className="w-4 h-4 mr-2" />
+                      Products as CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportToCSV('Customer Report', customerData)} className="text-sm">
+                      <FileText className="w-4 h-4 mr-2" />
+                      Customers as CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => exportToPDF('Complete Report')} className="text-sm">
+                      <FileText className="w-4 h-4 mr-2" />
+                      All Reports (PDF)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </>
       }
     >
         {/* Error Display */}
@@ -493,17 +496,15 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
         )}
 
         {/* Store Selection Notice */}
-        {!reportingStoreId && (
-          <Card className="mb-6 border-blue-200 bg-blue-50">
+        {!reportingStoreId && currentBusiness && currentBusiness.stores && currentBusiness.stores.length > 1 && (
+          <Card className="mb-6 border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
             <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Building2 className="w-5 h-5 text-blue-600" />
-                <div>
-                  <p className="text-blue-800 font-medium">Business-Wide View</p>
-                  <p className="text-blue-700 text-sm">
-                    You are viewing combined data from all stores. Product performance, customer analytics, 
-                    and inventory statistics are aggregated across your entire business. 
-                    Select a specific store for store-level detailed reports.
+              <div className="flex items-start gap-3">
+                <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-blue-900 dark:text-blue-100 font-medium mb-1">Business-Wide View</p>
+                  <p className="text-blue-700 dark:text-blue-300 text-sm">
+                    Viewing aggregated data from all {currentBusiness.stores.length} stores. Select a specific store above for detailed reports.
                   </p>
                 </div>
               </div>
@@ -512,139 +513,246 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
         )}
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Revenue</p>
-                  <p className="text-2xl font-semibold">
-                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : formatCurrency(totalRevenue)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Card className="border-l-4 border-l-green-500">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Total Revenue</p>
+                  <p className="text-2xl font-bold mb-1">
+                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : formatCurrency(totalRevenue)}
                   </p>
-                  <div className="flex items-center mt-2">
-                    <TrendingUp className="w-4 h-4 text-green-600 mr-1" />
-                    <span className="text-sm text-green-600">
-                      +{isLoading ? '...' : (safeFinancialStats.profitMargin > 0 ? safeFinancialStats.profitMargin.toFixed(1) : '0.0')}%
+                  <div className="flex items-center gap-1 mt-2">
+                    <TrendingUp className="w-3.5 h-3.5 text-green-600" />
+                    <span className="text-xs font-medium text-green-600">
+                      {isLoading ? '...' : (safeFinancialStats.profitMargin > 0 ? safeFinancialStats.profitMargin.toFixed(1) : '0.0')}% margin
                     </span>
                   </div>
                 </div>
-                <DollarSign className="w-8 h-8 text-green-600" />
+                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                  <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Orders</p>
-                  <p className="text-2xl font-semibold">
-                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : totalTransactions}
+          <Card className="border-l-4 border-l-blue-500">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Total Orders</p>
+                  <p className="text-2xl font-bold mb-1">
+                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : totalTransactions.toLocaleString()}
                   </p>
-                  <p className="text-sm text-muted-foreground">This period</p>
+                  <p className="text-xs text-muted-foreground mt-2">In selected period</p>
                 </div>
-                <ShoppingCart className="w-8 h-8 text-blue-600" />
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                  <ShoppingCart className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Avg Order Value</p>
-                  <p className="text-2xl font-semibold">
-                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : formatCurrency(averageOrderValue)}
+          <Card className="border-l-4 border-l-purple-500">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Avg Order Value</p>
+                  <p className="text-2xl font-bold mb-1">
+                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : formatCurrency(averageOrderValue)}
                   </p>
-                  <p className="text-sm text-blue-600">Per transaction</p>
+                  <p className="text-xs text-muted-foreground mt-2">Per transaction</p>
                 </div>
-                <BarChart3 className="w-8 h-8 text-purple-600" />
+                <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+                  <BarChart3 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Top Products</p>
-                  <p className="text-2xl font-semibold">
-                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : productPerformance.length}
+          <Card className="border-l-4 border-l-orange-500">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Products Sold</p>
+                  <p className="text-2xl font-bold mb-1">
+                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : productPerformance.length.toLocaleString()}
                   </p>
-                  <p className="text-sm text-orange-600">
-                    {!reportingStoreId ? 'All stores' : 'Store items'}
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {!reportingStoreId ? 'Across all stores' : 'In this store'}
                   </p>
                 </div>
-                <Package className="w-8 h-8 text-orange-600" />
+                <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
+                  <Package className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-              <div>
-                <Label htmlFor="search">Search</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    id="search"
-                    placeholder="Search products, customers..."
-                    value={searchTerm}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+        {/* Filters Section */}
+        <Card className="mb-6 overflow-hidden">
+          <CardHeader 
+            className="pb-3 cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={() => setFiltersOpen(!filtersOpen)}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <CardTitle className="text-base">Filters</CardTitle>
+                {activeFiltersCount > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {activeFiltersCount}
+                  </Badge>
+                )}
               </div>
-              
-              <div>
-                <Label>Date Range</Label>
-                <DatePickerWithRange
-                  date={dateRange}
-                  onDateChange={(date) => {
-                    if (date) {
-                      setDateRange({
-                        from: date.from ?? dateRange.from,
-                        to: date.to ?? dateRange.to,
-                      })
-                    }
-                  }}
-                />
-              </div>
-
-              <div>
-                <Label>Category</Label>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="All">All Categories</SelectItem>
-                    <SelectItem value="Electronics">Electronics</SelectItem>
-                    <SelectItem value="Accessories">Accessories</SelectItem>
-                    <SelectItem value="Audio">Audio</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Payment Method</Label>
-                <Select value={selectedPayment} onValueChange={setSelectedPayment}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Payment method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="All">All Methods</SelectItem>
-                    <SelectItem value="Card">Card</SelectItem>
-                    <SelectItem value="Cash">Cash</SelectItem>
-                    <SelectItem value="Digital">Digital</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center gap-2">
+                {activeFiltersCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearFilters();
+                    }}
+                    className="h-7 text-xs"
+                  >
+                    <X className="w-3 h-3 mr-1" />
+                    Clear
+                  </Button>
+                )}
+                {filtersOpen ? (
+                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                )}
               </div>
             </div>
-          </CardContent>
+          </CardHeader>
+          
+          {filtersOpen && (
+            <CardContent className="pt-0">
+              {/* Quick Date Range Buttons */}
+              <div className="mb-4 pb-4 border-b">
+                <Label className="text-xs font-medium text-muted-foreground mb-2 block">Quick Date Range</Label>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={dateRange.from && dateRange.to && 
+                      Math.floor((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) === 0 
+                      ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      const today = new Date();
+                      setDateRange({ from: today, to: today });
+                    }}
+                    className="h-8 text-xs"
+                  >
+                    Today
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setQuickDateRange(7)}
+                    className="h-8 text-xs"
+                  >
+                    Last 7 Days
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setQuickDateRange(30)}
+                    className="h-8 text-xs"
+                  >
+                    Last 30 Days
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setQuickDateRange(90)}
+                    className="h-8 text-xs"
+                  >
+                    Last 90 Days
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const today = new Date();
+                      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                      setDateRange({ from: firstDay, to: today });
+                    }}
+                    className="h-8 text-xs"
+                  >
+                    This Month
+                  </Button>
+                </div>
+              </div>
+
+              {/* Filter Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-2 min-w-0">
+                  <Label htmlFor="search" className="text-xs font-medium">Search</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <Input
+                      id="search"
+                      placeholder="Search products, customers..."
+                      value={searchTerm}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                      className="pl-10 h-9 w-full"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2 min-w-0">
+                  <Label className="text-xs font-medium">Date Range</Label>
+                  <div className="w-full">
+                    <DatePickerWithRange
+                      date={dateRange}
+                      onDateChange={(date) => {
+                        if (date) {
+                          setDateRange({
+                            from: date.from ?? dateRange.from,
+                            to: date.to ?? dateRange.to,
+                          })
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2 min-w-0">
+                  <Label className="text-xs font-medium">Category</Label>
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All Categories</SelectItem>
+                      <SelectItem value="Electronics">Electronics</SelectItem>
+                      <SelectItem value="Accessories">Accessories</SelectItem>
+                      <SelectItem value="Audio">Audio</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 min-w-0">
+                  <Label className="text-xs font-medium">Payment Method</Label>
+                  <Select value={selectedPayment} onValueChange={setSelectedPayment}>
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="All Methods" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All Methods</SelectItem>
+                      <SelectItem value="Card">Card</SelectItem>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Digital">Digital</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          )}
         </Card>
 
         {/* Charts Section */}
@@ -679,8 +787,8 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Sales by Category</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Sales by Category</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoadingCharts ? (
@@ -730,14 +838,16 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
         </div>
 
         {/* Tabbed Reports */}
-        <Tabs defaultValue="sales" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="sales">Sales Report</TabsTrigger>
-            <TabsTrigger value="products">Product Performance</TabsTrigger>
-            <TabsTrigger value="customers">Customer Report</TabsTrigger>
-            <TabsTrigger value="inventory">Inventory Report</TabsTrigger>
-            <TabsTrigger value="financial">Financial Summary</TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="sales" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <TabsList className="inline-flex h-10 items-center justify-start rounded-lg bg-muted p-1 text-muted-foreground">
+              <TabsTrigger value="sales" className="data-[state=active]:bg-background">Sales</TabsTrigger>
+              <TabsTrigger value="products" className="data-[state=active]:bg-background">Products</TabsTrigger>
+              <TabsTrigger value="customers" className="data-[state=active]:bg-background">Customers</TabsTrigger>
+              <TabsTrigger value="inventory" className="data-[state=active]:bg-background">Inventory</TabsTrigger>
+              <TabsTrigger value="financial" className="data-[state=active]:bg-background">Financial</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="sales">
             {/* Top Sales DataTable */}
@@ -808,14 +918,19 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="products">
+          <TabsContent value="products" className="mt-4">
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle>Product Performance ({filteredProducts.length})</CardTitle>
-                  <Button variant="outline" onClick={() => exportToCSV('Product Performance', filteredProducts)}>
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-lg">Product Performance</CardTitle>
+                    <Badge variant="secondary" className="text-xs">
+                      {filteredProducts.length} products
+                    </Badge>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => exportToCSV('Product Performance', filteredProducts)}>
                     <Download className="w-4 h-4 mr-2" />
-                    Export CSV
+                    Export
                   </Button>
                 </div>
               </CardHeader>
@@ -902,14 +1017,19 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="customers">
+          <TabsContent value="customers" className="mt-4">
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle>Customer Analytics ({customerData.length})</CardTitle>
-                  <Button variant="outline" onClick={() => exportToCSV('Customer Report', customerData)}>
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-lg">Customer Analytics</CardTitle>
+                    <Badge variant="secondary" className="text-xs">
+                      {customerData.length} customers
+                    </Badge>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => exportToCSV('Customer Report', customerData)}>
                     <Download className="w-4 h-4 mr-2" />
-                    Export CSV
+                    Export
                   </Button>
                 </div>
               </CardHeader>
@@ -951,16 +1071,22 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                       {
                         key: 'totalSpent',
                         header: 'Total Spent',
-                        render: (customer: CustomerType) => (
-                          <div className="font-medium">{formatCurrency(customer?.total_spent || 0)}</div>
-                        )
+                        render: (customer: CustomerType) => {
+                          const customerWithStats = customer as CustomerType & { total_spent?: number };
+                          return (
+                            <div className="font-medium">{formatCurrency(customerWithStats?.total_spent || 0)}</div>
+                          );
+                        }
                       },
                       {
                         key: 'avgOrderValue',
                         header: 'Avg Order Value',
-                        render: (customer: CustomerType) => (
-                          <div>{formatCurrency(customer?.average_order_value || 0)}</div>
-                        )
+                        render: (customer: CustomerType) => {
+                          const customerWithStats = customer as CustomerType & { average_order_value?: number };
+                          return (
+                            <div>{formatCurrency(customerWithStats?.average_order_value || 0)}</div>
+                          );
+                        }
                       },
                       {
                         key: 'lastVisit',
@@ -986,11 +1112,11 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="inventory">
-            <div className="space-y-6">
+          <TabsContent value="inventory" className="mt-4">
+            <div className="space-y-4">
               <Card>
-                <CardHeader>
-                  <CardTitle>Inventory Status</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Inventory Status</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {isLoadingInventory ? (
@@ -1024,8 +1150,8 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle>Payment Method Breakdown</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Payment Method Breakdown</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {isLoadingCharts ? (
@@ -1061,11 +1187,11 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
             </div>
           </TabsContent>
 
-          <TabsContent value="financial">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <TabsContent value="financial" className="mt-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <Card>
-                <CardHeader>
-                  <CardTitle>Financial Summary</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Financial Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {isLoadingFinancial ? (
@@ -1105,8 +1231,8 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle>Key Metrics</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Key Metrics</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {isLoadingFinancial ? (
