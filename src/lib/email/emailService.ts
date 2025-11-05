@@ -38,6 +38,33 @@ export interface PasswordResetEmailData {
   businessName?: string;
 }
 
+export interface AffiliateApplicationEmailData {
+  to: string;
+  name: string;
+  affiliateCode: string;
+  platformUrl: string;
+}
+
+export interface AffiliateApprovalEmailData {
+  to: string;
+  name: string;
+  affiliateCode: string;
+  loginUrl: string;
+  password?: string;
+  signupCommissionType?: string;
+  signupCommissionRate?: number;
+  signupCommissionFixed?: number;
+  subscriptionCommissionRate?: number;
+  platformUrl: string;
+}
+
+export interface AffiliateRejectionEmailData {
+  to: string;
+  name: string;
+  rejectionReason?: string;
+  platformUrl: string;
+}
+
 export interface EmailResult {
   success: boolean;
   messageId?: string;
@@ -414,6 +441,364 @@ Thank you for choosing SCIMS!
       };
     } catch (error) {
       console.error('Password reset email sending error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  }
+
+  static async sendAffiliateApplicationEmail(data: AffiliateApplicationEmailData): Promise<EmailResult> {
+    try {
+      const { to, name, affiliateCode, platformUrl } = data;
+
+      const subject = `Affiliate Application Received - SCIMS`;
+      
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Affiliate Application Received</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #A969A7 0%, #8B5A8B 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .code-box { background: #fff; border: 2px solid #A969A7; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; }
+            .code { font-family: monospace; font-size: 24px; font-weight: bold; color: #A969A7; letter-spacing: 2px; }
+            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+            .info { background: #e3f2fd; border: 1px solid #90caf9; border-radius: 6px; padding: 15px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>✅ Application Received!</h1>
+              <p>Thank you for applying to become a SCIMS Affiliate Partner</p>
+            </div>
+            
+            <div class="content">
+              <h2>Hello ${name},</h2>
+              
+              <p>Thank you for your interest in becoming an affiliate partner with <strong>SCIMS</strong>!</p>
+              
+              <p>We have successfully received your affiliate application and it is currently under review.</p>
+              
+              <div class="code-box">
+                <p style="margin: 0 0 10px 0; color: #666;">Your Affiliate Code:</p>
+                <div class="code">${affiliateCode}</div>
+                <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">Save this code for future reference</p>
+              </div>
+              
+              <div class="info">
+                <h3 style="margin-top: 0;">📋 What's Next?</h3>
+                <ul style="margin-bottom: 0;">
+                  <li>Our team will review your application</li>
+                  <li>We'll get back to you via email within 2-3 business days</li>
+                  <li>Once approved, you'll receive login credentials to access your affiliate dashboard</li>
+                </ul>
+              </div>
+              
+              <h3>🎯 What You Can Do While You Wait</h3>
+              <ul>
+                <li>Learn more about SCIMS at <a href="${platformUrl}">${platformUrl}</a></li>
+                <li>Share your unique affiliate code: <strong>${affiliateCode}</strong></li>
+                <li>Prepare your marketing materials</li>
+              </ul>
+              
+              <p>If you have any questions about your application, please don't hesitate to contact our support team.</p>
+              
+              <p>We look forward to working with you!</p>
+              <p><strong>The SCIMS Team</strong></p>
+            </div>
+            
+            <div class="footer">
+              <p>This email was sent to ${to}</p>
+              <p>© ${new Date().getFullYear()} SCIMS. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const mailOptions = {
+        from: `"SCIMS Affiliate Program" <${emailConfig.auth.user}>`,
+        to: to,
+        subject: subject,
+        html: htmlContent,
+      };
+
+      const result = await transporter.sendMail(mailOptions);
+      
+      return {
+        success: true,
+        messageId: result.messageId,
+      };
+    } catch (error) {
+      console.error('Affiliate application email sending error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  }
+
+  static async sendAffiliateApprovalEmail(data: AffiliateApprovalEmailData): Promise<EmailResult> {
+    try {
+      const { 
+        to, 
+        name, 
+        affiliateCode, 
+        loginUrl, 
+        password,
+        signupCommissionType,
+        signupCommissionRate,
+        signupCommissionFixed,
+        subscriptionCommissionRate,
+        platformUrl
+      } = data;
+
+      const subject = `🎉 Congratulations! Your Affiliate Application Has Been Approved - SCIMS`;
+      
+      const signupCommissionText = signupCommissionType === 'fixed' 
+        ? `$${signupCommissionFixed?.toFixed(2)} per signup`
+        : `${signupCommissionRate?.toFixed(1)}% per signup`;
+      
+      const subscriptionCommissionText = `${subscriptionCommissionRate?.toFixed(1)}% of subscription payments`;
+      
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Affiliate Application Approved</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .credentials { background: #fff; border: 2px solid #10b981; border-radius: 8px; padding: 20px; margin: 20px 0; }
+            .credential-item { margin: 10px 0; }
+            .label { font-weight: bold; color: #059669; }
+            .value { font-family: monospace; background: #f5f5f5; padding: 5px 10px; border-radius: 4px; }
+            .button { display: inline-block; background: #10b981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold; }
+            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+            .info { background: #d1fae5; border: 1px solid #10b981; border-radius: 6px; padding: 15px; margin: 20px 0; }
+            .commission-box { background: #fff; border: 2px solid #10b981; border-radius: 8px; padding: 20px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎉 Congratulations!</h1>
+              <p>Your Affiliate Application Has Been Approved</p>
+            </div>
+            
+            <div class="content">
+              <h2>Hello ${name},</h2>
+              
+              <p>Great news! Your application to become a SCIMS Affiliate Partner has been <strong>approved</strong>!</p>
+              
+              <div class="info">
+                <h3 style="margin-top: 0;">✨ You're now officially part of the SCIMS Affiliate Program!</h3>
+                <p style="margin-bottom: 0;">Start sharing your unique affiliate code and earn commissions when businesses sign up and subscribe to SCIMS.</p>
+              </div>
+              
+              ${password ? `
+              <div class="credentials">
+                <h3 style="margin-top: 0; color: #059669;">🔐 Your Login Credentials</h3>
+                <div class="credential-item">
+                  <span class="label">Affiliate Code:</span>
+                  <span class="value">${affiliateCode}</span>
+                </div>
+                <div class="credential-item">
+                  <span class="label">Email:</span>
+                  <span class="value">${to}</span>
+                </div>
+                <div class="credential-item">
+                  <span class="label">Password:</span>
+                  <span class="value">${password}</span>
+                </div>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+                  <p style="font-size: 12px; color: #666; margin: 0;">
+                    <strong>⚠️ Important:</strong> Please save these credentials securely. We recommend changing your password after your first login.
+                  </p>
+                </div>
+              </div>
+              
+              <div style="text-align: center;">
+                <a href="${loginUrl}" class="button">Login to Affiliate Dashboard</a>
+              </div>
+              ` : `
+              <div class="credentials">
+                <h3 style="margin-top: 0; color: #059669;">Your Affiliate Code</h3>
+                <div class="credential-item" style="text-align: center;">
+                  <div style="font-family: monospace; font-size: 24px; font-weight: bold; color: #10b981; letter-spacing: 2px;">
+                    ${affiliateCode}
+                  </div>
+                </div>
+                <p style="text-align: center; color: #666; margin-top: 10px;">
+                  Use this code to track referrals. Login credentials will be sent separately if a password was set.
+                </p>
+              </div>
+              `}
+              
+              <div class="commission-box">
+                <h3 style="margin-top: 0; color: #059669;">💰 Your Commission Structure</h3>
+                <div style="margin: 15px 0;">
+                  <p style="margin: 5px 0;"><strong>Signup Commission:</strong> ${signupCommissionText}</p>
+                  <p style="margin: 5px 0;"><strong>Subscription Commission:</strong> ${subscriptionCommissionText}</p>
+                </div>
+                <p style="font-size: 14px; color: #666; margin-bottom: 0;">
+                  You'll earn commissions when businesses sign up using your affiliate code and when they subscribe to SCIMS plans.
+                </p>
+              </div>
+              
+              <h3>🚀 Getting Started</h3>
+              <ol>
+                <li><strong>Access your dashboard</strong> at <a href="${loginUrl}">${loginUrl}</a></li>
+                <li><strong>Get your affiliate link</strong> from the dashboard</li>
+                <li><strong>Start sharing</strong> your affiliate code or link with businesses</li>
+                <li><strong>Track your referrals</strong> and commissions in real-time</li>
+                <li><strong>Request payouts</strong> when you're ready to cash out</li>
+              </ol>
+              
+              <h3>📚 Resources</h3>
+              <ul>
+                <li><strong>Affiliate Dashboard:</strong> <a href="${loginUrl}">${loginUrl}</a></li>
+                <li><strong>Platform:</strong> <a href="${platformUrl}">${platformUrl}</a></li>
+                <li><strong>Support:</strong> Contact us if you have any questions</li>
+              </ul>
+              
+              <p>We're excited to have you on board and look forward to a successful partnership!</p>
+              
+              <p><strong>The SCIMS Affiliate Team</strong></p>
+            </div>
+            
+            <div class="footer">
+              <p>This email was sent to ${to}</p>
+              <p>© ${new Date().getFullYear()} SCIMS. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const mailOptions = {
+        from: `"SCIMS Affiliate Program" <${emailConfig.auth.user}>`,
+        to: to,
+        subject: subject,
+        html: htmlContent,
+      };
+
+      const result = await transporter.sendMail(mailOptions);
+      
+      return {
+        success: true,
+        messageId: result.messageId,
+      };
+    } catch (error) {
+      console.error('Affiliate approval email sending error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  }
+
+  static async sendAffiliateRejectionEmail(data: AffiliateRejectionEmailData): Promise<EmailResult> {
+    try {
+      const { to, name, rejectionReason, platformUrl } = data;
+
+      const subject = `Affiliate Application Update - SCIMS`;
+      
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Affiliate Application Update</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+            .info { background: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; padding: 15px; margin: 20px 0; }
+            .reason-box { background: #fff; border: 2px solid #ef4444; border-radius: 8px; padding: 20px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Affiliate Application Update</h1>
+              <p>Thank you for your interest in SCIMS</p>
+            </div>
+            
+            <div class="content">
+              <h2>Hello ${name},</h2>
+              
+              <p>Thank you for your interest in becoming an affiliate partner with <strong>SCIMS</strong>.</p>
+              
+              <p>After careful review, we regret to inform you that we are unable to approve your affiliate application at this time.</p>
+              
+              ${rejectionReason ? `
+              <div class="reason-box">
+                <h3 style="margin-top: 0; color: #dc2626;">Reason for Decision</h3>
+                <p style="margin-bottom: 0;">${rejectionReason}</p>
+              </div>
+              ` : ''}
+              
+              <div class="info">
+                <h3 style="margin-top: 0;">💡 What This Means</h3>
+                <ul style="margin-bottom: 0;">
+                  <li>This decision does not prevent you from reapplying in the future</li>
+                  <li>We encourage you to address any concerns mentioned above</li>
+                  <li>You can always reach out to us with questions</li>
+                </ul>
+              </div>
+              
+              <h3>🔄 Reapplying</h3>
+              <p>If you believe circumstances have changed or you'd like to address the feedback provided, you are welcome to submit a new application at any time.</p>
+              
+              <p>You can reapply by visiting: <a href="${platformUrl}/affiliate/apply">${platformUrl}/affiliate/apply</a></p>
+              
+              <h3>📞 Questions?</h3>
+              <p>If you have any questions about this decision or would like to discuss your application further, please don't hesitate to contact our support team.</p>
+              
+              <p>We appreciate your interest in SCIMS and wish you the best in your endeavors.</p>
+              
+              <p><strong>The SCIMS Affiliate Team</strong></p>
+            </div>
+            
+            <div class="footer">
+              <p>This email was sent to ${to}</p>
+              <p>© ${new Date().getFullYear()} SCIMS. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const mailOptions = {
+        from: `"SCIMS Affiliate Program" <${emailConfig.auth.user}>`,
+        to: to,
+        subject: subject,
+        html: htmlContent,
+      };
+
+      const result = await transporter.sendMail(mailOptions);
+      
+      return {
+        success: true,
+        messageId: result.messageId,
+      };
+    } catch (error) {
+      console.error('Affiliate rejection email sending error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',

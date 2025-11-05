@@ -1,6 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
+import { EmailService } from '@/lib/email/emailService';
+import { env } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -130,6 +131,20 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Failed to submit application' },
         { status: 500 }
       );
+    }
+
+    // Send confirmation email to affiliate
+    const platformUrl = env.NEXT_PUBLIC_BASE_URL;
+    const emailResult = await EmailService.sendAffiliateApplicationEmail({
+      to: affiliate.email,
+      name: affiliate.name,
+      affiliateCode: affiliate.affiliate_code,
+      platformUrl: platformUrl
+    });
+
+    if (!emailResult.success) {
+      console.error('Failed to send application confirmation email:', emailResult.error);
+      // Don't fail the request if email fails, just log it
     }
 
     return NextResponse.json({

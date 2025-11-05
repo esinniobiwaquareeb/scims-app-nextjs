@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 import bcrypt from 'bcryptjs';
+import { EmailService } from '@/lib/email/emailService';
+import { env } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -71,7 +73,7 @@ export async function POST(
       updateData.commission_type = 'percentage';
     }
 
-    // Set password if provided
+    // Set password if provided, otherwise generate a random one
     if (set_password && password) {
       if (password.length < 8) {
         return NextResponse.json(
@@ -81,6 +83,14 @@ export async function POST(
       }
       const passwordHash = await bcrypt.hash(password, 12);
       updateData.password_hash = passwordHash;
+    } else {
+      // Auto-generate a secure password if not provided
+      const crypto = await import('crypto');
+      const generatedPassword = crypto.randomBytes(12).toString('base64').slice(0, 16);
+      const passwordHash = await bcrypt.hash(generatedPassword, 12);
+      updateData.password_hash = passwordHash;
+      // Store the plain password temporarily to include in email
+      (updateData as any).__generated_password = generatedPassword;
     }
 
     // Update affiliate
@@ -99,7 +109,32 @@ export async function POST(
       );
     }
 
-    // TODO: Send email notification to affiliate about approval
+    // Send approval email to affiliate
+    const platformUrl = env.NEXT_PUBLIC_BASE_URL;
+    const loginUrl = `${platformUrl}/affiliate/login`;
+    
+    // Get the password that was set (either provided or auto-generated)
+    const passwordToSend = set_password && password 
+      ? password 
+      : (updateData as any).__generated_password || undefined;
+    
+    const emailResult = await EmailService.sendAffiliateApprovalEmail({
+      to: updatedAffiliate.email,
+      name: updatedAffiliate.name,
+      affiliateCode: updatedAffiliate.affiliate_code,
+      loginUrl: loginUrl,
+      password: passwordToSend,
+      signupCommissionType: updatedAffiliate.signup_commission_type || signup_commission_type,
+      signupCommissionRate: updatedAffiliate.signup_commission_rate || signup_commission_rate,
+      signupCommissionFixed: updatedAffiliate.signup_commission_fixed || signup_commission_fixed,
+      subscriptionCommissionRate: updatedAffiliate.subscription_commission_rate || subscription_commission_rate,
+      platformUrl: platformUrl
+    });
+
+    if (!emailResult.success) {
+      console.error('Failed to send approval email:', emailResult.error);
+      // Don't fail the request if email fails, just log it
+    }
 
     return NextResponse.json({
       success: true,
@@ -152,7 +187,20 @@ export async function PUT(
       );
     }
 
-    // TODO: Send email notification to affiliate about rejection
+    // Send rejection email to affiliate
+    const platformUrl = env.NEXT_PUBLIC_BASE_URL;
+    
+    const emailResult = await EmailService.sendAffiliateRejectionEmail({
+      to: updatedAffiliate.email,
+      name: updatedAffiliate.name,
+      rejectionReason: updatedAffiliate.rejection_reason || rejection_reason,
+      platformUrl: platformUrl
+    });
+
+    if (!emailResult.success) {
+      console.error('Failed to send rejection email:', emailResult.error);
+      // Don't fail the request if email fails, just log it
+    }
 
     return NextResponse.json({
       success: true,

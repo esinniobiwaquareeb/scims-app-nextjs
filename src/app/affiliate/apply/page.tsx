@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, CheckCircle2, DollarSign, TrendingUp, Users, ArrowLeft } from 'lucide-react';
+import { Loader2, CheckCircle2, ArrowLeft } from 'lucide-react';
 import Logo from '@/components/common/Logo';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -25,7 +25,11 @@ export default function AffiliateApplyPage() {
     why_affiliate: '',
     social_media: '',
     payment_method: '',
-    payment_details: ''
+    bank_name: '',
+    account_number: '',
+    account_name: '',
+    paypal_email: '',
+    other_details: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,7 +51,13 @@ export default function AffiliateApplyPage() {
             social_media: formData.social_media
           },
           payment_method: formData.payment_method,
-          payment_details: formData.payment_details ? JSON.parse(formData.payment_details) : null
+          payment_details: formData.payment_method ? {
+            bank_name: formData.bank_name || undefined,
+            account_number: formData.account_number || undefined,
+            account_name: formData.account_name || undefined,
+            paypal_email: formData.paypal_email || undefined,
+            other_details: formData.other_details || undefined
+          } : null
         })
       });
 
@@ -81,48 +91,11 @@ export default function AffiliateApplyPage() {
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold mb-2">Become an Affiliate Partner</h1>
             <p className="text-muted-foreground">
-              Earn commissions by referring businesses to SCIMS. Help businesses grow while you earn.
+              Join our affiliate program and help businesses discover SCIMS.
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4 mx-auto">
-                <DollarSign className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-bold mb-2 text-center">Earn Commissions</h3>
-              <p className="text-sm text-muted-foreground text-center">
-                Get paid when businesses you refer sign up and subscribe to SCIMS plans.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4 mx-auto">
-                <TrendingUp className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-bold mb-2 text-center">Track Performance</h3>
-              <p className="text-sm text-muted-foreground text-center">
-                Monitor your referrals, conversions, and commissions in real-time through your dashboard.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4 mx-auto">
-                <Users className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-bold mb-2 text-center">Help Businesses</h3>
-              <p className="text-sm text-muted-foreground text-center">
-                Share SCIMS with businesses and help them grow while building your income stream.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
 
         <Card>
           <CardHeader>
@@ -212,26 +185,87 @@ export default function AffiliateApplyPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4 border-t pt-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Payment Information (Optional)</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    You can provide your payment details now or add them later after your application is approved.
+                  </p>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="payment_method">Preferred Payment Method</Label>
                   <Input
                     id="payment_method"
                     value={formData.payment_method}
                     onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
-                    placeholder="e.g., Bank Transfer, PayPal, etc."
+                    placeholder="e.g., Bank Transfer, PayPal, Mobile Money"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="payment_details">Payment Details (JSON)</Label>
-                  <Textarea
-                    id="payment_details"
-                    value={formData.payment_details}
-                    onChange={(e) => setFormData({ ...formData, payment_details: e.target.value })}
-                    placeholder='{"bank_name": "...", "account_number": "..."}'
-                    rows={3}
-                  />
-                </div>
+
+                {formData.payment_method && (
+                  <div className="space-y-4 pl-4 border-l-2 border-muted">
+                    {formData.payment_method.toLowerCase().includes('bank') && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="bank_name">Bank Name</Label>
+                          <Input
+                            id="bank_name"
+                            value={formData.bank_name}
+                            onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
+                            placeholder="e.g., First Bank, GTB"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="account_number">Account Number</Label>
+                          <Input
+                            id="account_number"
+                            value={formData.account_number}
+                            onChange={(e) => setFormData({ ...formData, account_number: e.target.value })}
+                            placeholder="1234567890"
+                          />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                          <Label htmlFor="account_name">Account Name</Label>
+                          <Input
+                            id="account_name"
+                            value={formData.account_name}
+                            onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
+                            placeholder="Name on bank account"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {formData.payment_method.toLowerCase().includes('paypal') && (
+                      <div className="space-y-2">
+                        <Label htmlFor="paypal_email">PayPal Email</Label>
+                        <Input
+                          id="paypal_email"
+                          type="email"
+                          value={formData.paypal_email}
+                          onChange={(e) => setFormData({ ...formData, paypal_email: e.target.value })}
+                          placeholder="your@email.com"
+                        />
+                      </div>
+                    )}
+
+                    {formData.payment_method && 
+                     !formData.payment_method.toLowerCase().includes('bank') && 
+                     !formData.payment_method.toLowerCase().includes('paypal') && (
+                      <div className="space-y-2">
+                        <Label htmlFor="other_details">Payment Details</Label>
+                        <Textarea
+                          id="other_details"
+                          value={formData.other_details}
+                          onChange={(e) => setFormData({ ...formData, other_details: e.target.value })}
+                          placeholder="Please provide your payment details (e.g., Mobile Money number, wallet ID, etc.)"
+                          rows={3}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-4 pt-4">

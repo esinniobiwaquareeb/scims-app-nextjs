@@ -31,19 +31,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if affiliate has password set
-    if (!affiliate.password_hash) {
-      return NextResponse.json(
-        { success: false, error: 'Account not activated. Please wait for approval.' },
-        { status: 401 }
-      );
-    }
-
-    // Check if affiliate is approved and active
+    // Check if affiliate is approved and active first
     if (affiliate.application_status !== 'approved' || affiliate.status !== 'active') {
+      if (affiliate.application_status === 'pending') {
+        return NextResponse.json(
+          { success: false, error: 'Account not activated. Please wait for approval.' },
+          { status: 403 }
+        );
+      }
       return NextResponse.json(
         { success: false, error: 'Your affiliate account is not active. Please contact support.' },
         { status: 403 }
+      );
+    }
+
+    // Check if affiliate has password set
+    if (!affiliate.password_hash) {
+      return NextResponse.json(
+        { success: false, error: 'No password set for your account. Please contact support to set up your password.' },
+        { status: 401 }
       );
     }
 
