@@ -69,14 +69,18 @@ function getSupabaseAnonClient(): SupabaseClient {
 // WARNING: This client bypasses RLS - only use for server-side operations
 export const supabase = new Proxy({} as SupabaseClient, {
   get(_target, prop) {
-    return (getSupabaseClient() as any)[prop];
+    const client = getSupabaseClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return ((client as unknown) as Record<string, any>)[prop as string];
   }
-});
+}) as SupabaseClient;
 
 // Client for user authentication (uses anon key, respects RLS)
 // Use this for validating user tokens in middleware
 export const supabaseAnon = new Proxy({} as SupabaseClient, {
   get(_target, prop) {
-    return (getSupabaseAnonClient() as any)[prop];
+    const client = getSupabaseAnonClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return ((client as unknown) as Record<string, any>)[prop as string];
   }
-});
+}) as SupabaseClient;
