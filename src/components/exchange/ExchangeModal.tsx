@@ -199,9 +199,9 @@ export const ExchangeModal: React.FC<ExchangeModalProps> = ({
         })
       });
 
-      const data: CalculateTradeInValueResponse = await response.json();
+      const data = await response.json();
 
-      if (data.success) {
+      if (data.unit_value !== undefined) {
         return data.unit_value;
       }
     } catch (error) {
