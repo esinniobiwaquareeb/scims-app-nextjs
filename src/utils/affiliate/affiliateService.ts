@@ -7,6 +7,7 @@ export interface AffiliateCommissionData {
   amount: number; // Subscription payment amount or signup value
   commissionType: 'signup' | 'subscription';
   referralId: string;
+  currencyId?: string; // Currency ID for the commission (Issue #8)
 }
 
 /**
@@ -145,7 +146,7 @@ export async function markReferralAsConverted(
  */
 export async function createAffiliateCommission(data: AffiliateCommissionData): Promise<void> {
   try {
-    const { businessId, subscriptionPlanId, amount, commissionType, referralId } = data;
+    const { businessId, subscriptionPlanId, amount, commissionType, referralId, currencyId } = data;
 
     if (!referralId) {
       console.log('No referral ID provided for commission');
@@ -218,6 +219,20 @@ export async function createAffiliateCommission(data: AffiliateCommissionData): 
       return;
     }
 
+    // Get business currency if not provided (Issue #8)
+    let finalCurrencyId = currencyId;
+    if (!finalCurrencyId) {
+      const { data: business } = await supabase
+        .from('business')
+        .select('currency_id')
+        .eq('id', businessId)
+        .single();
+      
+      if (business) {
+        finalCurrencyId = business.currency_id || null;
+      }
+    }
+
     // Create commission
     const { error: commissionError } = await supabase
       .from('affiliate_commission')
@@ -231,6 +246,7 @@ export async function createAffiliateCommission(data: AffiliateCommissionData): 
         commission_amount: commissionAmount,
         commission_type: commissionType,
         commission_sub_type: commissionSubType,
+        currency_id: finalCurrencyId || null, // Add currency (Issue #8)
         status: 'pending'
       });
 

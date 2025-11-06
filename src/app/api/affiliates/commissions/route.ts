@@ -46,6 +46,12 @@ export async function GET(request: NextRequest) {
           name,
           price_monthly,
           price_yearly
+        ),
+        currency:currency_id(
+          id,
+          code,
+          name,
+          symbol
         )
       `)
       .eq('affiliate_id', affiliateId)

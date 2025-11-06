@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase/config';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { EmailService } from '@/lib/email/emailService';
-import { trackBusinessReferral, markReferralAsConverted } from '@/utils/affiliate/affiliateService';
+import { trackBusinessReferral, markReferralAsConverted, createAffiliateCommission } from '@/utils/affiliate/affiliateService';
 
 // Force dynamic rendering for API routes
 export const dynamic = 'force-dynamic';
@@ -87,6 +87,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate affiliate code if provided (Issue #4)
+    let finalReferralId: string | null = null;
+    if (affiliate_code && !referral_id) {
+      const { data: affiliate } = await supabase
+        .from('affiliate')
+        .select('id, status')
+        .eq('affiliate_code', affiliate_code.toUpperCase())
+        .eq('status', 'active')
+        .single();
+
+      if (!affiliate) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid or inactive affiliate code' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Validate referral_id if provided
+    if (referral_id) {
+      const { data: referral } = await supabase
+        .from('affiliate_referral')
+        .select('id, affiliate_id')
+        .eq('id', referral_id)
+        .single();
+
+      if (!referral) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid referral ID' },
+          { status: 400 }
+        );
+      }
+
+      // Check affiliate status separately
+      const { data: affiliate } = await supabase
+        .from('affiliate')
+        .select('status')
+        .eq('id', referral.affiliate_id)
+        .single();
+
+      if (!affiliate || affiliate.status !== 'active') {
+        return NextResponse.json(
+          { success: false, error: 'Affiliate associated with this referral is not active' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Generate email verification token
     const emailVerificationToken = crypto.randomBytes(32).toString('hex');
     const emailVerificationExpires = new Date();
@@ -148,15 +196,49 @@ export async function POST(request: NextRequest) {
       } else {
         business = businessData;
 
-        // Handle affiliate referral tracking
+        // Handle affiliate referral tracking and commission creation (Issues #4, #7)
         if (referral_id) {
           // Mark referral as converted
           await markReferralAsConverted(referral_id, business.id);
+          finalReferralId = referral_id;
         } else if (affiliate_code) {
           // Track new referral and mark as converted
           const newReferralId = await trackBusinessReferral(affiliate_code, email, phone, 'registration');
           if (newReferralId) {
             await markReferralAsConverted(newReferralId, business.id);
+            finalReferralId = newReferralId;
+          }
+        }
+
+        // Create signup commission if referral exists (Issue #7)
+        if (finalReferralId && business) {
+          // Get affiliate to determine commission type
+          const { data: referralData } = await supabase
+            .from('affiliate_referral')
+            .select('affiliate_id, affiliate:affiliate_id(signup_commission_type, signup_commission_rate)')
+            .eq('id', finalReferralId)
+            .single();
+
+          if (referralData) {
+            const affiliate = referralData.affiliate as { signup_commission_type?: string; signup_commission_rate?: number } | null;
+            // For percentage-based signup commissions, use a default signup value
+            // For fixed commissions, the amount doesn't matter (will use fixed amount)
+            const signupValue = affiliate?.signup_commission_type === 'percentage' 
+              ? 100 // Default signup value for percentage calculations (can be made configurable)
+              : 0; // Amount doesn't matter for fixed commissions
+
+            try {
+              await createAffiliateCommission({
+                businessId: business.id,
+                amount: signupValue,
+                commissionType: 'signup',
+                referralId: finalReferralId,
+                currencyId: business.currency_id || undefined // Pass currency from business (Issue #8)
+              });
+            } catch (commissionError) {
+              console.error('Error creating signup commission:', commissionError);
+              // Don't fail registration if commission creation fails
+            }
           }
         }
 

@@ -45,18 +45,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if email already exists
+    // Check if email belongs to an existing SCIMS user (Issue #1 - allow customers to be affiliates)
+    const { data: existingUser } = await supabase
+      .from('user')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .single();
+
+    // Check if email already exists (Issue #3 - allow reapplication for rejected affiliates)
     const { data: existingAffiliate } = await supabase
       .from('affiliate')
-      .select('id, email')
+      .select('id, email, application_status')
       .eq('email', email.toLowerCase())
       .single();
 
     if (existingAffiliate) {
-      return NextResponse.json(
-        { success: false, error: 'An affiliate application with this email already exists' },
-        { status: 400 }
-      );
+      // If affiliate exists and is not rejected, prevent reapplication
+      if (existingAffiliate.application_status !== 'rejected') {
+        return NextResponse.json(
+          { success: false, error: 'An affiliate application with this email already exists' },
+          { status: 400 }
+        );
+      }
+      // If rejected, we'll update the existing record instead of creating a new one
     }
 
     // Handle preferred code or generate one
@@ -106,31 +117,67 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create affiliate application
-    const { data: affiliate, error: affiliateError } = await supabase
-      .from('affiliate')
-      .insert({
-        affiliate_code: affiliateCode!,
-        name,
-        email: email.toLowerCase(),
-        phone: phone ?? null,
-        status: 'pending',
-        application_status: 'pending',
-        application_data: application_data || {},
-        payment_method: payment_method || null,
-        payment_details: payment_details || null,
-        commission_rate: 10.00, // Default commission rate
-        commission_type: 'percentage'
-      })
-      .select()
-      .single();
+    // Create or update affiliate application (Issue #3 - allow reapplication, Issue #1 - link to user)
+    let affiliate;
+    if (existingAffiliate && existingAffiliate.application_status === 'rejected') {
+      // Update existing rejected affiliate
+      const { data: updatedAffiliate, error: updateError } = await supabase
+        .from('affiliate')
+        .update({
+          name,
+          phone: phone ?? null,
+          status: 'pending',
+          application_status: 'pending',
+          application_data: application_data || {},
+          payment_method: payment_method || null,
+          payment_details: payment_details || null,
+          rejection_reason: null, // Clear rejection reason
+          reviewed_at: null,
+          reviewed_by: null,
+          user_id: existingUser?.id || null, // Link to user if exists (Issue #1)
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingAffiliate.id)
+        .select()
+        .single();
 
-    if (affiliateError) {
-      console.error('Error creating affiliate application:', affiliateError);
-      return NextResponse.json(
-        { success: false, error: 'Failed to submit application' },
-        { status: 500 }
-      );
+      if (updateError) {
+        console.error('Error updating affiliate application:', updateError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to resubmit application' },
+          { status: 500 }
+        );
+      }
+      affiliate = updatedAffiliate;
+    } else {
+      // Create new affiliate application
+      const { data: newAffiliate, error: affiliateError } = await supabase
+        .from('affiliate')
+        .insert({
+          affiliate_code: affiliateCode!,
+          name,
+          email: email.toLowerCase(),
+          phone: phone ?? null,
+          status: 'pending',
+          application_status: 'pending',
+          application_data: application_data || {},
+          payment_method: payment_method || null,
+          payment_details: payment_details || null,
+          user_id: existingUser?.id || null, // Link to user if exists (Issue #1)
+          commission_rate: 10.00, // Default commission rate
+          commission_type: 'percentage'
+        })
+        .select()
+        .single();
+
+      if (affiliateError) {
+        console.error('Error creating affiliate application:', affiliateError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to submit application' },
+          { status: 500 }
+        );
+      }
+      affiliate = newAffiliate;
     }
 
     // Send confirmation email to affiliate
