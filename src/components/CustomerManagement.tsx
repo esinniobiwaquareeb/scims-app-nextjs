@@ -40,8 +40,7 @@ import {
   Loader2,
   Users,
   Building2,
-  UserCheck,
-  Share2
+  UserCheck
 } from 'lucide-react';
 import { Store } from '@/types/auth';
 import { Customer as DBCustomer } from '@/types/index';
@@ -127,10 +126,9 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showCustomerDetail, setShowCustomerDetail] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [showAssignAffiliateModal, setShowAssignAffiliateModal] = useState(false);
-  const [affiliates, setAffiliates] = useState<Array<{ id: string; name: string; affiliate_code: string }>>([]);
-  const [selectedAffiliateId, setSelectedAffiliateId] = useState<string>('');
-  const [assignLoading, setAssignLoading] = useState(false);
+  const [showMakeAffiliateModal, setShowMakeAffiliateModal] = useState(false);
+  const [makeAffiliateLoading, setMakeAffiliateLoading] = useState(false);
+  const [preferredCode, setPreferredCode] = useState<string>('');
   
   // React Query hooks
   const {
@@ -444,25 +442,6 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
     }
   }, [currentStore?.id]);
 
-  // Load affiliates for assignment (Issue #2)
-  useEffect(() => {
-    const loadAffiliates = async () => {
-      try {
-        const response = await fetch('/api/affiliates');
-        const data = await response.json();
-        if (data.success) {
-          // Filter only active affiliates
-          const activeAffiliates = (data.affiliates || []).filter(
-            (a: any) => a.status === 'active' && a.application_status === 'approved'
-          );
-          setAffiliates(activeAffiliates);
-        }
-      } catch (error) {
-        console.error('Error loading affiliates:', error);
-      }
-    };
-    loadAffiliates();
-  }, []);
 
   // Check if customers are also affiliates (Issue #1)
   useEffect(() => {
@@ -497,39 +476,43 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
     checkAffiliateStatus();
   }, [dbCustomers]);
 
-  const handleAssignAffiliate = async () => {
-    if (!selectedCustomer || !selectedAffiliateId || !currentBusiness?.id) {
-      toast.error('Please select a customer and affiliate');
+  const handleMakeAffiliate = async () => {
+    if (!selectedCustomer) {
+      toast.error('Please select a customer');
       return;
     }
 
-    setAssignLoading(true);
+    if (!selectedCustomer.email) {
+      toast.error('Customer must have an email address to become an affiliate');
+      return;
+    }
+
+    setMakeAffiliateLoading(true);
     try {
-      const response = await fetch('/api/affiliates/assign', {
+      const response = await fetch('/api/affiliates/create-from-customer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          affiliate_id: selectedAffiliateId,
-          business_id: currentBusiness.id,
-          create_commission: true
+          customer_id: selectedCustomer.id,
+          preferred_code: preferredCode.trim() || undefined
         })
       });
 
       const data = await response.json();
       if (data.success) {
-        toast.success('Affiliate assigned to customer successfully');
-        setShowAssignAffiliateModal(false);
-        setSelectedAffiliateId('');
+        toast.success(data.message || 'Customer successfully converted to affiliate');
+        setShowMakeAffiliateModal(false);
+        setPreferredCode('');
         // Refresh customers to show updated affiliate status
         await refetchCustomers();
       } else {
-        toast.error(data.error || 'Failed to assign affiliate');
+        toast.error(data.error || 'Failed to create affiliate');
       }
     } catch (error) {
-      console.error('Error assigning affiliate:', error);
-      toast.error('Failed to assign affiliate');
+      console.error('Error creating affiliate:', error);
+      toast.error('Failed to create affiliate');
     } finally {
-      setAssignLoading(false);
+      setMakeAffiliateLoading(false);
     }
   };
 
@@ -677,17 +660,17 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
           <Button variant="ghost" size="sm" onClick={() => openEditDialog(customer)}>
             <Edit className="w-4 h-4" />
           </Button>
-          {currentBusiness && !customer.isAffiliate && (
+          {currentBusiness && !customer.isAffiliate && customer.email && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 setSelectedCustomer(customer);
-                setShowAssignAffiliateModal(true);
+                setShowMakeAffiliateModal(true);
               }}
-              title="Assign affiliate to this customer"
+              title="Make this customer an affiliate"
             >
-              <Share2 className="w-4 h-4" />
+              <UserCheck className="w-4 h-4" />
             </Button>
           )}
           <Button 
@@ -1209,13 +1192,13 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Assign Affiliate Modal (Issue #2) */}
-      <Dialog open={showAssignAffiliateModal} onOpenChange={setShowAssignAffiliateModal}>
+      {/* Make Affiliate Modal */}
+      <Dialog open={showMakeAffiliateModal} onOpenChange={setShowMakeAffiliateModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Assign Affiliate to Customer</DialogTitle>
+            <DialogTitle>Make Customer an Affiliate</DialogTitle>
             <DialogDescription>
-              Assign an affiliate to {selectedCustomer?.name}. This will create a referral record and commission.
+              Convert {selectedCustomer?.name} to an affiliate. They will be automatically approved and can start earning commissions immediately.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -1227,40 +1210,37 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
               </div>
             )}
             <div>
-              <Label htmlFor="affiliate-select">Select Affiliate</Label>
-              <Select
-                value={selectedAffiliateId}
-                onValueChange={setSelectedAffiliateId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose an affiliate" />
-                </SelectTrigger>
-                <SelectContent>
-                  {affiliates.length === 0 ? (
-                    <div className="px-2 py-1.5 text-sm text-muted-foreground">No active affiliates available</div>
-                  ) : (
-                    affiliates.map((affiliate) => (
-                      <SelectItem key={affiliate.id} value={affiliate.id}>
-                        {affiliate.name} ({affiliate.affiliate_code})
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="preferred-code">Preferred Affiliate Code (Optional)</Label>
+              <Input
+                id="preferred-code"
+                value={preferredCode}
+                onChange={(e) => setPreferredCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                placeholder="Leave empty for auto-generation"
+                maxLength={20}
+                className="font-mono"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                3-20 alphanumeric characters. If left empty, a code will be auto-generated.
+              </p>
+            </div>
+            <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+              <p className="text-sm text-blue-900 dark:text-blue-100">
+                <strong>Note:</strong> The customer will be automatically approved as an affiliate and will receive an email notification with their affiliate code and login details.
+              </p>
             </div>
             <div className="flex gap-2 pt-4">
               <Button variant="outline" className="flex-1" onClick={() => {
-                setShowAssignAffiliateModal(false);
-                setSelectedAffiliateId('');
+                setShowMakeAffiliateModal(false);
+                setPreferredCode('');
               }}>
                 Cancel
               </Button>
               <Button 
                 className="flex-1" 
-                onClick={handleAssignAffiliate}
-                disabled={assignLoading || !selectedAffiliateId || !currentBusiness?.id}
+                onClick={handleMakeAffiliate}
+                disabled={makeAffiliateLoading || !selectedCustomer?.email}
               >
-                {assignLoading ? 'Assigning...' : 'Assign Affiliate'}
+                {makeAffiliateLoading ? 'Creating...' : 'Make Affiliate'}
               </Button>
             </div>
           </div>
