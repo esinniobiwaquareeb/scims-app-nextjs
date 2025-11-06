@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -18,11 +18,9 @@ import {
   Package,
   Search,
   Plus,
-  Minus,
   X,
   Loader2,
   CheckCircle,
-  AlertCircle,
   User,
   ShoppingCart,
   DollarSign,
@@ -40,7 +38,6 @@ import type {
   ItemCondition,
   ExchangeTransactionType,
   ValidateReturnResponse,
-  CalculateTradeInValueResponse
 } from '@/types/exchange';
 import type { Product, Customer } from '@/types';
 
@@ -122,6 +119,7 @@ export const ExchangeModal: React.FC<ExchangeModalProps> = ({
       fetchCustomers();
       fetchProducts();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, currentStore?.id]);
 
   const fetchCustomers = async () => {

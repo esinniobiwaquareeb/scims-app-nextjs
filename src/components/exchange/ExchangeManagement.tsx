@@ -524,7 +524,7 @@ export const ExchangeManagement: React.FC = () => {
                                 </span>
                               </div>
                               {item.condition_notes && (
-                                <p className="text-sm text-muted-foreground mt-2 italic">"{item.condition_notes}"</p>
+                                <p className="text-sm text-muted-foreground mt-2 italic">&quot;{item.condition_notes}&quot;</p>
                               )}
                               {item.add_to_inventory !== false && (
                                 <Badge variant="outline" className="mt-2 text-xs">Added to Inventory</Badge>
