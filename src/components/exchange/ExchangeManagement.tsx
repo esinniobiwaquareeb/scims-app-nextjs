@@ -7,10 +7,12 @@ import { DashboardLayout } from '@/components/common/DashboardLayout';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   RefreshCcw,
   Plus,
@@ -19,7 +21,10 @@ import {
   Loader2,
   Package,
   DollarSign,
-  ShoppingCart
+  ShoppingCart,
+  Info,
+  Calendar,
+  Filter
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ExchangeTransaction, ExchangeTransactionFilters } from '@/types/exchange';
@@ -225,15 +230,33 @@ export const ExchangeManagement: React.FC = () => {
       title="Exchange & Trade-in Management"
       subtitle="Manage customer returns, trade-ins, and exchanges"
       headerActions={
-        <Button onClick={() => setShowExchangeModal(true)}>
+        <Button onClick={() => setShowExchangeModal(true)} size="lg">
           <Plus className="w-4 h-4 mr-2" />
-          New Exchange
+          New Transaction
         </Button>
       }
     >
       <div className="space-y-6">
+        {/* Info Alert */}
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Quick Guide:</strong> Returns require receipt validation. Trade-ins allow customers to bring items for credit. 
+            Exchanges combine returns with new purchases. Click &quot;New Transaction&quot; to get started.
+          </AlertDescription>
+        </Alert>
+
         {/* Filters */}
         <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filter Transactions
+            </CardTitle>
+            <CardDescription>
+              Search and filter exchange transactions by type, status, date, or customer
+            </CardDescription>
+          </CardHeader>
           <CardContent className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div className="lg:col-span-2">
@@ -294,19 +317,29 @@ export const ExchangeManagement: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <div>
-                <label className="text-sm font-medium mb-1 block">Start Date</label>
+                <Label htmlFor="start-date" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Start Date
+                </Label>
                 <Input
+                  id="start-date"
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
+                  className="mt-1"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">End Date</label>
+                <Label htmlFor="end-date" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  End Date
+                </Label>
                 <Input
+                  id="end-date"
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
+                  className="mt-1"
                 />
               </div>
             </div>
@@ -316,12 +349,42 @@ export const ExchangeManagement: React.FC = () => {
         {/* Transactions Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Exchange Transactions</CardTitle>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>All Transactions</CardTitle>
+                <CardDescription className="mt-1">
+                  {transactions.length} transaction{transactions.length !== 1 ? 's' : ''} found
+                </CardDescription>
+              </div>
+              {transactions.length > 0 && (
+                <Badge variant="secondary" className="text-sm">
+                  {transactions.filter(t => t.status === 'completed').length} Completed
+                </Badge>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <span className="ml-3 text-muted-foreground">Loading transactions...</span>
+              </div>
+            ) : transactions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Package className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-lg font-medium mb-2">No transactions found</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {searchTerm || statusFilter !== 'all' || typeFilter !== 'all' || startDate || endDate
+                    ? 'Try adjusting your filters'
+                    : 'Get started by creating a new exchange transaction'
+                  }
+                </p>
+                {!searchTerm && statusFilter === 'all' && typeFilter === 'all' && !startDate && !endDate && (
+                  <Button onClick={() => setShowExchangeModal(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create First Transaction
+                  </Button>
+                )}
               </div>
             ) : (
               <DataTable
@@ -349,7 +412,13 @@ export const ExchangeManagement: React.FC = () => {
       <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" size="xl">
           <DialogHeader>
-            <DialogTitle>Transaction Details</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Transaction Details
+            </DialogTitle>
+            <DialogDescription>
+              Complete information about this exchange transaction
+            </DialogDescription>
           </DialogHeader>
 
           {detailLoading ? (
@@ -362,38 +431,42 @@ export const ExchangeManagement: React.FC = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Transaction Information</CardTitle>
+                  <CardDescription>Basic details about this transaction</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-muted-foreground">Transaction Number</Label>
-                      <p className="font-mono font-semibold">{selectedTransaction.transaction_number}</p>
+                      <Label className="text-muted-foreground text-xs">Transaction Number</Label>
+                      <p className="font-mono font-semibold text-base mt-1">{selectedTransaction.transaction_number}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">Type</Label>
+                      <Label className="text-muted-foreground text-xs">Transaction Type</Label>
                       <div className="mt-1">{getTypeBadge(selectedTransaction.transaction_type)}</div>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">Status</Label>
+                      <Label className="text-muted-foreground text-xs">Status</Label>
                       <div className="mt-1">{getStatusBadge(selectedTransaction.status)}</div>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">Date</Label>
-                      <p>{formatDate(new Date(selectedTransaction.transaction_date))}</p>
+                      <Label className="text-muted-foreground text-xs">Date & Time</Label>
+                      <p className="font-medium mt-1">{formatDate(new Date(selectedTransaction.transaction_date))}</p>
                     </div>
                     {selectedTransaction.customer && (
                       <div>
-                        <Label className="text-muted-foreground">Customer</Label>
-                        <p className="font-medium">{selectedTransaction.customer.name}</p>
+                        <Label className="text-muted-foreground text-xs">Customer</Label>
+                        <p className="font-medium text-base mt-1">{selectedTransaction.customer.name}</p>
                         {selectedTransaction.customer.phone && (
-                          <p className="text-sm text-muted-foreground">{selectedTransaction.customer.phone}</p>
+                          <p className="text-sm text-muted-foreground mt-0.5">{selectedTransaction.customer.phone}</p>
                         )}
                       </div>
                     )}
                     {selectedTransaction.original_sale && (
                       <div>
-                        <Label className="text-muted-foreground">Original Sale</Label>
-                        <p className="font-mono text-sm">{selectedTransaction.original_sale.receipt_number}</p>
+                        <Label className="text-muted-foreground text-xs">Original Sale Receipt</Label>
+                        <p className="font-mono text-sm font-semibold mt-1">{selectedTransaction.original_sale.receipt_number}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {formatDate(new Date(selectedTransaction.original_sale.transaction_date))}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -405,38 +478,65 @@ export const ExchangeManagement: React.FC = () => {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Package className="h-4 w-4" />
-                      Exchange Items ({selectedTransaction.exchange_items.length})
+                      <Package className="h-5 w-5" />
+                      Items Returned/Traded In
+                      <Badge variant="secondary" className="ml-auto">
+                        {selectedTransaction.exchange_items.length} item{selectedTransaction.exchange_items.length !== 1 ? 's' : ''}
+                      </Badge>
                     </CardTitle>
+                    <CardDescription>
+                      Items the customer returned or traded in during this transaction
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
                       {selectedTransaction.exchange_items.map((item) => (
-                        <div key={item.id} className="p-4 border rounded-lg">
+                        <div key={item.id} className="p-4 border-2 rounded-lg bg-muted/30">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <p className="font-semibold">
-                                {item.product?.name || item.product_name || 'Unknown Product'}
-                              </p>
-                              <div className="flex items-center gap-2 mt-2">
+                              <div className="flex items-center gap-2 mb-2">
+                                <p className="font-semibold text-base">
+                                  {item.product?.name || item.product_name || 'Unknown Product'}
+                                </p>
                                 <Badge className={CONDITION_OPTIONS.find(o => o.value === item.condition)?.color}>
-                                  {item.condition}
+                                  {CONDITION_OPTIONS.find(o => o.value === item.condition)?.value === 'excellent' ? 'Excellent' :
+                                   CONDITION_OPTIONS.find(o => o.value === item.condition)?.value === 'good' ? 'Good' :
+                                   CONDITION_OPTIONS.find(o => o.value === item.condition)?.value === 'fair' ? 'Fair' :
+                                   CONDITION_OPTIONS.find(o => o.value === item.condition)?.value === 'damaged' ? 'Damaged' :
+                                   'Defective'}
                                 </Badge>
-                                <span className="text-sm text-muted-foreground">
-                                  Qty: {item.quantity} × {formatCurrency(item.unit_value)} = {formatCurrency(item.total_value)}
+                                {item.item_type === 'returned' && (
+                                  <Badge variant="outline">Return</Badge>
+                                )}
+                                {item.item_type === 'trade_in' && (
+                                  <Badge variant="outline">Trade-In</Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-4 text-sm">
+                                <span className="text-muted-foreground">
+                                  Quantity: <span className="font-medium text-foreground">{item.quantity}</span>
+                                </span>
+                                <span className="text-muted-foreground">
+                                  Value: <span className="font-medium text-foreground">{formatCurrency(item.unit_value)}</span> each
+                                </span>
+                                <span className="font-semibold text-primary">
+                                  Total: {formatCurrency(item.total_value)}
                                 </span>
                               </div>
                               {item.condition_notes && (
-                                <p className="text-sm text-muted-foreground mt-1">{item.condition_notes}</p>
+                                <p className="text-sm text-muted-foreground mt-2 italic">"{item.condition_notes}"</p>
+                              )}
+                              {item.add_to_inventory !== false && (
+                                <Badge variant="outline" className="mt-2 text-xs">Added to Inventory</Badge>
                               )}
                             </div>
                           </div>
                         </div>
                       ))}
-                      <div className="pt-4 border-t">
-                        <div className="flex justify-between">
-                          <span className="font-semibold">Total Trade-in Value:</span>
-                          <span className="font-bold text-green-600">
+                      <div className="pt-4 border-t-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-lg font-semibold">Total Return/Trade-In Value:</span>
+                          <span className="text-2xl font-bold text-green-600 dark:text-green-400">
                             {formatCurrency(selectedTransaction.trade_in_total_value)}
                           </span>
                         </div>
@@ -451,24 +551,38 @@ export const ExchangeManagement: React.FC = () => {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <ShoppingCart className="h-4 w-4" />
-                      Purchase Items ({selectedTransaction.purchase_items.length})
+                      <ShoppingCart className="h-5 w-5" />
+                      New Items Purchased
+                      <Badge variant="secondary" className="ml-auto">
+                        {selectedTransaction.purchase_items.length} item{selectedTransaction.purchase_items.length !== 1 ? 's' : ''}
+                      </Badge>
                     </CardTitle>
+                    <CardDescription>
+                      Items the customer purchased in this transaction
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
                       {selectedTransaction.purchase_items.map((item) => (
-                        <div key={item.id} className="p-4 border rounded-lg">
-                          <p className="font-semibold">{item.product?.name || 'Unknown Product'}</p>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Qty: {item.quantity} × {formatCurrency(item.unit_price)} = {formatCurrency(item.total_price)}
-                          </p>
+                        <div key={item.id} className="p-4 border-2 rounded-lg bg-blue-50/50 dark:bg-blue-950/20">
+                          <p className="font-semibold text-base">{item.product?.name || 'Unknown Product'}</p>
+                          <div className="flex items-center gap-4 mt-2 text-sm">
+                            <span className="text-muted-foreground">
+                              Quantity: <span className="font-medium text-foreground">{item.quantity}</span>
+                            </span>
+                            <span className="text-muted-foreground">
+                              Price: <span className="font-medium text-foreground">{formatCurrency(item.unit_price)}</span> each
+                            </span>
+                            <span className="font-semibold text-primary">
+                              Total: {formatCurrency(item.total_price)}
+                            </span>
+                          </div>
                         </div>
                       ))}
-                      <div className="pt-4 border-t">
-                        <div className="flex justify-between">
-                          <span className="font-semibold">Total Purchase Amount:</span>
-                          <span className="font-bold">
+                      <div className="pt-4 border-t-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-lg font-semibold">Total Purchase Amount:</span>
+                          <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                             {formatCurrency(selectedTransaction.total_purchase_amount)}
                           </span>
                         </div>
@@ -479,40 +593,64 @@ export const ExchangeManagement: React.FC = () => {
               )}
 
               {/* Summary */}
-              <Card>
+              <Card className="border-2 border-primary bg-primary/5">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" />
-                    Summary
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <DollarSign className="h-6 w-6" />
+                    Transaction Summary
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Trade-in Value:</span>
-                    <span className="font-semibold">{formatCurrency(selectedTransaction.trade_in_total_value)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Purchase Amount:</span>
-                    <span className="font-semibold">{formatCurrency(selectedTransaction.total_purchase_amount)}</span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t">
-                    <span className="font-bold">Balance:</span>
-                    <span className={`font-bold ${
-                      selectedTransaction.total_purchase_amount - selectedTransaction.trade_in_total_value > 0
-                        ? 'text-red-600'
-                        : 'text-green-600'
-                    }`}>
-                      {formatCurrency(
-                        selectedTransaction.total_purchase_amount - selectedTransaction.trade_in_total_value
-                      )}
-                    </span>
-                  </div>
-                  {selectedTransaction.additional_payment > 0 && (
-                    <div className="flex justify-between pt-2 border-t">
-                      <span>Additional Payment:</span>
-                      <span className="font-semibold">{formatCurrency(selectedTransaction.additional_payment)}</span>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center p-3 bg-background rounded-lg border">
+                      <span className="text-base font-medium">Total Return/Trade-In Value:</span>
+                      <span className="text-xl font-bold text-green-600 dark:text-green-400">
+                        {formatCurrency(selectedTransaction.trade_in_total_value)}
+                      </span>
                     </div>
-                  )}
+                    <div className="flex justify-between items-center p-3 bg-background rounded-lg border">
+                      <span className="text-base font-medium">Total Purchase Amount:</span>
+                      <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                        {formatCurrency(selectedTransaction.total_purchase_amount)}
+                      </span>
+                    </div>
+                    <div className={`flex justify-between items-center p-4 rounded-lg border-2 ${
+                      selectedTransaction.total_purchase_amount - selectedTransaction.trade_in_total_value > 0
+                        ? 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800'
+                        : selectedTransaction.total_purchase_amount - selectedTransaction.trade_in_total_value < 0
+                        ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'
+                        : 'bg-muted border-muted-foreground/20'
+                    }`}>
+                      <span className="text-lg font-semibold">
+                        {selectedTransaction.total_purchase_amount - selectedTransaction.trade_in_total_value > 0
+                          ? 'Customer Paid:'
+                          : selectedTransaction.total_purchase_amount - selectedTransaction.trade_in_total_value < 0
+                          ? 'Store Credit:'
+                          : 'Balance:'
+                        }
+                      </span>
+                      <span className={`text-2xl font-bold ${
+                        selectedTransaction.total_purchase_amount - selectedTransaction.trade_in_total_value > 0
+                          ? 'text-red-600 dark:text-red-400'
+                          : selectedTransaction.total_purchase_amount - selectedTransaction.trade_in_total_value < 0
+                          ? 'text-green-600 dark:text-green-400'
+                          : ''
+                      }`}>
+                        {selectedTransaction.total_purchase_amount - selectedTransaction.trade_in_total_value > 0
+                          ? `+${formatCurrency(selectedTransaction.total_purchase_amount - selectedTransaction.trade_in_total_value)}`
+                          : formatCurrency(Math.abs(selectedTransaction.total_purchase_amount - selectedTransaction.trade_in_total_value))
+                        }
+                      </span>
+                    </div>
+                    {selectedTransaction.additional_payment > 0 && (
+                      <div className="flex justify-between items-center p-3 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                        <span className="text-sm font-medium">Additional Payment Received:</span>
+                        <span className="font-semibold text-yellow-800 dark:text-yellow-200">
+                          {formatCurrency(selectedTransaction.additional_payment)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
@@ -537,12 +675,10 @@ export const ExchangeManagement: React.FC = () => {
 
 // Condition options for badge colors
 const CONDITION_OPTIONS: { value: string; color: string }[] = [
-  { value: 'excellent', color: 'bg-green-100 text-green-800' },
-  { value: 'good', color: 'bg-blue-100 text-blue-800' },
-  { value: 'fair', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'damaged', color: 'bg-orange-100 text-orange-800' },
-  { value: 'defective', color: 'bg-red-100 text-red-800' }
+  { value: 'excellent', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
+  { value: 'good', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
+  { value: 'fair', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
+  { value: 'damaged', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' },
+  { value: 'defective', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }
 ];
-
-import { Label } from '@/components/ui/label';
 
