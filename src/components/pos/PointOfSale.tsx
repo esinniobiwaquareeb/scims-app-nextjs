@@ -18,7 +18,8 @@ import {
   ShoppingCart, 
   Activity,
   Loader2,
-  Package
+  Package,
+  RefreshCcw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Product, CartItem, Customer, Sale } from './types';
@@ -78,6 +79,7 @@ import { CustomerSelectionDialog } from './CustomerSelectionDialog';
 import { SaleDetailDialog } from './SaleDetailDialog';
 import { SaveCartDialog } from './SaveCartDialog';
 import { LoadSavedCartsDialog } from './LoadSavedCartsDialog';
+import { ExchangeModal } from '@/components/exchange/ExchangeModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -119,6 +121,9 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
   
   // Add supply mode state
   const [isSupplyMode, setIsSupplyMode] = useState(false);
+  
+  // Exchange modal state
+  const [showExchangeModal, setShowExchangeModal] = useState(false);
   
   const { 
     translate, 
@@ -1117,6 +1122,15 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
                     <span className="font-medium hidden xs:inline">Supply</span>
                     <span className="font-medium xs:hidden lg:inline">Supply Mode</span>
                   </button>
+
+                  <button
+                    onClick={() => setShowExchangeModal(true)}
+                    className="flex items-center gap-1 lg:gap-2 px-2 lg:px-3 py-1.5 lg:py-2 rounded-lg transition-all text-xs lg:text-sm text-muted-foreground hover:text-foreground hover:bg-muted"
+                  >
+                    <RefreshCcw className="w-3 h-3 lg:w-4 lg:h-4 flex-shrink-0" />
+                    <span className="font-medium hidden xs:inline">Exchange</span>
+                    <span className="font-medium xs:hidden lg:inline">Exchange/Trade-in</span>
+                  </button>
                 </div>
 
                 {/* Secondary Actions - Responsive Layout */}
@@ -1276,6 +1290,18 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
         onLoadCart={loadSavedCart}
         onDeleteCart={deleteSavedCart}
         formatDate={formatDate}
+      />
+
+      <ExchangeModal
+        open={showExchangeModal}
+        onOpenChange={setShowExchangeModal}
+        onSuccess={() => {
+          // Refresh products and sales after exchange
+          refetchProducts();
+          refetchSales();
+          setShowExchangeModal(false);
+          toast.success('Exchange transaction completed. Stock has been updated.');
+        }}
       />
     </div>
   );

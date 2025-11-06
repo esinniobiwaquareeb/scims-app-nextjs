@@ -131,6 +131,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           href: '/supply-management',
           icon: RotateCcw,
           roles: ['business_admin', 'store_admin']
+        },
+        {
+          title: 'Exchange & Trade-in',
+          href: '/exchange-management',
+          icon: RotateCcw,
+          roles: ['business_admin', 'store_admin', 'cashier']
         }
       ]
     },
@@ -354,6 +360,11 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
         {
           title: 'Supply Management',
           href: '/supply-management',
+          icon: RotateCcw
+        },
+        {
+          title: 'Exchange & Trade-in',
+          href: '/exchange-management',
           icon: RotateCcw
         }
       ]
