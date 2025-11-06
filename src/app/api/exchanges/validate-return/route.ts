@@ -114,6 +114,25 @@ export async function POST(request: NextRequest) {
       .eq('original_sale_id', sale.id)
       .in('status', ['pending', 'completed']);
 
+    // Transform sale items to match ValidateReturnResponse type
+    const transformedItems = (sale.items || []).map((item: {
+      id: string;
+      product_id: string;
+      quantity: number;
+      unit_price: number;
+      total_price: number;
+      product?: { name?: string } | Array<{ name?: string }>;
+    }) => ({
+      id: item.id,
+      product_id: item.product_id,
+      product_name: Array.isArray(item.product) 
+        ? item.product[0]?.name || 'Unknown Product'
+        : (item.product as { name?: string })?.name || 'Unknown Product',
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total_price: item.total_price
+    }));
+
     return NextResponse.json({
       success: true,
       valid: true,
@@ -122,7 +141,7 @@ export async function POST(request: NextRequest) {
         receipt_number: sale.receipt_number,
         transaction_date: sale.transaction_date,
         customer_id: sale.customer_id,
-        items: sale.items || []
+        items: transformedItems
       },
       existing_returns: existingReturns || []
     } as ValidateReturnResponse);

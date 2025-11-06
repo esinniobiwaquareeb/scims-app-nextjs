@@ -181,7 +181,7 @@ export const ExchangeModal: React.FC<ExchangeModalProps> = ({
   };
 
   // Calculate trade-in value
-  const handleCalculateTradeInValue = async (item: Partial<ExchangeItem>) => {
+  const handleCalculateTradeInValue = async (item: Partial<ExchangeItem> & { estimated_value?: number }) => {
     if (!item.condition || (!item.product_id && !item.product_name && !item.estimated_value)) {
       return;
     }
