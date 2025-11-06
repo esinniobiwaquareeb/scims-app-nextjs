@@ -11,6 +11,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Loader2,
   CheckCircle,
@@ -34,6 +36,7 @@ export default function VerifyEmailPage() {
     name: string;
   } | null>(null);
   const [token, setToken] = useState('');
+  const [email, setEmail] = useState('');
 
   const handleVerification = React.useCallback(async (verificationToken?: string) => {
     const tokenToUse = verificationToken || token;
@@ -83,15 +86,33 @@ export default function VerifyEmailPage() {
 
 
   const handleResendVerification = async () => {
+    if (!email) {
+      setError('Please enter your email address to resend the verification email.');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
     setSuccess('');
 
     try {
-      // This would require implementing a resend verification endpoint
-      // For now, we'll show a message
-      setSuccess('Please contact support to resend your verification email.');
-    } catch {
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSuccess(result.message || 'Verification email has been sent. Please check your inbox and click the verification link.');
+      } else {
+        setError(result.error || 'Failed to resend verification email. Please try again.');
+      }
+    } catch (error) {
+      console.error('Resend verification error:', error);
       setError('Failed to resend verification email. Please try again.');
     } finally {
       setIsLoading(false);
@@ -159,21 +180,34 @@ export default function VerifyEmailPage() {
                   {error}
                 </AlertDescription>
               </Alert>
-              <div className="space-y-2">
-                <Button
-                  onClick={() => handleVerification()}
-                  variant="outline"
-                  className="w-full"
-                  disabled={!token}
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Try Again
-                </Button>
+              <div className="space-y-4">
+                {token && (
+                  <Button
+                    onClick={() => handleVerification()}
+                    variant="outline"
+                    className="w-full"
+                    disabled={!token}
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Try Again
+                  </Button>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="resend-email">Email Address</Label>
+                  <Input
+                    id="resend-email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
                 <Button
                   onClick={handleResendVerification}
                   variant="outline"
                   className="w-full"
-                  disabled={isLoading}
+                  disabled={isLoading || !email}
                 >
                   {isLoading ? (
                     <>
@@ -207,12 +241,23 @@ export default function VerifyEmailPage() {
                 <p>Please check your email for a verification link.</p>
                 <p>Click the link in the email to verify your account.</p>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-4">
+                <div className="space-y-2 text-left">
+                  <Label htmlFor="resend-email-no-token">Email Address</Label>
+                  <Input
+                    id="resend-email-no-token"
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
                 <Button
                   onClick={handleResendVerification}
                   variant="outline"
                   className="w-full"
-                  disabled={isLoading}
+                  disabled={isLoading || !email}
                 >
                   {isLoading ? (
                     <>
