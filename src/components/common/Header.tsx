@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,6 +12,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ArrowLeft, LogOut, Store, Building2, User, Settings } from 'lucide-react';
+import { UserProfileModal } from './UserProfileModal';
+import { UserSettingsModal } from './UserSettingsModal';
 
 interface HeaderProps {
   title: string;
@@ -34,6 +36,8 @@ export const Header: React.FC<HeaderProps> = ({
   children 
 }) => {
   const { user, logout, currentBusiness, currentStore, switchStore } = useAuth();
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const handleStoreChange = (value: string) => {
     if (value === 'all') {
@@ -166,11 +170,11 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowProfileModal(true)}>
                     <User className="w-4 h-4 mr-2" />
                     <span>Profile</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowSettingsModal(true)}>
                     <Settings className="w-4 h-4 mr-2" />
                     <span>Settings</span>
                   </DropdownMenuItem>
@@ -192,6 +196,18 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Profile Modal */}
+      <UserProfileModal 
+        open={showProfileModal} 
+        onOpenChange={setShowProfileModal} 
+      />
+
+      {/* Settings Modal */}
+      <UserSettingsModal 
+        open={showSettingsModal} 
+        onOpenChange={setShowSettingsModal} 
+      />
     </header>
   );
 };
