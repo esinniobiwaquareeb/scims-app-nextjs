@@ -7,11 +7,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { DataTable } from '@/components/common/DataTable';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Copy, 
   LogOut,
-  Building2
+  Building2,
+  Settings
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSystem } from '@/contexts/SystemContext';
@@ -48,6 +53,13 @@ interface Commission {
   commission_type: 'signup' | 'subscription';
   status: string;
   created_at: string;
+  currency_id?: string;
+  currency?: {
+    id: string;
+    code: string;
+    name: string;
+    symbol: string;
+  };
   business?: {
     name: string;
     email: string;
@@ -65,6 +77,19 @@ export default function AffiliateDashboardPage() {
   const [commissions, setCommissions] = useState<Commission[]>([]);
   const [referrals, setReferrals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileData, setProfileData] = useState({
+    name: '',
+    phone: '',
+    payment_method: '',
+    payment_details: {} as Record<string, unknown>
+  });
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
+  const [selectedCommission, setSelectedCommission] = useState<Commission | null>(null);
+  const [currencies, setCurrencies] = useState<Array<{ id: string; code: string; name: string; symbol: string }>>([]);
+  const [selectedCurrencyId, setSelectedCurrencyId] = useState<string>('');
+  const [currencyLoading, setCurrencyLoading] = useState(false);
 
   useEffect(() => {
     // Check if affiliate is logged in
@@ -101,11 +126,116 @@ export default function AffiliateDashboardPage() {
       if (referralsData.success) {
         setReferrals(referralsData.referrals || []);
       }
+
+      // Load profile data (Issue #6)
+      const profileRes = await fetch(`/api/affiliates/profile?affiliate_id=${affiliateId}`);
+      const profileDataRes = await profileRes.json();
+      if (profileDataRes.success && profileDataRes.affiliate) {
+        setProfileData({
+          name: profileDataRes.affiliate.name || '',
+          phone: profileDataRes.affiliate.phone || '',
+          payment_method: profileDataRes.affiliate.payment_method || '',
+          payment_details: profileDataRes.affiliate.payment_details || {}
+        });
+      }
+
+      // Load currencies for commission currency editing (Issue #8)
+      const currenciesRes = await fetch('/api/currencies');
+      const currenciesData = await currenciesRes.json();
+      if (currenciesData.success) {
+        setCurrencies(currenciesData.currencies || []);
+      }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenProfileModal = () => {
+    if (affiliate) {
+      // Load fresh profile data
+      fetch(`/api/affiliates/profile?affiliate_id=${affiliate.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.affiliate) {
+            setProfileData({
+              name: data.affiliate.name || '',
+              phone: data.affiliate.phone || '',
+              payment_method: data.affiliate.payment_method || '',
+              payment_details: data.affiliate.payment_details || {}
+            });
+            setShowProfileModal(true);
+          }
+        });
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!affiliate) return;
+    setProfileLoading(true);
+    try {
+      const response = await fetch('/api/affiliates/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          affiliate_id: affiliate.id,
+          ...profileData
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Profile updated successfully');
+        setShowProfileModal(false);
+        // Update local affiliate data
+        const updatedAffiliate = { ...affiliate, ...data.affiliate };
+        setAffiliate(updatedAffiliate);
+        localStorage.setItem('affiliate', JSON.stringify(updatedAffiliate));
+      } else {
+        toast.error(data.error || 'Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handleOpenCurrencyModal = (commission: Commission) => {
+    setSelectedCommission(commission);
+    setSelectedCurrencyId(commission.currency_id || '');
+    setShowCurrencyModal(true);
+  };
+
+  const handleUpdateCommissionCurrency = async () => {
+    if (!selectedCommission) return;
+    setCurrencyLoading(true);
+    try {
+      const response = await fetch(`/api/affiliates/commissions/${selectedCommission.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currency_id: selectedCurrencyId || null
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Commission currency updated successfully');
+        setShowCurrencyModal(false);
+        // Reload commissions
+        loadDashboardData(affiliate!.id);
+      } else {
+        toast.error(data.error || 'Failed to update currency');
+      }
+    } catch (error) {
+      console.error('Error updating currency:', error);
+      toast.error('Failed to update currency');
+    } finally {
+      setCurrencyLoading(false);
     }
   };
 
@@ -159,8 +289,45 @@ export default function AffiliateDashboardPage() {
       key: 'commission_amount',
       label: 'Commission',
       render: (commission: Commission) => (
-        <div className="font-semibold text-primary">
-          {formatCurrency(commission.commission_amount)}
+        <div>
+          <div className="font-semibold text-primary">
+            {formatCurrency(commission.commission_amount)}
+          </div>
+          {commission.currency && (
+            <div className="text-xs text-muted-foreground">
+              {commission.currency.code} {commission.currency.symbol}
+            </div>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'currency',
+      label: 'Currency',
+      render: (commission: Commission) => (
+        <div className="flex items-center gap-2">
+          {commission.currency ? (
+            <>
+              <Badge variant="outline">{commission.currency.code}</Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleOpenCurrencyModal(commission)}
+                className="h-6 text-xs"
+              >
+                Change
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleOpenCurrencyModal(commission)}
+              className="h-6 text-xs"
+            >
+              Set Currency
+            </Button>
+          )}
         </div>
       )
     },
@@ -208,10 +375,16 @@ export default function AffiliateDashboardPage() {
                 <p className="text-sm text-muted-foreground">Welcome back, {affiliate.name}</p>
               </div>
             </div>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={handleOpenProfileModal}>
+                <Settings className="mr-2 h-4 w-4" />
+                Profile
+              </Button>
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -384,6 +557,187 @@ export default function AffiliateDashboardPage() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Profile Edit Modal (Issue #6) */}
+      <Dialog open={showProfileModal} onOpenChange={setShowProfileModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Profile</DialogTitle>
+            <DialogDescription>
+              Update your profile information and payment gateway details
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="profile-name">Name</Label>
+              <Input
+                id="profile-name"
+                value={profileData.name}
+                onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Your name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="profile-phone">Phone</Label>
+              <Input
+                id="profile-phone"
+                value={profileData.phone}
+                onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
+                placeholder="Phone number"
+              />
+            </div>
+            <div>
+              <Label htmlFor="profile-payment-method">Payment Method</Label>
+              <Select
+                value={profileData.payment_method}
+                onValueChange={(value) => setProfileData(prev => ({ ...prev, payment_method: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                  <SelectItem value="paypal">PayPal</SelectItem>
+                  <SelectItem value="stripe">Stripe</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {profileData.payment_method === 'bank_transfer' && (
+              <div className="space-y-2">
+                <Label>Bank Details</Label>
+                <Input
+                  placeholder="Bank Name"
+                  value={(profileData.payment_details as any)?.bank_name || ''}
+                  onChange={(e) => setProfileData(prev => ({
+                    ...prev,
+                    payment_details: { ...prev.payment_details, bank_name: e.target.value }
+                  }))}
+                />
+                <Input
+                  placeholder="Account Number"
+                  value={(profileData.payment_details as any)?.account_number || ''}
+                  onChange={(e) => setProfileData(prev => ({
+                    ...prev,
+                    payment_details: { ...prev.payment_details, account_number: e.target.value }
+                  }))}
+                />
+                <Input
+                  placeholder="Account Name"
+                  value={(profileData.payment_details as any)?.account_name || ''}
+                  onChange={(e) => setProfileData(prev => ({
+                    ...prev,
+                    payment_details: { ...prev.payment_details, account_name: e.target.value }
+                  }))}
+                />
+              </div>
+            )}
+            {profileData.payment_method === 'paypal' && (
+              <div>
+                <Label>PayPal Email</Label>
+                <Input
+                  type="email"
+                  placeholder="paypal@example.com"
+                  value={(profileData.payment_details as any)?.paypal_email || ''}
+                  onChange={(e) => setProfileData(prev => ({
+                    ...prev,
+                    payment_details: { ...prev.payment_details, paypal_email: e.target.value }
+                  }))}
+                />
+              </div>
+            )}
+            {profileData.payment_method === 'other' && (
+              <div>
+                <Label>Payment Details</Label>
+                <Textarea
+                  placeholder="Enter payment details"
+                  value={(profileData.payment_details as any)?.other_details || ''}
+                  onChange={(e) => setProfileData(prev => ({
+                    ...prev,
+                    payment_details: { ...prev.payment_details, other_details: e.target.value }
+                  }))}
+                  rows={3}
+                />
+              </div>
+            )}
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" className="flex-1" onClick={() => setShowProfileModal(false)}>
+                Cancel
+              </Button>
+              <Button className="flex-1" onClick={handleUpdateProfile} disabled={profileLoading}>
+                {profileLoading ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Currency Edit Modal (Issue #8) */}
+      <Dialog open={showCurrencyModal} onOpenChange={setShowCurrencyModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Update Commission Currency</DialogTitle>
+            <DialogDescription>
+              Change the currency for this commission. This can only be done for pending or approved commissions.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedCommission && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium">Commission Details</p>
+                <p className="text-sm text-muted-foreground">
+                  Business: {selectedCommission.business?.name || 'Unknown'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Amount: {formatCurrency(selectedCommission.commission_amount)}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Type: {selectedCommission.commission_type}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Status: {selectedCommission.status}
+                </p>
+              </div>
+            )}
+            <div>
+              <Label htmlFor="currency-select">Currency</Label>
+              <Select
+                value={selectedCurrencyId}
+                onValueChange={setSelectedCurrencyId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No Currency</SelectItem>
+                  {currencies.map((currency) => (
+                    <SelectItem key={currency.id} value={currency.id}>
+                      {currency.code} - {currency.name} ({currency.symbol})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" className="flex-1" onClick={() => setShowCurrencyModal(false)}>
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1" 
+                onClick={handleUpdateCommissionCurrency} 
+                disabled={currencyLoading || (selectedCommission?.status !== 'pending' && selectedCommission?.status !== 'approved')}
+              >
+                {currencyLoading ? 'Updating...' : 'Update Currency'}
+              </Button>
+            </div>
+            {selectedCommission && selectedCommission.status !== 'pending' && selectedCommission.status !== 'approved' && (
+              <p className="text-sm text-destructive">
+                Currency can only be changed for pending or approved commissions.
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

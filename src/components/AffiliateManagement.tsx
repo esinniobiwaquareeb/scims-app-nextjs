@@ -439,6 +439,21 @@ export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack
               </Button>
             </>
           )}
+          {affiliate.application_status === 'rejected' && (
+            <div className="flex flex-col gap-1">
+              <Badge variant="destructive" className="text-xs">
+                Rejected
+              </Badge>
+              {affiliate.rejection_reason && (
+                <p className="text-xs text-muted-foreground max-w-[150px] truncate" title={affiliate.rejection_reason}>
+                  {affiliate.rejection_reason}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Can reapply via application form
+              </p>
+            </div>
+          )}
           {affiliate.application_status === 'approved' && (
             <>
               <Button

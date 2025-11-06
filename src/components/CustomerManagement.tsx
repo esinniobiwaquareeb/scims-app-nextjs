@@ -39,7 +39,9 @@ import {
   Eye,
   Loader2,
   Users,
-  Building2
+  Building2,
+  UserCheck,
+  Share2
 } from 'lucide-react';
 import { Store } from '@/types/auth';
 import { Customer as DBCustomer } from '@/types/index';
@@ -57,6 +59,8 @@ interface Customer {
   createdAt: Date;
   storeId: string;
   storeName?: string;
+  isAffiliate?: boolean; // Issue #1 - indicates if customer is also an affiliate
+  affiliateId?: string; // Issue #1 - affiliate ID if customer is an affiliate
 }
 
 
@@ -123,6 +127,10 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showCustomerDetail, setShowCustomerDetail] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [showAssignAffiliateModal, setShowAssignAffiliateModal] = useState(false);
+  const [affiliates, setAffiliates] = useState<Array<{ id: string; name: string; affiliate_code: string }>>([]);
+  const [selectedAffiliateId, setSelectedAffiliateId] = useState<string>('');
+  const [assignLoading, setAssignLoading] = useState(false);
   
   // React Query hooks
   const {
@@ -157,6 +165,9 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
   // Loading states
   const isLoading = isLoadingCustomers || isLoadingSales || isLoadingCustomerSales;
 
+  // State for affiliate info per customer (Issue #1)
+  const [customerAffiliateMap, setCustomerAffiliateMap] = useState<Map<string, { id: string; name: string }>>(new Map());
+
   // Transform database customers to match our interface with calculated stats
   const customers = useMemo(() => {
     if (!dbCustomers || !storeSales) return [];
@@ -170,6 +181,9 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
         ? new Date(Math.max(...customerSales.map((s: DBSale) => new Date(s.transaction_date || s.created_at).getTime())))
         : undefined;
       
+      const customerEmail = customer.email?.toLowerCase();
+      const affiliateInfo = customerEmail ? customerAffiliateMap.get(customerEmail) : undefined;
+      
       return {
         id: customer.id,
         name: customer.name,
@@ -182,10 +196,12 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
         createdAt: new Date(customer.created_at || ''),
         lastPurchase,
         storeId: currentStore?.id || '',
-        storeName: currentStore?.name || ''
+        storeName: currentStore?.name || '',
+        isAffiliate: !!affiliateInfo, // Issue #1
+        affiliateId: affiliateInfo?.id // Issue #1
       };
     });
-  }, [dbCustomers, storeSales, currentStore?.id, currentStore?.name]);
+  }, [dbCustomers, storeSales, currentStore?.id, currentStore?.name, customerAffiliateMap]);
 
   // Check if phone number already exists (for validation)
   const isPhoneNumberExists = useCallback((phone: string, excludeCustomerId?: string) => {
@@ -428,6 +444,95 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
     }
   }, [currentStore?.id]);
 
+  // Load affiliates for assignment (Issue #2)
+  useEffect(() => {
+    const loadAffiliates = async () => {
+      try {
+        const response = await fetch('/api/affiliates');
+        const data = await response.json();
+        if (data.success) {
+          // Filter only active affiliates
+          const activeAffiliates = (data.affiliates || []).filter(
+            (a: any) => a.status === 'active' && a.application_status === 'approved'
+          );
+          setAffiliates(activeAffiliates);
+        }
+      } catch (error) {
+        console.error('Error loading affiliates:', error);
+      }
+    };
+    loadAffiliates();
+  }, []);
+
+  // Check if customers are also affiliates (Issue #1)
+  useEffect(() => {
+    const checkAffiliateStatus = async () => {
+      if (dbCustomers.length === 0) return;
+      
+      // Get all customer emails
+      const customerEmails = dbCustomers
+        .filter((c: DBCustomer) => c.email)
+        .map((c: DBCustomer) => c.email!.toLowerCase());
+
+      if (customerEmails.length === 0) return;
+
+      try {
+        // Check which emails belong to affiliates
+        const response = await fetch('/api/affiliates');
+        const data = await response.json();
+        if (data.success) {
+          const affiliateMap = new Map<string, { id: string; name: string }>();
+          (data.affiliates || []).forEach((aff: any) => {
+            if (aff.email && customerEmails.includes(aff.email.toLowerCase())) {
+              affiliateMap.set(aff.email.toLowerCase(), { id: aff.id, name: aff.name });
+            }
+          });
+          setCustomerAffiliateMap(affiliateMap);
+        }
+      } catch (error) {
+        console.error('Error checking affiliate status:', error);
+      }
+    };
+
+    checkAffiliateStatus();
+  }, [dbCustomers]);
+
+  const handleAssignAffiliate = async () => {
+    if (!selectedCustomer || !selectedAffiliateId || !currentBusiness?.id) {
+      toast.error('Please select a customer and affiliate');
+      return;
+    }
+
+    setAssignLoading(true);
+    try {
+      const response = await fetch('/api/affiliates/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          affiliate_id: selectedAffiliateId,
+          business_id: currentBusiness.id,
+          create_commission: true
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Affiliate assigned to customer successfully');
+        setShowAssignAffiliateModal(false);
+        setSelectedAffiliateId('');
+        // Refresh customers to show updated affiliate status
+        await refetchCustomers();
+      } else {
+        toast.error(data.error || 'Failed to assign affiliate');
+      }
+    } catch (error) {
+      console.error('Error assigning affiliate:', error);
+      toast.error('Failed to assign affiliate');
+    } finally {
+      setAssignLoading(false);
+    }
+  };
+
   const openEditDialog = (customer: Customer) => {
     setSelectedCustomer(customer);
     setFormData({
@@ -481,8 +586,16 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
           <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
             <User className="w-4 h-4 text-blue-600" />
           </div>
-          <div className="min-w-0">
-            <p className="font-medium break-words">{customer.name}</p>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className="font-medium break-words">{customer.name}</p>
+              {customer.isAffiliate && (
+                <Badge variant="default" className="text-xs">
+                  <UserCheck className="w-3 h-3 mr-1" />
+                  Affiliate
+                </Badge>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground flex items-center gap-1 break-words">
               <Phone className="w-3 h-3 flex-shrink-0" />
               {customer.phone}
@@ -564,6 +677,19 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
           <Button variant="ghost" size="sm" onClick={() => openEditDialog(customer)}>
             <Edit className="w-4 h-4" />
           </Button>
+          {currentBusiness && !customer.isAffiliate && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedCustomer(customer);
+                setShowAssignAffiliateModal(true);
+              }}
+              title="Assign affiliate to this customer"
+            >
+              <Share2 className="w-4 h-4" />
+            </Button>
+          )}
           <Button 
             variant="ghost" 
             size="sm"
@@ -1082,6 +1208,64 @@ export const CustomerManagement: React.FC<CustomerManagementProps> = ({ onBack }
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Assign Affiliate Modal (Issue #2) */}
+      <Dialog open={showAssignAffiliateModal} onOpenChange={setShowAssignAffiliateModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assign Affiliate to Customer</DialogTitle>
+            <DialogDescription>
+              Assign an affiliate to {selectedCustomer?.name}. This will create a referral record and commission.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedCustomer && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium">Customer</p>
+                <p className="text-sm text-muted-foreground">{selectedCustomer.name}</p>
+                <p className="text-sm text-muted-foreground">{selectedCustomer.email || selectedCustomer.phone}</p>
+              </div>
+            )}
+            <div>
+              <Label htmlFor="affiliate-select">Select Affiliate</Label>
+              <Select
+                value={selectedAffiliateId}
+                onValueChange={setSelectedAffiliateId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose an affiliate" />
+                </SelectTrigger>
+                <SelectContent>
+                  {affiliates.length === 0 ? (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">No active affiliates available</div>
+                  ) : (
+                    affiliates.map((affiliate) => (
+                      <SelectItem key={affiliate.id} value={affiliate.id}>
+                        {affiliate.name} ({affiliate.affiliate_code})
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" className="flex-1" onClick={() => {
+                setShowAssignAffiliateModal(false);
+                setSelectedAffiliateId('');
+              }}>
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1" 
+                onClick={handleAssignAffiliate}
+                disabled={assignLoading || !selectedAffiliateId || !currentBusiness?.id}
+              >
+                {assignLoading ? 'Assigning...' : 'Assign Affiliate'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
