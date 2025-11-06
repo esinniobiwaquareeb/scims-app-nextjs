@@ -5,10 +5,10 @@ import bcrypt from 'bcryptjs';
 // POST - Reset user password
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await params;
+    const { id: userId } = await params;
     const { newPassword } = await request.json();
 
     if (!userId) {
@@ -119,3 +119,4 @@ export async function POST(
     );
   }
 }
+
