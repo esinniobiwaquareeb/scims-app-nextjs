@@ -14,20 +14,14 @@ import {
   BarChart3, 
   Users, 
   Store, 
-  CreditCard, 
   Shield, 
   Globe, 
-  TrendingUp,
   MessageSquare,
   Settings,
   Zap,
-  Lock,
   Cloud,
-  Activity,
   Truck,
-  UserCheck,
-  TabletSmartphone,
-  Database
+  TabletSmartphone
 } from 'lucide-react';
 
 export default function FeaturesPage() {
@@ -161,65 +155,68 @@ export default function FeaturesPage() {
         onStartDemo={handleStartDemo}
       />
 
-      {/* Hero Section */}
-      <section className="relative py-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        <div className="relative max-w-7xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
-            Everything Your Business Needs
-            <span className="text-primary block">
-              + FREE ₦500,000 Website
-            </span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-            <strong>Stop paying for separate systems!</strong> Get complete business management (POS, inventory, analytics) 
-            PLUS a professional online store that works 24/7. Everything you need to grow your business.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button 
-              className="bg-primary text-primary-foreground px-8 py-4 rounded-lg hover:bg-primary/90 transition-colors duration-200 text-lg shadow-lg hover:shadow-xl"
-              onClick={handleGetStarted}
-            >
-              Get FREE Website + Start Trial
-            </button>
-            <button 
-              className="border border-primary text-primary px-8 py-4 rounded-lg hover:bg-primary/10 transition-colors duration-200 text-lg"
-              onClick={() => handleStartDemo('store_admin')}
-            >
-              See Live Demo
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
-        <div className="max-w-7xl mx-auto">
-          <SectionHeader
-            badge="🎁 FREE Website Included"
-            title="Complete Business Solution + FREE ₦500,000 Website"
-            description="Get everything your business needs in one platform - POS, inventory, analytics, CRM, AND a professional online store worth ₦500,000 absolutely FREE!"
-            maxWidth="4xl"
-          />
-
-          {/* Feature Categories */}
-          <div className="mb-12">
-            <div className="flex flex-wrap justify-center gap-4 mb-8">
-              {featureCategories.map((category) => (
-                <button
-                  key={category}
-                  className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                    category === 'All' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
+      <main>
+        {/* Hero Section */}
+        <section className="relative py-20 sm:py-24 lg:py-32 px-4 sm:px-6 lg:px-8 overflow-hidden bg-gradient-to-b from-background to-muted/20">
+          <div className="relative max-w-7xl mx-auto text-center pt-16 sm:pt-20">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 sm:mb-8 leading-tight">
+              Everything Your Business Needs
+              <span className="text-primary block mt-2 sm:mt-3">
+                + FREE ₦500,000 Website
+              </span>
+            </h1>
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-3xl mx-auto leading-relaxed px-4">
+              <strong>Stop paying for separate systems!</strong> Get complete business management (POS, inventory, analytics) 
+              PLUS a professional online store that works 24/7. Everything you need to grow your business.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
+              <button 
+                className="bg-primary text-primary-foreground px-6 sm:px-8 py-3 sm:py-4 rounded-lg hover:bg-primary/90 transition-all duration-200 text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl touch-manipulation"
+                onClick={handleGetStarted}
+                aria-label="Get free website and start trial"
+              >
+                Get FREE Website + Start Trial
+              </button>
+              <button 
+                className="border-2 border-primary text-primary px-6 sm:px-8 py-3 sm:py-4 rounded-lg hover:bg-primary/10 transition-all duration-200 text-base sm:text-lg font-semibold touch-manipulation"
+                onClick={() => handleStartDemo('store_admin')}
+                aria-label="See live demo"
+              >
+                See Live Demo
+              </button>
             </div>
           </div>
+        </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* Features Section */}
+        <section className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-muted/30" aria-label="Features">
+          <div className="max-w-7xl mx-auto">
+            <SectionHeader
+              badge="🎁 FREE Website Included"
+              title="Complete Business Solution + FREE ₦500,000 Website"
+              description="Get everything your business needs in one platform - POS, inventory, analytics, CRM, AND a professional online store worth ₦500,000 absolutely FREE!"
+              maxWidth="4xl"
+            />
+
+            {/* Feature Categories */}
+            <div className="mb-8 sm:mb-12">
+              <div className="flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8 overflow-x-auto pb-2 sm:pb-0">
+                {featureCategories.map((category) => (
+                  <button
+                    key={category}
+                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition-all touch-manipulation whitespace-nowrap ${
+                      category === 'All' 
+                        ? 'bg-primary text-primary-foreground shadow-md' 
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80 border border-border/50'
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {features.map((feature, index) => (
               <FeatureCard
                 key={index}
@@ -236,32 +233,33 @@ export default function FeaturesPage() {
             ))}
           </div>
 
-          {/* Feature Highlights */}
-          <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-8 h-8 text-primary" />
+            {/* Feature Highlights */}
+            <div className="mt-12 sm:mt-16 lg:mt-20 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+              <div className="text-center p-6 sm:p-8 rounded-xl bg-background/50 border border-border/50 hover:border-primary/50 transition-colors">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Zap className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">Lightning Fast</h3>
+                <p className="text-sm sm:text-base text-muted-foreground">Optimized for speed with instant responses and real-time updates</p>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Lightning Fast</h3>
-              <p className="text-muted-foreground">Optimized for speed with instant responses and real-time updates</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Shield className="w-8 h-8 text-primary" />
+              <div className="text-center p-6 sm:p-8 rounded-xl bg-background/50 border border-border/50 hover:border-primary/50 transition-colors">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Shield className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">Enterprise Security</h3>
+                <p className="text-sm sm:text-base text-muted-foreground">Bank-level security with encryption and compliance standards</p>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Enterprise Security</h3>
-              <p className="text-muted-foreground">Bank-level security with encryption and compliance standards</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Globe className="w-8 h-8 text-primary" />
+              <div className="text-center p-6 sm:p-8 rounded-xl bg-background/50 border border-border/50 hover:border-primary/50 transition-colors">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Globe className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">Global Ready</h3>
+                <p className="text-sm sm:text-base text-muted-foreground">Multi-currency, multi-language support for worldwide businesses</p>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Global Ready</h3>
-              <p className="text-muted-foreground">Multi-currency, multi-language support for worldwide businesses</p>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
       <Footer />
     </div>

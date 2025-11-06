@@ -18,11 +18,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SCIMS - Stock Control Inventory Management System",
-  description: "Professional inventory management system for businesses",
+  title: {
+    default: "SCIMS - Complete Business Management System | POS, Inventory & FREE Website",
+    template: "%s | SCIMS"
+  },
+  description: "Transform your business with SCIMS - complete POS, inventory management, business analytics, and a FREE professional website (worth ₦500,000). Support for retail, restaurant, pharmacy, and service businesses. 14-day free trial!",
+  keywords: ["POS system", "inventory management", "business management software", "retail management", "restaurant POS", "pharmacy management", "service business software", "free business website"],
   manifest: "/manifest.json",
   themeColor: "#3B82F6",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=5",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

@@ -100,8 +100,8 @@ export function generateMetadata(config: Partial<SEOConfig>): Metadata {
 // SEO configurations for different pages
 export const seoConfigs = {
   home: {
-    title: 'SCIMS - Stock Control & Inventory Management System | POS, Inventory & Business Management',
-    description: 'Transform your business with SCIMS - the complete POS, inventory management, and business analytics platform. Support for retail, restaurant, pharmacy, and service businesses. Start your free trial today!',
+    title: 'SCIMS - Complete Business Management System | POS, Inventory & FREE Website',
+    description: 'Transform your business with SCIMS - complete POS, inventory management, business analytics, and a FREE professional website (worth ₦500,000). Support for retail, restaurant, pharmacy, and service businesses. 14-day free trial, no credit card required. Start selling online 24/7!',
     keywords: [
       'POS system',
       'inventory management',
@@ -117,12 +117,23 @@ export const seoConfigs = {
       'business software Nigeria',
       'business software Africa',
       'cloud-based POS',
-      'offline POS system'
+      'offline POS system',
+      'free business website',
+      'online store builder',
+      'e-commerce platform',
+      'business management platform',
+      'retail POS system',
+      'restaurant management software',
+      'pharmacy software',
+      'service business management',
+      'business automation',
+      'sales management',
+      'stock control system'
     ],
     canonical: baseUrl,
     openGraph: {
-      title: 'SCIMS - Stock Control & Inventory Management System',
-      description: 'Transform your business with SCIMS - the complete POS, inventory management, and business analytics platform.',
+      title: 'SCIMS - Complete Business Management System | POS, Inventory & FREE Website',
+      description: 'Transform your business with SCIMS - complete POS, inventory management, business analytics, and a FREE professional website (worth ₦500,000). Support for retail, restaurant, pharmacy, and service businesses. 14-day free trial!',
       url: baseUrl,
       siteName,
       images: [
@@ -130,7 +141,7 @@ export const seoConfigs = {
           url: `${baseUrl}/og-home.jpg`,
           width: 1200,
           height: 630,
-          alt: 'SCIMS - Complete Business Management Solution'
+          alt: 'SCIMS - Complete Business Management Solution with FREE Website'
         }
       ],
       locale: 'en_US',
@@ -138,8 +149,8 @@ export const seoConfigs = {
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'SCIMS - Stock Control & Inventory Management System',
-      description: 'Transform your business with SCIMS - the complete POS, inventory management, and business analytics platform.',
+      title: 'SCIMS - Complete Business Management System | POS, Inventory & FREE Website',
+      description: 'Transform your business with SCIMS - complete POS, inventory management, business analytics, and a FREE professional website (worth ₦500,000). 14-day free trial!',
       images: [`${baseUrl}/og-home.jpg`]
     }
   },

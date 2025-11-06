@@ -142,34 +142,34 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3 pb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-2.5 md:gap-3 pb-4">
                 {filteredProducts.map(product => (
                   <Card 
                     key={`${product.id}-${product.stock_quantity}`} 
-                    className={`transition-all duration-200 transform hover:scale-105 active:scale-95 touch-manipulation group border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg ${
+                    className={`transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] touch-manipulation group border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md active:shadow-sm ${
                       product.stock_quantity <= 0 
                         ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800' 
-                        : 'cursor-pointer bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
+                        : 'cursor-pointer bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-blue-300 dark:hover:border-blue-600 active:bg-gray-100 dark:active:bg-gray-600'
                     }`}
                     onClick={() => product.stock_quantity > 0 && onProductClick(product)}
                   >
-                    <CardContent className="p-1.5 sm:p-2">
-                      <div className="aspect-square mb-2 sm:mb-3 bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden relative">
+                    <CardContent className="p-2 sm:p-2.5 md:p-3">
+                      <div className="aspect-square mb-2 sm:mb-2.5 md:mb-3 bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden relative">
                         <ImageWithFallback
                           src={product.image_url || undefined}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         />
                         {product.stock_quantity <= 5 && product.stock_quantity > 0 && (
-                          <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
-                            <Badge variant="destructive" className="text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 sm:py-1 font-medium">
+                          <div className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 md:top-2 md:right-2">
+                            <Badge variant="destructive" className="text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-1.5 md:px-2 py-0.5 sm:py-0.5 md:py-1 font-medium">
                               Low
                             </Badge>
                           </div>
                         )}
                         {product.stock_quantity <= 0 && (
-                          <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
-                            <Badge variant="secondary" className="text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 sm:py-1 font-medium bg-gray-500 dark:bg-gray-600 text-white">
+                          <div className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 md:top-2 md:right-2">
+                            <Badge variant="secondary" className="text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-1.5 md:px-2 py-0.5 sm:py-0.5 md:py-1 font-medium bg-gray-500 dark:bg-gray-600 text-white">
                               Out
                             </Badge>
                           </div>
@@ -177,11 +177,11 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
                       </div>
                       
                       <div className="space-y-0.5 sm:space-y-1">
-                        <p className="font-medium text-xs sm:text-sm line-clamp-2 leading-tight text-gray-900 dark:text-gray-100">{product.name}</p>
-                        <p className="text-sm sm:text-base font-bold text-gray-900 dark:text-gray-100">
+                        <p className="font-medium text-[11px] sm:text-xs md:text-sm line-clamp-2 leading-tight text-gray-900 dark:text-gray-100 min-h-[2.5em]">{product.name}</p>
+                        <p className="text-xs sm:text-sm md:text-base font-bold text-gray-900 dark:text-gray-100">
                           {formatCurrency(product.price)}
                         </p>
-                        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium">
+                        <p className="text-[9px] sm:text-[10px] md:text-xs text-gray-500 dark:text-gray-400 font-medium">
                           {product.stock_quantity} in stock
                         </p>
                       </div>

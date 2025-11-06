@@ -983,7 +983,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
     <div className={`min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
       <main className={`w-full ${isFullscreen ? 'h-screen' : 'h-screen'}`}>
         {/* Main POS Content */}
-        <div className={`h-full w-full flex flex-col lg:flex-row gap-2 sm:gap-3 lg:gap-6 p-2 sm:p-3 lg:p-6 pb-16 sm:pb-20 ${isFullscreen ? 'h-[calc(100vh-20px)]' : 'h-[calc(100vh-20px)]'}`}>
+        <div className={`h-full w-full flex flex-col lg:flex-row gap-2 sm:gap-2.5 md:gap-3 lg:gap-6 p-2 sm:p-2.5 md:p-3 lg:p-6 pb-14 sm:pb-16 md:pb-20 ${isFullscreen ? 'h-[calc(100vh-20px)]' : 'h-[calc(100vh-20px)]'}`}>
           {/* Error Display - Removed as error state is commented out */}
 
           {/* Products Section - Left Side */}

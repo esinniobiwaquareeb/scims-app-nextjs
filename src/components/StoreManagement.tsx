@@ -467,101 +467,118 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
       >
       {/* Add Store Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add New Store</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">Add New Store</DialogTitle>
+            <DialogDescription className="text-sm">
               Create a new store for your business. Fill in the required information below.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <Label htmlFor="store-name">Store Name *</Label>
+                <Label htmlFor="store-name" className="text-sm">Store Name *</Label>
                 <Input
                   id="store-name"
                   value={newStore.name}
                   onChange={(e) => setNewStore({ ...newStore, name: e.target.value })}
                   placeholder="Enter store name"
                   autoFocus
+                  className="mt-1 text-sm sm:text-base"
                 />
               </div>
               <div>
-                <Label htmlFor="store-phone">Phone</Label>
+                <Label htmlFor="store-phone" className="text-sm">Phone</Label>
                 <Input
                   id="store-phone"
                   value={newStore.phone}
                   onChange={(e) => setNewStore({ ...newStore, phone: e.target.value })}
                   placeholder="Enter phone number"
+                  className="mt-1 text-sm sm:text-base"
                 />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="store-address">Address</Label>
+              <Label htmlFor="store-address" className="text-sm">Address</Label>
               <Input
                 id="store-address"
                 value={newStore.address}
                 onChange={(e) => setNewStore({ ...newStore, address: e.target.value })}
                 placeholder="Enter street address"
+                className="mt-1 text-sm sm:text-base"
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
               <div>
-                <Label htmlFor="store-city">City</Label>
+                <Label htmlFor="store-city" className="text-sm">City</Label>
                 <Input
                   id="store-city"
                   value={newStore.city}
                   onChange={(e) => setNewStore({ ...newStore, city: e.target.value })}
                   placeholder="Enter city"
+                  className="mt-1 text-sm sm:text-base"
                 />
               </div>
               <div>
-                <Label htmlFor="store-state">State/Province</Label>
+                <Label htmlFor="store-state" className="text-sm">State/Province</Label>
                 <Input
                   id="store-state"
                   value={newStore.state}
                   onChange={(e) => setNewStore({ ...newStore, state: e.target.value })}
                   placeholder="Enter state"
+                  className="mt-1 text-sm sm:text-base"
                 />
               </div>
-              <div>
-                <Label htmlFor="store-postal">Postal Code</Label>
+              <div className="sm:col-span-2 md:col-span-1">
+                <Label htmlFor="store-postal" className="text-sm">Postal Code</Label>
                 <Input
                   id="store-postal"
                   value={newStore.postal_code}
                   onChange={(e) => setNewStore({ ...newStore, postal_code: e.target.value })}
                   placeholder="Enter postal code"
+                  className="mt-1 text-sm sm:text-base"
                 />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="store-email">Email</Label>
+              <Label htmlFor="store-email" className="text-sm">Email</Label>
               <Input
                 id="store-email"
                 type="email"
                 value={newStore.email}
                 onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
                 placeholder="Enter email address"
+                className="mt-1 text-sm sm:text-base"
               />
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <Switch
                 id="store-active"
                 checked={newStore.is_active}
                 onCheckedChange={(checked) => setNewStore({ ...newStore, is_active: checked })}
+                className="touch-manipulation"
               />
-              <Label htmlFor="store-active">Store is active</Label>
+              <Label htmlFor="store-active" className="text-sm cursor-pointer">Store is active</Label>
             </div>
 
-            <div className="flex gap-2 justify-end pt-4 border-t">
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={submitting}>
+            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 justify-end pt-3 sm:pt-4 border-t">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsAddDialogOpen(false)} 
+                disabled={submitting}
+                className="w-full sm:w-auto touch-manipulation"
+              >
                 Cancel
               </Button>
-              <Button onClick={handleAddStore} disabled={submitting}>
+              <Button 
+                onClick={handleAddStore} 
+                disabled={submitting}
+                className="w-full sm:w-auto touch-manipulation"
+              >
                 {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Create Store
               </Button>
@@ -632,102 +649,119 @@ export const StoreManagement: React.FC<StoreManagementProps> = ({ onBack }) => {
 
         {/* Edit Store Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Store</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-lg sm:text-xl">Edit Store</DialogTitle>
+              <DialogDescription className="text-sm">
                 Update store information and settings.
               </DialogDescription>
             </DialogHeader>
             {selectedStore && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <Label htmlFor="edit-store-name">Store Name</Label>
+                    <Label htmlFor="edit-store-name" className="text-sm">Store Name</Label>
                     <Input
                       id="edit-store-name"
                       value={newStore.name}
                       onChange={(e) => setNewStore({ ...newStore, name: e.target.value })}
                       placeholder="Enter store name"
                       autoFocus
+                      className="mt-1 text-sm sm:text-base"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="edit-store-phone">Phone</Label>
+                    <Label htmlFor="edit-store-phone" className="text-sm">Phone</Label>
                     <Input
                       id="edit-store-phone"
                       value={newStore.phone}
                       onChange={(e) => setNewStore({ ...newStore, phone: e.target.value })}
                       placeholder="Enter phone number"
+                      className="mt-1 text-sm sm:text-base"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="edit-store-address">Address</Label>
+                  <Label htmlFor="edit-store-address" className="text-sm">Address</Label>
                   <Input
                     id="edit-store-address"
                     value={newStore.address}
                     onChange={(e) => setNewStore({ ...newStore, address: e.target.value })}
                     placeholder="Enter street address"
+                    className="mt-1 text-sm sm:text-base"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                   <div>
-                    <Label htmlFor="edit-store-city">City</Label>
+                    <Label htmlFor="edit-store-city" className="text-sm">City</Label>
                     <Input
                       id="edit-store-city"
                       value={newStore.city}
                       onChange={(e) => setNewStore({ ...newStore, city: e.target.value })}
                       placeholder="Enter city"
+                      className="mt-1 text-sm sm:text-base"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="edit-store-state">State/Province</Label>
+                    <Label htmlFor="edit-store-state" className="text-sm">State/Province</Label>
                     <Input
                       id="edit-store-state"
                       value={newStore.state}
                       onChange={(e) => setNewStore({ ...newStore, state: e.target.value })}
                       placeholder="Enter state"
+                      className="mt-1 text-sm sm:text-base"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="edit-store-postal">Postal Code</Label>
+                  <div className="sm:col-span-2 md:col-span-1">
+                    <Label htmlFor="edit-store-postal" className="text-sm">Postal Code</Label>
                     <Input
                       id="edit-store-postal"
                       value={newStore.postal_code}
                       onChange={(e) => setNewStore({ ...newStore, postal_code: e.target.value })}
                       placeholder="Enter postal code"
+                      className="mt-1 text-sm sm:text-base"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="edit-store-email">Email</Label>
+                  <Label htmlFor="edit-store-email" className="text-sm">Email</Label>
                   <Input
                     id="edit-store-email"
                     type="email"
                     value={newStore.email}
                     onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
                     placeholder="Enter email address"
+                    className="mt-1 text-sm sm:text-base"
                   />
                 </div>
 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 sm:space-x-3">
                   <Switch
                     id="edit-store-active"
                     checked={newStore.is_active}
                     onCheckedChange={(checked) => setNewStore({ ...newStore, is_active: checked })}
+                    className="touch-manipulation"
                   />
-                  <Label htmlFor="edit-store-active">Store is active</Label>
+                  <Label htmlFor="edit-store-active" className="text-sm cursor-pointer">Store is active</Label>
                 </div>
 
-                <div className="flex gap-2 justify-end pt-4 border-t">
-                  <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={submitting}>
+                <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 justify-end pt-3 sm:pt-4 border-t">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsEditDialogOpen(false)} 
+                    disabled={submitting}
+                    className="w-full sm:w-auto touch-manipulation"
+                  >
                     Cancel
                   </Button>
-                  <Button onClick={handleUpdateStore} disabled={submitting}>
+                  <Button 
+                    onClick={handleUpdateStore} 
+                    disabled={submitting}
+                    className="w-full sm:w-auto touch-manipulation"
+                  >
                     {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     Update Store
                   </Button>

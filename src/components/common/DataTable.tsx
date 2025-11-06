@@ -314,9 +314,9 @@ export function DataTable<T extends { id: string }>({
 
   return (
     <Card>
-      <CardHeader className="p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <CardTitle className="text-lg font-semibold">
+      <CardHeader className="p-3 sm:p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <CardTitle className="text-base sm:text-lg font-semibold">
             {title}
           </CardTitle>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
@@ -325,7 +325,7 @@ export function DataTable<T extends { id: string }>({
               variant="outline" 
               size="sm"
               onClick={() => setIsMobileView(!isMobileView)}
-              className="w-full sm:hidden"
+              className="w-full sm:hidden touch-manipulation"
             >
               {isMobileView ? (
                 <>
@@ -397,29 +397,36 @@ export function DataTable<T extends { id: string }>({
       <CardContent className="p-3 sm:p-6">
         {/* Mobile Card View - only on small screens */}
         {isMobileView && (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {currentData.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-muted-foreground text-sm">
                 {emptyMessage}
               </div>
             ) : (
               currentData.map((item) => (
-                <Card key={item.id} className="p-4">
-                  <div className="space-y-3">
-                    {columns.map((column, index) => (
-                      <div key={column.key || column.accessorKey || index} className="flex flex-col">
-                        <span className="text-sm font-medium text-muted-foreground mb-1">
-                          {column.label || column.header}
-                        </span>
-                        <div className="text-sm">
-                          {column.render ? column.render(item) : 
-                           column.cell ? column.cell(item) :
-                           column.key ? String((item as Record<string, unknown>)[column.key] || '') :
-                           column.accessorKey ? String((item as Record<string, unknown>)[column.accessorKey] || '') :
-                           'N/A'}
+                <Card key={item.id} className="p-3 sm:p-4 border shadow-sm">
+                  <div className="space-y-2.5 sm:space-y-3">
+                    {columns.map((column, index) => {
+                      const value = column.render ? column.render(item) : 
+                                   column.cell ? column.cell(item) :
+                                   column.key ? String((item as Record<string, unknown>)[column.key] || '') :
+                                   column.accessorKey ? String((item as Record<string, unknown>)[column.accessorKey] || '') :
+                                   'N/A';
+                      // Skip empty values in mobile view for cleaner display
+                      if (!value || value === 'N/A' || (typeof value === 'string' && value.trim() === '')) {
+                        return null;
+                      }
+                      return (
+                        <div key={column.key || column.accessorKey || index} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 pb-2 sm:pb-0 border-b sm:border-b-0 last:border-b-0">
+                          <span className="text-xs sm:text-sm font-medium text-muted-foreground mb-0.5 sm:mb-0">
+                            {column.label || column.header}:
+                          </span>
+                          <div className="text-xs sm:text-sm text-foreground break-words">
+                            {value}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </Card>
               ))

@@ -147,39 +147,39 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   return (
-    <div className="w-full lg:w-96 xl:w-[420px] flex flex-col space-y-3 h-[calc(100vh-100px)]">
+    <div className="w-full lg:w-96 xl:w-[420px] flex flex-col space-y-2 sm:space-y-3 h-[calc(100vh-80px)] sm:h-[calc(100vh-100px)] lg:h-[calc(100vh-100px)]">
       {/* Compact Cart Header with Actions */}
       <Card className="flex-shrink-0 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <CardContent className="p-2">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <ShoppingCartIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-              <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">{translate('pos.cart') || 'Cart'} ({(cart || []).length})</span>
+        <CardContent className="p-2 sm:p-2.5 md:p-3">
+          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <ShoppingCartIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-700 dark:text-gray-300" />
+              <span className="font-semibold text-xs sm:text-sm text-gray-900 dark:text-gray-100">{translate('pos.cart') || 'Cart'} ({(cart || []).length})</span>
             </div>
             {hasItems && (
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={onClearCart}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-200 border-2 border-red-200 rounded-lg h-8 w-8 p-0 transition-all duration-200"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-200 border-2 border-red-200 rounded-lg h-7 w-7 sm:h-8 sm:w-8 p-0 transition-all duration-200 touch-manipulation"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </Button>
             )}
           </div>
           
           {/* Cart Actions Row */}
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3">
             {/* Save button - only show when there are items to save */}
             {hasItems && (
               <Button 
                 onClick={onSaveCart}
                 variant="outline"
                 size="sm"
-                className="flex-1 h-9 text-sm border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 transition-all duration-200"
+                className="flex-1 h-8 sm:h-9 text-xs sm:text-sm border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 transition-all duration-200 touch-manipulation"
               >
-                <Save className="w-4 h-4 mr-2" />
-                Save
+                <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                <span className="hidden sm:inline">Save</span>
               </Button>
             )}
             {/* Load button - always show so cashiers can load saved carts */}
@@ -187,12 +187,12 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
               onClick={onLoadSavedCarts}
               variant="outline"
               size="sm"
-              className={`h-9 text-sm border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 transition-all duration-200 ${
+              className={`h-8 sm:h-9 text-xs sm:text-sm border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 transition-all duration-200 touch-manipulation ${
                 hasItems ? 'flex-1' : 'w-full'
               }`}
             >
-              <Clock className="w-4 h-4 mr-2" />
-              Load
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+              <span className="hidden sm:inline">Load</span>
             </Button>
           </div>
         </CardContent>
@@ -333,15 +333,15 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
 
       {/* Compact Payment Section - Only show when items exist */}
       {hasItems && (
-        <Card className="flex-shrink-0">
-          <CardContent className="p-2">
-            <div className="space-y-2">
+        <Card className="flex-shrink-0 border-t-2 border-gray-200 dark:border-gray-700">
+          <CardContent className="p-2 sm:p-2.5 md:p-3">
+            <div className="space-y-2 sm:space-y-2.5">
               {/* Sale Success Indicator - Compact */}
               {showSaleSuccess && lastSaleInfo && (
-                <div className="bg-green-50 border border-green-200 rounded p-1.5 mb-2">
-                  <div className="flex items-center gap-2 text-green-800">
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-1.5 sm:p-2 mb-1.5 sm:mb-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-green-800 dark:text-green-200">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="font-medium text-xs">Previous Sale: #{lastSaleInfo.receiptNumber}</span>
+                    <span className="font-medium text-[10px] sm:text-xs">Previous Sale: #{lastSaleInfo.receiptNumber}</span>
                   </div>
                 </div>
               )}
@@ -356,47 +356,47 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
                   productIds={cart?.map(item => item.product.id)}
                   onDiscountApplied={onDiscountApplied}
                   appliedDiscount={appliedDiscount}
-                  className="mb-3"
+                  className="mb-2 sm:mb-3"
                 />
               )}
 
               {/* Compact Order Summary */}
-              <div className="space-y-1 text-xs">
-                <div className="flex justify-between">
+              <div className="space-y-1 sm:space-y-1.5 text-[11px] sm:text-xs">
+                <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Subtotal:</span>
-                  <span>{formatCurrency(calculateSubtotal())}</span>
+                  <span className="font-medium">{formatCurrency(calculateSubtotal())}</span>
                 </div>
                 {calculateDiscount() > 0 && (
-                  <div className="flex justify-between text-green-600">
+                  <div className="flex justify-between items-center text-green-600 dark:text-green-400">
                     <span className="text-muted-foreground">Discount:</span>
-                    <span>-{formatCurrency(calculateDiscount())}</span>
+                    <span className="font-medium">-{formatCurrency(calculateDiscount())}</span>
                   </div>
                 )}
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Tax:</span>
-                  <span>{formatCurrency(calculateTax())}</span>
+                  <span className="font-medium">{formatCurrency(calculateTax())}</span>
                 </div>
-                <Separator className="my-1.5" />
-                <div className="flex justify-between font-semibold text-sm">
+                <Separator className="my-1 sm:my-1.5" />
+                <div className="flex justify-between items-center font-semibold text-xs sm:text-sm pt-1">
                   <span>Total:</span>
-                  <span className="text-base text-green-700">{formatCurrency(calculateTotal())}</span>
+                  <span className="text-sm sm:text-base md:text-lg text-green-700 dark:text-green-400">{formatCurrency(calculateTotal())}</span>
                 </div>
               </div>
 
               {/* Process Payment Button - Opens Modal */}
-              <div className="pt-3 pb-1">
+              <div className="pt-2 sm:pt-3 pb-1">
                 <Button 
                   onClick={() => setShowPaymentModal(true)}
-                  className="w-full"
+                  className="w-full h-9 sm:h-10 text-xs sm:text-sm font-semibold touch-manipulation"
                   size="sm"
                   disabled={(cart || []).length === 0}
                 >
-                  <CreditCard className="w-3 h-3 mr-1" />
+                  <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
                   {isSupplyMode ? 'Process Supply Order' : (translate('pos.processPayment') || 'Process Payment')}
                 </Button>
                 {/* Supply Mode Warning */}
                 {isSupplyMode && selectedCustomer?.id === 'walk-in' && (cart || []).length > 0 && (
-                  <p className="text-xs text-orange-600 text-center mt-2 font-medium">
+                  <p className="text-[10px] sm:text-xs text-orange-600 dark:text-orange-400 text-center mt-1.5 sm:mt-2 font-medium">
                     Please select a registered customer to process supply order
                   </p>
                 )}

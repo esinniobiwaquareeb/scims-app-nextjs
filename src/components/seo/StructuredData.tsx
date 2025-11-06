@@ -19,13 +19,18 @@ export const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) =>
           "alternateName": "Stock Control & Inventory Management System",
           "url": baseUrl,
           "logo": `${baseUrl}/logo.png`,
-          "description": "Stock Control & Inventory Management System - Complete business management solution for retail, restaurant, pharmacy, and service businesses.",
+          "description": "Stock Control & Inventory Management System - Complete business management solution with POS, inventory management, business analytics, and FREE professional website for retail, restaurant, pharmacy, and service businesses.",
           "foundingDate": "2024",
+          "numberOfEmployees": {
+            "@type": "QuantitativeValue",
+            "value": "50-100"
+          },
           "contactPoint": {
             "@type": "ContactPoint",
-            "telephone": "+1-555-123-4567",
+            "telephone": "+234-XXX-XXXX-XXX",
             "contactType": "customer service",
-            "email": "support@scims.com"
+            "email": "support@scims.app",
+            "availableLanguage": ["English", "French", "Swahili", "Yoruba", "Hausa", "Igbo"]
           },
           "sameAs": [
             "https://twitter.com/scims",
@@ -34,11 +39,7 @@ export const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) =>
           ],
           "address": {
             "@type": "PostalAddress",
-            "streetAddress": "123 Business Street",
-            "addressLocality": "City",
-            "addressRegion": "State",
-            "postalCode": "12345",
-            "addressCountry": "US"
+            "addressCountry": "NG"
           }
         };
 
@@ -49,26 +50,40 @@ export const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) =>
           "name": "SCIMS",
           "applicationCategory": "BusinessApplication",
           "operatingSystem": "Web, iOS, Android",
-          "description": "Complete business management solution with POS system, stock control, analytics, and multi-store management.",
+          "description": "Complete business management solution with POS system, stock control, analytics, multi-store management, and FREE professional website (worth ₦500,000). Support for retail, restaurant, pharmacy, and service businesses.",
           "url": baseUrl,
           "screenshot": `${baseUrl}/screenshot.png`,
-          "softwareVersion": "1.0",
+          "softwareVersion": "2.0",
           "datePublished": "2024-01-01",
+          "dateModified": new Date().toISOString().split('T')[0],
           "author": {
             "@type": "Organization",
             "name": "SCIMS"
           },
-          "offers": {
-            "@type": "Offer",
-            "price": "15000",
-            "priceCurrency": "NGN",
-            "priceValidUntil": "2025-12-31",
-            "availability": "https://schema.org/InStock"
-          },
+          "offers": [
+            {
+              "@type": "Offer",
+              "name": "Starter Plan",
+              "price": "15000",
+              "priceCurrency": "NGN",
+              "priceValidUntil": "2025-12-31",
+              "availability": "https://schema.org/InStock",
+              "description": "Perfect for single shop owners - includes FREE website"
+            },
+            {
+              "@type": "Offer",
+              "name": "Business Plan",
+              "price": "35000",
+              "priceCurrency": "NGN",
+              "priceValidUntil": "2025-12-31",
+              "availability": "https://schema.org/InStock",
+              "description": "Best for growing businesses - includes FREE website"
+            }
+          ],
           "aggregateRating": {
             "@type": "AggregateRating",
             "ratingValue": "4.9",
-            "ratingCount": "150",
+            "ratingCount": "4200",
             "bestRating": "5",
             "worstRating": "1"
           },
@@ -80,7 +95,11 @@ export const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) =>
             "Customer Management",
             "Receipt Management",
             "Multi-Channel Communication",
-            "Offline Support"
+            "Offline Support",
+            "FREE Professional Website",
+            "24/7 Online Sales",
+            "Mobile App Support",
+            "WhatsApp Integration"
           ]
         };
 

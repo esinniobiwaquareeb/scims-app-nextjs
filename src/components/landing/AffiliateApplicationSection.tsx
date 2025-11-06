@@ -19,15 +19,15 @@ export const AffiliateApplicationSection: React.FC = () => {
             maxWidth="3xl"
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mt-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mt-8 sm:mt-12">
             <AnimatedSection animation="fadeUp" delay={0.1}>
-              <Card className="h-full">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
-                    <DollarSign className="w-6 h-6 text-primary" />
+              <Card className="h-full border border-border/50 hover:border-primary/50 transition-colors">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 mb-3 sm:mb-4">
+                    <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Earn Commissions</h3>
-                  <p className="text-muted-foreground">
+                  <h3 className="text-lg sm:text-xl font-bold mb-2">Earn Commissions</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                     Get paid when businesses you refer sign up and subscribe to SCIMS plans.
                   </p>
                 </CardContent>
@@ -35,13 +35,13 @@ export const AffiliateApplicationSection: React.FC = () => {
             </AnimatedSection>
 
             <AnimatedSection animation="fadeUp" delay={0.2}>
-              <Card className="h-full">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
-                    <TrendingUp className="w-6 h-6 text-primary" />
+              <Card className="h-full border border-border/50 hover:border-primary/50 transition-colors">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 mb-3 sm:mb-4">
+                    <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Track Performance</h3>
-                  <p className="text-muted-foreground">
+                  <h3 className="text-lg sm:text-xl font-bold mb-2">Track Performance</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                     Monitor your referrals, conversions, and commissions in real-time through your dashboard.
                   </p>
                 </CardContent>
@@ -49,13 +49,13 @@ export const AffiliateApplicationSection: React.FC = () => {
             </AnimatedSection>
 
             <AnimatedSection animation="fadeUp" delay={0.3}>
-              <Card className="h-full">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
-                    <Users className="w-6 h-6 text-primary" />
+              <Card className="h-full border border-border/50 hover:border-primary/50 transition-colors">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 mb-3 sm:mb-4">
+                    <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Help Businesses</h3>
-                  <p className="text-muted-foreground">
+                  <h3 className="text-lg sm:text-xl font-bold mb-2">Help Businesses</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                     Share SCIMS with businesses and help them grow while building your income stream.
                   </p>
                 </CardContent>
@@ -63,17 +63,17 @@ export const AffiliateApplicationSection: React.FC = () => {
             </AnimatedSection>
           </div>
 
-          <AnimatedSection animation="fadeUp" delay={0.4} className="text-center mt-12">
+          <AnimatedSection animation="fadeUp" delay={0.4} className="text-center mt-8 sm:mt-12">
             <Link href="/affiliate/apply">
               <Button 
                 size="lg" 
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 sm:px-8 py-5 sm:py-6 text-sm sm:text-base font-semibold shadow-md hover:shadow-lg touch-manipulation"
               >
                 Apply to Become an Affiliate
-                <ArrowRight className="ml-2 w-5 h-5" />
+                <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
             </Link>
-            <p className="text-sm text-muted-foreground mt-4">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-3 sm:mt-4 px-4">
               Quick approval process • Competitive commission rates • Regular payouts
             </p>
           </AnimatedSection>

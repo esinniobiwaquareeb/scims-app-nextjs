@@ -66,14 +66,14 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
       className={`text-center mb-12 sm:mb-16 lg:mb-20 ${className}`}
     >
       {badge && (
-        <Badge variant="outline" className="mb-3 sm:mb-4">
+        <Badge variant="outline" className="mb-2 sm:mb-3 md:mb-4 text-xs sm:text-sm">
           {badge}
         </Badge>
       )}
-      <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 leading-tight">
+      <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-3 sm:mb-4 md:mb-6 leading-tight px-2">
         {title}
       </h2>
-      <p className={`text-base sm:text-lg lg:text-xl text-muted-foreground mx-auto ${maxWidthClasses[maxWidth]}`}>
+      <p className={`text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground mx-auto px-2 ${maxWidthClasses[maxWidth]}`}>
         {description}
       </p>
     </motion.div>

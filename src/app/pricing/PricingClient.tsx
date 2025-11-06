@@ -96,59 +96,61 @@ export default function PricingClient() {
         onStartDemo={handleStartDemo}
       />
 
-      {/* Hero Section */}
-      <HeroSection 
-        onGetStarted={handleGetStarted}
-        onStartDemo={handleStartDemo}
-      />
+      <main>
+        {/* Hero Section */}
+        <HeroSection 
+          onGetStarted={handleGetStarted}
+          onStartDemo={handleStartDemo}
+        />
 
-      {/* Pricing Section */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <SectionHeader
-            badge="🎁 FREE Website Included"
-            title="Get Everything Your Business Needs + FREE ₦500,000 Website"
-            description="Stop paying for separate systems! Get complete business management PLUS a professional online store. All plans include the FREE website worth ₦500,000."
-            maxWidth="4xl"
-          />
+        {/* Pricing Section */}
+        <section className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8" aria-label="Pricing Plans">
+          <div className="max-w-7xl mx-auto">
+            <SectionHeader
+              badge="🎁 FREE Website Included"
+              title="Get Everything Your Business Needs + FREE ₦500,000 Website"
+              description="Stop paying for separate systems! Get complete business management PLUS a professional online store. All plans include the FREE website worth ₦500,000."
+              maxWidth="4xl"
+            />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pricingTiers.map((tier, index) => (
-              <PricingCard
-                key={index}
-                tier={tier}
-                onGetStarted={handleGetStarted}
-                animation="fadeUp"
-                delay={index * 0.1}
-              />
-            ))}
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mt-12">
+              {pricingTiers.map((tier, index) => (
+                <PricingCard
+                  key={index}
+                  tier={tier}
+                  onGetStarted={handleGetStarted}
+                  animation="fadeUp"
+                  delay={index * 0.1}
+                />
+              ))}
+            </div>
 
-          <div className="text-center mt-12">
-            <p className="text-muted-foreground mb-6">
-              🎁 FREE ₦500,000 Website • 14-day free trial • No setup fees • Cancel anytime
-            </p>
-            <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
-              <div className="flex items-center space-x-2">
-                <CheckCircle2 className="w-4 h-4 text-primary" />
-                <span><strong>FREE Professional Website</strong></span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <CheckCircle2 className="w-4 h-4 text-primary" />
-                <span>24/7 Online Sales</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <CheckCircle2 className="w-4 h-4 text-primary" />
-                <span>WhatsApp, SMS & Email receipts</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <CheckCircle2 className="w-4 h-4 text-primary" />
-                <span>Works offline</span>
+            <div className="text-center mt-10 sm:mt-12">
+              <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 px-4">
+                🎁 FREE ₦500,000 Website • 14-day free trial • No setup fees • Cancel anytime
+              </p>
+              <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground px-4">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
+                  <span><strong>FREE Professional Website</strong></span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
+                  <span>24/7 Online Sales</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
+                  <span>WhatsApp, SMS & Email receipts</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
+                  <span>Works offline</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
       <Footer />
     </div>

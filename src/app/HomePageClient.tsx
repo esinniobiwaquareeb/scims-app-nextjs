@@ -216,13 +216,14 @@ export default function HomePageClient() {
         onStartDemo={handleStartDemo}
       />
 
-      <HeroSection 
-        onGetStarted={handleGetStarted}
-        onStartDemo={handleStartDemo}
-      />
+      <main>
+        <HeroSection 
+          onGetStarted={handleGetStarted}
+          onStartDemo={handleStartDemo}
+        />
 
       {/* Module Showcase Section */}
-      <section className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
+      <section className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-muted/30" aria-label="Key Modules">
         <div className="max-w-7xl mx-auto">
           <SectionHeader
             badge="💼 Key Modules"
@@ -292,7 +293,7 @@ export default function HomePageClient() {
       </section>
 
       {/* FREE Website Section - Simplified */}
-      <section className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary/5 to-primary/10">
+      <section className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary/5 to-primary/10" aria-label="Free Website">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <div className="space-y-6">
@@ -335,13 +336,14 @@ export default function HomePageClient() {
             </div>
 
             <AnimatedSection animation="fadeUp" delay={0.3}>
-              <div className="relative rounded-2xl shadow-2xl overflow-hidden aspect-video">
+              <div className="relative rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden aspect-video ring-1 ring-primary/20">
                 <Image
                   src="https://eutsywibykwwvpqsrgkz.supabase.co/storage/v1/object/public/images/website-shot.png"
-                  alt="SCIMS FREE Website"
+                  alt="SCIMS FREE Professional Website - Mobile-optimized online store worth ₦500,000 included with every plan"
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 50vw"
+                  priority={false}
                 />
               </div>
             </AnimatedSection>
@@ -350,7 +352,7 @@ export default function HomePageClient() {
       </section>
 
       {/* Features Showcase - Reduced to 6 */}
-      <section id="features" className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8">
+      <section id="features" className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8" aria-label="Features">
         <div className="max-w-7xl mx-auto">
           <SectionHeader
             badge="🎯 Complete Solution"
@@ -379,7 +381,7 @@ export default function HomePageClient() {
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
+      <section id="testimonials" className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-muted/30" aria-label="Testimonials">
         <div className="max-w-7xl mx-auto">
           <SectionHeader
             badge="⭐ Success Stories"
@@ -402,7 +404,7 @@ export default function HomePageClient() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8">
+      <section id="pricing" className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8" aria-label="Pricing">
         <div className="max-w-7xl mx-auto">
           <SectionHeader
             badge="💰 Simple Pricing"
@@ -453,7 +455,7 @@ export default function HomePageClient() {
       <AffiliateApplicationSection />
 
       {/* FAQ Section */}
-      <section id="faq" className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
+      <section id="faq" className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-muted/30" aria-label="Frequently Asked Questions">
         <div className="max-w-4xl mx-auto">
           <SectionHeader
             badge="❓ FAQ"
@@ -480,7 +482,7 @@ export default function HomePageClient() {
       </section>
 
       {/* CTA Section - Simplified */}
-      <section className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8" aria-label="Call to Action">
         <div className="max-w-4xl mx-auto text-center">
           <AnimatedSection animation="fadeUp">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
@@ -492,15 +494,17 @@ export default function HomePageClient() {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button 
-                className="bg-primary text-primary-foreground px-8 sm:px-10 py-4 sm:py-6 rounded-lg hover:bg-primary/90 transition-all text-base sm:text-lg shadow-lg hover:shadow-xl"
+                className="bg-primary text-primary-foreground px-8 sm:px-10 py-4 sm:py-6 rounded-lg hover:bg-primary/90 transition-all text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl touch-manipulation"
                 onClick={handleGetStarted}
+                aria-label="Start your free trial"
               >
                 Start Your Free Trial
                 <ArrowRight className="ml-2 w-5 h-5 inline" />
               </button>
               <button 
-                className="border-2 border-primary text-primary px-8 sm:px-10 py-4 sm:py-6 rounded-lg hover:bg-primary/10 transition-all text-base sm:text-lg"
+                className="border-2 border-primary text-primary px-8 sm:px-10 py-4 sm:py-6 rounded-lg hover:bg-primary/10 transition-all text-base sm:text-lg font-semibold touch-manipulation"
                 onClick={() => handleStartDemo('store_admin')}
+                aria-label="Try demo first"
               >
                 <Eye className="mr-2 w-5 h-5 inline" />
                 Try Demo First
@@ -509,6 +513,7 @@ export default function HomePageClient() {
           </AnimatedSection>
         </div>
       </section>
+      </main>
 
       <Footer />
     </div>

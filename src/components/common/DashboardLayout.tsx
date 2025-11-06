@@ -4,7 +4,6 @@ import React from 'react';
 import { SidebarNavigation } from './SidebarNavigation';
 import { Header } from './Header';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
-import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ShoppingCart } from 'lucide-react';
 
@@ -55,7 +54,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         
         {/* Scrollable main content */}
         <main className={`flex-1 overflow-y-auto overflow-x-hidden ${title ? 'pt-[73px] sm:pt-[81px] lg:pt-[89px]' : ''}`}>
-          <div className="w-full max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+          <div className="w-full max-w-8xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6 lg:py-8">
             {children}
           </div>
         </main>
