@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,7 +29,10 @@ import {
   AlertTriangle,
   Loader2,
   RefreshCw,
-  Copy
+  Copy,
+  Upload,
+  Download,
+  FileSpreadsheet
 } from 'lucide-react';
 import { useBusinessStores } from '@/utils/hooks/stores';
 import { useBusinessCategories } from '@/utils/hooks/categories';
@@ -113,6 +117,21 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  
+  // Import states
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    success: boolean;
+    totalRows: number;
+    imported: number;
+    failed: number;
+    errors: Array<{ row: number; error: string }>;
+    createdCategories: string[];
+    createdBrands: string[];
+    createdSuppliers: string[];
+  } | null>(null);
   
   // Data states
   const [isSaving, setIsSaving] = useState(false);
@@ -582,6 +601,72 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
     });
   }, [filteredProducts, currentStore?.name]);
 
+  // Download sample CSV
+  const downloadSampleCSV = useCallback(() => {
+    const link = document.createElement('a');
+    link.href = '/sample-products-import.csv';
+    link.download = 'sample-products-import.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Sample CSV downloaded!');
+  }, []);
+
+  // Handle product import
+  const handleImport = useCallback(async () => {
+    if (!importFile || !currentStore?.id || !currentBusiness?.id) {
+      toast.error('Please select a file and ensure you have a store selected');
+      return;
+    }
+
+    setImporting(true);
+    setImportResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', importFile);
+      formData.append('store_id', currentStore.id);
+      formData.append('business_id', currentBusiness.id);
+
+      const response = await fetch('/api/products/import', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Import failed');
+      }
+
+      setImportResult(data.result);
+      
+      if (data.result.imported > 0) {
+        toast.success(`Successfully imported ${data.result.imported} product(s)!`);
+        // Refresh products list
+        await refetchProducts();
+        // Note: Categories and brands hooks will auto-refetch on next render
+        // Close dialog after a short delay to show results
+        setTimeout(() => {
+          if (data.result.failed === 0) {
+            setShowImportDialog(false);
+            setImportFile(null);
+            setImportResult(null);
+          }
+        }, 2000);
+      }
+
+      if (data.result.failed > 0) {
+        toast.warning(`${data.result.failed} product(s) failed to import. Check the details below.`);
+      }
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to import products');
+    } finally {
+      setImporting(false);
+    }
+  }, [importFile, currentStore?.id, currentBusiness?.id, refetchProducts]);
+
   const columns = [
     {
       key: 'product',
@@ -946,10 +1031,31 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
           tableName="products"
           userRole={user?.role}
           actions={
-            <Button onClick={() => setIsAddDialogOpen(true)} disabled={!hasPermission()}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Product
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={downloadSampleCSV}
+                title="Download sample CSV template"
+                size="sm"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Sample CSV
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowImportDialog(true)}
+                disabled={!currentStore?.id}
+                title="Import products from CSV"
+                size="sm"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Import
+              </Button>
+              <Button onClick={() => setIsAddDialogOpen(true)} disabled={!hasPermission()} size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Product
+              </Button>
+            </div>
           }
         />
 
@@ -1527,6 +1633,163 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Import Products Dialog */}
+        <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileSpreadsheet className="h-5 w-5" />
+                Import Products from CSV
+              </DialogTitle>
+              <DialogDescription>
+                Upload a CSV file to import multiple products at once. Categories and brands will be created automatically if they don&apos;t exist.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <Alert>
+                <FileSpreadsheet className="h-4 w-4" />
+                <AlertTitle>Import Instructions</AlertTitle>
+                <AlertDescription className="mt-2">
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    <li>Download the sample CSV template to see the required format</li>
+                    <li>Required columns: <strong>name</strong>, <strong>price</strong></li>
+                    <li>Optional columns: sku, barcode, description, cost, stock_quantity, min_stock_level, reorder_level, category, brand, supplier, is_active, is_public, public_description</li>
+                    <li>Categories and brands will be automatically created if they don&apos;t exist</li>
+                    <li>Products with duplicate SKU or barcode in the same store will be skipped</li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
+
+              <div>
+                <Label htmlFor="import-file">Select CSV File</Label>
+                <Input
+                  id="import-file"
+                  type="file"
+                  accept=".csv"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setImportFile(file);
+                      setImportResult(null);
+                    }
+                  }}
+                  className="mt-1"
+                />
+                {importFile && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Selected: {importFile.name} ({(importFile.size / 1024).toFixed(2)} KB)
+                  </p>
+                )}
+              </div>
+
+              {importResult && (
+                <div className="space-y-3">
+                  <Alert className={importResult.success ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'}>
+                    <AlertTitle className={importResult.success ? 'text-green-800' : 'text-yellow-800'}>
+                      Import Results
+                    </AlertTitle>
+                    <AlertDescription className={importResult.success ? 'text-green-700' : 'text-yellow-700'}>
+                      <div className="space-y-2 mt-2">
+                        <div className="flex justify-between">
+                          <span>Total Rows:</span>
+                          <strong>{importResult.totalRows}</strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Successfully Imported:</span>
+                          <strong className="text-green-600">{importResult.imported}</strong>
+                        </div>
+                        {importResult.failed > 0 && (
+                          <div className="flex justify-between">
+                            <span>Failed:</span>
+                            <strong className="text-red-600">{importResult.failed}</strong>
+                          </div>
+                        )}
+                        {importResult.createdCategories.length > 0 && (
+                          <div className="mt-2">
+                            <span className="font-semibold">Created Categories:</span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {importResult.createdCategories.map((cat, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs">
+                                  {cat}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {importResult.createdBrands.length > 0 && (
+                          <div className="mt-2">
+                            <span className="font-semibold">Created Brands:</span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {importResult.createdBrands.map((brand, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs">
+                                  {brand}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+
+                  {importResult.errors.length > 0 && (
+                    <div className="max-h-60 overflow-y-auto border rounded-lg p-3">
+                      <Label className="text-sm font-semibold mb-2 block">Errors:</Label>
+                      <div className="space-y-1">
+                        {importResult.errors.map((error, idx) => (
+                          <div key={idx} className="text-sm text-red-600">
+                            Row {error.row}: {error.error}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={downloadSampleCSV}
+                  className="flex-1"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Sample CSV
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowImportDialog(false);
+                    setImportFile(null);
+                    setImportResult(null);
+                  }}
+                  disabled={importing}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleImport}
+                  disabled={!importFile || importing || !currentStore?.id}
+                  className="flex-1"
+                >
+                  {importing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Importing...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Import Products
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
     </DashboardLayout>
   );
 };
