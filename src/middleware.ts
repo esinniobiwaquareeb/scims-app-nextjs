@@ -9,8 +9,26 @@ export async function middleware(request: NextRequest) {
   // Detect subdomain
   // Check for app subdomain (pos.scims.app or app.scims.app)
   const isAppSubdomain = hostname.startsWith('pos.') || hostname.startsWith('app.');
-  // Main domain includes scims.app, www.scims.app, and any other non-app subdomains
-  const isMainDomain = !isAppSubdomain;
+  
+  // Extract storefront subdomain (e.g., "techmart" from "techmart.scims.app")
+  // Storefront subdomains are any subdomain that's not "pos" or "app"
+  let storefrontSlug: string | null = null;
+  if (!isAppSubdomain && hostname.includes('.')) {
+    const parts = hostname.split('.');
+    // Check if it's a subdomain (has more than 2 parts: subdomain.domain.tld)
+    // Or if it's exactly 2 parts and not the main domain
+    if (parts.length >= 3 || (parts.length === 2 && parts[0] !== 'www' && parts[0] !== 'scims')) {
+      const subdomain = parts[0];
+      // Only treat as storefront if it's not www or scims
+      if (subdomain && subdomain !== 'www' && subdomain !== 'scims') {
+        storefrontSlug = subdomain;
+      }
+    }
+  }
+  
+  const isStorefrontSubdomain = storefrontSlug !== null;
+  // Main domain includes scims.app, www.scims.app, and any other non-app, non-storefront subdomains
+  const isMainDomain = !isAppSubdomain && !isStorefrontSubdomain;
   
   // Define landing page routes (should only be on main domain)
   const landingRoutes = [
@@ -66,7 +84,19 @@ export async function middleware(request: NextRequest) {
     '/discounts'
   ];
   
-  // Special handling: If on subdomain root, redirect to dashboard (or login if not authenticated)
+  // Handle storefront subdomain: Rewrite to /s/[slug] route
+  // Exclude API routes, static files, and Next.js internals
+  const isApiRoute = pathname.startsWith('/api/');
+  const isStaticFile = pathname.startsWith('/_next/') || pathname.startsWith('/favicon.ico');
+  
+  if (isStorefrontSubdomain && storefrontSlug && !isApiRoute && !isStaticFile) {
+    // Rewrite the request to the storefront route
+    const rewriteUrl = new URL(`/s/${storefrontSlug}${pathname === '/' ? '' : pathname}`, request.url);
+    rewriteUrl.search = request.nextUrl.search;
+    return NextResponse.rewrite(rewriteUrl);
+  }
+  
+  // Special handling: If on app subdomain root, redirect to dashboard (or login if not authenticated)
   if (isAppSubdomain && pathname === '/') {
     // Get token to check if user is authenticated
     const token = request.cookies.get('scims_auth_token')?.value;
@@ -117,7 +147,8 @@ export async function middleware(request: NextRequest) {
     '/docs',
     '/business-types',
     '/demo',
-    '/sitemap.xml'
+    '/sitemap.xml',
+    '/s/' // Storefront routes are public
   ];
   const authApiPrefixes = ['/api/auth'];
   const publicApiPrefixes = ['/api/platform/settings', '/api/languages', '/api/currencies'];

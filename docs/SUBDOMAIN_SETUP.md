@@ -3,6 +3,7 @@
 This guide explains how to configure subdomain routing so that:
 - **Main website**: `https://scims.app` (landing pages, marketing)
 - **App dashboard**: `https://pos.scims.app` (dashboard, auth, admin)
+- **Storefronts**: `https://[slug].scims.app` (e.g., `https://techmart.scims.app` for business with slug "techmart")
 
 ## Code Changes (Already Done)
 
@@ -18,36 +19,53 @@ The following changes have been made to support subdomain routing:
 
 ## Vercel Setup Steps
 
-### Step 1: Add Subdomain to Vercel Project
+### Step 1: Add App Subdomain to Vercel Project
 
 1. Go to your Vercel project dashboard
 2. Navigate to **Settings** → **Domains**
 3. Add the subdomain: `pos.scims.app`
 4. Vercel will automatically configure DNS records
 
-### Step 2: Configure DNS Records
+### Step 2: Configure Wildcard Subdomain for Storefronts (Recommended)
 
-You need to add a CNAME record for the subdomain:
+To support dynamic storefront subdomains (e.g., `techmart.scims.app`, `mystore.scims.app`), you need to add a wildcard subdomain:
 
-**Option A: Using Vercel's DNS (Recommended)**
-- If your domain is managed by Vercel, the CNAME will be added automatically
-- Verify it points to: `cname.vercel-dns.com` or similar
+1. In Vercel dashboard, go to **Settings** → **Domains**
+2. Add a wildcard domain: `*.scims.app`
+3. This will automatically handle all storefront subdomains
 
-**Option B: Using External DNS Provider**
+**Alternative: Manual Subdomain Setup**
+If you prefer to add storefront subdomains manually:
+- Add each subdomain individually (e.g., `techmart.scims.app`)
+- This gives you more control but requires manual setup for each business
+
+### Step 3: Configure DNS Records
+
+**For App Subdomain (`pos.scims.app`):**
 - Add a CNAME record:
   - **Name**: `pos`
   - **Value**: `cname.vercel-dns.com` (or your Vercel project domain)
   - **TTL**: 3600 (or default)
 
-### Step 3: Verify Domain Configuration
+**For Storefront Subdomains (Wildcard):**
+- If using wildcard, add a CNAME record:
+  - **Name**: `*`
+  - **Value**: `cname.vercel-dns.com` (or your Vercel project domain)
+  - **TTL**: 3600 (or default)
+- Vercel will automatically handle all subdomains matching the wildcard
+
+**Note:** If your domain is managed by Vercel, DNS records are configured automatically.
+
+### Step 4: Verify Domain Configuration
 
 1. In Vercel dashboard, go to **Settings** → **Domains**
-2. Ensure both domains are listed:
+2. Ensure domains are listed:
    - `scims.app` (main domain)
-   - `pos.scims.app` (subdomain)
-3. Both should show "Valid Configuration"
+   - `pos.scims.app` (app subdomain)
+   - `*.scims.app` (wildcard for storefronts, if using)
+3. All should show "Valid Configuration"
 
-### Step 4: Deploy
+### Step 5: Deploy
 
 1. Push your code changes to your repository
 2. Vercel will automatically deploy
@@ -55,6 +73,8 @@ You need to add a CNAME record for the subdomain:
    - Visit `https://scims.app` → Should show landing page
    - Visit `https://pos.scims.app/dashboard` → Should show app (or redirect to login)
    - Visit `https://scims.app/dashboard` → Should redirect to `https://pos.scims.app/dashboard`
+   - Visit `https://techmart.scims.app` → Should show storefront for business with slug "techmart"
+   - Visit `https://scims.app/s/techmart` → Should still work (original route)
 
 ## How It Works
 
@@ -68,10 +88,11 @@ You need to add a CNAME record for the subdomain:
 - `/docs` → Documentation
 - `/business-types` → Business types
 - `/demo` → Demo page
+- `/s/[slug]` → Storefront (e.g., `/s/techmart`)
 - `/dashboard` → **Redirects to** `pos.scims.app/dashboard`
 - `/auth/login` → **Redirects to** `pos.scims.app/auth/login`
 
-**Subdomain (`pos.scims.app`):**
+**App Subdomain (`pos.scims.app`):**
 - `/dashboard` → Dashboard
 - `/auth/login` → Login page
 - `/auth/register` → Registration
@@ -80,12 +101,17 @@ You need to add a CNAME record for the subdomain:
 - `/stores` → Store management
 - `/staff` → Staff management
 - All other app routes...
-- `/` → **Redirects to** `scims.app`
+- `/` → **Redirects to** dashboard or login
 - `/features` → **Redirects to** `scims.app/features`
+
+**Storefront Subdomains (`[slug].scims.app`, e.g., `techmart.scims.app`):**
+- `/` → Storefront homepage (rewritten to `/s/[slug]`)
+- All paths → Storefront pages (rewritten to `/s/[slug]/*`)
+- API routes work normally (not rewritten)
 
 ### API Routes
 
-API routes (`/api/*`) are accessible from both domains to maintain functionality.
+API routes (`/api/*`) are accessible from all domains to maintain functionality. Storefront subdomains can access public APIs like `/api/public/store/[slug]` and `/api/public/order`.
 
 ## Testing
 
@@ -105,11 +131,18 @@ After deployment, test the following:
    https://pos.scims.app/products → Should work
    ```
 
-3. **Automatic Redirects:**
+2. **Automatic Redirects:**
    ```
    https://scims.app/dashboard → Should redirect to https://pos.scims.app/dashboard
-   https://pos.scims.app/ → Should redirect to https://scims.app
+   https://pos.scims.app/ → Should redirect to dashboard or login
    https://pos.scims.app/features → Should redirect to https://scims.app/features
+   ```
+
+3. **Storefront Subdomains:**
+   ```
+   https://techmart.scims.app → Should show storefront (rewritten to /s/techmart)
+   https://techmart.scims.app/api/public/store/techmart → Should work (API route, not rewritten)
+   https://scims.app/s/techmart → Should still work (original route)
    ```
 
 ## Troubleshooting
