@@ -9,7 +9,7 @@ import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { useStoreSales } from '../utils/hooks/sales';
+import { useCashierSales } from '../utils/hooks/sales';
 import { toast } from 'sonner';
 import { 
   Download,
@@ -66,21 +66,31 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
   const [salesPaymentFilter, setSalesPaymentFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Fetch sales filtered by staff member ID (cashier_id)
   const {
     data: staffSales,
     isLoading,
     isError,
     error
-  } = useStoreSales(staffMember?.store_id || '', {
-    enabled: !!staffMember?.store_id && !!staffMember.store_id
-  });
+  } = useCashierSales(
+    staffMember?.id || '',
+    staffMember?.store_id || '',
+    {
+      enabled: !!staffMember?.id && !!staffMember?.store_id
+    }
+  );
 
 
-  // Filter staff sales
+  // Filter staff sales - ensure only sales initiated by this staff member are shown
   const filteredStaffSales = useMemo(() => {
-    if (!staffSales) return [];
+    if (!staffSales || !staffMember?.id) return [];
 
     return staffSales.filter((sale: any) => {
+      // Safety check: ensure sale belongs to this staff member
+      if (sale.cashier_id !== staffMember.id) {
+        return false;
+      }
+      
       const matchesDate = salesDateFilter === 'all' || 
                          (salesDateFilter === 'today' && new Date(sale.transaction_date).toDateString() === new Date().toDateString()) ||
                          (salesDateFilter === 'week' && new Date(sale.transaction_date) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) ||
@@ -91,7 +101,7 @@ export const StaffDetail: React.FC<StaffDetailProps> = ({ onBack, staffMember })
       
       return matchesDate && matchesStatus && matchesPayment;
     });
-  }, [staffSales, salesDateFilter, salesStatusFilter, salesPaymentFilter]);
+  }, [staffSales, staffMember?.id, salesDateFilter, salesStatusFilter, salesPaymentFilter]);
 
   // Sales statistics
   const totalSalesAmount = useMemo(() => 
