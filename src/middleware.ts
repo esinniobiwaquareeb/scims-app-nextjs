@@ -4,8 +4,84 @@ import { supabase, supabaseAnon } from '@/lib/supabase/config';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const hostname = request.headers.get('host') || '';
   
-  // Public routes that don't require authentication
+  // Detect subdomain
+  const isAppSubdomain = hostname.startsWith('pos.') || hostname.startsWith('app.');
+  const isMainDomain = !isAppSubdomain && (hostname === 'scims.app' || hostname.includes('scims.app'));
+  
+  // Define landing page routes (should only be on main domain)
+  const landingRoutes = [
+    '/',
+    '/features',
+    '/pricing',
+    '/contact',
+    '/help',
+    '/support',
+    '/terms',
+    '/privacy',
+    '/cookies',
+    '/security',
+    '/training',
+    '/docs',
+    '/business-types',
+    '/demo',
+    '/sitemap.xml'
+  ];
+  
+  // Define app routes (should only be on subdomain)
+  const appRoutes = [
+    '/auth/login',
+    '/auth/register',
+    '/auth/verify-email',
+    '/auth/reset-password',
+    '/dashboard',
+    '/businesses',
+    '/products',
+    '/customers',
+    '/sales-report',
+    '/stores',
+    '/staff',
+    '/cashiers',
+    '/reports',
+    '/restock',
+    '/suppliers',
+    '/categories',
+    '/brands',
+    '/roles',
+    '/pos',
+    '/notifications',
+    '/activity-logs',
+    '/business-settings',
+    '/platform-settings',
+    '/affiliate',
+    '/affiliates',
+    '/exchange-management',
+    '/supply-management',
+    '/product-sync',
+    '/menu-management',
+    '/subscriptions',
+    '/discounts'
+  ];
+  
+  // Redirect logic: If on main domain and accessing app route, redirect to subdomain
+  if (isMainDomain && appRoutes.some(route => pathname.startsWith(route))) {
+    const appUrl = new URL(pathname, `https://pos.scims.app${request.nextUrl.search}`);
+    return NextResponse.redirect(appUrl);
+  }
+  
+  // Redirect logic: If on subdomain and accessing landing route, redirect to main domain
+  if (isAppSubdomain && landingRoutes.some(route => {
+    if (route === '/') {
+      return pathname === '/';
+    }
+    return pathname.startsWith(route);
+  })) {
+    const mainUrl = new URL(pathname, `https://scims.app${request.nextUrl.search}`);
+    return NextResponse.redirect(mainUrl);
+  }
+  
+  // Public routes that don't require authentication (accessible on both domains)
   const publicRoutes = [
     '/', 
     '/auth/login', 
