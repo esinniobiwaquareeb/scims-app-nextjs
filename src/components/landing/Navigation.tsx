@@ -53,7 +53,7 @@ export const Navigation: React.FC<NavigationProps> = ({
         <div className="flex justify-between items-center h-16 sm:h-18">
           {/* Logo */}
           <Link href="/" className="flex items-center" aria-label="SCIMS Home">
-            <Logo size="md" animated={true} />
+            <Logo size="md" animated={true} disableLink={true} />
           </Link>
           
           {/* Desktop Navigation */}

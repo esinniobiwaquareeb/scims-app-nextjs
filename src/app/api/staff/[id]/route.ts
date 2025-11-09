@@ -90,12 +90,12 @@ export async function PUT(
       updated_at: string;
       username?: string;
     } = {
-      name: body.name,
-      email: body.email || null,
-      phone: body.phone || null,
-      role: body.role || null,
-      is_active: body.is_active !== undefined ? body.is_active : true,
-      updated_at: new Date().toISOString()
+        name: body.name,
+        email: body.email || null,
+        phone: body.phone || null,
+        role: body.role || null,
+        is_active: body.is_active !== undefined ? body.is_active : true,
+        updated_at: new Date().toISOString()
     };
 
     // Include username if provided
@@ -126,8 +126,8 @@ export async function PUT(
       
       // Check if user_business_role record exists
       const { data: existingRole, error: fetchRoleError } = await supabase
-        .from('user_business_role')
-        .select('*')
+      .from('user_business_role')
+      .select('*')
         .eq('user_id', staffId)
         .eq('business_id', body.business_id)
         .single();
@@ -159,20 +159,20 @@ export async function PUT(
       } else {
         // Update existing user_business_role record
         const { error: roleError } = await supabase
-          .from('user_business_role')
-          .update({
-            store_id: storeIdValue,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', staffId)
+      .from('user_business_role')
+      .update({
+        store_id: storeIdValue,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', staffId)
           .eq('business_id', body.business_id);
 
-        if (roleError) {
-          console.error('Supabase error updating user role:', roleError);
-          return NextResponse.json(
-            { error: 'Failed to update staff store assignment' },
-            { status: 500 }
-          );
+    if (roleError) {
+      console.error('Supabase error updating user role:', roleError);
+      return NextResponse.json(
+        { error: 'Failed to update staff store assignment' },
+        { status: 500 }
+      );
         }
       }
     }

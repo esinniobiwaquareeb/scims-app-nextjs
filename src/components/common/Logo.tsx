@@ -8,6 +8,7 @@ interface LogoProps {
   showText?: boolean;
   className?: string;
   animated?: boolean;
+  disableLink?: boolean; // When true, don't render Link wrapper (useful when already inside a Link)
 }
 
 const sizeClasses = {
@@ -37,7 +38,8 @@ export default function Logo({
   size = 'md', 
   showText = true, 
   className = '',
-  animated = false 
+  animated = false,
+  disableLink = false
 }: LogoProps) {
   const sizeConfig = sizeClasses[size];
   
@@ -51,6 +53,22 @@ export default function Logo({
       )}
     </div>
   );
+
+  // If disableLink is true, don't wrap in Link (useful when already inside a Link)
+  if (disableLink) {
+    if (animated) {
+      return (
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+          className="inline-block"
+        >
+          <LogoContent />
+        </motion.div>
+      );
+    }
+    return <LogoContent />;
+  }
 
   if (animated) {
     return (
