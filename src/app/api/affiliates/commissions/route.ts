@@ -39,13 +39,14 @@ export async function GET(request: NextRequest) {
           id,
           name,
           email,
-          subscription_status
-        ),
-        subscription_plan:subscription_plan_id(
-          id,
-          name,
-          price_monthly,
-          price_yearly
+          subscription_status,
+          subscription_plan_id,
+          subscription_plans:subscription_plan_id(
+            id,
+            name,
+            price_monthly,
+            price_yearly
+          )
         ),
         currency:currency_id(
           id,

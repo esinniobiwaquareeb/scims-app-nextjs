@@ -65,6 +65,13 @@ interface Commission {
   business?: {
     name: string;
     email: string;
+    subscription_plan_id?: string;
+    subscription_plans?: {
+      id: string;
+      name: string;
+      price_monthly: number;
+      price_yearly: number;
+    };
   };
   subscription_plan?: {
     name: string;
@@ -344,7 +351,11 @@ export default function AffiliateDashboardPage() {
     {
       key: 'subscription_plan',
       label: 'Plan',
-      render: (commission: Commission) => commission.subscription_plan?.name || (commission.commission_type === 'signup' ? 'N/A' : 'N/A')
+      render: (commission: Commission) => {
+        // Try to get subscription plan from business relationship first, then fallback to direct relationship
+        const planName = commission.business?.subscription_plans?.name || commission.subscription_plan?.name;
+        return planName || (commission.commission_type === 'signup' ? 'N/A' : 'N/A');
+      }
     },
     {
       key: 'amount',
