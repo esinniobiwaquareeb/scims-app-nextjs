@@ -190,19 +190,24 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
   const storeCustomers = customers || [];
   
   // Calculate stats from available data
+  const todaySales = storeSales.filter((sale: { transaction_date: any; created_at: any; total_amount?: number; }) => {
+    const saleDate = new Date(sale.transaction_date || sale.created_at);
+    const today = new Date();
+    return saleDate.toDateString() === today.toDateString();
+  });
+  
   const calculatedStats = {
     totalProducts: storeProducts.length,
-    todaysSales: storeSales.filter((sale: { transaction_date: any; created_at: any; }) => {
-      const saleDate = new Date(sale.transaction_date || sale.created_at);
-      const today = new Date();
-      return saleDate.toDateString() === today.toDateString();
-    }).length,
+    todaysSalesRevenue: todaySales.reduce((sum: number, sale: { total_amount?: number }) => {
+      return sum + (Number(sale.total_amount) || 0);
+    }, 0),
+    todaysSalesCount: todaySales.length,
+    totalSalesRevenue: storeSales.reduce((sum: number, sale: { total_amount?: number }) => {
+      return sum + (Number(sale.total_amount) || 0);
+    }, 0),
+    totalSalesCount: storeSales.length,
     totalCustomers: storeCustomers.length,
-    ordersToday: storeSales.filter((sale: { transaction_date: any; created_at: any; }) => {
-      const saleDate = new Date(sale.transaction_date || sale.created_at);
-      const today = new Date();
-      return saleDate.toDateString() === today.toDateString();
-    }).length
+    ordersToday: todaySales.length
   };
 
   // Use calculated stats
@@ -286,7 +291,8 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Today&apos;s Sales</p>
-                  <p className="text-2xl font-bold">{formatCurrency(typedStats.todaysSales)}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(typedStats.todaysSalesRevenue)}</p>
+                  <p className="text-xs text-gray-500 mt-1">{typedStats.todaysSalesCount} transactions</p>
                 </div>
               </div>
             </CardContent>
@@ -408,6 +414,14 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
                   <div className="flex justify-between">
                     <span className="text-gray-600">Language:</span>
                     <span className="font-medium">{storeData?.language || 'English'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Sales Revenue:</span>
+                    <span className="font-medium">{formatCurrency(typedStats.totalSalesRevenue)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Transactions:</span>
+                    <span className="font-medium">{typedStats.totalSalesCount}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tax Rate:</span>
