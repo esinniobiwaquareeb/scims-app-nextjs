@@ -7,8 +7,10 @@ export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   
   // Detect subdomain
+  // Check for app subdomain (pos.scims.app or app.scims.app)
   const isAppSubdomain = hostname.startsWith('pos.') || hostname.startsWith('app.');
-  const isMainDomain = !isAppSubdomain && (hostname === 'scims.app' || hostname.includes('scims.app'));
+  // Main domain includes scims.app, www.scims.app, and any other non-app subdomains
+  const isMainDomain = !isAppSubdomain;
   
   // Define landing page routes (should only be on main domain)
   const landingRoutes = [
@@ -64,16 +66,32 @@ export async function middleware(request: NextRequest) {
     '/discounts'
   ];
   
+  // Special handling: If on subdomain root, redirect to dashboard (or login if not authenticated)
+  if (isAppSubdomain && pathname === '/') {
+    // Get token to check if user is authenticated
+    const token = request.cookies.get('scims_auth_token')?.value;
+    if (token) {
+      // Redirect authenticated users to dashboard
+      const dashboardUrl = new URL('/dashboard', request.url);
+      return NextResponse.redirect(dashboardUrl);
+    } else {
+      // Redirect unauthenticated users to login
+      const loginUrl = new URL('/auth/login', request.url);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+  
   // Redirect logic: If on main domain and accessing app route, redirect to subdomain
   if (isMainDomain && appRoutes.some(route => pathname.startsWith(route))) {
     const appUrl = new URL(pathname, `https://pos.scims.app${request.nextUrl.search}`);
     return NextResponse.redirect(appUrl);
   }
   
-  // Redirect logic: If on subdomain and accessing landing route, redirect to main domain
+  // Redirect logic: If on subdomain and accessing landing route (except root), redirect to main domain
   if (isAppSubdomain && landingRoutes.some(route => {
+    // Skip root path - it's handled above
     if (route === '/') {
-      return pathname === '/';
+      return false;
     }
     return pathname.startsWith(route);
   })) {
