@@ -32,7 +32,10 @@ import {
   Share2,
   CheckCircle,
   XCircle,
-  Trash2
+  Trash2,
+  Key,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAffiliateLink } from '@/utils/affiliate/affiliateService';
@@ -85,6 +88,11 @@ export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordData, setPasswordData] = useState({ password: '', confirmPassword: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [selectedAffiliate, setSelectedAffiliate] = useState<Affiliate | null>(null);
   const [affiliateToDelete, setAffiliateToDelete] = useState<{ id: string; name: string } | null>(null);
@@ -265,6 +273,58 @@ export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack
     } finally {
       setDeleteLoading(false);
     }
+  };
+
+  const handleSetPassword = async () => {
+    if (!selectedAffiliate) return;
+
+    if (!passwordData.password) {
+      toast.error('Password is required');
+      return;
+    }
+
+    if (passwordData.password.length < 8) {
+      toast.error('Password must be at least 8 characters long');
+      return;
+    }
+
+    if (passwordData.password !== passwordData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const response = await fetch(`/api/affiliates/${selectedAffiliate.id}/set-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passwordData.password })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Password has been set successfully');
+        setShowPasswordModal(false);
+        setPasswordData({ password: '', confirmPassword: '' });
+        fetchAffiliates();
+      } else {
+        toast.error(data.error || 'Failed to set password');
+      }
+    } catch (error) {
+      console.error('Error setting password:', error);
+      toast.error('Failed to set password');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const openPasswordModal = (affiliate: Affiliate) => {
+    setSelectedAffiliate(affiliate);
+    setPasswordData({ password: '', confirmPassword: '' });
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+    setShowPasswordModal(true);
   };
 
   const copyAffiliateLink = (affiliate: Affiliate) => {
@@ -477,6 +537,15 @@ export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack
                 ) : (
                   <Share2 className="w-4 h-4" />
                 )}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => openPasswordModal(affiliate)}
+                className="h-8 w-8 p-0"
+                title="Set Password"
+              >
+                <Key className="w-4 h-4" />
               </Button>
               <Button
                 size="sm"
@@ -1116,6 +1185,102 @@ export const AffiliateManagement: React.FC<AffiliateManagementProps> = ({ onBack
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Set Password Modal */}
+        <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Set Affiliate Password</DialogTitle>
+              <DialogDescription>
+                Set or reset the password for {selectedAffiliate?.name || 'this affiliate'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="password">New Password <span className="text-red-500">*</span></Label>
+                <div className="relative mt-1">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={passwordData.password}
+                    onChange={(e) => setPasswordData({ ...passwordData, password: e.target.value })}
+                    placeholder="Enter new password (min 8 characters)"
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Password must be at least 8 characters long
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="confirmPassword">Confirm Password <span className="text-red-500">*</span></Label>
+                <div className="relative mt-1">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                    placeholder="Confirm new password"
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowPasswordModal(false);
+                    setPasswordData({ password: '', confirmPassword: '' });
+                    setShowPassword(false);
+                    setShowConfirmPassword(false);
+                  }}
+                  disabled={passwordLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSetPassword}
+                  disabled={passwordLoading}
+                >
+                  {passwordLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Setting...
+                    </div>
+                  ) : (
+                    'Set Password'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

@@ -16,7 +16,9 @@ import {
   Copy, 
   LogOut,
   Building2,
-  Settings
+  Settings,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSystem } from '@/contexts/SystemContext';
@@ -96,6 +98,9 @@ export default function AffiliateDashboardPage() {
     new_password: '',
     confirm_password: ''
   });
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
 
   useEffect(() => {
@@ -286,6 +291,9 @@ export default function AffiliateDashboardPage() {
           new_password: '',
           confirm_password: ''
         });
+        setShowCurrentPassword(false);
+        setShowNewPassword(false);
+        setShowConfirmPassword(false);
       } else {
         toast.error(data.error || 'Failed to change password');
       }
@@ -425,22 +433,22 @@ export default function AffiliateDashboardPage() {
       {/* Header */}
       <header className="border-b bg-background sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
               <Logo size="sm" />
-              <div>
-                <h1 className="text-xl font-bold">Affiliate Dashboard</h1>
-                <p className="text-sm text-muted-foreground">Welcome back, {affiliate.name}</p>
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-xl font-bold truncate">Affiliate Dashboard</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Welcome back, {affiliate.name}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={handleOpenProfileModal}>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button variant="outline" onClick={handleOpenProfileModal} size="sm" className="flex-1 sm:flex-initial">
                 <Settings className="mr-2 h-4 w-4" />
-                Profile
+                <span className="hidden sm:inline">Profile</span>
               </Button>
-              <Button variant="outline" onClick={handleLogout}>
+              <Button variant="outline" onClick={handleLogout} size="sm" className="flex-1 sm:flex-initial">
                 <LogOut className="mr-2 h-4 w-4" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
@@ -524,9 +532,9 @@ export default function AffiliateDashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-2">
-              <Input value={affiliateLink} readOnly className="font-mono text-sm" />
-              <Button onClick={copyAffiliateLink} size="sm">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <Input value={affiliateLink} readOnly className="font-mono text-sm flex-1" />
+              <Button onClick={copyAffiliateLink} size="sm" className="w-full sm:w-auto">
                 <Copy className="h-4 w-4 mr-2" />
                 Copy
               </Button>
@@ -552,13 +560,13 @@ export default function AffiliateDashboardPage() {
             ) : (
               <div className="space-y-3">
                 {referrals.map((referral: any) => (
-                  <div key={referral.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
+                  <div key={referral.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-3">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3">
-                        <Building2 className="w-5 h-5 text-primary" />
-                        <div>
-                          <p className="font-medium">{referral.business?.name || 'Pending Signup'}</p>
-                          <p className="text-sm text-muted-foreground">
+                        <Building2 className="w-5 h-5 text-primary flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">{referral.business?.name || 'Pending Signup'}</p>
+                          <p className="text-sm text-muted-foreground truncate">
                             {referral.business?.email || referral.user_email}
                             {referral.business && (
                               <span className="ml-2">
@@ -573,7 +581,7 @@ export default function AffiliateDashboardPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right flex-shrink-0">
                       <p className="text-sm text-muted-foreground">
                         {format(new Date(referral.created_at), 'MMM dd, yyyy')}
                       </p>
@@ -754,36 +762,87 @@ export default function AffiliateDashboardPage() {
           <div className="space-y-4">
             <div>
               <Label htmlFor="current-password">Current Password</Label>
-              <Input
-                id="current-password"
-                type="password"
-                value={passwordData.current_password}
-                onChange={(e) => setPasswordData(prev => ({ ...prev, current_password: e.target.value }))}
-                placeholder="Enter current password"
-                disabled={passwordLoading}
-              />
+              <div className="relative mt-1">
+                <Input
+                  id="current-password"
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={passwordData.current_password}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, current_password: e.target.value }))}
+                  placeholder="Enter current password"
+                  disabled={passwordLoading}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  disabled={passwordLoading}
+                >
+                  {showCurrentPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
             </div>
             <div>
               <Label htmlFor="new-password">New Password</Label>
-              <Input
-                id="new-password"
-                type="password"
-                value={passwordData.new_password}
-                onChange={(e) => setPasswordData(prev => ({ ...prev, new_password: e.target.value }))}
-                placeholder="Enter new password (min 8 characters)"
-                disabled={passwordLoading}
-              />
+              <div className="relative mt-1">
+                <Input
+                  id="new-password"
+                  type={showNewPassword ? "text" : "password"}
+                  value={passwordData.new_password}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, new_password: e.target.value }))}
+                  placeholder="Enter new password (min 8 characters)"
+                  disabled={passwordLoading}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  disabled={passwordLoading}
+                >
+                  {showNewPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
             </div>
             <div>
               <Label htmlFor="confirm-password">Confirm New Password</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                value={passwordData.confirm_password}
-                onChange={(e) => setPasswordData(prev => ({ ...prev, confirm_password: e.target.value }))}
-                placeholder="Confirm new password"
-                disabled={passwordLoading}
-              />
+              <div className="relative mt-1">
+                <Input
+                  id="confirm-password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={passwordData.confirm_password}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, confirm_password: e.target.value }))}
+                  placeholder="Confirm new password"
+                  disabled={passwordLoading}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  disabled={passwordLoading}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
             </div>
             <div className="flex gap-2 pt-4">
               <Button variant="outline" className="flex-1" onClick={() => {
@@ -793,6 +852,9 @@ export default function AffiliateDashboardPage() {
                   new_password: '',
                   confirm_password: ''
                 });
+                setShowCurrentPassword(false);
+                setShowNewPassword(false);
+                setShowConfirmPassword(false);
               }}>
                 Cancel
               </Button>
