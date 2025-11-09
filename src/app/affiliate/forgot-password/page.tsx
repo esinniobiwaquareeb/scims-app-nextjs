@@ -89,7 +89,7 @@ export default function AffiliateForgotPasswordPage() {
           </div>
           <CardTitle className="text-2xl">Forgot Password</CardTitle>
           <CardDescription>
-            Enter your email address and we'll send you a password reset link
+            Enter your email address and we&apos;ll send you a password reset link
           </CardDescription>
         </CardHeader>
         <CardContent>

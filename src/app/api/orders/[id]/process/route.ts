@@ -32,6 +32,15 @@ export async function POST(
       );
     }
 
+    // Prevent multiple stores from accepting the same order
+    // Only allow status changes if order is still pending, or if the status change is to cancelled
+    if (order.status !== 'pending' && status !== 'cancelled' && !['cancelled'].includes(order.status)) {
+      return NextResponse.json(
+        { success: false, error: `This order has already been ${order.status}. Only pending orders can be processed.` },
+        { status: 400 }
+      );
+    }
+
     // Update order status
     const { error: updateError } = await supabase
       .from('public_order')

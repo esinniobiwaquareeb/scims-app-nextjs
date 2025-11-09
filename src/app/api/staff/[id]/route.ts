@@ -81,16 +81,31 @@ export async function PUT(
     }
 
     // Update the user record
+    const updateData: {
+      name: string;
+      email: string | null;
+      phone: string | null;
+      role: string | null;
+      is_active: boolean;
+      updated_at: string;
+      username?: string;
+    } = {
+      name: body.name,
+      email: body.email || null,
+      phone: body.phone || null,
+      role: body.role || null,
+      is_active: body.is_active !== undefined ? body.is_active : true,
+      updated_at: new Date().toISOString()
+    };
+
+    // Include username if provided
+    if (body.username !== undefined) {
+      updateData.username = body.username;
+    }
+
     const { data: userData, error: userError } = await supabase
       .from('user')
-      .update({
-        name: body.name,
-        email: body.email || null,
-        phone: body.phone || null,
-        role: body.role || null,
-        is_active: body.is_active !== undefined ? body.is_active : true,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', staffId)
       .select()
       .single();
@@ -103,51 +118,70 @@ export async function PUT(
       );
     }
 
-    // First, let's check what user_business_role records exist for this user
-    const { data: existingRoles, error: fetchRolesError } = await supabase
-      .from('user_business_role')
-      .select('*')
-      .eq('user_id', staffId);
+    // Ensure user_business_role record exists for this user and business
+    // This is critical for login to work
+    let storeIdValue: string | null = null;
+    if (body.business_id) {
+      storeIdValue = body.store_id && body.store_id.trim() !== '' ? body.store_id : null;
+      
+      // Check if user_business_role record exists
+      const { data: existingRole, error: fetchRoleError } = await supabase
+        .from('user_business_role')
+        .select('*')
+        .eq('user_id', staffId)
+        .eq('business_id', body.business_id)
+        .single();
 
-    if (fetchRolesError) {
-      console.error('Error fetching existing user roles:', fetchRolesError);
-    } else {
-      console.log('Existing user roles for staff:', {
-        staffId,
-        existingRoles,
-        businessId: body.business_id
-      });
-    }
+      if (fetchRoleError && fetchRoleError.code !== 'PGRST116') {
+        // PGRST116 means no rows found, which is expected if record doesn't exist
+        console.error('Error fetching user role:', fetchRoleError);
+      }
 
-    // Update the user_business_role store assignment
-    // Filter by both user_id and business_id to ensure we're updating the correct record
-    // Convert empty string to null for store_id
-    const storeIdValue = body.store_id && body.store_id.trim() !== '' ? body.store_id : null;
-    
-    const { data: updateResult, error: roleError } = await supabase
-      .from('user_business_role')
-      .update({
-        store_id: storeIdValue,
-        updated_at: new Date().toISOString()
-      })
-      .eq('user_id', staffId)
-      .eq('business_id', body.business_id)
-      .select();
+      if (!existingRole) {
+        // Create user_business_role record if it doesn't exist
+        const { error: createRoleError } = await supabase
+          .from('user_business_role')
+          .insert({
+            user_id: staffId,
+            business_id: body.business_id,
+            store_id: storeIdValue,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
 
-    if (roleError) {
-      console.error('Supabase error updating user role:', roleError);
-      return NextResponse.json(
-        { error: 'Failed to update staff store assignment' },
-        { status: 500 }
-      );
+        if (createRoleError) {
+          console.error('Supabase error creating user role:', createRoleError);
+          return NextResponse.json(
+            { error: 'Failed to create staff business role assignment' },
+            { status: 500 }
+          );
+        }
+      } else {
+        // Update existing user_business_role record
+        const { error: roleError } = await supabase
+          .from('user_business_role')
+          .update({
+            store_id: storeIdValue,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', staffId)
+          .eq('business_id', body.business_id);
+
+        if (roleError) {
+          console.error('Supabase error updating user role:', roleError);
+          return NextResponse.json(
+            { error: 'Failed to update staff store assignment' },
+            { status: 500 }
+          );
+        }
+      }
     }
 
     // Debug logging
-    console.log('Staff store assignment updated:', {
+    console.log('Staff updated successfully:', {
       staffId,
       storeId: storeIdValue,
-      businessId: body.business_id,
-      updateResult
+      businessId: body.business_id
     });
 
     return NextResponse.json({

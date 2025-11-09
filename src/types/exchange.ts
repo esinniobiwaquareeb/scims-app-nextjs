@@ -169,6 +169,7 @@ export interface ValidateReturnData {
   sale_id?: string;
   product_id?: string;
   quantity?: number;
+  store_id?: string; // Store where return is being processed
 }
 
 export interface ValidateReturnResponse {

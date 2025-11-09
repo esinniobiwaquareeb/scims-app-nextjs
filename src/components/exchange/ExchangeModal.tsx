@@ -153,12 +153,20 @@ export const ExchangeModal: React.FC<ExchangeModalProps> = ({
       return;
     }
 
+    if (!currentStore?.id) {
+      toast.error('Store context is required');
+      return;
+    }
+
     setValidatingReturn(true);
     try {
       const response = await fetch('/api/exchanges/validate-return', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ receipt_number: receiptNumber })
+        body: JSON.stringify({ 
+          receipt_number: receiptNumber,
+          store_id: currentStore.id
+        })
       });
 
       const data = await response.json();

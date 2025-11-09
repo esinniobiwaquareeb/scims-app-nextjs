@@ -101,6 +101,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check for duplicate products in the same store (by name, SKU, or barcode)
+    if (body.sku || body.name || body.barcode) {
+      let duplicateQuery = supabase
+        .from('product')
+        .select('id, name, sku, barcode')
+        .eq('store_id', body.store_id)
+        .eq('is_active', true);
+
+      const orConditions: string[] = [];
+      if (body.sku && body.sku.trim() !== '') {
+        orConditions.push(`sku.eq.${body.sku.trim()}`);
+      }
+      if (body.name && body.name.trim() !== '') {
+        orConditions.push(`name.eq.${body.name.trim()}`);
+      }
+      if (body.barcode && body.barcode.trim() !== '') {
+        orConditions.push(`barcode.eq.${body.barcode.trim()}`);
+      }
+
+      if (orConditions.length > 0) {
+        duplicateQuery = duplicateQuery.or(orConditions.join(','));
+      }
+
+      const { data: duplicates } = await duplicateQuery;
+
+      // Filter for exact matches
+      const exactMatches = (duplicates || []).filter(product => {
+        const skuMatch = body.sku && body.sku.trim() !== '' && product.sku?.trim() === body.sku.trim();
+        const nameMatch = body.name && body.name.trim() !== '' && product.name?.trim() === body.name.trim();
+        const barcodeMatch = body.barcode && body.barcode.trim() !== '' && product.barcode?.trim() === body.barcode.trim();
+        return skuMatch || nameMatch || barcodeMatch;
+      });
+
+      if (exactMatches.length > 0) {
+        return NextResponse.json(
+          { success: false, error: `A product with the same ${exactMatches[0].sku === body.sku ? 'SKU' : exactMatches[0].name === body.name ? 'name' : 'barcode'} already exists in this store` },
+          { status: 400 }
+        );
+      }
+    }
+
     const productData = {
       name: body.name,
       price: body.price || 0,

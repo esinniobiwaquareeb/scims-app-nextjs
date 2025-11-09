@@ -35,6 +35,7 @@ interface Product {
   category_id?: string;
   supplier_id?: string;
   brand_id?: string;
+  image_url?: string;
   is_active: boolean;
   category?: { id: string; name: string };
   supplier?: { id: string; name: string };
@@ -365,6 +366,7 @@ export const ProductSync: React.FC<ProductSyncProps> = () => {
                 category_id: product.category_id,
                 supplier_id: product.supplier_id,
                 brand_id: product.brand_id,
+                image_url: product.image_url || null, // Include image URL
                 is_active: true
               };
 
@@ -427,7 +429,8 @@ export const ProductSync: React.FC<ProductSyncProps> = () => {
                   reorder_level: product.reorder_level,
                   category_id: product.category_id,
                   supplier_id: product.supplier_id,
-                  brand_id: product.brand_id
+                  brand_id: product.brand_id,
+                  image_url: product.image_url || null // Include image URL
                 };
 
                 const updateResponse = await fetch(`/api/products/${existingProduct.id}`, {
@@ -457,6 +460,7 @@ export const ProductSync: React.FC<ProductSyncProps> = () => {
                   category_id: product.category_id,
                   supplier_id: product.supplier_id,
                   brand_id: product.brand_id,
+                  image_url: product.image_url || null, // Include image URL
                   is_active: true
                 };
 

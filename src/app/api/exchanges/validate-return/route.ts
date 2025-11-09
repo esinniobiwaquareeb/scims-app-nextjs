@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
         customer_id,
         total_amount,
         status,
+        store_id,
         items:sale_item(
           id,
           product_id,
@@ -38,7 +39,8 @@ export async function POST(request: NextRequest) {
             id,
             name,
             sku,
-            barcode
+            barcode,
+            store_id
           )
         )
       `);
@@ -74,6 +76,16 @@ export async function POST(request: NextRequest) {
         success: true,
         valid: false,
         error: 'Cannot return items from a cancelled sale'
+      } as ValidateReturnResponse);
+    }
+
+    // Validate that return is being processed in the same store where the sale was made
+    // This prevents cross-store returns
+    if (data.store_id && sale.store_id !== data.store_id) {
+      return NextResponse.json({
+        success: true,
+        valid: false,
+        error: 'Returns can only be processed at the same store where the purchase was made. This purchase was made at a different store.'
       } as ValidateReturnResponse);
     }
 

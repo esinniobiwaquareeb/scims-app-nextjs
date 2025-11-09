@@ -281,6 +281,16 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           title: 'Discounts & Promotions',
           href: '/discounts',
           icon: Tag
+        },
+        {
+          title: 'Supply Management',
+          href: '/supply-management',
+          icon: RotateCcw
+        },
+        {
+          title: 'Exchange & Trade-in',
+          href: '/exchange-management',
+          icon: RotateCcw
         }
       ]
     },
@@ -356,16 +366,6 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           title: 'Store Settings',
           href: '/stores',
           icon: Settings
-        },
-        {
-          title: 'Supply Management',
-          href: '/supply-management',
-          icon: RotateCcw
-        },
-        {
-          title: 'Exchange & Trade-in',
-          href: '/exchange-management',
-          icon: RotateCcw
         }
       ]
     }
