@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSystem } from '@/contexts/SystemContext';
 import { useRouter } from 'next/navigation';
@@ -27,6 +27,7 @@ export const BusinessAdminDashboard: React.FC = () => {
   const { user, currentBusiness, currentStore } = useAuth();
   const { formatCurrency } = useSystem();
   const router = useRouter();
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Fetch business dashboard stats
   const { data: businessDashboardStats, isLoading: isLoadingBusinessStats } = useBusinessDashboardStats(
@@ -67,17 +68,16 @@ export const BusinessAdminDashboard: React.FC = () => {
   const businessTypeDisplay = getBusinessTypeDisplay();
 
   const handleShowOnboarding = () => {
-    // Clear dismissal flag to show onboarding again
+    // Clear dismissal flag and force show onboarding
     if (currentBusiness?.id) {
       localStorage.removeItem(`onboarding_dismissed_${currentBusiness.id}`);
-      // Reload page to show onboarding
-      window.location.reload();
+      setShowOnboarding(true);
     }
   };
 
   return (
     <>
-      <WelcomeOnboarding />
+      <WelcomeOnboarding forceOpen={showOnboarding} onDismiss={() => setShowOnboarding(false)} />
       <DashboardLayout
         title="Business Admin Dashboard"
         subtitle={`Welcome back, ${user?.name || user?.username} • ${businessTypeDisplay.label}`}

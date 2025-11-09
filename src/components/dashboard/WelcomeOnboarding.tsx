@@ -35,14 +35,15 @@ interface SetupStatus {
 
 interface WelcomeOnboardingProps {
   onDismiss?: () => void;
+  forceOpen?: boolean; // Allow parent to force open the modal
 }
 
-export const WelcomeOnboarding: React.FC<WelcomeOnboardingProps> = ({ onDismiss }) => {
+export const WelcomeOnboarding: React.FC<WelcomeOnboardingProps> = ({ onDismiss, forceOpen = false }) => {
   const { user, currentBusiness } = useAuth();
   const router = useRouter();
   const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false); // Start as false, only open if not dismissed
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [isSetupComplete, setIsSetupComplete] = useState(false);
 
@@ -55,9 +56,9 @@ export const WelcomeOnboarding: React.FC<WelcomeOnboardingProps> = ({ onDismiss 
         return;
       }
 
-      // Check if already dismissed
+      // Check if already dismissed - if dismissed, don't show (unless forced)
       const dismissed = localStorage.getItem(`onboarding_dismissed_${currentBusiness.id}`);
-      if (dismissed === 'true') {
+      if (dismissed === 'true' && !forceOpen) {
         setIsOpen(false);
         setIsLoading(false);
         return;
@@ -72,10 +73,8 @@ export const WelcomeOnboarding: React.FC<WelcomeOnboardingProps> = ({ onDismiss 
             setCompletionPercentage(data.completionPercentage);
             setIsSetupComplete(data.isSetupComplete);
             
-            // Auto-dismiss if setup is complete (but allow manual dismissal)
-            if (data.isSetupComplete) {
-              // Don't auto-dismiss, let user see completion message
-            }
+            // Open if not dismissed, or if forced open
+            setIsOpen(true);
           }
         }
       } catch (error) {
@@ -86,15 +85,34 @@ export const WelcomeOnboarding: React.FC<WelcomeOnboardingProps> = ({ onDismiss 
     };
 
     checkSetupStatus();
-  }, [currentBusiness?.id, user?.role]);
+  }, [currentBusiness?.id, user?.role, forceOpen]);
+
+  // Watch for forceOpen changes to immediately show modal
+  useEffect(() => {
+    if (forceOpen && currentBusiness?.id && user?.role === 'business_admin') {
+      // Clear dismissal flag when forced open
+      localStorage.removeItem(`onboarding_dismissed_${currentBusiness.id}`);
+      setIsOpen(true);
+    }
+  }, [forceOpen, currentBusiness?.id, user?.role]);
 
   const handleDismiss = () => {
     setIsOpen(false);
-    // Store dismissal in localStorage
+    // Store dismissal in localStorage - use a more specific key
     if (currentBusiness?.id) {
       localStorage.setItem(`onboarding_dismissed_${currentBusiness.id}`, 'true');
     }
     onDismiss?.();
+  };
+
+  // Handle Dialog close - ensure dismissal is saved
+  const handleDialogChange = (open: boolean) => {
+    if (!open) {
+      // User closed the dialog (via X button or outside click)
+      handleDismiss();
+    } else {
+      setIsOpen(true);
+    }
   };
 
   const handleSkip = () => {
@@ -174,7 +192,7 @@ export const WelcomeOnboarding: React.FC<WelcomeOnboardingProps> = ({ onDismiss 
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleDialogChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
         {/* Header */}
         <div className="relative bg-gradient-to-br from-primary/10 via-primary/5 to-background border-b px-6 py-6">
