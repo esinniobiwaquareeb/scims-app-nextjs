@@ -1,19 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { trackBusinessReferral } from '@/utils/affiliate/affiliateService';
+import { supabase } from '@/lib/supabase/config';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-// POST - Track affiliate referral (when user clicks affiliate link during signup)
+// POST - Validate affiliate code (does NOT create referral record)
+// Referral records are only created when business successfully signs up
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const {
-      affiliate_code,
-      user_email,
-      user_phone,
-      referral_source
-    } = body;
+    const { affiliate_code } = body;
 
     if (!affiliate_code) {
       return NextResponse.json(
@@ -22,25 +18,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Track the referral (email is optional - can be set later during registration)
-    const referralId = await trackBusinessReferral(
-      affiliate_code,
-      user_email || 'pending@example.com', // Placeholder if email not provided yet
-      user_phone,
-      referral_source || 'link'
-    );
+    // Only validate the affiliate code exists and is active
+    // Do NOT create a referral record here
+    const { data: affiliate, error: affiliateError } = await supabase
+      .from('affiliate')
+      .select('id, affiliate_code, status')
+      .eq('affiliate_code', affiliate_code.toUpperCase())
+      .eq('status', 'active')
+      .single();
 
-    if (!referralId) {
+    if (affiliateError || !affiliate) {
       return NextResponse.json(
         { success: false, error: 'Invalid or inactive affiliate code' },
         { status: 404 }
       );
     }
 
+    // Return validation success without creating any records
     return NextResponse.json({
       success: true,
-      referral_id: referralId,
-      referral_code: affiliate_code.toUpperCase()
+      affiliate_code: affiliate.affiliate_code,
+      message: 'Affiliate code is valid'
     });
   } catch (error) {
     console.error('Error in POST /api/affiliates/track:', error);

@@ -94,61 +94,26 @@ export default function RegisterPage() {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [languages, setLanguages] = useState<Language[]>([]);
   
-  // Affiliate tracking
-  const [referralId, setReferralId] = useState<string | null>(null);
+  // Affiliate tracking - only store code, don't create referral until signup succeeds
   const [affiliateCode, setAffiliateCode] = useState<string | null>(null);
 
-  // Track affiliate referral
-  const trackAffiliateReferral = React.useCallback(async (code: string, email?: string) => {
-    try {
-      const response = await fetch('/api/affiliates/track', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          affiliate_code: code,
-          user_email: email || formData.email || '',
-          referral_source: 'link'
-        })
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setReferralId(data.referral_id);
-        setAffiliateCode(code.toUpperCase());
-        sessionStorage.setItem('affiliate_referral_id', data.referral_id);
-        sessionStorage.setItem('affiliate_code', code.toUpperCase());
-      }
-    } catch (error) {
-      console.error('Error tracking affiliate referral:', error);
-    }
-  }, [formData.email]);
-
-  // Track affiliate referral from URL
+  // Store affiliate code from URL (no API call - just store locally)
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const refCode = urlParams.get('ref');
     
     if (refCode) {
-      trackAffiliateReferral(refCode);
+      const code = refCode.toUpperCase();
+      setAffiliateCode(code);
+      sessionStorage.setItem('affiliate_code', code);
     }
     
     // Restore from sessionStorage
-    const storedReferralId = sessionStorage.getItem('affiliate_referral_id');
     const storedAffiliateCode = sessionStorage.getItem('affiliate_code');
-    
-    if (storedReferralId && storedAffiliateCode) {
-      setReferralId(storedReferralId);
+    if (storedAffiliateCode) {
       setAffiliateCode(storedAffiliateCode);
     }
-  }, [trackAffiliateReferral]);
-
-  // Update referral when email is entered
-  React.useEffect(() => {
-    if (affiliateCode && formData.email && !referralId) {
-      trackAffiliateReferral(affiliateCode, formData.email);
-    }
-  }, [formData.email, affiliateCode, referralId, trackAffiliateReferral]);
+  }, []);
 
   // Load reference data
   React.useEffect(() => {
@@ -251,8 +216,7 @@ export default function RegisterPage() {
         },
         body: JSON.stringify({
           ...formData,
-          affiliate_code: affiliateCode || undefined,
-          referral_id: referralId || undefined
+          affiliate_code: affiliateCode || undefined
         }),
       });
 

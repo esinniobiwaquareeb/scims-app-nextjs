@@ -113,6 +113,15 @@ export default function AffiliateLoginPage() {
               </div>
             </div>
 
+            <div className="flex items-center justify-between">
+              <Link 
+                href="/affiliate/forgot-password" 
+                className="text-sm text-primary hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
             <Button
               type="submit"
               className="w-full"

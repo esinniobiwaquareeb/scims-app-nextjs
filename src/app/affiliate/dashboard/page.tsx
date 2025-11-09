@@ -90,6 +90,13 @@ export default function AffiliateDashboardPage() {
   const [currencies, setCurrencies] = useState<Array<{ id: string; code: string; name: string; symbol: string }>>([]);
   const [selectedCurrencyId, setSelectedCurrencyId] = useState<string>('');
   const [currencyLoading, setCurrencyLoading] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    current_password: '',
+    new_password: '',
+    confirm_password: ''
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   useEffect(() => {
     // Check if affiliate is logged in
@@ -236,6 +243,57 @@ export default function AffiliateDashboardPage() {
       toast.error('Failed to update currency');
     } finally {
       setCurrencyLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!affiliate) return;
+
+    // Validation
+    if (!passwordData.current_password || !passwordData.new_password || !passwordData.confirm_password) {
+      toast.error('All fields are required');
+      return;
+    }
+
+    if (passwordData.new_password.length < 8) {
+      toast.error('New password must be at least 8 characters long');
+      return;
+    }
+
+    if (passwordData.new_password !== passwordData.confirm_password) {
+      toast.error('New passwords do not match');
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const response = await fetch('/api/affiliates/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          affiliate_id: affiliate.id,
+          current_password: passwordData.current_password,
+          new_password: passwordData.new_password
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Password changed successfully');
+        setShowChangePasswordModal(false);
+        setPasswordData({
+          current_password: '',
+          new_password: '',
+          confirm_password: ''
+        });
+      } else {
+        toast.error(data.error || 'Failed to change password');
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast.error('Failed to change password');
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -660,12 +718,86 @@ export default function AffiliateDashboardPage() {
                 />
               </div>
             )}
+            <div className="border-t pt-4 mt-4">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setShowProfileModal(false);
+                  setShowChangePasswordModal(true);
+                }}
+              >
+                Change Password
+              </Button>
+            </div>
             <div className="flex gap-2 pt-4">
               <Button variant="outline" className="flex-1" onClick={() => setShowProfileModal(false)}>
                 Cancel
               </Button>
               <Button className="flex-1" onClick={handleUpdateProfile} disabled={profileLoading}>
                 {profileLoading ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Password Modal */}
+      <Dialog open={showChangePasswordModal} onOpenChange={setShowChangePasswordModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Enter your current password and choose a new password
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="current-password">Current Password</Label>
+              <Input
+                id="current-password"
+                type="password"
+                value={passwordData.current_password}
+                onChange={(e) => setPasswordData(prev => ({ ...prev, current_password: e.target.value }))}
+                placeholder="Enter current password"
+                disabled={passwordLoading}
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={passwordData.new_password}
+                onChange={(e) => setPasswordData(prev => ({ ...prev, new_password: e.target.value }))}
+                placeholder="Enter new password (min 8 characters)"
+                disabled={passwordLoading}
+              />
+            </div>
+            <div>
+              <Label htmlFor="confirm-password">Confirm New Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={passwordData.confirm_password}
+                onChange={(e) => setPasswordData(prev => ({ ...prev, confirm_password: e.target.value }))}
+                placeholder="Confirm new password"
+                disabled={passwordLoading}
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" className="flex-1" onClick={() => {
+                setShowChangePasswordModal(false);
+                setPasswordData({
+                  current_password: '',
+                  new_password: '',
+                  confirm_password: ''
+                });
+              }}>
+                Cancel
+              </Button>
+              <Button className="flex-1" onClick={handleChangePassword} disabled={passwordLoading}>
+                {passwordLoading ? 'Changing...' : 'Change Password'}
               </Button>
             </div>
           </div>

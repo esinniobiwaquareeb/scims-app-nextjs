@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase/config';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { EmailService } from '@/lib/email/emailService';
-import { trackBusinessReferral, markReferralAsConverted, createAffiliateCommission } from '@/utils/affiliate/affiliateService';
+import { createAffiliateCommission } from '@/utils/affiliate/affiliateService';
 
 // Force dynamic rendering for API routes
 export const dynamic = 'force-dynamic';
@@ -87,51 +87,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate affiliate code if provided (Issue #4)
-    let finalReferralId: string | null = null;
-    if (affiliate_code && !referral_id) {
-      const { data: affiliate } = await supabase
+    // Validate affiliate code if provided (only validate, don't create referral yet)
+    // If invalid, allow registration to proceed but don't create referral
+    let affiliateId: string | null = null;
+    if (affiliate_code) {
+      const { data: affiliate, error: affiliateError } = await supabase
         .from('affiliate')
         .select('id, status')
         .eq('affiliate_code', affiliate_code.toUpperCase())
         .eq('status', 'active')
         .single();
 
-      if (!affiliate) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid or inactive affiliate code' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Validate referral_id if provided
-    if (referral_id) {
-      const { data: referral } = await supabase
-        .from('affiliate_referral')
-        .select('id, affiliate_id')
-        .eq('id', referral_id)
-        .single();
-
-      if (!referral) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid referral ID' },
-          { status: 400 }
-        );
-      }
-
-      // Check affiliate status separately
-      const { data: affiliate } = await supabase
-        .from('affiliate')
-        .select('status')
-        .eq('id', referral.affiliate_id)
-        .single();
-
-      if (!affiliate || affiliate.status !== 'active') {
-        return NextResponse.json(
-          { success: false, error: 'Affiliate associated with this referral is not active' },
-          { status: 400 }
-        );
+      if (affiliateError || !affiliate) {
+        // Log warning but don't block registration
+        console.warn(`Invalid or inactive affiliate code provided during registration: ${affiliate_code}`, affiliateError);
+        // Continue with registration - affiliate code will be ignored
+      } else {
+        affiliateId = affiliate.id;
       }
     }
 
@@ -196,21 +168,56 @@ export async function POST(request: NextRequest) {
       } else {
         business = businessData;
 
-        // Handle affiliate referral tracking and commission creation (Issues #4, #7)
-        if (referral_id) {
-          // Mark referral as converted
-          await markReferralAsConverted(referral_id, business.id);
-          finalReferralId = referral_id;
-        } else if (affiliate_code) {
-          // Track new referral and mark as converted
-          const newReferralId = await trackBusinessReferral(affiliate_code, email, phone, 'registration');
-          if (newReferralId) {
-            await markReferralAsConverted(newReferralId, business.id);
-            finalReferralId = newReferralId;
+        // Handle affiliate referral tracking and commission creation
+        // Only create referral record when business successfully signs up
+        let finalReferralId: string | null = null;
+        if (affiliateId && affiliate_code) {
+          // Create referral record and mark as converted immediately (since signup succeeded)
+          const referralExpiresAt = new Date();
+          referralExpiresAt.setDate(referralExpiresAt.getDate() + 90);
+
+          const { data: referral, error: referralError } = await supabase
+            .from('affiliate_referral')
+            .insert({
+              affiliate_id: affiliateId,
+              business_id: business.id,
+              user_email: email.toLowerCase(),
+              user_phone: phone || null,
+              referral_code: affiliate_code.toUpperCase(),
+              referral_source: 'registration',
+              status: 'converted', // Mark as converted immediately since signup succeeded
+              converted_at: new Date().toISOString(),
+              expires_at: referralExpiresAt.toISOString()
+            })
+            .select()
+            .single();
+
+          if (!referralError && referral) {
+            finalReferralId = referral.id;
+
+            // Update affiliate business count
+            const { data: currentAffiliate } = await supabase
+              .from('affiliate')
+              .select('total_businesses, total_referrals')
+              .eq('id', affiliateId)
+              .single();
+
+            if (currentAffiliate) {
+              await supabase
+                .from('affiliate')
+                .update({
+                  total_businesses: (currentAffiliate.total_businesses || 0) + 1,
+                  total_referrals: (currentAffiliate.total_referrals || 0) + 1
+                })
+                .eq('id', affiliateId);
+            }
+          } else {
+            console.error('Error creating affiliate referral:', referralError);
+            // Don't fail registration if referral creation fails
           }
         }
 
-        // Create signup commission if referral exists (Issue #7)
+        // Create signup commission if referral exists
         if (finalReferralId && business) {
           // Get affiliate to determine commission type
           const { data: referralData } = await supabase
