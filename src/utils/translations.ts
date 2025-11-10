@@ -26,6 +26,7 @@ export const translations = {
     'common.actions': 'Actions',
     'common.close': 'Close',
     'common.print': 'Print',
+    'sales.paymentDistribution': 'Payment Distribution',
 
     'dashboard.cashierTitle': 'Cashier Dashboard',
     'dashboard.cashierWelcome': 'Welcome back, {name}',

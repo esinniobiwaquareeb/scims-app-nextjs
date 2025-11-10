@@ -101,6 +101,9 @@ export default function RootLayout({
         <meta name="twitter:title" content="SCIMS - Complete Business Management System | POS, Inventory & FREE Website" />
         <meta name="twitter:description" content="Transform your business with SCIMS - complete POS, inventory management, business analytics, and a FREE professional website (worth ₦500,000). 14-day free trial!" />
         <meta name="twitter:image" content="https://scims.app/og-home.png" />
+        {/* Optional: Add your Twitter handle if you have one */}
+        {/* <meta name="twitter:site" content="@yourhandle" /> */}
+        {/* <meta name="twitter:creator" content="@yourhandle" /> */}
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning>
         <Providers>
