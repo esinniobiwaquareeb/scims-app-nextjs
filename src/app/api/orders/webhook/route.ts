@@ -94,21 +94,59 @@ export async function POST(request: NextRequest) {
       };
     });
 
+    // Create notification directly in database (more reliable than HTTP call)
     try {
-      await createOrderNotification(
-        {
-          orderId: validOrderId,
-          customerName: orderData.customer_name,
-          customerPhone: orderData.customer_phone || '',
-          customerAddress: orderData.customer_address,
-          customerEmail: orderData.customer_email,
-          totalAmount: orderData.total_amount,
-          orderItems: transformedOrderItems,
-        },
-        storeId,
-        businessId
-      );
-      console.log('Order notification created successfully');
+      // Format order items for display
+      const itemsSummary = transformedOrderItems
+        .map((item: { name: any; quantity: any; }) => `${item.name} (${item.quantity}x)`)
+        .join(', ');
+      
+      const { data: notification, error: notificationError } = await supabase
+        .from('notification')
+        .insert({
+          type: 'order',
+          title: 'New Order Received',
+          message: `New order from ${orderData.customer_name} - ${itemsSummary} - Total: ${orderData.total_amount.toFixed(2)}`,
+          data: {
+            orderId: validOrderId,
+            customerName: orderData.customer_name,
+            customerPhone: orderData.customer_phone || '',
+            customerAddress: orderData.customer_address,
+            customerEmail: orderData.customer_email,
+            totalAmount: orderData.total_amount,
+            orderItems: transformedOrderItems,
+          },
+          is_read: false,
+          store_id: storeId,
+          business_id: businessId,
+        })
+        .select()
+        .single();
+
+      if (notificationError) {
+        console.error('Failed to create notification in database:', notificationError);
+        // Try alternative approach with createOrderNotification as fallback
+        try {
+          await createOrderNotification(
+            {
+              orderId: validOrderId,
+              customerName: orderData.customer_name,
+              customerPhone: orderData.customer_phone || '',
+              customerAddress: orderData.customer_address,
+              customerEmail: orderData.customer_email,
+              totalAmount: orderData.total_amount,
+              orderItems: transformedOrderItems,
+            },
+            storeId,
+            businessId
+          );
+          console.log('Order notification created via API fallback');
+        } catch (fallbackError) {
+          console.error('Both notification creation methods failed:', fallbackError);
+        }
+      } else {
+        console.log('Order notification created successfully in database:', notification?.id);
+      }
     } catch (notificationError) {
       console.error('Error creating order notification:', notificationError);
       // Don't fail the webhook if notification fails

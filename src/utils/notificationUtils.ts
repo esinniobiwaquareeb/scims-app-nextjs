@@ -21,10 +21,15 @@ export async function createOrderNotification(
   businessId: string
 ): Promise<void> {
   try {
+    // Format order items for display
+    const itemsSummary = orderData.orderItems
+      .map(item => `${item.name} (${item.quantity}x)`)
+      .join(', ');
+    
     const notificationData = {
       type: 'order',
       title: 'New Order Received',
-      message: `New order from ${orderData.customerName} for $${orderData.totalAmount.toFixed(2)}`,
+      message: `New order from ${orderData.customerName} - ${itemsSummary} - Total: ${orderData.totalAmount.toFixed(2)}`,
       data: {
         orderId: orderData.orderId,
         customerName: orderData.customerName,
@@ -38,7 +43,12 @@ export async function createOrderNotification(
       businessId,
     };
 
-    const response = await fetch(`${getBaseUrl()}/api/notifications`, {
+    const baseUrl = getBaseUrl();
+    const url = `${baseUrl}/api/notifications`;
+    
+    console.log('Creating notification:', { url, storeId, businessId, orderId: orderData.orderId });
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -47,14 +57,28 @@ export async function createOrderNotification(
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorText = await response.text();
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { error: errorText || 'Unknown error' };
+      }
+      console.error('Notification API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      });
       throw new Error(`Failed to create order notification: ${errorData.error || 'Unknown error'}`);
     }
 
-    console.log(`Order notification created successfully for order ${orderData.orderId}`);
+    const result = await response.json();
+    console.log(`Order notification created successfully for order ${orderData.orderId}:`, result);
   } catch (error) {
     console.error('Error creating order notification:', error);
-    // Don't throw error to avoid breaking the order creation flow
+    // Re-throw to allow caller to handle, but don't break order creation
+    // The webhook will catch and log this
+    throw error;
   }
 }
 
