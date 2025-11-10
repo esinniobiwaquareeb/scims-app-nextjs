@@ -667,16 +667,35 @@ export const ExchangeModal: React.FC<ExchangeModalProps> = ({
                       <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800">
                         <p className="font-medium text-green-800 dark:text-green-200 mb-2">Items Purchased:</p>
                         <div className="space-y-1">
-                          {validatedSale.items?.map((item: { id: string; product_name?: string; quantity: number; unit_price: number }) => (
-                            <div key={item.id} className="flex justify-between text-sm">
-                              <span className="text-green-700 dark:text-green-300">
-                                {item.product_name} (Qty: {item.quantity})
-                              </span>
-                              <span className="font-medium text-green-800 dark:text-green-200">
-                                {formatCurrency(item.unit_price)}
-                              </span>
-                            </div>
-                          ))}
+                          {validatedSale.items?.map((item: { 
+                            id: string; 
+                            product_name?: string; 
+                            quantity: number; 
+                            unit_price: number;
+                            remaining_returnable?: number;
+                            already_returned?: number;
+                          }) => {
+                            const remaining = item.remaining_returnable !== undefined 
+                              ? item.remaining_returnable 
+                              : item.quantity - (item.already_returned || 0);
+                            const alreadyReturned = item.already_returned || 0;
+                            return (
+                              <div key={item.id} className="flex justify-between text-sm">
+                                <span className="text-green-700 dark:text-green-300">
+                                  {item.product_name} (Qty: {item.quantity}
+                                  {alreadyReturned > 0 && (
+                                    <span className="text-orange-600 dark:text-orange-400">
+                                      {' '}- {alreadyReturned} returned, {remaining} remaining
+                                    </span>
+                                  )}
+                                  )
+                                </span>
+                                <span className="font-medium text-green-800 dark:text-green-200">
+                                  {formatCurrency(item.unit_price)}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
@@ -719,11 +738,37 @@ export const ExchangeModal: React.FC<ExchangeModalProps> = ({
                           <SelectValue placeholder="Choose product from receipt" />
                         </SelectTrigger>
                         <SelectContent>
-                          {validatedSale.items?.map((item: { id: string; product_id: string; product_name?: string; quantity: number }) => (
-                            <SelectItem key={item.id} value={item.product_id}>
-                              {item.product_name} (Available: {item.quantity})
-                            </SelectItem>
-                          ))}
+                          {validatedSale.items?.filter((item: { 
+                            id: string; 
+                            product_id: string; 
+                            product_name?: string; 
+                            quantity: number;
+                            remaining_returnable?: number;
+                            already_returned?: number;
+                          }) => {
+                            const remaining = item.remaining_returnable !== undefined 
+                              ? item.remaining_returnable 
+                              : item.quantity - (item.already_returned || 0);
+                            return remaining > 0;
+                          }).map((item: { 
+                            id: string; 
+                            product_id: string; 
+                            product_name?: string; 
+                            quantity: number;
+                            remaining_returnable?: number;
+                            already_returned?: number;
+                          }) => {
+                            const remaining = item.remaining_returnable !== undefined 
+                              ? item.remaining_returnable 
+                              : item.quantity - (item.already_returned || 0);
+                            const alreadyReturned = item.already_returned || 0;
+                            return (
+                              <SelectItem key={item.id} value={item.product_id}>
+                                {item.product_name} (Remaining: {remaining}/{item.quantity}
+                                {alreadyReturned > 0 && `, ${alreadyReturned} returned`})
+                              </SelectItem>
+                            );
+                          })}
                         </SelectContent>
                       </Select>
                     </div>
@@ -734,12 +779,44 @@ export const ExchangeModal: React.FC<ExchangeModalProps> = ({
                         id="return-quantity"
                         type="number"
                         min="1"
+                        max={(() => {
+                          if (!currentExchangeItem.product_id || !validatedSale?.items) return undefined;
+                          const saleItem = validatedSale.items.find(
+                            (item: { product_id: string; remaining_returnable?: number; already_returned?: number; quantity: number }) => 
+                              item.product_id === currentExchangeItem.product_id
+                          );
+                          if (!saleItem) return undefined;
+                          const remaining = saleItem.remaining_returnable !== undefined 
+                            ? saleItem.remaining_returnable 
+                            : saleItem.quantity - (saleItem.already_returned || 0);
+                          return remaining;
+                        })()}
                         value={currentExchangeItem.quantity || 1}
                         onChange={(e) => setCurrentExchangeItem({
                           ...currentExchangeItem,
                           quantity: parseInt(e.target.value) || 1
                         })}
                       />
+                      {(() => {
+                        if (!currentExchangeItem.product_id || !validatedSale?.items) return null;
+                        const saleItem = validatedSale.items.find(
+                          (item: { product_id: string; remaining_returnable?: number; already_returned?: number; quantity: number }) => 
+                            item.product_id === currentExchangeItem.product_id
+                        );
+                        if (!saleItem) return null;
+                        const remaining = saleItem.remaining_returnable !== undefined 
+                          ? saleItem.remaining_returnable 
+                          : saleItem.quantity - (saleItem.already_returned || 0);
+                        const alreadyReturned = saleItem.already_returned || 0;
+                        if (alreadyReturned > 0) {
+                          return (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {alreadyReturned} already returned. Maximum {remaining} can be returned.
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
 
                     <div>

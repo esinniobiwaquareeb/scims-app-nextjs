@@ -212,6 +212,25 @@ export async function POST(request: NextRequest) {
       remaining_returnable: item.quantity - (alreadyReturnedByItem[item.id] || 0)
     }));
 
+    // Check if all items have been fully returned
+    const allItemsFullyReturned = transformedItems.every(item => item.remaining_returnable <= 0);
+    
+    if (allItemsFullyReturned && transformedItems.length > 0) {
+      return NextResponse.json({
+        success: true,
+        valid: false,
+        error: 'All items from this receipt have already been returned. No further returns are allowed for this receipt.',
+        sale: {
+          id: sale.id,
+          receipt_number: sale.receipt_number,
+          transaction_date: sale.transaction_date,
+          customer_id: sale.customer_id,
+          items: transformedItems
+        },
+        existing_returns: existingReturns || []
+      } as ValidateReturnResponse);
+    }
+
     return NextResponse.json({
       success: true,
       valid: true,

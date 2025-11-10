@@ -78,6 +78,8 @@ export async function POST(request: NextRequest) {
 
       const returnTransactionIds = (existingReturnTransactions || []).map((t: { id: string }) => t.id);
 
+      // Calculate already returned quantities per sale item
+      const alreadyReturnedByItem: { [key: string]: number } = {};
       if (returnTransactionIds.length > 0) {
         const { data: existingReturnItems } = await supabase
           .from('exchange_item')
@@ -85,15 +87,31 @@ export async function POST(request: NextRequest) {
           .eq('item_type', 'returned')
           .in('exchange_transaction_id', returnTransactionIds);
 
-        // Calculate already returned quantities per sale item
-        const alreadyReturnedByItem: { [key: string]: number } = {};
         (existingReturnItems || []).forEach((item: { original_sale_item_id: string; quantity: number }) => {
           if (item.original_sale_item_id) {
             alreadyReturnedByItem[item.original_sale_item_id] = 
               (alreadyReturnedByItem[item.original_sale_item_id] || 0) + (item.quantity || 0);
           }
         });
+      }
 
+      // Check if all items have been fully returned
+      const allItemsFullyReturned = (originalSale.items || []).every((saleItem: { id: string; quantity: number }) => {
+        const alreadyReturned = alreadyReturnedByItem[saleItem.id] || 0;
+        return alreadyReturned >= saleItem.quantity;
+      });
+
+      if (allItemsFullyReturned && (originalSale.items || []).length > 0) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'All items from this receipt have already been returned. No further returns are allowed for this receipt.' 
+          },
+          { status: 400 }
+        );
+      }
+
+      if (returnTransactionIds.length > 0) {
         // Validate each return item
         for (const returnItem of data.exchange_items) {
           if (returnItem.item_type === 'returned' && returnItem.original_sale_item_id) {

@@ -207,6 +207,7 @@ DECLARE
   exchange_item_record RECORD;
   product_to_update uuid;
   stock_quantity_to_add INTEGER;
+  is_new_product BOOLEAN := false;
 BEGIN
   -- Only process when transaction is completed
   IF NEW.status = 'completed' AND (OLD.status IS NULL OR OLD.status != 'completed') THEN
@@ -217,6 +218,9 @@ BEGIN
       WHERE exchange_transaction_id = NEW.id 
       AND add_to_inventory = true
     LOOP
+      -- Reset flag for each item
+      is_new_product := false;
+      
       -- Determine product_id
       IF exchange_item_record.item_type = 'returned' AND exchange_item_record.original_sale_item_id IS NOT NULL THEN
         -- Get product_id from original sale item
@@ -228,6 +232,7 @@ BEGIN
         product_to_update := exchange_item_record.product_id;
       ELSE
         -- Create new product for trade-in
+        is_new_product := true;
         INSERT INTO product (
           store_id,
           name,
@@ -244,9 +249,9 @@ BEGIN
           COALESCE(exchange_item_record.product_name, 'Trade-in Item'),
           exchange_item_record.product_sku,
           exchange_item_record.product_barcode,
-          0, -- Price to be set later
+          exchange_item_record.unit_value, -- Set price to trade-in value
           exchange_item_record.unit_value, -- Cost is trade-in value
-          exchange_item_record.quantity, -- Initial stock
+          0, -- Start with 0 stock, will be added below
           true,
           NOW(),
           NOW()
@@ -259,6 +264,8 @@ BEGIN
       END IF;
       
       -- Add stock based on condition
+      -- For new products, this sets the stock (since it starts at 0)
+      -- For existing products, this adds to existing stock
       IF exchange_item_record.condition IN ('excellent', 'good', 'fair') THEN
         -- Add full quantity for resellable items
         UPDATE product
