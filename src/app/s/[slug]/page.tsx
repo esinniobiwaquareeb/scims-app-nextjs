@@ -18,6 +18,7 @@ import { generateOrderPDF } from '@/utils/pdfGenerator';
 interface Product {
   id: string;
   name: string;
+  sku?: string;
   description: string;
   public_description?: string;
   price: number;
@@ -175,7 +176,40 @@ export default function StorefrontPage() {
       if (data.success) {
         setBusiness(data.business);
         setStores(data.stores);
-        setProducts(data.products);
+        
+        // Deduplicate products by SKU (preferred) or name (fallback)
+        // If same product exists in multiple stores, show only one instance
+        const uniqueProducts = (data.products || []).reduce((acc: Product[], product: Product) => {
+          // Check for existing product by SKU (preferred) or name (fallback)
+          const existingProduct = acc.find(p => {
+            // If both have SKUs, match by SKU (case-insensitive, trimmed)
+            if (p.sku && product.sku && p.sku.trim().toLowerCase() === product.sku.trim().toLowerCase()) {
+              return true;
+            }
+            // If SKUs don't match or one is missing, match by name (case-insensitive, trimmed)
+            if (p.name && product.name && p.name.trim().toLowerCase() === product.name.trim().toLowerCase()) {
+              return true;
+            }
+            return false;
+          });
+          
+          if (!existingProduct) {
+            acc.push(product);
+          } else {
+            // If product exists in multiple stores, combine stock quantities
+            existingProduct.stock_quantity += product.stock_quantity;
+            // Update store info to show it's available in multiple stores
+            if (!existingProduct.store_names) {
+              existingProduct.store_names = existingProduct.store?.name ? [existingProduct.store.name] : [];
+            }
+            if (product.store?.name && !existingProduct.store_names.includes(product.store.name)) {
+              existingProduct.store_names.push(product.store.name);
+            }
+          }
+          return acc;
+        }, []);
+        
+        setProducts(uniqueProducts);
         setCategories(data.categories);
       } else {
         setError(data.error || 'Store not found');
