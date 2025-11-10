@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystem } from '../contexts/SystemContext';
+import { useTheme } from '../contexts/ThemeContext';
 // import { useActivityLogger } from '../contexts/ActivityLogger';
 import { toast } from 'sonner';
 import { Header } from './common/Header';
@@ -52,6 +53,7 @@ interface StoreDetailsProps {
 export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => {
   const { formatCurrency, getCurrentCurrency } = useSystem();
   const { user, currentStore: authCurrentStore } = useAuth();
+  const { isDark } = useTheme();
   
   const [activeTab, setActiveTab] = useState('overview');
   const [error, setError] = useState<string | null>(null);
@@ -227,100 +229,134 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
       />
       
       <main className="flex-1 overflow-y-auto pt-[73px] sm:pt-[81px] lg:pt-[89px]">
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
         {/* Store Header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 bg-brand-primary rounded-lg">
-              <StoreIcon className="w-8 h-8 text-white" />
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+              <div className="p-4 bg-primary rounded-xl shadow-sm">
+                <StoreIcon className="w-10 h-10 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                    {storeData?.name || store?.name}
+                  </h1>
+                  <Badge variant={storeData?.is_active !== false ? "default" : "secondary"}>
+                    {storeData?.is_active !== false ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
+                {storeData?.address || storeData?.city || storeData?.state ? (
+                  <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
+                    {storeData?.address && `${storeData.address}`}
+                    {(storeData?.city || storeData?.state) && (
+                      <span>
+                        {storeData?.address && ', '}
+                        {storeData?.city && `${storeData.city}`}
+                        {storeData?.city && storeData?.state && ', '}
+                        {storeData?.state && `${storeData.state}`}
+                      </span>
+                    )}
+                    {storeData?.postal_code && ` ${storeData.postal_code}`}
+                  </p>
+                ) : null}
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{storeData?.name || store?.name}</h1>
-              <p className="text-gray-600">
-                {storeData?.address && `${storeData.address}, `}
-                {storeData?.city && `${storeData.city}, `}
-                {storeData?.state && `${storeData.state}`}
-                {storeData?.postal_code && ` ${storeData.postal_code}`}
-              </p>
+            
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              {storeData?.phone && (
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                  <Phone className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <a href={`tel:${storeData.phone}`} className="hover:text-primary transition-colors">
+                    {storeData.phone}
+                  </a>
+                </div>
+              )}
+              {storeData?.email && (
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                  <Mail className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <a href={`mailto:${storeData.email}`} className="hover:text-primary transition-colors break-all">
+                    {storeData.email}
+                  </a>
+                </div>
+              )}
+              {storeData?.website && (
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                  <Globe className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <a 
+                    href={storeData.website.startsWith('http') ? storeData.website : `https://${storeData.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary transition-colors break-all"
+                  >
+                    {storeData.website}
+                  </a>
+                </div>
+              )}
+              {storeData?.manager_name && (
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                  <Users className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span>Manager: {storeData.manager_name}</span>
+                </div>
+              )}
             </div>
-          </div>
-          
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            {storeData?.phone && (
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4" />
-                <span>{storeData.phone}</span>
-              </div>
-            )}
-            {storeData?.email && (
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                <span>{storeData.email}</span>
-              </div>
-            )}
-            {storeData?.website && (
-              <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4" />
-                <span>{storeData.website}</span>
-              </div>
-            )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Package className="w-5 h-5 text-blue-600" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Total Products</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{typedStats.totalProducts}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Total Products</p>
-                  <p className="text-2xl font-bold">{typedStats.totalProducts}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <ShoppingCart className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Today&apos;s Sales</p>
-                  <p className="text-2xl font-bold">{formatCurrency(typedStats.todaysSalesRevenue)}</p>
-                  <p className="text-xs text-gray-500 mt-1">{typedStats.todaysSalesCount} transactions</p>
+                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <Package className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Users className="w-5 h-5 text-purple-600" />
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Today&apos;s Sales</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(typedStats.todaysSalesRevenue)}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{typedStats.todaysSalesCount} {typedStats.todaysSalesCount === 1 ? 'transaction' : 'transactions'}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Total Customers</p>
-                  <p className="text-2xl font-bold">{typedStats.totalCustomers}</p>
+                <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                  <ShoppingCart className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <BarChart3 className="w-5 h-5 text-orange-600" />
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Total Customers</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{typedStats.totalCustomers}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Orders Today</p>
-                  <p className="text-2xl font-bold">{typedStats.ordersToday}</p>
+                <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                  <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Orders Today</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{typedStats.ordersToday}</p>
+                </div>
+                <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                  <BarChart3 className="w-6 h-6 text-orange-600 dark:text-orange-400" />
                 </div>
               </div>
             </CardContent>
@@ -328,186 +364,265 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="sales">Sales</TabsTrigger>
-            <TabsTrigger value="customers">Customers</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-1 h-auto p-1">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm py-2">Overview</TabsTrigger>
+            <TabsTrigger value="products" className="text-xs sm:text-sm py-2">Products</TabsTrigger>
+            <TabsTrigger value="sales" className="text-xs sm:text-sm py-2">Sales</TabsTrigger>
+            <TabsTrigger value="customers" className="text-xs sm:text-sm py-2">Customers</TabsTrigger>
+            <TabsTrigger value="settings" className="text-xs sm:text-sm py-2">Settings</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-4">
+          <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Store Information */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg">
                     <Building className="w-5 h-5" />
                     Store Information
                   </CardTitle>
+                  <CardDescription>
+                    Basic store details and contact information
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Name:</span>
-                    <span className="font-medium">{storeData?.name || store?.name}</span>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Name</p>
+                      <p className="text-base font-semibold text-gray-900 dark:text-white">{storeData?.name || store?.name}</p>
+                    </div>
+                    {storeData?.address && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Address</p>
+                        <p className="text-sm text-gray-900 dark:text-gray-100">{storeData.address}</p>
+                      </div>
+                    )}
+                    {(storeData?.city || storeData?.state || storeData?.postal_code) && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Location</p>
+                        <p className="text-sm text-gray-900 dark:text-gray-100">
+                          {storeData?.city && `${storeData.city}`}
+                          {storeData?.city && storeData?.state && ', '}
+                          {storeData?.state && `${storeData.state}`}
+                          {storeData?.postal_code && ` ${storeData.postal_code}`}
+                        </p>
+                      </div>
+                    )}
+                    {storeData?.phone && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Phone</p>
+                        <a href={`tel:${storeData.phone}`} className="text-sm text-primary hover:underline">
+                          {storeData.phone}
+                        </a>
+                      </div>
+                    )}
+                    {storeData?.email && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Email</p>
+                        <a href={`mailto:${storeData.email}`} className="text-sm text-primary hover:underline break-all">
+                          {storeData.email}
+                        </a>
+                      </div>
+                    )}
+                    {storeData?.website && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Website</p>
+                        <a 
+                          href={storeData.website.startsWith('http') ? storeData.website : `https://${storeData.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline break-all"
+                        >
+                          {storeData.website}
+                        </a>
+                      </div>
+                    )}
+                    {storeData?.manager_name && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Manager</p>
+                        <p className="text-sm text-gray-900 dark:text-gray-100">{storeData.manager_name}</p>
+                      </div>
+                    )}
                   </div>
-                  {storeData?.address && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Address:</span>
-                      <span className="font-medium">{storeData.address}</span>
-                    </div>
-                  )}
-                  {storeData?.city && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">City:</span>
-                      <span className="font-medium">{storeData.city}</span>
-                    </div>
-                  )}
-                  {storeData?.state && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">State:</span>
-                      <span className="font-medium">{storeData.state}</span>
-                    </div>
-                  )}
-                  {storeData?.postal_code && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Postal Code:</span>
-                      <span className="font-medium">{storeData.postal_code}</span>
-                    </div>
-                  )}
-                  {storeData?.phone && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Phone:</span>
-                      <span className="font-medium">{storeData.phone}</span>
-                    </div>
-                  )}
-                  {storeData?.email && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Email:</span>
-                      <span className="font-medium">{storeData.email}</span>
-                    </div>
-                  )}
-                  {storeData?.website && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Website:</span>
-                      <span className="font-medium">{storeData.website}</span>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
 
-              {/* Business Settings */}
+              {/* Business Settings & Statistics */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings className="w-5 h-5" />
-                    Business Settings
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <BarChart3 className="w-5 h-5" />
+                    Statistics & Settings
                   </CardTitle>
+                  <CardDescription>
+                    Store performance metrics and configuration
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Currency:</span>
-                    <span className="font-medium">{getCurrentCurrency()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Language:</span>
-                    <span className="font-medium">{storeData?.language || 'English'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Total Sales Revenue:</span>
-                    <span className="font-medium">{formatCurrency(typedStats.totalSalesRevenue)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Total Transactions:</span>
-                    <span className="font-medium">{typedStats.totalSalesCount}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Tax Rate:</span>
-                    <span className="font-medium">{storeData?.taxRate || 0}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Tax Enabled:</span>
-                    <Badge variant={storeData?.enableTax ? "default" : "secondary"}>
-                      {storeData?.enableTax ? "Yes" : "No"}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Returns Allowed:</span>
-                    <Badge variant={storeData?.allowReturns ? "default" : "secondary"}>
-                      {storeData?.allowReturns ? "Yes" : "No"}
-                    </Badge>
-                  </div>
-                  {storeData?.allowReturns && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Return Period:</span>
-                      <span className="font-medium">{storeData?.returnPeriodDays || 30} days</span>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="space-y-3">
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Performance</p>
+                      <div className="grid grid-cols-1 gap-3">
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Total Sales Revenue:</span>
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(typedStats.totalSalesRevenue)}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Total Transactions:</span>
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">{typedStats.totalSalesCount}</span>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                    
+                    <div className="space-y-3 pt-2">
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Configuration</p>
+                      <div className="grid grid-cols-1 gap-3">
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Currency:</span>
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">{getCurrentCurrency()}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Language:</span>
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">{storeData?.language || 'English'}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Tax Rate:</span>
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">{storeData?.taxRate || 0}%</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Tax Enabled:</span>
+                          <Badge variant={storeData?.enableTax ? "default" : "secondary"} className="text-xs">
+                            {storeData?.enableTax ? "Yes" : "No"}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Returns Allowed:</span>
+                          <Badge variant={storeData?.allowReturns ? "default" : "secondary"} className="text-xs">
+                            {storeData?.allowReturns ? "Yes" : "No"}
+                          </Badge>
+                        </div>
+                        {storeData?.allowReturns && (
+                          <div className="flex justify-between items-center py-2">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">Return Period:</span>
+                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{storeData?.returnPeriodDays || 30} days</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
 
           {/* Products Tab */}
-          <TabsContent value="products" className="space-y-4">
+          <TabsContent value="products" className="space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  Store Products ({storeProducts.length})
-                </CardTitle>
-                <CardDescription>
-                  All products available in this store
-                </CardDescription>
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Package className="w-5 h-5" />
+                      Store Products
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      {storeProducts.length} {storeProducts.length === 1 ? 'product' : 'products'} available in this store
+                    </CardDescription>
+                  </div>
+                  <Badge variant="outline" className="text-sm">
+                    {storeProducts.length} {storeProducts.length === 1 ? 'item' : 'items'}
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent>
                 {isLoadingProducts ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto mb-4"></div>
-                    <p>Loading products...</p>
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-gray-600 dark:text-gray-400">Loading products...</p>
                   </div>
                 ) : storeProducts.length > 0 ? (
                   <div className="space-y-3">
                     {storeProducts.slice(0, 10).map((product: any) => (
-                      <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <Package className="w-5 h-5 text-gray-600" />
+                      <div key={product.id} className={`flex items-center justify-between p-4 border rounded-lg hover:shadow-sm transition-shadow ${
+                        isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'
+                      }`}>
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                            isDark ? 'bg-gray-700' : 'bg-gray-100'
+                          }`}>
+                            <Package className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                           </div>
-                          <div>
-                            <p className="font-medium">{product.name}</p>
-                            <p className="text-sm text-gray-600">
-                              SKU: {product.sku || 'N/A'} • 
-                              Stock: {product.stock_quantity || 0}
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-medium truncate ${
+                              isDark ? 'text-white' : 'text-gray-900'
+                            }`}>
+                              {product.name}
                             </p>
+                            <div className="flex items-center gap-3 mt-1">
+                              <p className={`text-xs ${
+                                isDark ? 'text-gray-400' : 'text-gray-500'
+                              }`}>
+                                SKU: {product.sku || 'N/A'}
+                              </p>
+                              <span className={`text-xs ${
+                                isDark ? 'text-gray-500' : 'text-gray-400'
+                              }`}>•</span>
+                              <p className={`text-xs ${
+                                isDark ? 'text-gray-400' : 'text-gray-500'
+                              }`}>
+                                Stock: {product.stock_quantity || 0}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium">{formatCurrency(product.price || 0)}</p>
-                          <Badge variant={product.stock_quantity > 0 ? "default" : "secondary"}>
-                            {product.stock_quantity > 0 ? "In Stock" : "Out of Stock"}
-                          </Badge>
+                        <div className="flex items-center gap-4 flex-shrink-0">
+                          <div className="text-right">
+                            <p className={`font-semibold ${
+                              isDark ? 'text-white' : 'text-gray-900'
+                            }`}>
+                              {formatCurrency(product.price || 0)}
+                            </p>
+                            <Badge 
+                              variant={product.stock_quantity > 0 ? "default" : "secondary"} 
+                              className="mt-1 text-xs"
+                            >
+                              {product.stock_quantity > 0 ? "In Stock" : "Out of Stock"}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
                     ))}
                     {storeProducts.length > 10 && (
-                      <div className="text-center py-4">
-                        <p className="text-gray-600">
+                      <div className="text-center py-6 border-t border-gray-200 dark:border-gray-700">
+                        <p className={`text-sm mb-3 ${
+                          isDark ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
                           Showing 10 of {storeProducts.length} products
                         </p>
-                        <Button variant="outline" className="mt-2">
+                        <Button variant="outline" onClick={() => window.location.href = '/products'}>
                           View All Products
                         </Button>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Products Found</h3>
-                    <p className="text-gray-600 mb-4">This store doesn&apos;t have any products yet.</p>
+                  <div className="text-center py-12">
+                    <Package className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                    <h3 className={`text-lg font-semibold mb-2 ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      No Products Found
+                    </h3>
+                    <p className={`mb-4 ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      This store doesn&apos;t have any products yet.
+                    </p>
+                    <Button variant="outline" onClick={() => window.location.href = '/products'}>
+                      Add Products
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -515,60 +630,109 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
           </TabsContent>
 
           {/* Sales Tab */}
-          <TabsContent value="sales" className="space-y-4">
+          <TabsContent value="sales" className="space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ShoppingCart className="w-5 h-5" />
-                  Recent Sales ({storeSales.length})
-                </CardTitle>
-                <CardDescription>
-                  Recent sales transactions for this store
-                </CardDescription>
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <ShoppingCart className="w-5 h-5" />
+                      Recent Sales
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      Recent sales transactions for this store
+                    </CardDescription>
+                  </div>
+                  <Badge variant="outline" className="text-sm">
+                    {storeSales.length} {storeSales.length === 1 ? 'sale' : 'sales'}
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent>
                 {isLoadingSales ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto mb-4"></div>
-                    <p>Loading sales...</p>
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-gray-600 dark:text-gray-400">Loading sales...</p>
                   </div>
                 ) : storeSales.length > 0 ? (
                   <div className="space-y-3">
                     {storeSales.slice(0, 10).map((sale: any) => (
-                      <div key={sale.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                            <ShoppingCart className="w-5 h-5 text-green-600" />
+                      <div key={sale.id} className={`flex items-center justify-between p-4 border rounded-lg hover:shadow-sm transition-shadow ${
+                        isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'
+                      }`}>
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <ShoppingCart className="w-6 h-6 text-green-600 dark:text-green-400" />
                           </div>
-                          <div>
-                            <p className="font-medium">Sale #{sale.id.slice(-8)}</p>
-                            <p className="text-sm text-gray-600">
-                              {new Date(sale.created_at).toLocaleDateString()} • 
-                              {sale.items?.length || 0} items
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-medium ${
+                              isDark ? 'text-white' : 'text-gray-900'
+                            }`}>
+                              Sale #{sale.receipt_number || sale.id.slice(-8).toUpperCase()}
                             </p>
+                            <div className="flex items-center gap-3 mt-1">
+                              <p className={`text-xs ${
+                                isDark ? 'text-gray-400' : 'text-gray-500'
+                              }`}>
+                                {new Date(sale.transaction_date || sale.created_at).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                              <span className={`text-xs ${
+                                isDark ? 'text-gray-500' : 'text-gray-400'
+                              }`}>•</span>
+                              <p className={`text-xs ${
+                                isDark ? 'text-gray-400' : 'text-gray-500'
+                              }`}>
+                                {sale.items?.length || 0} {sale.items?.length === 1 ? 'item' : 'items'}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium">{formatCurrency(sale.total_amount || 0)}</p>
-                          <Badge variant="default">Completed</Badge>
+                        <div className="flex items-center gap-4 flex-shrink-0">
+                          <div className="text-right">
+                            <p className={`font-semibold ${
+                              isDark ? 'text-white' : 'text-gray-900'
+                            }`}>
+                              {formatCurrency(sale.total_amount || 0)}
+                            </p>
+                            <Badge variant="default" className="mt-1 text-xs">
+                              Completed
+                            </Badge>
+                          </div>
                         </div>
                       </div>
                     ))}
                     {storeSales.length > 10 && (
-                      <div className="text-center py-4">
-                        <p className="text-gray-600">
+                      <div className="text-center py-6 border-t border-gray-200 dark:border-gray-700">
+                        <p className={`text-sm mb-3 ${
+                          isDark ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
                           Showing 10 of {storeSales.length} sales
                         </p>
-                        <Button variant="outline" className="mt-2">
+                        <Button variant="outline" onClick={() => window.location.href = '/sales-report'}>
                           View All Sales
                         </Button>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No sales found for this store</p>
+                  <div className="text-center py-12">
+                    <ShoppingCart className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                    <h3 className={`text-lg font-semibold mb-2 ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      No Sales Found
+                    </h3>
+                    <p className={`${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      No sales transactions found for this store yet.
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -576,62 +740,118 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
           </TabsContent>
 
           {/* Customers Tab */}
-          <TabsContent value="customers" className="space-y-4">
+          <TabsContent value="customers" className="space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  Store Customers ({storeCustomers.length})
-                </CardTitle>
-                <CardDescription>
-                  Customers who have made purchases at this store
-                </CardDescription>
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Users className="w-5 h-5" />
+                      Store Customers
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      Customers who have made purchases at this store
+                    </CardDescription>
+                  </div>
+                  <Badge variant="outline" className="text-sm">
+                    {storeCustomers.length} {storeCustomers.length === 1 ? 'customer' : 'customers'}
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent>
                 {isLoadingCustomers ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto mb-4"></div>
-                    <p>Loading customers...</p>
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-gray-600 dark:text-gray-400">Loading customers...</p>
                   </div>
                 ) : storeCustomers.length > 0 ? (
                   <div className="space-y-3">
                     {storeCustomers.slice(0, 10).map((customer: any) => (
-                      <div key={customer.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <Users className="w-5 h-5 text-blue-600" />
+                      <div key={customer.id} className={`flex items-center justify-between p-4 border rounded-lg hover:shadow-sm transition-shadow ${
+                        isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'
+                      }`}>
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                           </div>
-                          <div>
-                            <p className="font-medium">{customer.name}</p>
-                            <p className="text-sm text-gray-600">
-                              {customer.phone || 'No phone'} • 
-                              {customer.email || 'No email'}
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-medium truncate ${
+                              isDark ? 'text-white' : 'text-gray-900'
+                            }`}>
+                              {customer.name}
                             </p>
+                            <div className="flex items-center gap-3 mt-1">
+                              {customer.phone && (
+                                <>
+                                  <p className={`text-xs ${
+                                    isDark ? 'text-gray-400' : 'text-gray-500'
+                                  }`}>
+                                    {customer.phone}
+                                  </p>
+                                  {customer.email && (
+                                    <span className={`text-xs ${
+                                      isDark ? 'text-gray-500' : 'text-gray-400'
+                                    }`}>•</span>
+                                  )}
+                                </>
+                              )}
+                              {customer.email && (
+                                <p className={`text-xs truncate ${
+                                  isDark ? 'text-gray-400' : 'text-gray-500'
+                                }`}>
+                                  {customer.email}
+                                </p>
+                              )}
+                              {!customer.phone && !customer.email && (
+                                <p className={`text-xs ${
+                                  isDark ? 'text-gray-500' : 'text-gray-400'
+                                }`}>
+                                  No contact information
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm text-gray-600">
-                            {customer.total_purchases || 0} purchases
-                          </p>
-                          <Badge variant="default">Active</Badge>
+                        <div className="flex items-center gap-4 flex-shrink-0">
+                          <div className="text-right">
+                            <p className={`text-sm ${
+                              isDark ? 'text-gray-400' : 'text-gray-600'
+                            }`}>
+                              {customer.total_purchases || 0} {customer.total_purchases === 1 ? 'purchase' : 'purchases'}
+                            </p>
+                            <Badge variant="default" className="mt-1 text-xs">
+                              Active
+                            </Badge>
+                          </div>
                         </div>
                       </div>
                     ))}
                     {storeCustomers.length > 10 && (
-                      <div className="text-center py-4">
-                        <p className="text-gray-600">
+                      <div className="text-center py-6 border-t border-gray-200 dark:border-gray-700">
+                        <p className={`text-sm mb-3 ${
+                          isDark ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
                           Showing 10 of {storeCustomers.length} customers
                         </p>
-                        <Button variant="outline" className="mt-2">
+                        <Button variant="outline" onClick={() => window.location.href = '/customers'}>
                           View All Customers
                         </Button>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No customers found for this store</p>
+                  <div className="text-center py-12">
+                    <Users className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                    <h3 className={`text-lg font-semibold mb-2 ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      No Customers Found
+                    </h3>
+                    <p className={`${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      No customers have made purchases at this store yet.
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -640,10 +860,10 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
 
           {/* Settings Tab - Only show if user has access */}
           {hasAccessToStore && (
-            <TabsContent value="settings" className="space-y-4">
+            <TabsContent value="settings" className="space-y-6">
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg">
                     <Settings className="w-5 h-5" />
                     Store Settings
                   </CardTitle>
@@ -652,63 +872,98 @@ export const StoreDetails: React.FC<StoreDetailsProps> = ({ onBack, store }) => 
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="font-medium mb-2">Receipt Settings</h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span>Header:</span>
-                            <span className="text-gray-600">{storeData.receiptHeader || 'Not set'}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Footer:</span>
-                            <span className="text-gray-600">{storeData.receiptFooter || 'Not set'}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Custom Message:</span>
-                            <span className="text-gray-600">{storeData.customReceiptMessage || 'Not set'}</span>
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className={`font-semibold mb-3 text-sm ${
+                            isDark ? 'text-white' : 'text-gray-900'
+                          }`}>
+                            Receipt Settings
+                          </h4>
+                          <div className="space-y-3">
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Header</p>
+                              <p className={`text-sm ${
+                                isDark ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                {storeData.receiptHeader || storeData.receipt_header || 'Not set'}
+                              </p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Footer</p>
+                              <p className={`text-sm ${
+                                isDark ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                {storeData.receiptFooter || storeData.receipt_footer || 'Not set'}
+                              </p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Custom Message</p>
+                              <p className={`text-sm ${
+                                isDark ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                {storeData.customReceiptMessage || storeData.custom_receipt_message || 'Not set'}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
                       
-                      <div>
-                        <h4 className="font-medium mb-2">Theme Settings</h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span>Primary Color:</span>
-                            <div className="flex items-center gap-2">
-                              <div 
-                                className="w-4 h-4 rounded border"
-                                style={{ backgroundColor: storeData.theme?.primaryColor || '#3B82F6' }}
-                              ></div>
-                              <span className="text-gray-600">{storeData.theme?.primaryColor || '#3B82F6'}</span>
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className={`font-semibold mb-3 text-sm ${
+                            isDark ? 'text-white' : 'text-gray-900'
+                          }`}>
+                            Theme Settings
+                          </h4>
+                          <div className="space-y-3">
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Primary Color</p>
+                              <div className="flex items-center gap-3">
+                                <div 
+                                  className="w-8 h-8 rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm"
+                                  style={{ backgroundColor: storeData.theme?.primaryColor || storeData.primary_color || '#3B82F6' }}
+                                ></div>
+                                <span className={`text-sm font-mono ${
+                                  isDark ? 'text-gray-300' : 'text-gray-700'
+                                }`}>
+                                  {storeData.theme?.primaryColor || storeData.primary_color || '#3B82F6'}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Secondary Color:</span>
-                            <div className="flex items-center gap-2">
-                              <div 
-                                className="w-4 h-4 rounded border"
-                                style={{ backgroundColor: storeData.theme?.secondaryColor || '#10B981' }}
-                              ></div>
-                              <span className="text-gray-600">{storeData.theme?.secondaryColor || '#10B981'}</span>
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Secondary Color</p>
+                              <div className="flex items-center gap-3">
+                                <div 
+                                  className="w-8 h-8 rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm"
+                                  style={{ backgroundColor: storeData.theme?.secondaryColor || storeData.secondary_color || '#10B981' }}
+                                ></div>
+                                <span className={`text-sm font-mono ${
+                                  isDark ? 'text-gray-300' : 'text-gray-700'
+                                }`}>
+                                  {storeData.theme?.secondaryColor || storeData.secondary_color || '#10B981'}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Accent Color:</span>
-                            <div className="flex items-center gap-2">
-                              <div 
-                                className="w-4 h-4 rounded border"
-                                style={{ backgroundColor: storeData.theme?.accentColor || '#F59E0B' }}
-                              ></div>
-                              <span className="text-gray-600">{storeData.theme?.accentColor || '#F59E0B'}</span>
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Accent Color</p>
+                              <div className="flex items-center gap-3">
+                                <div 
+                                  className="w-8 h-8 rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm"
+                                  style={{ backgroundColor: storeData.theme?.accentColor || storeData.accent_color || '#F59E0B' }}
+                                ></div>
+                                <span className={`text-sm font-mono ${
+                                  isDark ? 'text-gray-300' : 'text-gray-700'
+                                }`}>
+                                  {storeData.theme?.accentColor || storeData.accent_color || '#F59E0B'}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                    
                   </div>
                 </CardContent>
               </Card>

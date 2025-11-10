@@ -20,7 +20,9 @@ import {
   CreditCard,
   Truck,
   User,
-  Receipt
+  Receipt,
+  ArrowRight,
+  Info
 } from 'lucide-react';
 import PaymentMethodSelector from './PaymentMethodSelector';
 import { DiscountApplicationComponent } from '@/components/DiscountApplication';
@@ -256,6 +258,37 @@ export default function StorefrontCart({
                   />
                 </div>
               )}
+
+              {/* Navigation Hint */}
+              <div className={`mt-4 p-3 rounded-lg border ${
+                isDark ? 'bg-blue-950 border-blue-800' : 'bg-blue-50 border-blue-200'
+              }`}>
+                <div className="flex items-start gap-2">
+                  <Info className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                    isDark ? 'text-blue-400' : 'text-blue-600'
+                  }`} />
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${
+                      isDark ? 'text-blue-200' : 'text-blue-900'
+                    }`}>
+                      Ready to checkout?
+                    </p>
+                    <p className={`text-xs mt-1 ${
+                      isDark ? 'text-blue-300' : 'text-blue-700'
+                    }`}>
+                      Go to the <strong>Details</strong> tab to enter your information, then <strong>Summary</strong> to review and place your order.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 w-full"
+                      onClick={() => setActiveTab('customer')}
+                    >
+                      Continue to Details <ArrowRight className="w-3 h-3 ml-1" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </TabsContent>
 
             {/* Customer Info Tab */}
@@ -324,12 +357,85 @@ export default function StorefrontCart({
                     disabled={isOrdering}
                   />
                 </div>
+
+                {/* Navigation Hint */}
+                <div className={`mt-4 p-3 rounded-lg border ${
+                  isDark ? 'bg-green-950 border-green-800' : 'bg-green-50 border-green-200'
+                }`}>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                      isDark ? 'text-green-400' : 'text-green-600'
+                    }`} />
+                    <div className="flex-1">
+                      <p className={`text-sm font-medium ${
+                        isDark ? 'text-green-200' : 'text-green-900'
+                      }`}>
+                        {customerName && customerPhone && selectedPaymentMethod 
+                          ? 'All set! Ready to place your order.'
+                          : 'Almost there!'
+                        }
+                      </p>
+                      <p className={`text-xs mt-1 ${
+                        isDark ? 'text-green-300' : 'text-green-700'
+                      }`}>
+                        {customerName && customerPhone && selectedPaymentMethod
+                          ? 'Go to the Summary tab to review and place your order.'
+                          : 'Please fill in all required fields (marked with *) to continue.'
+                        }
+                      </p>
+                      {customerName && customerPhone && selectedPaymentMethod && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2 w-full"
+                          onClick={() => setActiveTab('summary')}
+                        >
+                          Review Order <ArrowRight className="w-3 h-3 ml-1" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </TabsContent>
 
             {/* Order Summary Tab */}
             <TabsContent value="summary" className="space-y-4 mt-4">
               <div className="space-y-4">
+                {/* Order Items Summary */}
+                <div className={`border rounded-lg p-4 ${
+                  isDark ? 'border-gray-700 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                }`}>
+                  <h3 className={`font-semibold mb-3 ${
+                    isDark ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    Order Items ({cart.length})
+                  </h3>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {cart.map((item) => (
+                      <div key={item.product.id} className="flex justify-between items-center text-sm py-2 border-b border-gray-200 dark:border-gray-600 last:border-0">
+                        <div className="flex-1">
+                          <p className={`font-medium ${
+                            isDark ? 'text-white' : 'text-gray-900'
+                          }`}>
+                            {item.product.name}
+                          </p>
+                          <p className={`text-xs ${
+                            isDark ? 'text-gray-400' : 'text-gray-500'
+                          }`}>
+                            {item.quantity} × {business.currency.symbol}{item.product.price.toLocaleString()}
+                          </p>
+                        </div>
+                        <p className={`font-medium ${
+                          isDark ? 'text-white' : 'text-gray-900'
+                        }`}>
+                          {business.currency.symbol}{(item.product.price * item.quantity).toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Order Summary */}
                 <div className={`border rounded-lg p-4 ${
                   isDark ? 'border-gray-700 bg-gray-700' : 'border-gray-200 bg-gray-50'
@@ -337,19 +443,19 @@ export default function StorefrontCart({
                   <h3 className={`font-semibold mb-3 ${
                     isDark ? 'text-white' : 'text-gray-900'
                   }`}>
-                    Order Summary
+                    Price Summary
                   </h3>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>
-                        Items ({cart.length}):
+                        Subtotal ({cart.length} {cart.length === 1 ? 'item' : 'items'}):
                       </span>
                       <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>
                         {business.currency.symbol}{getCartSubtotal().toLocaleString()}
                       </span>
                     </div>
                     {appliedDiscount && (
-                      <div className="flex justify-between text-sm text-green-600">
+                      <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
                         <span>Discount ({appliedDiscount.name}):</span>
                         <span>
                           -{business.currency.symbol}{appliedDiscount.discount_amount.toLocaleString()}
@@ -374,39 +480,70 @@ export default function StorefrontCart({
                 </div>
 
                 {/* Customer Info Summary */}
-                {(customerName || customerPhone) && (
-                  <div className={`border rounded-lg p-4 ${
-                    isDark ? 'border-gray-700 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                <div className={`border rounded-lg p-4 ${
+                  isDark ? 'border-gray-700 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                }`}>
+                  <h3 className={`font-semibold mb-3 ${
+                    isDark ? 'text-white' : 'text-gray-900'
                   }`}>
-                    <h3 className={`font-semibold mb-2 ${
-                      isDark ? 'text-white' : 'text-gray-900'
-                    }`}>
-                      Customer Information
-                    </h3>
-                    <div className="space-y-1 text-sm">
-                      {customerName && (
-                        <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>
-                          <span className="font-medium">Name:</span> {customerName}
-                        </p>
-                      )}
-                      {customerPhone && (
-                        <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>
-                          <span className="font-medium">Phone:</span> {customerPhone}
-                        </p>
-                      )}
-                      {customerEmail && (
-                        <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>
-                          <span className="font-medium">Email:</span> {customerEmail}
-                        </p>
-                      )}
-                      {customerAddress && (
-                        <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>
-                          <span className="font-medium">Address:</span> {customerAddress}
-                        </p>
-                      )}
+                    Customer Information
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    {customerName ? (
+                      <div className="flex justify-between">
+                        <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Name:</span>
+                        <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{customerName}</span>
+                      </div>
+                    ) : (
+                      <p className={`text-xs ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                        ⚠️ Name is required
+                      </p>
+                    )}
+                    {customerPhone ? (
+                      <div className="flex justify-between">
+                        <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Phone:</span>
+                        <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{customerPhone}</span>
+                      </div>
+                    ) : (
+                      <p className={`text-xs ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                        ⚠️ Phone is required
+                      </p>
+                    )}
+                    {customerEmail && (
+                      <div className="flex justify-between">
+                        <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Email:</span>
+                        <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{customerEmail}</span>
+                      </div>
+                    )}
+                    {customerAddress && (
+                      <div className="flex justify-between">
+                        <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Address:</span>
+                        <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'} text-right max-w-[60%]`}>{customerAddress}</span>
+                      </div>
+                    )}
+                    {orderNotes && (
+                      <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
+                        <p className={`text-xs mb-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Special Instructions:</p>
+                        <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{orderNotes}</p>
+                      </div>
+                    )}
+                    <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
+                      <div className="flex justify-between">
+                        <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Payment Method:</span>
+                        <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {selectedPaymentMethod === 'pay_on_delivery' ? 'Pay on Delivery' : 'Online Payment'}
+                        </span>
+                      </div>
                     </div>
+                    {(!customerName || !customerPhone || !selectedPaymentMethod) && (
+                      <div className={`mt-3 p-2 rounded text-xs ${
+                        isDark ? 'bg-yellow-900/30 border border-yellow-800 text-yellow-300' : 'bg-yellow-50 border border-yellow-200 text-yellow-800'
+                      }`}>
+                        Please go back to the <strong>Details</strong> tab to complete required information.
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
 
                 {/* Error/Success Messages */}
                 {error && (
