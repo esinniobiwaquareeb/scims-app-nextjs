@@ -19,6 +19,7 @@ import {
   useReportingFinancialMetrics,
   useReportingChartData
 } from '@/utils/hooks/reports';
+import { useBusinessCategories } from '@/utils/hooks/categories';
 import { toast } from 'sonner';
 import { 
   TrendingUp, 
@@ -148,7 +149,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
     isLoading: isLoadingInventory,
     error: inventoryError,
     refetch: refetchInventory
-  } = useReportingInventoryStats(currentBusiness?.id || '', reportingStoreId || '');
+  } = useReportingInventoryStats(currentBusiness?.id || '', reportingStoreId || '', startDate, endDate);
 
   const {
     data: financialResponse = {
@@ -185,12 +186,29 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
     endDate
   );
 
+  // Fetch categories for filter dropdown
+  const { data: categoriesData = [] } = useBusinessCategories(currentBusiness?.id || '', {
+    enabled: !!currentBusiness?.id
+  });
+  const availableCategories = Array.isArray(categoriesData) ? categoriesData : [];
+
   // Extract the actual data from the API responses
   const salesData = salesResponse?.sales || [];
   const productPerformance = productResponse?.products || [];
   const customerData = customerResponse?.customers || [];
   const inventoryStats = inventoryResponse?.summary || { inStock: 0, lowStock: 0, outOfStock: 0 };
   const inventoryProducts = inventoryResponse?.products || [];
+
+  // Extract unique payment methods from sales data
+  const availablePaymentMethods = useMemo(() => {
+    const methods = new Set<string>();
+    salesData.forEach((sale: RawSalesData) => {
+      if (sale.payment_method) {
+        methods.add(sale.payment_method.charAt(0).toUpperCase() + sale.payment_method.slice(1));
+      }
+    });
+    return Array.from(methods).sort();
+  }, [salesData]);
   const financialStats = financialResponse?.summary || {
     totalProfit: 0,
     operatingExpenses: 0,
@@ -592,7 +610,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
         </div>
 
         {/* Filters Section */}
-        <Card className="mb-6 overflow-hidden">
+        <Card className="mb-6 overflow-visible">
           <CardHeader 
             className="pb-3 cursor-pointer hover:bg-muted/50 transition-colors"
             onClick={() => setFiltersOpen(!filtersOpen)}
@@ -632,7 +650,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
           </CardHeader>
           
           {filtersOpen && (
-            <CardContent className="pt-0">
+            <CardContent className="pt-0 overflow-visible">
               {/* Quick Date Range Buttons */}
               <div className="mb-4 pb-4 border-b">
                 <Label className="text-xs font-medium text-muted-foreground mb-2 block">Quick Date Range</Label>
@@ -705,7 +723,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                   </div>
                 </div>
                 
-                <div className="space-y-2 min-w-0">
+                <div className="space-y-2 min-w-0 relative z-10">
                   <Label className="text-xs font-medium">Date Range</Label>
                   <div className="w-full">
                     <DatePickerWithRange
@@ -722,32 +740,36 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                   </div>
                 </div>
 
-                <div className="space-y-2 min-w-0">
+                <div className="space-y-2 min-w-0 relative z-10">
                   <Label className="text-xs font-medium">Category</Label>
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                     <SelectTrigger className="h-9 w-full">
                       <SelectValue placeholder="All Categories" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[9999]">
                       <SelectItem value="All">All Categories</SelectItem>
-                      <SelectItem value="Electronics">Electronics</SelectItem>
-                      <SelectItem value="Accessories">Accessories</SelectItem>
-                      <SelectItem value="Audio">Audio</SelectItem>
+                      {availableCategories.map((category: { id: string; name: string }) => (
+                        <SelectItem key={category.id} value={category.name}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="space-y-2 min-w-0">
+                <div className="space-y-2 min-w-0 relative z-10">
                   <Label className="text-xs font-medium">Payment Method</Label>
                   <Select value={selectedPayment} onValueChange={setSelectedPayment}>
                     <SelectTrigger className="h-9 w-full">
                       <SelectValue placeholder="All Methods" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[9999]">
                       <SelectItem value="All">All Methods</SelectItem>
-                      <SelectItem value="Card">Card</SelectItem>
-                      <SelectItem value="Cash">Cash</SelectItem>
-                      <SelectItem value="Digital">Digital</SelectItem>
+                      {availablePaymentMethods.map((method) => (
+                        <SelectItem key={method} value={method}>
+                          {method}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -1152,7 +1174,18 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Inventory Products</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Stock Tracking & Balance</CardTitle>
+                    <Button variant="outline" size="sm" onClick={() => exportToCSV('Stock Tracking', inventoryProducts)}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Export
+                    </Button>
+                  </div>
+                  {dateRange.from && dateRange.to && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Showing stock movements from {dateRange.from.toLocaleDateString()} to {dateRange.to.toLocaleDateString()}
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent>
                   {isLoadingInventory ? (
@@ -1165,55 +1198,93 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                       No inventory products found
                     </div>
                   ) : (
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {inventoryProducts.map((product: {
-                        id: string;
-                        name: string;
-                        sku?: string;
-                        stock_quantity?: number;
-                        reorder_level?: number;
-                        category?: { name: string };
-                        brand?: { name: string };
-                      }) => {
-                        const stockStatus = 
-                          (product.stock_quantity || 0) <= 0 ? 'outOfStock' :
-                          (product.stock_quantity || 0) <= (product.reorder_level || 0) ? 'lowStock' :
-                          'inStock';
-                        
-                        const statusColor = 
-                          stockStatus === 'outOfStock' ? 'text-red-600' :
-                          stockStatus === 'lowStock' ? 'text-orange-600' :
-                          'text-green-600';
-                        
-                        const statusLabel = 
-                          stockStatus === 'outOfStock' ? 'Out of Stock' :
-                          stockStatus === 'lowStock' ? 'Low Stock' :
-                          'In Stock';
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left p-3 text-sm font-medium">Product</th>
+                            <th className="text-left p-3 text-sm font-medium">SKU</th>
+                            <th className="text-center p-3 text-sm font-medium">Initial Stock</th>
+                            <th className="text-center p-3 text-sm font-medium">Sold</th>
+                            <th className="text-center p-3 text-sm font-medium">Restocked</th>
+                            <th className="text-center p-3 text-sm font-medium">Current Stock</th>
+                            <th className="text-center p-3 text-sm font-medium">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {inventoryProducts.map((product: {
+                            id: string;
+                            name: string;
+                            sku?: string;
+                            stock_quantity?: number;
+                            reorder_level?: number;
+                            category?: { name: string };
+                            brand?: { name: string };
+                            initialStock?: number;
+                            quantitySold?: number;
+                            quantityRestocked?: number;
+                            currentStock?: number;
+                          }) => {
+                            const initialStock = product.initialStock ?? product.stock_quantity ?? 0;
+                            const quantitySold = product.quantitySold ?? 0;
+                            const quantityRestocked = product.quantityRestocked ?? 0;
+                            const currentStock = product.currentStock ?? product.stock_quantity ?? 0;
+                            
+                            const stockStatus = 
+                              currentStock <= 0 ? 'outOfStock' :
+                              currentStock <= (product.reorder_level || 0) ? 'lowStock' :
+                              'inStock';
+                            
+                            const statusColor = 
+                              stockStatus === 'outOfStock' ? 'text-red-600' :
+                              stockStatus === 'lowStock' ? 'text-orange-600' :
+                              'text-green-600';
+                            
+                            const statusLabel = 
+                              stockStatus === 'outOfStock' ? 'Out of Stock' :
+                              stockStatus === 'lowStock' ? 'Low Stock' :
+                              'In Stock';
 
-                        return (
-                          <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3">
-                                <p className="font-medium">{product.name}</p>
-                                <Badge variant="outline" className={statusColor}>
-                                  {statusLabel}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                                <span>SKU: {product.sku || 'N/A'}</span>
-                                {product.category?.name && <span>Category: {product.category.name}</span>}
-                                {product.brand?.name && <span>Brand: {product.brand.name}</span>}
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-semibold">Stock: {product.stock_quantity || 0}</p>
-                              {product.reorder_level && (
-                                <p className="text-xs text-muted-foreground">Reorder: {product.reorder_level}</p>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+                            // Calculate expected stock for balance check
+                            const expectedStock = initialStock - quantitySold + quantityRestocked;
+                            const stockDifference = currentStock - expectedStock;
+                            const isBalanced = Math.abs(stockDifference) <= 1; // Allow 1 unit difference for rounding
+
+                            return (
+                              <tr key={product.id} className="border-b hover:bg-muted/50">
+                                <td className="p-3">
+                                  <div>
+                                    <p className="font-medium">{product.name}</p>
+                                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                      {product.category?.name && <span>{product.category.name}</span>}
+                                      {product.brand?.name && <span>• {product.brand.name}</span>}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="p-3 text-sm">{product.sku || 'N/A'}</td>
+                                <td className="p-3 text-center text-sm font-medium">{initialStock}</td>
+                                <td className="p-3 text-center text-sm text-red-600 font-medium">-{quantitySold}</td>
+                                <td className="p-3 text-center text-sm text-green-600 font-medium">+{quantityRestocked}</td>
+                                <td className="p-3 text-center">
+                                  <div>
+                                    <p className="text-sm font-semibold">{currentStock}</p>
+                                    {!isBalanced && (
+                                      <p className="text-xs text-orange-600 mt-1">
+                                        Expected: {expectedStock}
+                                      </p>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="p-3 text-center">
+                                  <Badge variant="outline" className={statusColor}>
+                                    {statusLabel}
+                                  </Badge>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     </div>
                   )}
                 </CardContent>

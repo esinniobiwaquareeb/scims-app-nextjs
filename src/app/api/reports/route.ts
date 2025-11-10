@@ -385,6 +385,8 @@ async function getBusinessSalesReport(businessId: string, searchParams: URLSearc
 async function getBusinessInventoryReport(businessId: string, searchParams: URLSearchParams) {
   try {
     const storeId = searchParams.get('store_id');
+    const startDate = searchParams.get('start_date');
+    const endDate = searchParams.get('end_date');
 
     let storeIds: string[];
 
@@ -438,7 +440,8 @@ async function getBusinessInventoryReport(businessId: string, searchParams: URLS
         category:category_id(name),
         brand:brand_id(name),
         supplier:supplier_id(name),
-        store_id
+        store_id,
+        created_at
       `)
       .in('store_id', storeIds)
       .eq('is_active', true);
@@ -463,9 +466,64 @@ async function getBusinessInventoryReport(businessId: string, searchParams: URLS
       return sum + stockValue;
     }, 0) || 0;
 
+    // Get stock movements if date range is provided
+    const productsWithStockMovements = await Promise.all(
+      (products || []).map(async (product: any) => {
+        let initialStock = product.stock_quantity || 0;
+        let quantitySold = 0;
+        let quantityRestocked = 0;
+        const currentStock = product.stock_quantity || 0;
+
+        if (startDate && endDate) {
+          // Get initial stock (stock at start of date range)
+          // Initial stock = current stock + sold - restocked (for the period)
+          
+          // Get quantity sold in the date range
+          const { data: salesItems, error: salesError } = await supabase
+            .from('sale_item')
+            .select('quantity, sale!inner(transaction_date, status)')
+            .eq('product_id', product.id)
+            .eq('sale.status', 'completed')
+            .gte('sale.transaction_date', startDate)
+            .lte('sale.transaction_date', endDate);
+
+          if (!salesError && salesItems) {
+            quantitySold = salesItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+          }
+
+          // Get quantity restocked in the date range
+          const { data: restockItems, error: restockError } = await supabase
+            .from('restock_item')
+            .select('received_quantity, restock_order!inner(created_at, status)')
+            .eq('product_id', product.id)
+            .eq('restock_order.status', 'received')
+            .gte('restock_order.created_at', startDate)
+            .lte('restock_order.created_at', endDate);
+
+          if (!restockError && restockItems) {
+            quantityRestocked = restockItems.reduce((sum, item) => sum + (item.received_quantity || 0), 0);
+          }
+
+          // Calculate initial stock: current stock + sold - restocked
+          // This gives us the stock at the start of the period
+          initialStock = currentStock + quantitySold - quantityRestocked;
+          // Ensure initial stock is not negative
+          initialStock = Math.max(0, initialStock);
+        }
+
+        return {
+          ...product,
+          initialStock,
+          quantitySold,
+          quantityRestocked,
+          currentStock
+        };
+      })
+    );
+
     return NextResponse.json({
       success: true,
-      products: products || [],
+      products: productsWithStockMovements || [],
       summary: {
         totalProducts: totalProducts,
         inStock: inStock,

@@ -162,7 +162,7 @@ const SelectContent = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "absolute z-50 min-w-[8rem] overflow-hidden rounded-md border border-gray-200 bg-white p-1 text-gray-900 shadow-lg",
+        "absolute z-[9999] min-w-[8rem] overflow-hidden rounded-md border border-gray-200 bg-white p-1 text-gray-900 shadow-lg",
         "top-full mt-1 left-0 right-0",
         "max-h-[200px] overflow-y-auto",
         "animate-in fade-in-0 zoom-in-95 duration-200",

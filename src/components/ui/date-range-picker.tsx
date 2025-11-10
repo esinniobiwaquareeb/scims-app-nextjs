@@ -53,27 +53,27 @@ const DatePickerWithRange = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn("flex items-center gap-2 w-full min-w-0", className)}
+      className={cn("flex items-center gap-2 w-full min-w-0 relative z-10", className)}
       {...props}
     >
-      <div className="relative flex-1 min-w-0">
-        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+      <div className="relative flex-1 min-w-0 z-10">
+        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
         <Input
           type="date"
           value={formatDateForInput(fromDate)}
           onChange={handleFromChange}
-          className="pl-10 w-full"
+          className="pl-10 w-full relative z-10"
           placeholder="From"
         />
       </div>
       <span className="text-muted-foreground text-sm shrink-0">to</span>
-      <div className="relative flex-1 min-w-0">
-        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+      <div className="relative flex-1 min-w-0 z-10">
+        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
         <Input
           type="date"
           value={formatDateForInput(toDate)}
           onChange={handleToChange}
-          className="pl-10 w-full"
+          className="pl-10 w-full relative z-10"
           placeholder="To"
         />
       </div>

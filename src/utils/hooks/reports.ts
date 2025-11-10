@@ -32,8 +32,8 @@ export const useReportingCustomerAnalytics = (businessId: string, storeId?: stri
   return useReport(businessId, 'customers', storeId);
 };
 
-export const useReportingInventoryStats = (businessId: string, storeId?: string) => {
-  return useReport(businessId, 'inventory', storeId);
+export const useReportingInventoryStats = (businessId: string, storeId?: string, startDate?: string, endDate?: string) => {
+  return useReport(businessId, 'inventory', storeId, startDate, endDate);
 };
 
 export const useReportingFinancialMetrics = (businessId: string, storeId?: string, startDate?: string, endDate?: string) => {
