@@ -59,6 +59,32 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: '/og-home.png',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'image/png',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/og-image.png',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'image/png',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
     ];
   },
   
