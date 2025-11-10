@@ -75,9 +75,22 @@ export async function GET(
       console.error('Error fetching products:', productsError);
     }
 
-    // Ensure unique products (in case same product exists in multiple stores)
+    // Ensure unique products by SKU (preferred) or name (fallback)
+    // If same product exists in multiple stores, show only one instance
     const uniqueProducts = products ? products.reduce((acc: typeof products, product: typeof products[0]) => {
-      const existingProduct = acc.find(p => p.id === product.id);
+      // Check for existing product by SKU (preferred) or name (fallback)
+      const existingProduct = acc.find(p => {
+        // If both have SKUs, match by SKU (case-insensitive, trimmed)
+        if (p.sku && product.sku && p.sku.trim().toLowerCase() === product.sku.trim().toLowerCase()) {
+          return true;
+        }
+        // If SKUs don't match or one is missing, match by name (case-insensitive, trimmed)
+        if (p.name && product.name && p.name.trim().toLowerCase() === product.name.trim().toLowerCase()) {
+          return true;
+        }
+        return false;
+      });
+      
       if (!existingProduct) {
         acc.push(product);
       } else {
@@ -85,7 +98,7 @@ export async function GET(
         existingProduct.stock_quantity += product.stock_quantity;
         // Update store info to show it's available in multiple stores
         if (!existingProduct.store_names) {
-          existingProduct.store_names = [existingProduct.store?.name];
+          existingProduct.store_names = existingProduct.store?.name ? [existingProduct.store.name] : [];
         }
         if (product.store?.name && !existingProduct.store_names.includes(product.store.name)) {
           existingProduct.store_names.push(product.store.name);
