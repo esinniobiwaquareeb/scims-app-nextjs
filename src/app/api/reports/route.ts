@@ -727,6 +727,7 @@ async function getBusinessProductsReport(businessId: string, searchParams: URLSe
         sku,
         price,
         cost,
+        stock_quantity,
         category:category_id(name),
         store_id
       `)
@@ -794,6 +795,7 @@ async function getBusinessProductsReport(businessId: string, searchParams: URLSe
         sku: product.sku || 'N/A',
         category: product.category?.name || 'Uncategorized',
         soldQuantity: stats.quantity,
+        totalQuantity: product.stock_quantity || 0,
         revenue: stats.revenue,
         profit: profit
       };

@@ -453,6 +453,18 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           href: '/pos',
           icon: ShoppingCart,
           roles: ['cashier']
+        },
+        {
+          title: 'Supply Management',
+          href: '/supply-management',
+          icon: RotateCcw,
+          roles: ['cashier']
+        },
+        {
+          title: 'Exchange & Trade-in',
+          href: '/exchange-management',
+          icon: RotateCcw,
+          roles: ['cashier']
         }
       ]
     }

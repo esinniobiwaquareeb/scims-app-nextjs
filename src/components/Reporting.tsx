@@ -92,6 +92,7 @@ interface ProductPerformance {
   name: string;
   category: string;
   soldQuantity: number;
+  totalQuantity: number;
   revenue: number;
   profit: number;
 }
@@ -1309,6 +1310,13 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                         header: 'Sold Qty',
                         render: (product: Product) => (
                           <div>{product.soldQuantity}</div>
+                        )
+                      },
+                      {
+                        key: 'totalQuantity',
+                        header: 'Total Quantity',
+                        render: (product: Product) => (
+                          <div className="font-medium">{product.totalQuantity || 0}</div>
                         )
                       },
                       {
