@@ -338,7 +338,9 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - status (status page to avoid redirect loops)
+     * - og-*.png (OG images)
+     * - *.png, *.jpg, *.jpeg, *.gif, *.svg, *.webp (image files)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|status).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|status|.*\\.(png|jpg|jpeg|gif|svg|webp|ico)).*)',
   ],
 };
