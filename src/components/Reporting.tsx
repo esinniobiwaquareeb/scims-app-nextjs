@@ -1294,21 +1294,21 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                       {
                         key: 'product',
                         header: 'Product',
-                        render: (product: Product) => (
+                        render: (product: ProductPerformance) => (
                           <div className="font-medium">{product.name || 'Unknown Product'}</div>
                         )
                       },
                       {
                         key: 'category',
                         header: 'Category',
-                        render: (product: Product) => (
+                        render: (product: ProductPerformance) => (
                           <div>{product.category}</div>
                         )
                       },
                       {
                         key: 'soldQty',
                         header: 'Sold Qty',
-                        render: (product: Product) => (
+                        render: (product: ProductPerformance) => (
                           <div>{product.soldQuantity}</div>
                         )
                       },
@@ -1322,21 +1322,21 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                       {
                         key: 'revenue',
                         header: 'Revenue',
-                        render: (product: Product) => (
+                        render: (product: ProductPerformance) => (
                           <div>{formatCurrency(product.revenue)}</div>
                         )
                       },
                       {
                         key: 'profit',
                         header: 'Profit',
-                        render: (product: Product) => (
+                        render: (product: ProductPerformance) => (
                           <div className="text-green-600">{formatCurrency(product.profit)}</div>
                         )
                       },
                       {
                         key: 'profitMargin',
                         header: 'Profit Margin',
-                        render: (product: Product) => (
+                        render: (product: ProductPerformance) => (
                           <Badge variant="secondary">
                             {product.revenue > 0 ? ((product.profit / product.revenue) * 100).toFixed(1) : '0.0'}%
                           </Badge>
