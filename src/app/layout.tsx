@@ -82,6 +82,25 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="SCIMS" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-TileColor" content="#3B82F6" />
+        {/* OpenGraph meta tags for WhatsApp and social media */}
+        <meta property="og:title" content="SCIMS - Complete Business Management System | POS, Inventory & FREE Website" />
+        <meta property="og:description" content="Transform your business with SCIMS - complete POS, inventory management, business analytics, and a FREE professional website (worth ₦500,000). Support for retail, restaurant, pharmacy, and service businesses. 14-day free trial!" />
+        <meta property="og:image" content="https://scims.app/og-home.png" />
+        <meta property="og:image:url" content="https://scims.app/og-home.png" />
+        <meta property="og:image:secure_url" content="https://scims.app/og-home.png" />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="SCIMS - Complete Business Management Solution with FREE Website" />
+        <meta property="og:url" content="https://scims.app" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="SCIMS - Stock Control & Inventory Management System" />
+        <meta property="og:locale" content="en_US" />
+        {/* Twitter Card meta tags */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="SCIMS - Complete Business Management System | POS, Inventory & FREE Website" />
+        <meta name="twitter:description" content="Transform your business with SCIMS - complete POS, inventory management, business analytics, and a FREE professional website (worth ₦500,000). 14-day free trial!" />
+        <meta name="twitter:image" content="https://scims.app/og-home.png" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning>
         <Providers>
