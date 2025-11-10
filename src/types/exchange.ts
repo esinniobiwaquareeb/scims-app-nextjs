@@ -186,6 +186,8 @@ export interface ValidateReturnResponse {
       quantity: number;
       unit_price: number;
       total_price: number;
+      already_returned?: number;
+      remaining_returnable?: number;
     }>;
   };
   error?: string;

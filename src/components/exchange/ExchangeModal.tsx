@@ -251,8 +251,32 @@ export const ExchangeModal: React.FC<ExchangeModalProps> = ({
         return;
       }
 
-      if (currentExchangeItem.quantity > saleItem.quantity) {
-        toast.error(`Cannot return more than ${saleItem.quantity} items`);
+      // Check against already returned quantities
+      const saleItemWithReturns = saleItem as typeof saleItem & { 
+        already_returned?: number; 
+        remaining_returnable?: number;
+      };
+      const alreadyReturned = saleItemWithReturns.already_returned || 0;
+      const remainingReturnable = saleItemWithReturns.remaining_returnable !== undefined 
+        ? saleItemWithReturns.remaining_returnable 
+        : saleItem.quantity - alreadyReturned;
+
+      if (currentExchangeItem.quantity > remainingReturnable) {
+        toast.error(
+          `Cannot return ${currentExchangeItem.quantity} items. Only ${remainingReturnable} items can be returned. ${alreadyReturned} items have already been returned out of ${saleItem.quantity} purchased.`
+        );
+        return;
+      }
+
+      // Also check total quantity in current exchange items for this product
+      const alreadyInCurrentReturn = exchangeItems
+        .filter(item => item.original_sale_item_id === saleItem.id)
+        .reduce((sum, item) => sum + (item.quantity || 0), 0);
+
+      if (currentExchangeItem.quantity + alreadyInCurrentReturn > remainingReturnable) {
+        toast.error(
+          `Cannot return ${currentExchangeItem.quantity} items. You've already added ${alreadyInCurrentReturn} items to this return. Only ${remainingReturnable} items total can be returned.`
+        );
         return;
       }
 

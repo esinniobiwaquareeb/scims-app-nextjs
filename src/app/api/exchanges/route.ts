@@ -39,12 +39,116 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For returns, validate original_sale_id
-    if (data.transaction_type === 'return' && !data.original_sale_id) {
-      return NextResponse.json(
-        { success: false, error: 'original_sale_id is required for return transactions' },
-        { status: 400 }
-      );
+    // For returns, validate original_sale_id and quantities
+    if (data.transaction_type === 'return') {
+      if (!data.original_sale_id) {
+        return NextResponse.json(
+          { success: false, error: 'original_sale_id is required for return transactions' },
+          { status: 400 }
+        );
+      }
+
+      // Validate return quantities don't exceed purchased quantities
+      const { data: originalSale } = await supabase
+        .from('sale')
+        .select(`
+          id,
+          items:sale_item(
+            id,
+            product_id,
+            quantity
+          )
+        `)
+        .eq('id', data.original_sale_id)
+        .single();
+
+      if (!originalSale) {
+        return NextResponse.json(
+          { success: false, error: 'Original sale not found' },
+          { status: 404 }
+        );
+      }
+
+      // Get already returned quantities for each sale item
+      const { data: existingReturnTransactions } = await supabase
+        .from('exchange_transaction')
+        .select('id')
+        .eq('original_sale_id', data.original_sale_id)
+        .in('status', ['pending', 'completed']);
+
+      const returnTransactionIds = (existingReturnTransactions || []).map((t: { id: string }) => t.id);
+
+      if (returnTransactionIds.length > 0) {
+        const { data: existingReturnItems } = await supabase
+          .from('exchange_item')
+          .select('original_sale_item_id, quantity')
+          .eq('item_type', 'returned')
+          .in('exchange_transaction_id', returnTransactionIds);
+
+        // Calculate already returned quantities per sale item
+        const alreadyReturnedByItem: { [key: string]: number } = {};
+        (existingReturnItems || []).forEach((item: { original_sale_item_id: string; quantity: number }) => {
+          if (item.original_sale_item_id) {
+            alreadyReturnedByItem[item.original_sale_item_id] = 
+              (alreadyReturnedByItem[item.original_sale_item_id] || 0) + (item.quantity || 0);
+          }
+        });
+
+        // Validate each return item
+        for (const returnItem of data.exchange_items) {
+          if (returnItem.item_type === 'returned' && returnItem.original_sale_item_id) {
+            const saleItem = (originalSale.items || []).find(
+              (item: { id: string }) => item.id === returnItem.original_sale_item_id
+            );
+
+            if (!saleItem) {
+              return NextResponse.json(
+                { success: false, error: `Sale item not found for return item` },
+                { status: 400 }
+              );
+            }
+
+            const alreadyReturned = alreadyReturnedByItem[returnItem.original_sale_item_id] || 0;
+            const remainingReturnable = saleItem.quantity - alreadyReturned;
+
+            if (returnItem.quantity > remainingReturnable) {
+              return NextResponse.json(
+                { 
+                  success: false, 
+                  error: `Cannot return ${returnItem.quantity} items. Only ${remainingReturnable} items can be returned (${alreadyReturned} already returned out of ${saleItem.quantity} purchased).` 
+                },
+                { status: 400 }
+              );
+            }
+          }
+        }
+      } else {
+        // No previous returns, just check against original purchase
+        for (const returnItem of data.exchange_items) {
+          if (returnItem.item_type === 'returned' && returnItem.original_sale_item_id) {
+            const saleItem = (originalSale.items || []).find(
+              (item: { id: string }) => item.id === returnItem.original_sale_item_id
+            );
+
+            if (!saleItem) {
+              return NextResponse.json(
+                { success: false, error: `Sale item not found for return item` },
+                { status: 400 }
+              );
+            }
+
+            if (returnItem.quantity > saleItem.quantity) {
+              return NextResponse.json(
+                { 
+                  success: false, 
+                  error: `Cannot return ${returnItem.quantity} items. Only ${saleItem.quantity} items were purchased.` 
+                },
+                { status: 400 }
+              );
+            }
+          }
+        }
+      }
     }
 
     // Generate transaction number

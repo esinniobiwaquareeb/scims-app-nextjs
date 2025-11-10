@@ -1315,7 +1315,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                       {
                         key: 'totalQuantity',
                         header: 'Total Quantity',
-                        render: (product: Product) => (
+                        render: (product: ProductPerformance) => (
                           <div className="font-medium">{product.totalQuantity || 0}</div>
                         )
                       },

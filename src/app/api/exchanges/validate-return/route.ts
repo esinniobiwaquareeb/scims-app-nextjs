@@ -109,11 +109,49 @@ export async function POST(request: NextRequest) {
           (item: { product_id: string; quantity: number }) => item.product_id === data.product_id
         );
 
-        if (saleItem && data.quantity > saleItem.quantity) {
+        if (!saleItem) {
           return NextResponse.json({
             success: true,
             valid: false,
-            error: `Cannot return more than ${saleItem.quantity} items. Only ${saleItem.quantity} were purchased.`
+            error: 'Product not found in this sale'
+          } as ValidateReturnResponse);
+        }
+
+        // Get already returned quantities for this sale item
+        // First, get all completed/pending return transactions for this sale
+        const { data: existingReturnTransactions } = await supabase
+          .from('exchange_transaction')
+          .select('id')
+          .eq('original_sale_id', sale.id)
+          .in('status', ['pending', 'completed']);
+
+        const returnTransactionIds = (existingReturnTransactions || []).map((t: { id: string }) => t.id);
+
+        // Then get all returned items for this sale item from those transactions
+        let alreadyReturned = 0;
+        if (returnTransactionIds.length > 0) {
+          const { data: existingReturnItems } = await supabase
+            .from('exchange_item')
+            .select('quantity')
+            .eq('original_sale_item_id', saleItem.id)
+            .eq('item_type', 'returned')
+            .in('exchange_transaction_id', returnTransactionIds);
+
+          // Calculate total already returned
+          alreadyReturned = (existingReturnItems || []).reduce(
+            (sum: number, item: { quantity: number }) => sum + (item.quantity || 0),
+            0
+          );
+        }
+
+        // Calculate remaining returnable quantity
+        const remainingReturnable = saleItem.quantity - alreadyReturned;
+
+        if (data.quantity > remainingReturnable) {
+          return NextResponse.json({
+            success: true,
+            valid: false,
+            error: `Cannot return more than ${remainingReturnable} items. ${alreadyReturned} items have already been returned out of ${saleItem.quantity} purchased.`
           } as ValidateReturnResponse);
         }
       }
@@ -125,6 +163,33 @@ export async function POST(request: NextRequest) {
       .select('id, status')
       .eq('original_sale_id', sale.id)
       .in('status', ['pending', 'completed']);
+
+    // Get already returned quantities for all sale items
+    const { data: existingReturnTransactions } = await supabase
+      .from('exchange_transaction')
+      .select('id')
+      .eq('original_sale_id', sale.id)
+      .in('status', ['pending', 'completed']);
+
+    const returnTransactionIds = (existingReturnTransactions || []).map((t: { id: string }) => t.id);
+
+    // Get all returned items for this sale
+    const alreadyReturnedByItem: { [key: string]: number } = {};
+    if (returnTransactionIds.length > 0) {
+      const { data: existingReturnItems } = await supabase
+        .from('exchange_item')
+        .select('original_sale_item_id, quantity')
+        .eq('item_type', 'returned')
+        .in('exchange_transaction_id', returnTransactionIds);
+
+      // Calculate already returned quantities per sale item
+      (existingReturnItems || []).forEach((item: { original_sale_item_id: string; quantity: number }) => {
+        if (item.original_sale_item_id) {
+          alreadyReturnedByItem[item.original_sale_item_id] = 
+            (alreadyReturnedByItem[item.original_sale_item_id] || 0) + (item.quantity || 0);
+        }
+      });
+    }
 
     // Transform sale items to match ValidateReturnResponse type
     const transformedItems = (sale.items || []).map((item: {
@@ -142,7 +207,9 @@ export async function POST(request: NextRequest) {
         : (item.product as { name?: string })?.name || 'Unknown Product',
       quantity: item.quantity,
       unit_price: item.unit_price,
-      total_price: item.total_price
+      total_price: item.total_price,
+      already_returned: alreadyReturnedByItem[item.id] || 0,
+      remaining_returnable: item.quantity - (alreadyReturnedByItem[item.id] || 0)
     }));
 
     return NextResponse.json({
