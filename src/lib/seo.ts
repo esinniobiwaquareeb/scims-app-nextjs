@@ -54,7 +54,7 @@ export const defaultSEO: Partial<SEOConfig> = {
     type: 'website',
     images: [
       {
-        url: `${baseUrl}/og-image.jpg`,
+        url: `${baseUrl}/og-image.png`,
         width: 1200,
         height: 630,
         alt: 'SCIMS - Stock Control & Inventory Management System'
@@ -65,7 +65,7 @@ export const defaultSEO: Partial<SEOConfig> = {
     card: 'summary_large_image',
     title: 'SCIMS - Stock Control & Inventory Management System',
     description: 'Transform your business with SCIMS - the complete POS, inventory management, and business analytics platform.',
-    images: [`${baseUrl}/og-image.jpg`]
+    images: [`${baseUrl}/og-image.png`]
   },
   robots: {
     index: true,
@@ -138,7 +138,7 @@ export const seoConfigs = {
       siteName,
       images: [
         {
-          url: `${baseUrl}/og-home.jpg`,
+          url: `${baseUrl}/og-home.png`,
           width: 1200,
           height: 630,
           alt: 'SCIMS - Complete Business Management Solution with FREE Website'
@@ -151,7 +151,7 @@ export const seoConfigs = {
       card: 'summary_large_image',
       title: 'SCIMS - Complete Business Management System | POS, Inventory & FREE Website',
       description: 'Transform your business with SCIMS - complete POS, inventory management, business analytics, and a FREE professional website (worth ₦500,000). 14-day free trial!',
-      images: [`${baseUrl}/og-home.jpg`]
+      images: [`${baseUrl}/og-home.png`]
     }
   },
 
@@ -176,7 +176,7 @@ export const seoConfigs = {
       siteName,
       images: [
         {
-          url: `${baseUrl}/og-business-types.jpg`,
+          url: `${baseUrl}/og-business-types.png`,
           width: 1200,
           height: 630,
           alt: 'SCIMS Business Types - Retail, Restaurant, Pharmacy, Service'
@@ -189,7 +189,7 @@ export const seoConfigs = {
       card: 'summary_large_image',
       title: 'Business Types Supported by SCIMS',
       description: 'Discover how SCIMS supports different business types with specialized features and workflows.',
-      images: [`${baseUrl}/og-business-types.jpg`]
+      images: [`${baseUrl}/og-business-types.png`]
     }
   },
 
@@ -214,7 +214,7 @@ export const seoConfigs = {
       siteName,
       images: [
         {
-          url: `${baseUrl}/og-features.jpg`,
+          url: `${baseUrl}/og-features.png`,
           width: 1200,
           height: 630,
           alt: 'SCIMS Features - Complete Business Management'
@@ -227,7 +227,7 @@ export const seoConfigs = {
       card: 'summary_large_image',
       title: 'SCIMS Features - Complete Business Management',
       description: 'Explore SCIMS comprehensive features for complete business management.',
-      images: [`${baseUrl}/og-features.jpg`]
+      images: [`${baseUrl}/og-features.png`]
     }
   },
 
@@ -252,7 +252,7 @@ export const seoConfigs = {
       siteName,
       images: [
         {
-          url: `${baseUrl}/og-pricing.jpg`,
+          url: `${baseUrl}/og-pricing.png`,
           width: 1200,
           height: 630,
           alt: 'SCIMS Pricing Plans - Affordable Business Management'
@@ -265,7 +265,7 @@ export const seoConfigs = {
       card: 'summary_large_image',
       title: 'SCIMS Pricing Plans - Affordable Business Management',
       description: 'Choose the perfect SCIMS pricing plan for your business. Flexible plans starting from ₦15,000/month.',
-      images: [`${baseUrl}/og-pricing.jpg`]
+      images: [`${baseUrl}/og-pricing.png`]
     }
   },
 
@@ -289,7 +289,7 @@ export const seoConfigs = {
       siteName,
       images: [
         {
-          url: `${baseUrl}/og-contact.jpg`,
+          url: `${baseUrl}/og-contact.png`,
           width: 1200,
           height: 630,
           alt: 'Contact SCIMS - Support & Sales'
@@ -302,7 +302,7 @@ export const seoConfigs = {
       card: 'summary_large_image',
       title: 'Contact SCIMS - Get Support & Sales Information',
       description: 'Contact SCIMS for sales inquiries, technical support, or general questions.',
-      images: [`${baseUrl}/og-contact.jpg`]
+      images: [`${baseUrl}/og-contact.png`]
     }
   },
 
@@ -325,7 +325,7 @@ export const seoConfigs = {
       siteName,
       images: [
         {
-          url: `${baseUrl}/og-privacy.jpg`,
+          url: `${baseUrl}/og-privacy.png`,
           width: 1200,
           height: 630,
           alt: 'SCIMS Privacy Policy - Data Protection'
@@ -338,7 +338,7 @@ export const seoConfigs = {
       card: 'summary_large_image',
       title: 'SCIMS Privacy Policy - Data Protection',
       description: 'Read SCIMS privacy policy to understand how we protect your data.',
-      images: [`${baseUrl}/og-privacy.jpg`]
+      images: [`${baseUrl}/og-privacy.png`]
     }
   },
 
@@ -360,7 +360,7 @@ export const seoConfigs = {
       siteName,
       images: [
         {
-          url: `${baseUrl}/og-terms.jpg`,
+          url: `${baseUrl}/og-terms.png`,
           width: 1200,
           height: 630,
           alt: 'SCIMS Terms of Service - User Agreement'
@@ -373,7 +373,7 @@ export const seoConfigs = {
       card: 'summary_large_image',
       title: 'SCIMS Terms of Service - User Agreement',
       description: 'Read SCIMS terms of service and user agreement.',
-      images: [`${baseUrl}/og-terms.jpg`]
+      images: [`${baseUrl}/og-terms.png`]
     }
   }
 };

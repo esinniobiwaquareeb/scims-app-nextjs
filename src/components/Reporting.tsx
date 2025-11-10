@@ -17,7 +17,16 @@ import {
   useReportingCustomerAnalytics,
   useReportingInventoryStats,
   useReportingFinancialMetrics,
-  useReportingChartData
+  useReportingChartData,
+  useProfitLossReport,
+  useCashFlowReport,
+  useStaffPerformanceReport,
+  useStoreComparisonReport,
+  usePeriodComparisonReport,
+  usePeakHoursReport,
+  useDiscountEffectivenessReport,
+  useReturnsReport,
+  useCustomerLifetimeValueReport
 } from '@/utils/hooks/reports';
 import { useBusinessCategories } from '@/utils/hooks/categories';
 import { toast } from 'sonner';
@@ -37,15 +46,17 @@ import {
   Filter,
   X,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  ArrowUpRight,
+  ArrowDownRight,
+  Percent
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, Legend } from 'recharts';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
 import { Product, CustomerType } from '@/types';
 
 interface ReportingProps {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onBack?: () => void; // Optional for backward compatibility
 }
 
@@ -94,6 +105,62 @@ interface TopSaleData {
   paymentMethod: string;
   cashier: string;
   storeId: string;
+}
+
+interface StaffPerformance {
+  id?: string;
+  name: string;
+  username: string;
+  transactions: number;
+  revenue: number;
+  profit: number;
+  avgTransactionValue: number;
+  itemsSold: number;
+}
+
+interface StoreComparison {
+  id?: string;
+  storeId: string;
+  storeName: string;
+  revenue: number;
+  transactions: number;
+  avgTransactionValue: number;
+  profit: number;
+  profitMargin: number;
+  itemsSold: number;
+}
+
+interface CouponPerformance {
+  id?: string;
+  name: string;
+  uses: number;
+  totalDiscount: number;
+  totalRevenue: number;
+}
+
+interface ProductReturn {
+  id?: string;
+  name: string;
+  sku: string;
+  category: string;
+  quantity: number;
+  refundAmount: number;
+}
+
+interface CustomerCLV {
+  id?: string;
+  customerId: string;
+  name: string;
+  email: string;
+  phone: string;
+  firstPurchase: string;
+  lastPurchase: string;
+  totalRevenue: number;
+  totalTransactions: number;
+  avgOrderValue: number;
+  daysSinceFirstPurchase: number;
+  daysSinceLastPurchase: number;
+  clv: number;
 }
 
 export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
@@ -185,6 +252,63 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
     startDate,
     endDate
   );
+
+  // New comprehensive report hooks
+  const [compareType, setCompareType] = useState<'previous' | 'yoy' | 'mom'>('previous');
+  
+  const {
+    data: profitLossData,
+    isLoading: isLoadingPL,
+    error: plError
+  } = useProfitLossReport(currentBusiness?.id || '', reportingStoreId || '', startDate, endDate);
+
+  const {
+    data: cashFlowData,
+    isLoading: isLoadingCashFlow,
+    error: cashFlowError
+  } = useCashFlowReport(currentBusiness?.id || '', reportingStoreId || '', startDate, endDate);
+
+  const {
+    data: staffPerformanceData,
+    isLoading: isLoadingStaff,
+    error: staffError
+  } = useStaffPerformanceReport(currentBusiness?.id || '', reportingStoreId || '', startDate, endDate);
+
+  const {
+    data: storeComparisonData,
+    isLoading: isLoadingStoreComparison,
+    error: storeComparisonError
+  } = useStoreComparisonReport(currentBusiness?.id || '', startDate, endDate);
+
+  const {
+    data: periodComparisonData,
+    isLoading: isLoadingPeriodComparison,
+    error: periodComparisonError
+  } = usePeriodComparisonReport(currentBusiness?.id || '', reportingStoreId || '', startDate, endDate, compareType);
+
+  const {
+    data: peakHoursData,
+    isLoading: isLoadingPeakHours,
+    error: peakHoursError
+  } = usePeakHoursReport(currentBusiness?.id || '', reportingStoreId || '', startDate, endDate);
+
+  const {
+    data: discountEffectivenessData,
+    isLoading: isLoadingDiscount,
+    error: discountError
+  } = useDiscountEffectivenessReport(currentBusiness?.id || '', reportingStoreId || '', startDate, endDate);
+
+  const {
+    data: returnsData,
+    isLoading: isLoadingReturns,
+    error: returnsError
+  } = useReturnsReport(currentBusiness?.id || '', reportingStoreId || '', startDate, endDate);
+
+  const {
+    data: clvData,
+    isLoading: isLoadingCLV,
+    error: clvError
+  } = useCustomerLifetimeValueReport(currentBusiness?.id || '', reportingStoreId || '');
 
   // Fetch categories for filter dropdown
   const { data: categoriesData = [] } = useBusinessCategories(currentBusiness?.id || '', {
@@ -861,16 +985,203 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
         </div>
 
         {/* Tabbed Reports */}
-        <Tabs defaultValue="sales" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <TabsList className="inline-flex h-10 items-center justify-start rounded-lg bg-muted p-1 text-muted-foreground">
+        <Tabs defaultValue="overview" className="space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <TabsList className="inline-flex h-10 items-center justify-start rounded-lg bg-muted p-1 text-muted-foreground overflow-x-auto">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-background">Overview</TabsTrigger>
               <TabsTrigger value="sales" className="data-[state=active]:bg-background">Sales</TabsTrigger>
               <TabsTrigger value="products" className="data-[state=active]:bg-background">Products</TabsTrigger>
               <TabsTrigger value="customers" className="data-[state=active]:bg-background">Customers</TabsTrigger>
               <TabsTrigger value="inventory" className="data-[state=active]:bg-background">Inventory</TabsTrigger>
               <TabsTrigger value="financial" className="data-[state=active]:bg-background">Financial</TabsTrigger>
+              <TabsTrigger value="profit-loss" className="data-[state=active]:bg-background">P&L</TabsTrigger>
+              <TabsTrigger value="cash-flow" className="data-[state=active]:bg-background">Cash Flow</TabsTrigger>
+              <TabsTrigger value="staff" className="data-[state=active]:bg-background">Staff</TabsTrigger>
+              <TabsTrigger value="stores" className="data-[state=active]:bg-background">Stores</TabsTrigger>
+              <TabsTrigger value="analytics" className="data-[state=active]:bg-background">Analytics</TabsTrigger>
             </TabsList>
           </div>
+
+          {/* Overview Tab - Executive Dashboard */}
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card className="border-l-4 border-l-blue-500">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Total Revenue</p>
+                      <p className="text-2xl font-bold mb-1">
+                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : formatCurrency(totalRevenue)}
+                      </p>
+                      <div className="flex items-center gap-1 mt-2">
+                        <TrendingUp className="w-3.5 h-3.5 text-green-600" />
+                        <span className="text-xs font-medium text-green-600">
+                          {totalTransactions} transactions
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                      <DollarSign className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-green-500">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Gross Profit</p>
+                      <p className="text-2xl font-bold mb-1">
+                        {isLoadingFinancial ? <Loader2 className="w-5 h-5 animate-spin" /> : formatCurrency(safeFinancialStats.totalProfit)}
+                      </p>
+                      <div className="flex items-center gap-1 mt-2">
+                        <Percent className="w-3.5 h-3.5 text-green-600" />
+                        <span className="text-xs font-medium text-green-600">
+                          {safeFinancialStats.profitMargin.toFixed(1)}% margin
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                      <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-purple-500">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Avg Order Value</p>
+                      <p className="text-2xl font-bold mb-1">
+                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : formatCurrency(averageOrderValue)}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2">Per transaction</p>
+                    </div>
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+                      <BarChart3 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-orange-500">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Products Sold</p>
+                      <p className="text-2xl font-bold mb-1">
+                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : productPerformance.length.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {!reportingStoreId ? 'Across all stores' : 'In this store'}
+                      </p>
+                    </div>
+                    <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
+                      <Package className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Period Comparison Card */}
+            {periodComparisonData && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Period Comparison</CardTitle>
+                    <Select value={compareType} onValueChange={(v) => {
+                      if (v === 'previous' || v === 'yoy' || v === 'mom') {
+                        setCompareType(v);
+                      }
+                    }}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="previous">Previous Period</SelectItem>
+                        <SelectItem value="mom">Month over Month</SelectItem>
+                        <SelectItem value="yoy">Year over Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingPeriodComparison ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                      <p className="text-muted-foreground">Loading comparison data...</p>
+                    </div>
+                  ) : periodComparisonData.comparison ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {Object.entries(periodComparisonData.comparison).map(([key, data]) => {
+                        const comparisonData = data as {
+                          current: number;
+                          previous: number;
+                          change: number;
+                          changeAmount: number;
+                        };
+                        return (
+                        <div key={key} className="p-4 border rounded-lg">
+                          <p className="text-sm text-muted-foreground mb-2 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</p>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-2xl font-bold">{formatCurrency(comparisonData.current)}</p>
+                            {comparisonData.change !== undefined && (
+                              <div className={`flex items-center gap-1 ${comparisonData.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {comparisonData.change >= 0 ? (
+                                  <ArrowUpRight className="w-4 h-4" />
+                                ) : (
+                                  <ArrowDownRight className="w-4 h-4" />
+                                )}
+                                <span className="text-sm font-medium">{Math.abs(comparisonData.change).toFixed(1)}%</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">Previous: {formatCurrency(comparisonData.previous)}</p>
+                        </div>
+                      );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">No comparison data available</p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Revenue Trend Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Revenue & Profit Trend</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingCharts ? (
+                  <div className="text-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading chart data...</p>
+                  </div>
+                ) : safeChartData.revenueData.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No revenue data available
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={safeChartData.revenueData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" tickFormatter={(value) => new Date(value).toLocaleDateString()} />
+                      <YAxis tickFormatter={(value) => `$${value}`} />
+                      <Tooltip formatter={(value) => [`$${value}`, 'Amount']} />
+                      <Area type="monotone" dataKey="revenue" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.2} name="Revenue" />
+                      <Area type="monotone" dataKey="profit" stroke="#10B981" fill="#10B981" fillOpacity={0.2} name="Profit" />
+                      <Legend />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="sales">
             {/* Top Sales DataTable */}
@@ -1376,6 +1687,822 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Profit & Loss Tab */}
+          <TabsContent value="profit-loss" className="mt-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Profit & Loss Statement</CardTitle>
+                  <Button variant="outline" size="sm" onClick={() => profitLossData && exportToCSV('Profit & Loss', [profitLossData])}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                </div>
+                {dateRange.from && dateRange.to && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Period: {dateRange.from.toLocaleDateString()} to {dateRange.to.toLocaleDateString()}
+                  </p>
+                )}
+              </CardHeader>
+              <CardContent>
+                {isLoadingPL ? (
+                  <div className="text-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading P&L data...</p>
+                  </div>
+                ) : plError ? (
+                  <div className="text-center py-8">
+                    <p className="text-destructive mb-2">Error loading P&L data</p>
+                    <Button variant="outline" onClick={() => window.location.reload()}>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Retry
+                    </Button>
+                  </div>
+                ) : profitLossData ? (
+                  <div className="space-y-6">
+                    {/* Revenue Section */}
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold">Revenue</h3>
+                      <div className="space-y-2 pl-4">
+                        <div className="flex justify-between">
+                          <span>Gross Revenue</span>
+                          <span className="font-medium">{formatCurrency(profitLossData.revenue?.total || 0)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-muted-foreground">
+                          <span>Less: Discounts</span>
+                          <span>-{formatCurrency(profitLossData.revenue?.discounts || 0)}</span>
+                        </div>
+                        <div className="flex justify-between border-t pt-2 font-semibold">
+                          <span>Net Revenue</span>
+                          <span>{formatCurrency(profitLossData.revenue?.net || 0)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* COGS Section */}
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold">Cost of Goods Sold (COGS)</h3>
+                      <div className="space-y-2 pl-4">
+                        <div className="flex justify-between">
+                          <span>Total COGS</span>
+                          <span className="font-medium text-red-600">-{formatCurrency(profitLossData.cogs?.total || 0)}</span>
+                        </div>
+                        {profitLossData.cogs?.breakdown && profitLossData.cogs.breakdown.length > 0 && (
+                          <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                            {profitLossData.cogs.breakdown.map((item: { name: string; value: number }, idx: number) => (
+                              <div key={idx} className="flex justify-between pl-4">
+                                <span>{item.name}</span>
+                                <span>-{formatCurrency(item.value)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Gross Profit */}
+                    <div className="border-t pt-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-semibold">Gross Profit</span>
+                        <span className="text-2xl font-bold text-green-600">{formatCurrency(profitLossData.grossProfit || 0)}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Gross Profit Margin: {profitLossData.revenue?.total > 0 
+                          ? ((profitLossData.grossProfit / profitLossData.revenue.total) * 100).toFixed(2) 
+                          : '0.00'}%
+                      </p>
+                    </div>
+
+                    {/* Operating Expenses */}
+                    <div className="space-y-3 border-t pt-4">
+                      <h3 className="text-lg font-semibold">Operating Expenses</h3>
+                      <div className="flex justify-between">
+                        <span>Total Operating Expenses</span>
+                        <span className="font-medium text-red-600">-{formatCurrency(profitLossData.operatingExpenses || 0)}</span>
+                      </div>
+                    </div>
+
+                    {/* Net Profit */}
+                    <div className="border-t-2 pt-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xl font-bold">Net Profit</span>
+                        <span className={`text-3xl font-bold ${profitLossData.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {formatCurrency(profitLossData.netProfit || 0)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Net Profit Margin: {profitLossData.profitMargin?.toFixed(2) || '0.00'}%
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No P&L data available</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Cash Flow Tab */}
+          <TabsContent value="cash-flow" className="mt-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Cash Flow Statement</CardTitle>
+                  <Button variant="outline" size="sm" onClick={() => cashFlowData && exportToCSV('Cash Flow', [cashFlowData])}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isLoadingCashFlow ? (
+                  <div className="text-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading cash flow data...</p>
+                  </div>
+                ) : cashFlowData ? (
+                  <div className="space-y-6">
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Card className="border-l-4 border-l-green-500">
+                        <CardContent className="p-4">
+                          <p className="text-sm text-muted-foreground mb-1">Cash Inflows</p>
+                          <p className="text-2xl font-bold text-green-600">{formatCurrency(cashFlowData.cashIn?.total || 0)}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="border-l-4 border-l-red-500">
+                        <CardContent className="p-4">
+                          <p className="text-sm text-muted-foreground mb-1">Cash Outflows</p>
+                          <p className="text-2xl font-bold text-red-600">{formatCurrency(cashFlowData.cashOut?.total || 0)}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className={`border-l-4 ${(cashFlowData.netCashFlow || 0) >= 0 ? 'border-l-blue-500' : 'border-l-orange-500'}`}>
+                        <CardContent className="p-4">
+                          <p className="text-sm text-muted-foreground mb-1">Net Cash Flow</p>
+                          <p className={`text-2xl font-bold ${(cashFlowData.netCashFlow || 0) >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+                            {formatCurrency(cashFlowData.netCashFlow || 0)}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Payment Method Breakdown */}
+                    {cashFlowData.cashIn?.breakdown && cashFlowData.cashIn.breakdown.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-3">Cash Inflows by Payment Method</h3>
+                        <div className="space-y-2">
+                          {cashFlowData.cashIn.breakdown.map((item: { method: string; amount: number }, idx: number) => (
+                            <div key={idx} className="flex justify-between items-center p-3 border rounded-lg">
+                              <span>{item.method}</span>
+                              <span className="font-medium text-green-600">{formatCurrency(item.amount)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Daily Cash Flow Chart */}
+                    {cashFlowData.dailyFlow && cashFlowData.dailyFlow.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-3">Daily Cash Flow</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <AreaChart data={cashFlowData.dailyFlow}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="date" tickFormatter={(value) => new Date(value).toLocaleDateString()} />
+                            <YAxis tickFormatter={(value) => `$${value}`} />
+                            <Tooltip formatter={(value) => [`$${value}`, 'Amount']} />
+                            <Area type="monotone" dataKey="in" stroke="#10B981" fill="#10B981" fillOpacity={0.2} name="Cash In" />
+                            <Area type="monotone" dataKey="out" stroke="#EF4444" fill="#EF4444" fillOpacity={0.2} name="Cash Out" />
+                            <Area type="monotone" dataKey="net" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.2} name="Net" />
+                            <Legend />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No cash flow data available</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Staff Performance Tab */}
+          <TabsContent value="staff" className="mt-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Staff Performance Report</CardTitle>
+                  <Button variant="outline" size="sm" onClick={() => staffPerformanceData && exportToCSV('Staff Performance', staffPerformanceData.staff || [])}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isLoadingStaff ? (
+                  <div className="text-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading staff performance data...</p>
+                  </div>
+                ) : staffPerformanceData?.staff && staffPerformanceData.staff.length > 0 ? (
+                  <div className="space-y-4">
+                    {/* Summary Stats */}
+                    {staffPerformanceData.summary && (
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <Card>
+                          <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground mb-1">Total Staff</p>
+                            <p className="text-2xl font-bold">{staffPerformanceData.summary.totalStaff}</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground mb-1">Total Transactions</p>
+                            <p className="text-2xl font-bold">{staffPerformanceData.summary.totalTransactions}</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground mb-1">Total Revenue</p>
+                            <p className="text-2xl font-bold">{formatCurrency(staffPerformanceData.summary.totalRevenue)}</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground mb-1">Avg Transactions/Staff</p>
+                            <p className="text-2xl font-bold">{staffPerformanceData.summary.avgTransactionsPerStaff.toFixed(1)}</p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+
+                    {/* Staff Performance Table */}
+                    <DataTable
+                      title=""
+                      data={staffPerformanceData.staff}
+                      columns={[
+                        {
+                          key: 'name',
+                          header: 'Staff Member',
+                          render: (staff) => {
+                            const s = staff as StaffPerformance;
+                            return (
+                            <div>
+                              <p className="font-medium">{s.name}</p>
+                              {s.username && <p className="text-xs text-muted-foreground">@{s.username}</p>}
+                            </div>
+                          );
+                          }
+                        },
+                        {
+                          key: 'transactions',
+                          header: 'Transactions',
+                          render: (staff) => {
+                            const s = staff as StaffPerformance;
+                            return <div className="text-center">{s.transactions}</div>;
+                          }
+                        },
+                        {
+                          key: 'revenue',
+                          header: 'Revenue',
+                          render: (staff) => {
+                            const s = staff as StaffPerformance;
+                            return <div className="font-medium">{formatCurrency(s.revenue)}</div>;
+                          }
+                        },
+                        {
+                          key: 'profit',
+                          header: 'Profit',
+                          render: (staff) => {
+                            const s = staff as StaffPerformance;
+                            return <div className="text-green-600 font-medium">{formatCurrency(s.profit)}</div>;
+                          }
+                        },
+                        {
+                          key: 'avgTransactionValue',
+                          header: 'Avg Transaction',
+                          render: (staff) => {
+                            const s = staff as StaffPerformance;
+                            return <div>{formatCurrency(s.avgTransactionValue)}</div>;
+                          }
+                        },
+                        {
+                          key: 'itemsSold',
+                          header: 'Items Sold',
+                          render: (staff) => {
+                            const s = staff as StaffPerformance;
+                            return <div className="text-center">{s.itemsSold}</div>;
+                          }
+                        }
+                      ]}
+                      searchable={false}
+                      tableName="reports"
+                      userRole={user?.role}
+                      pagination={{
+                        enabled: true,
+                        pageSize: 15,
+                        showPageSizeSelector: false,
+                        showPageInfo: true
+                      }}
+                      emptyMessage="No staff performance data available"
+                    />
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No staff performance data available</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Store Comparison Tab */}
+          <TabsContent value="stores" className="mt-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Store Comparison Report</CardTitle>
+                  <Button variant="outline" size="sm" onClick={() => storeComparisonData && exportToCSV('Store Comparison', storeComparisonData.stores || [])}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isLoadingStoreComparison ? (
+                  <div className="text-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading store comparison data...</p>
+                  </div>
+                ) : storeComparisonData?.stores && storeComparisonData.stores.length > 0 ? (
+                  <div className="space-y-4">
+                    {/* Store Comparison Chart */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold mb-3">Revenue by Store</h3>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={storeComparisonData.stores}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="storeName" />
+                          <YAxis tickFormatter={(value) => `$${value}`} />
+                          <Tooltip formatter={(value) => [`$${value}`, 'Revenue']} />
+                          <Bar dataKey="revenue" fill="#3B82F6" name="Revenue" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Store Comparison Table */}
+                    <DataTable
+                      title=""
+                      data={storeComparisonData.stores}
+                      columns={[
+                        {
+                          key: 'storeName',
+                          header: 'Store',
+                          render: (store) => {
+                            const s = store as StoreComparison;
+                            return <div className="font-medium">{s.storeName}</div>;
+                          }
+                        },
+                        {
+                          key: 'revenue',
+                          header: 'Revenue',
+                          render: (store) => {
+                            const s = store as StoreComparison;
+                            return <div className="font-medium">{formatCurrency(s.revenue)}</div>;
+                          }
+                        },
+                        {
+                          key: 'transactions',
+                          header: 'Transactions',
+                          render: (store) => {
+                            const s = store as StoreComparison;
+                            return <div className="text-center">{s.transactions}</div>;
+                          }
+                        },
+                        {
+                          key: 'avgTransactionValue',
+                          header: 'Avg Transaction',
+                          render: (store) => {
+                            const s = store as StoreComparison;
+                            return <div>{formatCurrency(s.avgTransactionValue)}</div>;
+                          }
+                        },
+                        {
+                          key: 'profit',
+                          header: 'Profit',
+                          render: (store) => {
+                            const s = store as StoreComparison;
+                            return <div className="text-green-600 font-medium">{formatCurrency(s.profit)}</div>;
+                          }
+                        },
+                        {
+                          key: 'profitMargin',
+                          header: 'Profit Margin',
+                          render: (store) => {
+                            const s = store as StoreComparison;
+                            return <Badge variant="secondary">{s.profitMargin.toFixed(1)}%</Badge>;
+                          }
+                        },
+                        {
+                          key: 'itemsSold',
+                          header: 'Items Sold',
+                          render: (store) => {
+                            const s = store as StoreComparison;
+                            return <div className="text-center">{s.itemsSold}</div>;
+                          }
+                        }
+                      ]}
+                      searchable={false}
+                      tableName="reports"
+                      userRole={user?.role}
+                      pagination={{
+                        enabled: true,
+                        pageSize: 15,
+                        showPageSizeSelector: false,
+                        showPageInfo: true
+                      }}
+                      emptyMessage="No store comparison data available"
+                    />
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No store comparison data available</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="mt-4 space-y-4">
+            {/* Peak Hours */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Peak Hours Analysis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingPeakHours ? (
+                  <div className="text-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading peak hours data...</p>
+                  </div>
+                ) : peakHoursData ? (
+                  <div className="space-y-6">
+                    {/* Hourly Chart */}
+                    {peakHoursData.hourly && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-3">Sales by Hour of Day</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={peakHoursData.hourly}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="hourLabel" />
+                            <YAxis />
+                            <Tooltip />
+                            <Bar dataKey="transactions" fill="#3B82F6" name="Transactions" />
+                            <Bar dataKey="revenue" fill="#10B981" name="Revenue" />
+                            <Legend />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+
+                    {/* Day of Week Chart */}
+                    {peakHoursData.dayOfWeek && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-3">Sales by Day of Week</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={peakHoursData.dayOfWeek}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="day" />
+                            <YAxis />
+                            <Tooltip />
+                            <Bar dataKey="transactions" fill="#8B5CF6" name="Transactions" />
+                            <Bar dataKey="revenue" fill="#F59E0B" name="Revenue" />
+                            <Legend />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No peak hours data available</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Discount Effectiveness */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Discount Effectiveness</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingDiscount ? (
+                  <div className="text-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading discount data...</p>
+                  </div>
+                ) : discountEffectivenessData ? (
+                  <div className="space-y-6">
+                    {/* Summary */}
+                    {discountEffectivenessData.summary && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Card>
+                          <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground mb-1">Discount Rate</p>
+                            <p className="text-2xl font-bold">{discountEffectivenessData.summary.discountRate.toFixed(1)}%</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {discountEffectivenessData.summary.salesWithDiscount} of {discountEffectivenessData.summary.totalSales} sales
+                            </p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground mb-1">Total Discounts</p>
+                            <p className="text-2xl font-bold text-orange-600">-{formatCurrency(discountEffectivenessData.summary.totalDiscountAmount)}</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground mb-1">Avg Discount/Sale</p>
+                            <p className="text-2xl font-bold">{formatCurrency(discountEffectivenessData.summary.avgDiscountPerSale)}</p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+
+                    {/* Coupon Performance */}
+                    {discountEffectivenessData.coupons && discountEffectivenessData.coupons.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-3">Coupon Performance</h3>
+                        <DataTable
+                          title=""
+                          data={discountEffectivenessData.coupons}
+                          columns={[
+                            {
+                              key: 'name',
+                              header: 'Coupon',
+                              render: (coupon) => {
+                                const c = coupon as CouponPerformance;
+                                return <div className="font-medium">{c.name}</div>;
+                              }
+                            },
+                            {
+                              key: 'uses',
+                              header: 'Uses',
+                              render: (coupon) => {
+                                const c = coupon as CouponPerformance;
+                                return <div className="text-center">{c.uses}</div>;
+                              }
+                            },
+                            {
+                              key: 'totalDiscount',
+                              header: 'Total Discount',
+                              render: (coupon) => {
+                                const c = coupon as CouponPerformance;
+                                return <div className="text-orange-600">-{formatCurrency(c.totalDiscount)}</div>;
+                              }
+                            },
+                            {
+                              key: 'totalRevenue',
+                              header: 'Revenue Generated',
+                              render: (coupon) => {
+                                const c = coupon as CouponPerformance;
+                                return <div className="font-medium">{formatCurrency(c.totalRevenue)}</div>;
+                              }
+                            }
+                          ]}
+                          searchable={false}
+                          tableName="reports"
+                          userRole={user?.role}
+                          pagination={{
+                            enabled: true,
+                            pageSize: 10,
+                            showPageSizeSelector: false,
+                            showPageInfo: true
+                          }}
+                          emptyMessage="No coupon data available"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No discount data available</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Returns Analysis */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Returns & Exchanges Analysis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingReturns ? (
+                  <div className="text-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading returns data...</p>
+                  </div>
+                ) : returnsData ? (
+                  <div className="space-y-6">
+                    {/* Summary */}
+                    {returnsData.summary && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Card>
+                          <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground mb-1">Total Returns</p>
+                            <p className="text-2xl font-bold">{returnsData.summary.totalReturns}</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground mb-1">Total Refunded</p>
+                            <p className="text-2xl font-bold text-red-600">-{formatCurrency(returnsData.summary.totalRefundAmount)}</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground mb-1">Avg Refund</p>
+                            <p className="text-2xl font-bold">{formatCurrency(returnsData.summary.avgRefundAmount)}</p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+
+                    {/* Product Returns */}
+                    {returnsData.products && returnsData.products.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-3">Products with Most Returns</h3>
+                        <DataTable
+                          title=""
+                          data={returnsData.products}
+                          columns={[
+                            {
+                              key: 'name',
+                              header: 'Product',
+                              render: (product) => {
+                                const p = product as ProductReturn;
+                                return (
+                                  <div>
+                                    <p className="font-medium">{p.name}</p>
+                                    <p className="text-xs text-muted-foreground">SKU: {p.sku}</p>
+                                  </div>
+                                );
+                              }
+                            },
+                            {
+                              key: 'category',
+                              header: 'Category',
+                              render: (product) => {
+                                const p = product as ProductReturn;
+                                return <div>{p.category}</div>;
+                              }
+                            },
+                            {
+                              key: 'quantity',
+                              header: 'Quantity Returned',
+                              render: (product) => {
+                                const p = product as ProductReturn;
+                                return <div className="text-center text-red-600 font-medium">{p.quantity}</div>;
+                              }
+                            },
+                            {
+                              key: 'refundAmount',
+                              header: 'Refund Amount',
+                              render: (product) => {
+                                const p = product as ProductReturn;
+                                return <div className="text-red-600">-{formatCurrency(p.refundAmount)}</div>;
+                              }
+                            }
+                          ]}
+                          searchable={false}
+                          tableName="reports"
+                          userRole={user?.role}
+                          pagination={{
+                            enabled: true,
+                            pageSize: 10,
+                            showPageSizeSelector: false,
+                            showPageInfo: true
+                          }}
+                          emptyMessage="No returns data available"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No returns data available</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Customer Lifetime Value */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Customer Lifetime Value (CLV)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingCLV ? (
+                  <div className="text-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading CLV data...</p>
+                  </div>
+                ) : clvData ? (
+                  <div className="space-y-6">
+                    {/* Summary */}
+                    {clvData.summary && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Card>
+                          <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground mb-1">Total Customers</p>
+                            <p className="text-2xl font-bold">{clvData.summary.totalCustomers}</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground mb-1">Average CLV</p>
+                            <p className="text-2xl font-bold">{formatCurrency(clvData.summary.avgCLV)}</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground mb-1">Total CLV</p>
+                            <p className="text-2xl font-bold text-green-600">{formatCurrency(clvData.summary.totalCLV)}</p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+
+                    {/* Top Customers */}
+                    {clvData.customers && clvData.customers.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-3">Top Customers by Lifetime Value</h3>
+                        <DataTable
+                          title=""
+                          data={clvData.customers.slice(0, 20)}
+                          columns={[
+                            {
+                              key: 'name',
+                              header: 'Customer',
+                              render: (customer) => {
+                                const c = customer as CustomerCLV;
+                                return (
+                                  <div>
+                                    <p className="font-medium">{c.name}</p>
+                                    {c.email && <p className="text-xs text-muted-foreground">{c.email}</p>}
+                                  </div>
+                                );
+                              }
+                            },
+                            {
+                              key: 'totalRevenue',
+                              header: 'Total Revenue',
+                              render: (customer) => {
+                                const c = customer as CustomerCLV;
+                                return <div className="font-medium">{formatCurrency(c.totalRevenue)}</div>;
+                              }
+                            },
+                            {
+                              key: 'totalTransactions',
+                              header: 'Transactions',
+                              render: (customer) => {
+                                const c = customer as CustomerCLV;
+                                return <div className="text-center">{c.totalTransactions}</div>;
+                              }
+                            },
+                            {
+                              key: 'avgOrderValue',
+                              header: 'Avg Order Value',
+                              render: (customer) => {
+                                const c = customer as CustomerCLV;
+                                return <div>{formatCurrency(c.avgOrderValue)}</div>;
+                              }
+                            },
+                            {
+                              key: 'clv',
+                              header: 'Lifetime Value',
+                              render: (customer) => {
+                                const c = customer as CustomerCLV;
+                                return <div className="font-bold text-green-600">{formatCurrency(c.clv)}</div>;
+                              }
+                            }
+                          ]}
+                          searchable={false}
+                          tableName="reports"
+                          userRole={user?.role}
+                          pagination={{
+                            enabled: true,
+                            pageSize: 15,
+                            showPageSizeSelector: false,
+                            showPageInfo: true
+                          }}
+                          emptyMessage="No customer data available"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No CLV data available</p>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
     </DashboardLayout>

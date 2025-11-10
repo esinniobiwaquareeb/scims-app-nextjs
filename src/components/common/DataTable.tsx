@@ -403,8 +403,8 @@ export function DataTable<T extends { id: string }>({
                 {emptyMessage}
               </div>
             ) : (
-              currentData.map((item) => (
-                <Card key={item.id} className="p-3 sm:p-4 border shadow-sm">
+              currentData.map((item, idx) => (
+                <Card key={item.id || `card-${idx}-${JSON.stringify(item).slice(0, 50)}`} className="p-3 sm:p-4 border shadow-sm">
                   <div className="space-y-2.5 sm:space-y-3">
                     {columns.map((column, index) => {
                       const value = column.render ? column.render(item) : 
@@ -486,8 +486,14 @@ export function DataTable<T extends { id: string }>({
                         </TableCell>
                       </TableRow>
                     ) : (
-                      currentData.map((item) => (
-                        <TableRow key={item.id} className="hover:bg-muted/50">
+                      currentData.map((item, idx) => {
+                        // Generate a unique key - prefer id, fallback to index + first column value
+                        const uniqueKey = item.id || 
+                          (columns[0]?.key && (item as Record<string, unknown>)[columns[0].key] 
+                            ? `${columns[0].key}-${(item as Record<string, unknown>)[columns[0].key]}-${idx}`
+                            : `row-${idx}`);
+                        return (
+                        <TableRow key={uniqueKey} className="hover:bg-muted/50">
                           {columns.map((column, index) => (
                             <TableCell 
                               key={column.key || column.accessorKey || index} 
@@ -506,7 +512,8 @@ export function DataTable<T extends { id: string }>({
                             </TableCell>
                           ))}
                         </TableRow>
-                      ))
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>

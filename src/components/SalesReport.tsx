@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, Legend } from 'recharts';
 
 interface SalesReportProps {
   onBack?: () => void; // Optional for backward compatibility
@@ -457,7 +458,11 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
 
     const topCategories = Object.values(categoryStats)
       .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 10);
+      .slice(0, 10)
+      .map(cat => ({
+        ...cat,
+        percentage: totalRevenue > 0 ? (cat.revenue / totalRevenue) * 100 : 0
+      }));
 
     // Payment method breakdown
     const paymentStats: { [key: string]: { count: number; amount: number; cash_received: number; change_given: number } } = {};
@@ -1001,64 +1006,125 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="w-5 h-5" />
-                    {translate('sales.topProducts') || 'Top Products'}
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <Package className="w-5 h-5" />
+                      {translate('sales.topProducts') || 'Top Products'}
+                    </CardTitle>
+                    <Badge variant="secondary">{calculatedStats.topProducts.length} products</Badge>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {calculatedStats.topProducts.slice(0, 5).map((product, index) => (
-                      <div key={`product-${product.sku || index}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-6 bg-primary text-white text-xs font-bold rounded flex items-center justify-center">
-                            #{index + 1}
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">{product.name}</p>
-                            <p className="text-xs text-muted-foreground">{product.sku}</p>
-                          </div>
+                  {calculatedStats.topProducts.length > 0 ? (
+                    <>
+                      {/* Chart for top 5 */}
+                      {calculatedStats.topProducts.length >= 3 && (
+                        <div className="mb-4">
+                          <ResponsiveContainer width="100%" height={200}>
+                            <BarChart data={calculatedStats.topProducts.slice(0, 5)} layout="vertical">
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis type="number" tickFormatter={(value) => `$${value}`} />
+                              <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} />
+                              <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                              <Bar dataKey="revenue" fill="#3B82F6" name="Revenue" />
+                            </BarChart>
+                          </ResponsiveContainer>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-sm">{product.quantity} sold</p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatCurrency(product.revenue)}
-                          </p>
-                        </div>
+                      )}
+                      <div className="space-y-3">
+                        {calculatedStats.topProducts.slice(0, 10).map((product, index) => (
+                          <div key={`product-${product.sku || index}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-6 bg-primary text-white text-xs font-bold rounded flex items-center justify-center">
+                                #{index + 1}
+                              </div>
+                              <div>
+                                <p className="font-medium text-sm">{product.name}</p>
+                                <p className="text-xs text-muted-foreground">{product.sku}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold text-sm">{product.quantity} sold</p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatCurrency(product.revenue)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No product data available
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5" />
-                    {translate('sales.topCategories') || 'Top Categories'}
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5" />
+                      {translate('sales.topCategories') || 'Top Categories'}
+                    </CardTitle>
+                    <Badge variant="secondary">{calculatedStats.topCategories.length} categories</Badge>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {calculatedStats.topCategories.slice(0, 5).map((category, index) => (
-                      <div key={`category-${category.name || index}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-6 bg-secondary text-white text-xs font-bold rounded flex items-center justify-center">
-                            #{index + 1}
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">{category.name}</p>
-                          </div>
+                  {calculatedStats.topCategories.length > 0 ? (
+                    <>
+                      {/* Pie Chart for categories */}
+                      {calculatedStats.topCategories.length >= 2 && (
+                        <div className="mb-4">
+                          <ResponsiveContainer width="100%" height={200}>
+                            <PieChart>
+                              <Pie
+                                data={calculatedStats.topCategories.slice(0, 5)}
+                                cx="50%"
+                                cy="50%"
+                                labelLine={false}
+                                label={({ name, percentage }) => `${name}: ${percentage.toFixed(1)}%`}
+                                outerRadius={70}
+                                fill="#8884d8"
+                                dataKey="revenue"
+                              >
+                                {calculatedStats.topCategories.slice(0, 5).map((entry, index) => {
+                                  const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+                                  return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                                })}
+                              </Pie>
+                              <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                            </PieChart>
+                          </ResponsiveContainer>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-sm">{category.quantity} items</p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatCurrency(category.revenue)}
-                          </p>
-                        </div>
+                      )}
+                      <div className="space-y-3">
+                        {calculatedStats.topCategories.slice(0, 10).map((category, index) => (
+                          <div key={`category-${category.name || index}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-6 bg-secondary text-white text-xs font-bold rounded flex items-center justify-center">
+                                #{index + 1}
+                              </div>
+                              <div>
+                                <p className="font-medium text-sm">{category.name}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold text-sm">{category.quantity} items</p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatCurrency(category.revenue)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No category data available
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -1119,28 +1185,124 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {calculatedStats.dailyRevenue.map((day) => (
-                    <div key={day.date} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">
-                          {formatDate(new Date(day.date))}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-semibold text-primary">
-                          {formatCurrency(day.revenue)}
+                {calculatedStats.dailyRevenue.length > 0 ? (
+                  <>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <AreaChart data={calculatedStats.dailyRevenue}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="date" 
+                          tickFormatter={(value) => formatDate(new Date(value))}
+                        />
+                        <YAxis tickFormatter={(value) => `$${value}`} />
+                        <Tooltip 
+                          formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                          labelFormatter={(label) => formatDate(new Date(label))}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="revenue" 
+                          stroke="#3B82F6" 
+                          fill="#3B82F6" 
+                          fillOpacity={0.2}
+                          name="Revenue"
+                        />
+                        <Legend />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                    <div className="mt-4 space-y-2">
+                      {calculatedStats.dailyRevenue.slice(-7).map((day) => (
+                        <div key={day.date} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">
+                              {formatDate(new Date(day.date))}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-semibold text-primary">
+                              {formatCurrency(day.revenue)}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {day.orders} orders
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          {day.orders} orders
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No revenue data available for the selected period
+                  </div>
+                )}
               </CardContent>
             </Card>
+
+            {/* Top Products Chart */}
+            {calculatedStats.topProducts.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="w-5 h-5" />
+                    {translate('sales.topProducts') || 'Top Products Performance'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={calculatedStats.topProducts.slice(0, 10)}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45}
+                        textAnchor="end"
+                        height={100}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <YAxis tickFormatter={(value) => `$${value}`} />
+                      <Tooltip formatter={(value: number) => [formatCurrency(value), 'Revenue']} />
+                      <Bar dataKey="revenue" fill="#10B981" name="Revenue" />
+                      <Legend />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Payment Method Distribution */}
+            {calculatedStats.paymentMethodBreakdown.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="w-5 h-5" />
+                    {translate('sales.paymentDistribution') || 'Payment Method Distribution'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={calculatedStats.paymentMethodBreakdown}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ method, percentage }) => `${method}: ${percentage.toFixed(1)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="amount"
+                      >
+                        {calculatedStats.paymentMethodBreakdown.map((entry, index) => {
+                          const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+                          return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                        })}
+                      </Pie>
+                      <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Transactions Tab */}
