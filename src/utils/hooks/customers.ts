@@ -18,8 +18,8 @@ export const useStoreCustomers = (storeId: string, options?: { enabled?: boolean
     enabled: enabled && !!storeId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: !forceRefresh,
+    refetchOnWindowFocus: false,
+    refetchOnMount: forceRefresh ? true : false, // Only refetch if explicitly requested
   });
 };
 
@@ -35,6 +35,10 @@ export const useCreateCustomer = () => {
     },
     onSuccess: (_data, variables: any) => {
       queryClient.invalidateQueries({ queryKey: ['store-customers', variables.store_id] });
+      // Invalidate customer sales if customer_id is available
+      if (variables.customer_id) {
+        queryClient.invalidateQueries({ queryKey: ['customerSales', variables.customer_id] });
+      }
       toast.success('Customer created successfully');
     },
     onError: (error) => {
@@ -54,8 +58,12 @@ export const useUpdateCustomer = (storeId: string) => {
       if (!response.ok) throw new Error('Failed to update customer');
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables: any) => {
       queryClient.invalidateQueries({ queryKey: ['store-customers', storeId] });
+      // Invalidate customer sales
+      if (variables.customerData?.id) {
+        queryClient.invalidateQueries({ queryKey: ['customerSales', variables.customerData.id] });
+      }
       toast.success('Customer updated successfully');
     },
     onError: (error) => {
@@ -73,8 +81,10 @@ export const useDeleteCustomer = (storeId: string) => {
       if (!response.ok) throw new Error('Failed to delete customer');
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_data, customerId: string) => {
       queryClient.invalidateQueries({ queryKey: ['store-customers', storeId] });
+      // Invalidate customer sales
+      queryClient.invalidateQueries({ queryKey: ['customerSales', customerId] });
       toast.success('Customer deleted successfully');
     },
     onError: (error) => {
@@ -94,6 +104,10 @@ export const useCustomerSales = (customerId: string) => {
       return data.sales || [];
     },
     enabled: !!customerId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Don't refetch on mount if data is fresh
   });
 };
 
@@ -118,8 +132,8 @@ export const useOfflineStoreCustomers = (storeId: string, options?: { enabled?: 
     enabled: enabled && !!storeId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: !forceRefresh,
+    refetchOnWindowFocus: false,
+    refetchOnMount: forceRefresh ? true : false, // Only refetch if explicitly requested
   });
 };
 

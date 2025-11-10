@@ -14,8 +14,8 @@ export const useRestockOrders = (storeId: string, options?: { enabled?: boolean;
     enabled: enabled && !!storeId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: !forceRefresh,
+    refetchOnWindowFocus: false,
+    refetchOnMount: forceRefresh ? true : false, // Only refetch if explicitly requested
   });
 };
 
@@ -65,9 +65,12 @@ export const useReceiveRestockItems = () => {
       if (!response.ok) throw new Error('Failed to receive restock items');
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables: { orderId: string; receivedItems: Array<{ product_id: string; received_quantity: number; }> }) => {
       queryClient.invalidateQueries({ queryKey: ['restock-orders'] });
+      // Invalidate all product-related queries since stock quantities changed
       queryClient.invalidateQueries({ queryKey: ['store-products'] });
+      queryClient.invalidateQueries({ queryKey: ['business-products'] });
+      queryClient.invalidateQueries({ queryKey: ['business-products-low-stock'] });
       toast.success('Restock items received successfully');
     },
     onError: (error) => {

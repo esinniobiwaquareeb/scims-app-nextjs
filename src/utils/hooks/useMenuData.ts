@@ -57,6 +57,8 @@ export const useMenuItems = (businessType: string, userRole: string, enabledFeat
     enabled: !!businessType && !!userRole,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Don't refetch on mount if data is fresh
   });
 };
 
@@ -75,6 +77,8 @@ export const useBusinessTypeMenu = (businessType: string) => {
     enabled: !!businessType,
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 20 * 60 * 1000, // 20 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Don't refetch on mount if data is fresh
   });
 };
 
@@ -92,6 +96,8 @@ export const useMenuCategories = () => {
     },
     staleTime: 30 * 60 * 1000, // 30 minutes
     gcTime: 60 * 60 * 1000, // 1 hour
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Don't refetch on mount if data is fresh
   });
 };
 
@@ -109,5 +115,7 @@ export const useAllMenuItems = () => {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Don't refetch on mount if data is fresh
   });
 };

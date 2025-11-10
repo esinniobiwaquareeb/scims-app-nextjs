@@ -35,9 +35,16 @@ export const useCreateStore = (businessId: string) => {
         queryClient.invalidateQueries({
           queryKey: ["business-stores", businessId],
         });
-        queryClient.refetchQueries({
-          queryKey: ["business-stores", businessId],
+        queryClient.invalidateQueries({
+          queryKey: ["businessStores", businessId],
         });
+        // Invalidate store-related queries
+        if (response.store?.id) {
+          queryClient.invalidateQueries({ queryKey: ['store-products', response.store.id] });
+          queryClient.invalidateQueries({ queryKey: ['store-customers', response.store.id] });
+          queryClient.invalidateQueries({ queryKey: ['store-sales', response.store.id] });
+          queryClient.invalidateQueries({ queryKey: ['store-settings', response.store.id] });
+        }
         toast.success("Store created successfully");
       }
     },
@@ -60,14 +67,21 @@ export const useUpdateStore = (businessId: string) => {
       if (!response.ok) throw new Error("Failed to update store");
       return response.json();
     },
-    onSuccess: (response) => {
+    onSuccess: (response, variables: { id: string; storeData: any }) => {
       if (response && response.success) {
         queryClient.invalidateQueries({
           queryKey: ["business-stores", businessId],
         });
-        queryClient.refetchQueries({
-          queryKey: ["business-stores", businessId],
+        queryClient.invalidateQueries({
+          queryKey: ["businessStores", businessId],
         });
+        // Invalidate store-related queries
+        const storeId = variables.id;
+        queryClient.invalidateQueries({ queryKey: ['store-products', storeId] });
+        queryClient.invalidateQueries({ queryKey: ['store-customers', storeId] });
+        queryClient.invalidateQueries({ queryKey: ['store-sales', storeId] });
+        queryClient.invalidateQueries({ queryKey: ['store-settings', storeId] });
+        queryClient.invalidateQueries({ queryKey: ['store-dashboard-stats', storeId] });
         toast.success("Store updated successfully");
       }
     },
@@ -88,14 +102,22 @@ export const useDeleteStore = (businessId: string) => {
       if (!response.ok) throw new Error("Failed to delete store");
       return response.json();
     },
-    onSuccess: (response) => {
+    onSuccess: (response, storeId: string) => {
       if (response && response.success) {
         queryClient.invalidateQueries({
           queryKey: ["business-stores", businessId],
         });
-        queryClient.refetchQueries({
-          queryKey: ["business-stores", businessId],
+        queryClient.invalidateQueries({
+          queryKey: ["businessStores", businessId],
         });
+        // Invalidate all store-related queries
+        queryClient.invalidateQueries({ queryKey: ['store-products', storeId] });
+        queryClient.invalidateQueries({ queryKey: ['store-customers', storeId] });
+        queryClient.invalidateQueries({ queryKey: ['store-sales', storeId] });
+        queryClient.invalidateQueries({ queryKey: ['store-settings', storeId] });
+        queryClient.invalidateQueries({ queryKey: ['store-dashboard-stats', storeId] });
+        queryClient.invalidateQueries({ queryKey: ['storeStaff', storeId] });
+        queryClient.invalidateQueries({ queryKey: ['restock-orders', storeId] });
         toast.success("Store deleted successfully");
       }
     },
@@ -129,7 +151,7 @@ export const useStoreSettings = (
     enabled: enabled && !!storeId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: true,
-    refetchOnMount: !forceRefresh,
+    refetchOnWindowFocus: false,
+    refetchOnMount: forceRefresh ? true : false, // Only refetch if explicitly requested
   });
 };

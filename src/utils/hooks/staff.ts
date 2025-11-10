@@ -13,6 +13,10 @@ export const useBusinessStaff = (businessId: string, p0: { enabled: boolean; }) 
       return result.success ? result.staff : [];
     },
     enabled: !!businessId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Don't refetch on mount if data is fresh
   });
 };
 
@@ -26,6 +30,10 @@ export const useStoreStaff = (storeId: string, p0: { enabled: boolean; }) => {
       return result.success ? result.staff : [];
     },
     enabled: !!storeId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Don't refetch on mount if data is fresh
   });
 };
 

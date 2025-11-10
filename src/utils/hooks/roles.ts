@@ -11,6 +11,10 @@ export const useRoles = (businessId: string) => {
       return response.json();
     },
     enabled: !!businessId,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Don't refetch on mount if data is fresh
   });
 };
 

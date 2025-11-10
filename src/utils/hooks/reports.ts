@@ -13,6 +13,10 @@ export const useReport = (businessId: string, reportType: string, storeId?: stri
       return response.json();
     },
     enabled: !!businessId && !!reportType,
+    staleTime: 2 * 60 * 1000, // Reports can be stale faster since they're time-based
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Don't refetch on mount if data is fresh
   });
 };
 

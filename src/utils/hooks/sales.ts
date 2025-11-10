@@ -21,8 +21,8 @@ export const useStoreSales = (
     enabled: enabled && !!storeId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: !forceRefresh,
+    refetchOnWindowFocus: false,
+    refetchOnMount: forceRefresh ? true : false, // Only refetch if explicitly requested
   });
 };
 
@@ -45,8 +45,8 @@ export const useCashierSales = (
     enabled: enabled && !!cashierId && !!storeId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: !forceRefresh,
+    refetchOnWindowFocus: false,
+    refetchOnMount: forceRefresh ? true : false, // Only refetch if explicitly requested
   });
 };
 
@@ -79,8 +79,8 @@ export const useStoreSalesReport = (
     enabled: enabled && !!storeId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: !forceRefresh,
+    refetchOnWindowFocus: false,
+    refetchOnMount: forceRefresh ? true : false, // Only refetch if explicitly requested
   });
 };
 
@@ -114,8 +114,8 @@ export const useAggregatedSalesReport = (
     enabled: enabled && storeIds.length > 0,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: !forceRefresh,
+    refetchOnWindowFocus: false,
+    refetchOnMount: forceRefresh ? true : false, // Only refetch if explicitly requested
   });
 };
 
@@ -159,8 +159,8 @@ export const useOfflineStoreSales = (
     enabled: enabled && !!storeId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: !forceRefresh,
+    refetchOnWindowFocus: false,
+    refetchOnMount: forceRefresh ? true : false, // Only refetch if explicitly requested
   });
 };
 
@@ -186,8 +186,26 @@ export const useOfflineCreateSale = () => {
         throw error;
       }
     },
-    onSuccess: (data: any, variables: { store_id: string }) => {
+    onSuccess: (data: any, variables: { store_id: string; business_id?: string; customer_id?: string; cashier_id?: string }) => {
       queryClient.invalidateQueries({ queryKey: ['store-sales', variables.store_id] });
+      // Invalidate sales reports
+      queryClient.invalidateQueries({ queryKey: ['store-sales-report', variables.store_id] });
+      queryClient.invalidateQueries({ queryKey: ['aggregated-sales-report'] });
+      // Invalidate dashboard stats
+      queryClient.invalidateQueries({ queryKey: ['store-dashboard-stats', variables.store_id] });
+      if (variables.business_id) {
+        queryClient.invalidateQueries({ queryKey: ['business-dashboard-stats', variables.business_id] });
+      }
+      // Invalidate customer sales if customer_id is available
+      if (variables.customer_id) {
+        queryClient.invalidateQueries({ queryKey: ['customerSales', variables.customer_id] });
+      }
+      // Invalidate cashier sales if cashier_id is available
+      if (variables.cashier_id) {
+        queryClient.invalidateQueries({ queryKey: ['cashier-sales', variables.cashier_id] });
+      }
+      // Invalidate reports
+      queryClient.invalidateQueries({ queryKey: ['report'] });
       toast.success(data.offline ? 'Sale completed offline (will sync when online)' : 'Sale completed successfully');
     },
     onError: (error) => {

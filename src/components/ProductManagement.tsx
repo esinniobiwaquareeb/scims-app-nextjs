@@ -268,7 +268,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
   // Use mutations for CRUD operations
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
-  const deleteProductMutation = useDeleteProduct(currentStore?.id || '');
+  const deleteProductMutation = useDeleteProduct(currentStore?.id || '', currentBusiness?.id);
 
   // Combined loading state
   const isLoading = productsLoading || categoriesLoading || suppliersLoading || brandsLoading || storesLoading;

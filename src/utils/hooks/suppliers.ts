@@ -15,6 +15,8 @@ export const useBusinessSuppliers = (businessId: string, options?: { enabled?: b
     enabled: enabled && !!businessId,
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Don't refetch on mount if data is fresh
   });
 };
 
@@ -30,6 +32,9 @@ export const useCreateBusinessSupplier = (businessId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['suppliers', businessId] });
+      // Invalidate products that use suppliers
+      queryClient.invalidateQueries({ queryKey: ['store-products'] });
+      queryClient.invalidateQueries({ queryKey: ['business-products'] });
       toast.success('Supplier created successfully');
     },
     onError: (error) => {
@@ -51,6 +56,9 @@ export const useUpdateBusinessSupplier = (businessId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['suppliers', businessId] });
+      // Invalidate products that use suppliers
+      queryClient.invalidateQueries({ queryKey: ['store-products'] });
+      queryClient.invalidateQueries({ queryKey: ['business-products'] });
       toast.success('Supplier updated successfully');
     },
     onError: (error) => {
@@ -70,6 +78,9 @@ export const useDeleteBusinessSupplier = (businessId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['suppliers', businessId] });
+      // Invalidate products that use suppliers
+      queryClient.invalidateQueries({ queryKey: ['store-products'] });
+      queryClient.invalidateQueries({ queryKey: ['business-products'] });
       toast.success('Supplier deleted successfully');
     },
     onError: (error) => {

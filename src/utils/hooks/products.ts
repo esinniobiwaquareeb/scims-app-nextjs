@@ -28,8 +28,8 @@ export const useStoreProducts = (storeId: string, options?: {
     enabled: enabled && !!storeId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: !forceRefresh,
+    refetchOnWindowFocus: false,
+    refetchOnMount: forceRefresh ? true : false, // Only refetch if explicitly requested
   });
 };
 
@@ -68,8 +68,8 @@ export const useOfflineStoreProducts = (storeId: string, options?: {
     enabled: enabled && !!storeId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: !forceRefresh,
+    refetchOnWindowFocus: false,
+    refetchOnMount: forceRefresh ? true : false, // Only refetch if explicitly requested
   });
 };
 
@@ -89,8 +89,8 @@ export const useBusinessProducts = (businessId: string, options?: {
     enabled: enabled && !!businessId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: !forceRefresh,
+    refetchOnWindowFocus: false,
+    refetchOnMount: forceRefresh ? true : false, // Only refetch if explicitly requested
   });
 };
 
@@ -110,8 +110,8 @@ export const useBusinessProductsWithLowStock = (businessId: string, options?: {
     enabled: enabled && !!businessId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: !forceRefresh,
+    refetchOnWindowFocus: false,
+    refetchOnMount: forceRefresh ? true : false, // Only refetch if explicitly requested
   });
 };
 
@@ -126,7 +126,19 @@ export const useCreateProduct = () => {
       return response.json();
     },
     onSuccess: (data, variables: any) => {
-      queryClient.invalidateQueries({ queryKey: ['store-products', variables.store_id] });
+      const storeId = variables.store_id;
+      const businessId = variables.business_id;
+      
+      // Invalidate store-specific products
+      queryClient.invalidateQueries({ queryKey: ['store-products', storeId] });
+      
+      // Invalidate "All stores" view if businessId is available
+      if (businessId) {
+        queryClient.invalidateQueries({ queryKey: ['store-products', 'All', businessId] });
+        queryClient.invalidateQueries({ queryKey: ['business-products', businessId] });
+        queryClient.invalidateQueries({ queryKey: ['business-products-low-stock', businessId] });
+      }
+      
       toast.success('Product created successfully');
     },
     onError: (error) => {
@@ -147,7 +159,19 @@ export const useUpdateProduct = () => {
       return response.json();
     },
     onSuccess: (data, variables: any) => {
-      queryClient.invalidateQueries({ queryKey: ['store-products', variables.productData.store_id] });
+      const storeId = variables.productData.store_id;
+      const businessId = variables.productData.business_id;
+      
+      // Invalidate store-specific products
+      queryClient.invalidateQueries({ queryKey: ['store-products', storeId] });
+      
+      // Invalidate "All stores" view if businessId is available
+      if (businessId) {
+        queryClient.invalidateQueries({ queryKey: ['store-products', 'All', businessId] });
+        queryClient.invalidateQueries({ queryKey: ['business-products', businessId] });
+        queryClient.invalidateQueries({ queryKey: ['business-products-low-stock', businessId] });
+      }
+      
       toast.success('Product updated successfully');
     },
     onError: (error) => {
@@ -157,7 +181,7 @@ export const useUpdateProduct = () => {
   });
 };
 
-export const useDeleteProduct = (storeId: string) => {
+export const useDeleteProduct = (storeId: string, businessId?: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (productId: string) => {
@@ -166,7 +190,16 @@ export const useDeleteProduct = (storeId: string) => {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate store-specific products
       queryClient.invalidateQueries({ queryKey: ['store-products', storeId] });
+      
+      // Invalidate "All stores" view if businessId is available
+      if (businessId) {
+        queryClient.invalidateQueries({ queryKey: ['store-products', 'All', businessId] });
+        queryClient.invalidateQueries({ queryKey: ['business-products', businessId] });
+        queryClient.invalidateQueries({ queryKey: ['business-products-low-stock', businessId] });
+      }
+      
       toast.success('Product deleted successfully');
     },
     onError: (error) => {

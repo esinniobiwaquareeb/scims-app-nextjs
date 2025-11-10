@@ -55,7 +55,9 @@ export const useStoreAdminDashboard = (storeId: string, options?: {
     },
     enabled: enabled && !!storeId,
     staleTime,
+    gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus,
+    refetchOnMount: false, // Don't refetch on mount if data is fresh
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   });
 };

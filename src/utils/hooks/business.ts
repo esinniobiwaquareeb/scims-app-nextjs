@@ -40,7 +40,7 @@ export const useUserBusiness = (userId: string, options?: { enabled?: boolean; f
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,
-    refetchOnMount: !forceRefresh,
+    refetchOnMount: forceRefresh ? true : false, // Only refetch if explicitly requested
   });
 };
 
@@ -72,7 +72,7 @@ export const useBusinesses = (options?: { enabled?: boolean; forceRefresh?: bool
     staleTime: 60 * 60 * 1000,
     gcTime: 2 * 60 * 60 * 1000,
     refetchOnWindowFocus: false,
-    refetchOnMount: !forceRefresh,
+    refetchOnMount: forceRefresh ? true : false, // Only refetch if explicitly requested
   });
 };
 

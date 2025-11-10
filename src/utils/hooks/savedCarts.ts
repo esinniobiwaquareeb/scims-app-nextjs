@@ -16,6 +16,8 @@ export const useSavedCarts = (storeId: string, _cashierId?: string, options?: { 
     enabled: enabled && !!storeId,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Don't refetch on mount if data is fresh
   });
 };
 
@@ -137,6 +139,8 @@ export const useOfflineSavedCarts = (storeId: string, options?: { enabled?: bool
     enabled: enabled && !!storeId,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Don't refetch on mount if data is fresh
   });
 };
 

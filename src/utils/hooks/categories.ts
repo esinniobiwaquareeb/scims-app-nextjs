@@ -16,6 +16,8 @@ export const useCategories = (businessId: string, options?: { enabled?: boolean 
     enabled: enabled && !!businessId,
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Don't refetch on mount if data is fresh
   });
 };
 
@@ -33,6 +35,9 @@ export const useCreateBusinessCategory = (businessId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories', businessId] });
+      // Invalidate products that use categories
+      queryClient.invalidateQueries({ queryKey: ['store-products'] });
+      queryClient.invalidateQueries({ queryKey: ['business-products'] });
       toast.success('Category created successfully');
     },
     onError: (error) => {
@@ -54,6 +59,9 @@ export const useUpdateBusinessCategory = (businessId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories', businessId] });
+      // Invalidate products that use categories
+      queryClient.invalidateQueries({ queryKey: ['store-products'] });
+      queryClient.invalidateQueries({ queryKey: ['business-products'] });
       toast.success('Category updated successfully');
     },
     onError: (error) => {
@@ -73,6 +81,9 @@ export const useDeleteBusinessCategory = (businessId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories', businessId] });
+      // Invalidate products that use categories
+      queryClient.invalidateQueries({ queryKey: ['store-products'] });
+      queryClient.invalidateQueries({ queryKey: ['business-products'] });
       toast.success('Category deleted successfully');
     },
     onError: (error) => {
@@ -103,6 +114,8 @@ export const useOfflineCategories = (businessId: string, options?: { enabled?: b
     enabled: enabled && !!businessId,
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Don't refetch on mount if data is fresh
   });
 };
 
