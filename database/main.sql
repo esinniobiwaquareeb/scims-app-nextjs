@@ -2066,3 +2066,734 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+-- ======================
+-- AFFILIATE SYSTEM (SaaS - Business Signup Based)
+-- ======================
+
+-- Affiliates Table
+-- For SaaS, affiliates are independent marketers who refer businesses to sign up
+CREATE TABLE IF NOT EXISTS public.affiliate (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  affiliate_code character varying(50) NOT NULL UNIQUE, -- Unique code for tracking
+  name character varying(255) NOT NULL,
+  email character varying(255) NOT NULL UNIQUE, -- Email for login and notifications
+  phone character varying(50),
+  password_hash character varying(255), -- Hashed password for affiliate login (optional, can be set after approval)
+  -- Signup commission (one-time commission when business signs up)
+  signup_commission_type character varying(20) DEFAULT 'percentage', -- 'percentage' or 'fixed'
+  signup_commission_rate numeric(5, 2) NULL, -- Percentage commission for signup (e.g., 10.00 = 10%)
+  signup_commission_fixed numeric(10, 2) NULL, -- Fixed commission amount for signup
+  -- Subscription commission (recurring commission on subscription payments)
+  subscription_commission_rate numeric(5, 2) NOT NULL DEFAULT 10.00, -- Percentage commission on subscriptions (e.g., 10.00 = 10%)
+  -- Legacy fields (deprecated, kept for backward compatibility)
+  commission_rate numeric(5, 2) DEFAULT 10.00, -- Legacy: use subscription_commission_rate
+  commission_type character varying(20) DEFAULT 'percentage', -- Legacy field
+  fixed_commission_amount numeric(10, 2) NULL, -- Legacy field
+  status character varying(20) DEFAULT 'pending', -- 'pending', 'approved', 'active', 'suspended', 'inactive'
+  application_status character varying(20) DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
+  payment_method character varying(50), -- 'bank_transfer', 'paypal', 'stripe', etc.
+  payment_details jsonb, -- Store payment account details securely
+  application_data jsonb, -- Store application form data (why they want to be affiliate, etc.)
+  reviewed_by uuid NULL, -- User who reviewed the application
+  reviewed_at timestamp without time zone NULL,
+  rejection_reason text, -- Reason for rejection if application is rejected
+  total_referrals integer DEFAULT 0, -- Number of business signups referred
+  total_businesses integer DEFAULT 0, -- Number of businesses that signed up
+  total_subscriptions numeric(12, 2) DEFAULT 0, -- Total subscription revenue from referrals
+  total_commission_earned numeric(12, 2) DEFAULT 0,
+  total_commission_paid numeric(12, 2) DEFAULT 0,
+  total_commission_pending numeric(12, 2) DEFAULT 0,
+  notes text,
+  metadata jsonb, -- Store additional affiliate data
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  last_login timestamp without time zone NULL,
+  CONSTRAINT affiliate_pkey PRIMARY KEY (id),
+  CONSTRAINT affiliate_code_unique UNIQUE (affiliate_code),
+  CONSTRAINT affiliate_email_unique UNIQUE (email),
+  CONSTRAINT affiliate_commission_rate_check CHECK (commission_rate >= 0 AND commission_rate <= 100),
+  CONSTRAINT affiliate_fixed_commission_amount_check CHECK (fixed_commission_amount IS NULL OR fixed_commission_amount >= 0),
+  CONSTRAINT affiliate_status_check CHECK (status IN ('pending', 'approved', 'active', 'suspended', 'inactive')),
+  CONSTRAINT affiliate_application_status_check CHECK (application_status IN ('pending', 'approved', 'rejected')),
+  CONSTRAINT affiliate_reviewed_by_fkey FOREIGN KEY (reviewed_by) 
+    REFERENCES "user"(id) ON DELETE SET NULL
+) TABLESPACE pg_default;
+
+-- Affiliate Referrals Table (tracks business signups from affiliates)
+CREATE TABLE IF NOT EXISTS public.affiliate_referral (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  affiliate_id uuid NOT NULL,
+  business_id uuid NULL, -- The business that was referred and signed up
+  user_email character varying(255), -- Email used during signup
+  user_phone character varying(50),
+  referral_code character varying(50) NOT NULL, -- The code used for referral
+  referral_source character varying(50), -- 'link', 'code', 'social', etc.
+  status character varying(20) DEFAULT 'pending', -- 'pending', 'converted', 'expired'
+  converted_at timestamp without time zone NULL, -- When business completed signup
+  subscription_started_at timestamp without time zone NULL, -- When business started paying
+  expires_at timestamp without time zone NULL, -- Referral expiration date (default 90 days)
+  metadata jsonb, -- Store referral tracking data (UTM params, source, etc.)
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT affiliate_referral_pkey PRIMARY KEY (id),
+  CONSTRAINT affiliate_referral_affiliate_id_fkey FOREIGN KEY (affiliate_id) 
+    REFERENCES affiliate(id) ON DELETE CASCADE,
+  CONSTRAINT affiliate_referral_business_id_fkey FOREIGN KEY (business_id) 
+    REFERENCES business(id) ON DELETE SET NULL,
+  CONSTRAINT affiliate_referral_status_check CHECK (status IN ('pending', 'converted', 'expired'))
+) TABLESPACE pg_default;
+
+-- Affiliate Commissions Table (tracks commissions earned from signups and subscription payments)
+CREATE TABLE IF NOT EXISTS public.affiliate_commission (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  affiliate_id uuid NOT NULL,
+  referral_id uuid NULL, -- Link to the referral that generated this commission
+  business_id uuid NOT NULL, -- The business that was referred
+  subscription_plan_id uuid NULL, -- The subscription plan purchased (null for signup commissions)
+  amount numeric(12, 2) NOT NULL, -- Base amount (subscription payment or signup value)
+  commission_rate numeric(5, 2) NULL, -- Commission rate at time of commission (for percentage)
+  commission_amount numeric(12, 2) NOT NULL, -- Calculated commission
+  commission_type character varying(20) NOT NULL, -- 'signup' or 'subscription'
+  commission_sub_type character varying(20) DEFAULT 'percentage', -- 'percentage' or 'fixed' (for signup)
+  status character varying(20) DEFAULT 'pending', -- 'pending', 'approved', 'paid', 'cancelled'
+  payout_id uuid NULL, -- Link to payout when commission is paid (FK added after payout table is created)
+  notes text,
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  paid_at timestamp without time zone NULL,
+  CONSTRAINT affiliate_commission_pkey PRIMARY KEY (id),
+  CONSTRAINT affiliate_commission_affiliate_id_fkey FOREIGN KEY (affiliate_id) 
+    REFERENCES affiliate(id) ON DELETE CASCADE,
+  CONSTRAINT affiliate_commission_referral_id_fkey FOREIGN KEY (referral_id) 
+    REFERENCES affiliate_referral(id) ON DELETE SET NULL,
+  CONSTRAINT affiliate_commission_business_id_fkey FOREIGN KEY (business_id) 
+    REFERENCES business(id) ON DELETE CASCADE,
+  -- Note: payout_id foreign key is added after affiliate_payout table is created (see below)
+  CONSTRAINT affiliate_commission_status_check CHECK (status IN ('pending', 'approved', 'paid', 'cancelled')),
+  CONSTRAINT affiliate_commission_commission_type_check CHECK (commission_type IN ('signup', 'subscription')),
+  CONSTRAINT affiliate_commission_commission_amount_check CHECK (commission_amount >= 0),
+  CONSTRAINT affiliate_commission_amount_check CHECK (amount >= 0)
+) TABLESPACE pg_default;
+
+-- Affiliate Payouts Table (tracks commission payouts to affiliates)
+CREATE TABLE IF NOT EXISTS public.affiliate_payout (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  affiliate_id uuid NOT NULL,
+  payout_number character varying(100) NOT NULL UNIQUE, -- Unique payout reference number
+  total_amount numeric(12, 2) NOT NULL,
+  commission_count integer NOT NULL, -- Number of commissions included in this payout
+  payment_method character varying(50) NOT NULL,
+  payment_details jsonb, -- Payment account details
+  status character varying(20) DEFAULT 'pending', -- 'pending', 'processing', 'completed', 'failed', 'cancelled'
+  processed_by uuid NULL, -- User who processed the payout
+  processed_at timestamp without time zone NULL,
+  notes text,
+  transaction_reference character varying(255), -- External transaction reference
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT affiliate_payout_pkey PRIMARY KEY (id),
+  CONSTRAINT affiliate_payout_affiliate_id_fkey FOREIGN KEY (affiliate_id) 
+    REFERENCES affiliate(id) ON DELETE CASCADE,
+  CONSTRAINT affiliate_payout_processed_by_fkey FOREIGN KEY (processed_by) 
+    REFERENCES "user"(id) ON DELETE SET NULL,
+  CONSTRAINT affiliate_payout_status_check CHECK (status IN ('pending', 'processing', 'completed', 'failed', 'cancelled')),
+  CONSTRAINT affiliate_payout_total_amount_check CHECK (total_amount > 0),
+  CONSTRAINT affiliate_payout_commission_count_check CHECK (commission_count > 0)
+) TABLESPACE pg_default;
+
+-- Add the foreign key reference for payout_id after payout table is created
+DO $$ 
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'affiliate_payout') THEN
+    -- Drop constraint if it exists (in case of re-running migration)
+    ALTER TABLE IF EXISTS public.affiliate_commission DROP CONSTRAINT IF EXISTS affiliate_commission_payout_id_fkey;
+    
+    -- Add the foreign key constraint
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.table_constraints 
+      WHERE constraint_schema = 'public' 
+      AND constraint_name = 'affiliate_commission_payout_id_fkey'
+    ) THEN
+      ALTER TABLE public.affiliate_commission 
+        ADD CONSTRAINT affiliate_commission_payout_id_fkey 
+        FOREIGN KEY (payout_id) REFERENCES affiliate_payout(id) ON DELETE SET NULL;
+    END IF;
+  END IF;
+END $$;
+
+-- Indexes for Affiliates
+CREATE INDEX IF NOT EXISTS idx_affiliate_code 
+  ON public.affiliate USING btree (affiliate_code);
+CREATE INDEX IF NOT EXISTS idx_affiliate_status 
+  ON public.affiliate USING btree (status);
+
+-- Indexes for Affiliate Referrals
+CREATE INDEX IF NOT EXISTS idx_affiliate_referral_affiliate_id 
+  ON public.affiliate_referral USING btree (affiliate_id);
+CREATE INDEX IF NOT EXISTS idx_affiliate_referral_business_id 
+  ON public.affiliate_referral USING btree (business_id);
+CREATE INDEX IF NOT EXISTS idx_affiliate_referral_code 
+  ON public.affiliate_referral USING btree (referral_code);
+CREATE INDEX IF NOT EXISTS idx_affiliate_referral_status 
+  ON public.affiliate_referral USING btree (status);
+
+-- Indexes for Affiliate Commissions
+CREATE INDEX IF NOT EXISTS idx_affiliate_commission_affiliate_id 
+  ON public.affiliate_commission USING btree (affiliate_id);
+CREATE INDEX IF NOT EXISTS idx_affiliate_commission_referral_id 
+  ON public.affiliate_commission USING btree (referral_id);
+CREATE INDEX IF NOT EXISTS idx_affiliate_commission_business_id 
+  ON public.affiliate_commission USING btree (business_id);
+CREATE INDEX IF NOT EXISTS idx_affiliate_commission_status 
+  ON public.affiliate_commission USING btree (status);
+CREATE INDEX IF NOT EXISTS idx_affiliate_commission_payout_id 
+  ON public.affiliate_commission USING btree (payout_id);
+
+-- Indexes for Affiliate Payouts
+CREATE INDEX IF NOT EXISTS idx_affiliate_payout_affiliate_id 
+  ON public.affiliate_payout USING btree (affiliate_id);
+CREATE INDEX IF NOT EXISTS idx_affiliate_payout_status 
+  ON public.affiliate_payout USING btree (status);
+CREATE INDEX IF NOT EXISTS idx_affiliate_payout_payout_number 
+  ON public.affiliate_payout USING btree (payout_number);
+
+-- Triggers for updated_at
+CREATE OR REPLACE FUNCTION update_affiliate_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_affiliate_updated_at BEFORE UPDATE ON public.affiliate
+  FOR EACH ROW EXECUTE FUNCTION update_affiliate_updated_at();
+
+CREATE TRIGGER update_affiliate_referral_updated_at BEFORE UPDATE ON public.affiliate_referral
+  FOR EACH ROW EXECUTE FUNCTION update_affiliate_updated_at();
+
+CREATE TRIGGER update_affiliate_commission_updated_at BEFORE UPDATE ON public.affiliate_commission
+  FOR EACH ROW EXECUTE FUNCTION update_affiliate_updated_at();
+
+CREATE TRIGGER update_affiliate_payout_updated_at BEFORE UPDATE ON public.affiliate_payout
+  FOR EACH ROW EXECUTE FUNCTION update_affiliate_updated_at();
+-- Add user_id field to affiliate table to link affiliates to SCIMS user accounts (Issue #1)
+-- This allows SCIMS customers to also be affiliates
+
+-- Add user_id column if it doesn't exist
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'affiliate' 
+    AND column_name = 'user_id'
+  ) THEN
+    ALTER TABLE public.affiliate 
+    ADD COLUMN user_id uuid NULL;
+    
+    -- Add foreign key constraint
+    ALTER TABLE public.affiliate 
+    ADD CONSTRAINT affiliate_user_id_fkey 
+    FOREIGN KEY (user_id) 
+    REFERENCES "user"(id) ON DELETE SET NULL;
+    
+    -- Add index for performance
+    CREATE INDEX IF NOT EXISTS idx_affiliate_user_id 
+    ON public.affiliate USING btree (user_id);
+  END IF;
+END $$;
+
+-- Add currency_id field to affiliate_commission table (Issue #8)
+-- This allows commissions to have a currency and enables currency changes
+
+-- Add currency_id column if it doesn't exist
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'affiliate_commission' 
+    AND column_name = 'currency_id'
+  ) THEN
+    ALTER TABLE public.affiliate_commission 
+    ADD COLUMN currency_id uuid NULL;
+    
+    -- Add foreign key constraint
+    ALTER TABLE public.affiliate_commission 
+    ADD CONSTRAINT affiliate_commission_currency_id_fkey 
+    FOREIGN KEY (currency_id) 
+    REFERENCES currency(id) ON DELETE SET NULL;
+    
+    -- Add index for performance
+    CREATE INDEX IF NOT EXISTS idx_affiliate_commission_currency_id 
+    ON public.affiliate_commission USING btree (currency_id);
+  END IF;
+END $$;
+
+-- Add password reset fields to affiliate table
+ALTER TABLE public.affiliate 
+ADD COLUMN IF NOT EXISTS password_reset_token character varying(255) NULL,
+ADD COLUMN IF NOT EXISTS password_reset_expires_at timestamp without time zone NULL;
+
+-- Add index for password reset token lookup
+CREATE INDEX IF NOT EXISTS idx_affiliate_password_reset_token 
+  ON public.affiliate USING btree (password_reset_token);
+
+-- ======================
+-- AI AGENT SYSTEM
+-- ======================
+
+-- AI Agent Settings (extends business_setting)
+-- Add columns to business_setting table for AI agent configuration
+ALTER TABLE public.business_setting 
+ADD COLUMN IF NOT EXISTS enable_ai_agent boolean DEFAULT false,
+ADD COLUMN IF NOT EXISTS ai_agent_provider character varying(50) DEFAULT 'openai',
+ADD COLUMN IF NOT EXISTS ai_agent_api_key text,
+ADD COLUMN IF NOT EXISTS ai_agent_model character varying(100) DEFAULT 'gpt-4',
+ADD COLUMN IF NOT EXISTS ai_agent_temperature numeric(3, 2) DEFAULT 0.7,
+ADD COLUMN IF NOT EXISTS ai_agent_system_prompt text DEFAULT 'You are a helpful customer service agent for a retail business. You help customers find products, check availability, get pricing, and answer questions about the business.',
+ADD COLUMN IF NOT EXISTS ai_agent_enabled_platforms jsonb DEFAULT '["whatsapp"]'::jsonb,
+ADD COLUMN IF NOT EXISTS ai_agent_auto_order boolean DEFAULT false,
+ADD COLUMN IF NOT EXISTS ai_agent_response_delay_ms integer DEFAULT 1000;
+
+-- AI Agent Conversations Table
+CREATE TABLE IF NOT EXISTS public.ai_agent_conversation (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  business_id uuid NOT NULL,
+  platform character varying(50) NOT NULL, -- 'whatsapp', 'instagram', 'tiktok'
+  customer_phone character varying(50),
+  customer_username character varying(255),
+  customer_name character varying(255),
+  conversation_id character varying(255) NOT NULL, -- Platform-specific conversation ID
+  status character varying(50) DEFAULT 'active', -- 'active', 'completed', 'escalated'
+  metadata jsonb, -- Store platform-specific data
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  last_message_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT ai_agent_conversation_pkey PRIMARY KEY (id),
+  CONSTRAINT ai_agent_conversation_business_id_fkey FOREIGN KEY (business_id) 
+    REFERENCES business(id) ON DELETE CASCADE
+) TABLESPACE pg_default;
+
+-- AI Agent Messages Table
+CREATE TABLE IF NOT EXISTS public.ai_agent_message (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  conversation_id uuid NOT NULL,
+  role character varying(20) NOT NULL, -- 'user', 'assistant', 'system'
+  content text NOT NULL,
+  message_type character varying(50) DEFAULT 'text', -- 'text', 'image', 'location', 'order', 'payment'
+  metadata jsonb, -- Store additional data like product IDs, order info, etc.
+  created_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT ai_agent_message_pkey PRIMARY KEY (id),
+  CONSTRAINT ai_agent_message_conversation_id_fkey FOREIGN KEY (conversation_id) 
+    REFERENCES ai_agent_conversation(id) ON DELETE CASCADE
+) TABLESPACE pg_default;
+
+-- AI Agent Orders Table (for tracking orders created via AI agent)
+CREATE TABLE IF NOT EXISTS public.ai_agent_order (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  conversation_id uuid NOT NULL,
+  order_id uuid, -- Link to actual order if created
+  customer_name character varying(255),
+  customer_phone character varying(50),
+  customer_address text,
+  items jsonb NOT NULL, -- Array of {product_id, quantity, price}
+  total_amount numeric(10, 2) NOT NULL,
+  status character varying(50) DEFAULT 'pending', -- 'pending', 'confirmed', 'completed', 'cancelled'
+  payment_method character varying(50),
+  payment_status character varying(50) DEFAULT 'pending',
+  notes text,
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT ai_agent_order_pkey PRIMARY KEY (id),
+  CONSTRAINT ai_agent_order_conversation_id_fkey FOREIGN KEY (conversation_id) 
+    REFERENCES ai_agent_conversation(id) ON DELETE CASCADE
+) TABLESPACE pg_default;
+
+-- AI Agent Platform Mapping Table (SaaS Multi-Tenant Support)
+-- Maps platform account IDs to business IDs for automatic routing
+CREATE TABLE IF NOT EXISTS public.ai_agent_platform_mapping (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  business_id uuid NOT NULL,
+  platform character varying(50) NOT NULL, -- 'whatsapp', 'instagram', 'tiktok', 'facebook'
+  platform_account_id character varying(255) NOT NULL, -- Platform-specific account ID
+  platform_phone_number character varying(50), -- For WhatsApp
+  platform_username character varying(255), -- For Instagram/TikTok
+  platform_app_id character varying(255), -- Meta App ID, TikTok App ID, etc.
+  platform_secret character varying(255), -- For webhook verification
+  is_active boolean DEFAULT true,
+  metadata jsonb, -- Store additional platform-specific data
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT ai_agent_platform_mapping_pkey PRIMARY KEY (id),
+  CONSTRAINT ai_agent_platform_mapping_business_id_fkey FOREIGN KEY (business_id) 
+    REFERENCES business(id) ON DELETE CASCADE,
+  CONSTRAINT ai_agent_platform_mapping_unique UNIQUE (platform, platform_account_id)
+) TABLESPACE pg_default;
+
+-- Indexes for AI Agent Conversations
+CREATE INDEX IF NOT EXISTS idx_ai_agent_conversation_business_id 
+  ON public.ai_agent_conversation USING btree (business_id);
+CREATE INDEX IF NOT EXISTS idx_ai_agent_conversation_conversation_id 
+  ON public.ai_agent_conversation USING btree (conversation_id);
+CREATE INDEX IF NOT EXISTS idx_ai_agent_conversation_status 
+  ON public.ai_agent_conversation USING btree (status);
+
+-- Indexes for AI Agent Messages
+CREATE INDEX IF NOT EXISTS idx_ai_agent_message_conversation_id 
+  ON public.ai_agent_message USING btree (conversation_id);
+CREATE INDEX IF NOT EXISTS idx_ai_agent_message_created_at 
+  ON public.ai_agent_message USING btree (created_at);
+
+-- Indexes for AI Agent Orders
+CREATE INDEX IF NOT EXISTS idx_ai_agent_order_conversation_id 
+  ON public.ai_agent_order USING btree (conversation_id);
+CREATE INDEX IF NOT EXISTS idx_ai_agent_order_status 
+  ON public.ai_agent_order USING btree (status);
+
+-- Indexes for AI Agent Platform Mapping (SaaS Multi-Tenant)
+CREATE INDEX IF NOT EXISTS idx_ai_agent_platform_mapping_business_id 
+  ON public.ai_agent_platform_mapping USING btree (business_id);
+CREATE INDEX IF NOT EXISTS idx_ai_agent_platform_mapping_platform_account 
+  ON public.ai_agent_platform_mapping USING btree (platform, platform_account_id);
+CREATE INDEX IF NOT EXISTS idx_ai_agent_platform_mapping_phone 
+  ON public.ai_agent_platform_mapping USING btree (platform_phone_number) 
+  WHERE platform_phone_number IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ai_agent_platform_mapping_active 
+  ON public.ai_agent_platform_mapping USING btree (is_active) 
+  WHERE is_active = true;
+
+-- Trigger to update updated_at for conversations
+CREATE OR REPLACE FUNCTION update_ai_agent_conversation_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_ai_agent_conversation_updated_at
+  BEFORE UPDATE ON public.ai_agent_conversation
+  FOR EACH ROW
+  EXECUTE FUNCTION update_ai_agent_conversation_updated_at();
+
+-- Trigger to update updated_at for orders (uses existing function)
+CREATE TRIGGER update_ai_agent_order_updated_at
+  BEFORE UPDATE ON public.ai_agent_order
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger to update updated_at for platform mapping (uses existing function)
+CREATE TRIGGER update_ai_agent_platform_mapping_updated_at
+  BEFORE UPDATE ON public.ai_agent_platform_mapping
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+-- ======================
+-- EXCHANGE/TRADE-IN SYSTEM
+-- ======================
+
+-- Exchange Transaction Table
+-- Main table for all exchange/trade-in transactions
+CREATE TABLE IF NOT EXISTS public.exchange_transaction (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  store_id uuid NOT NULL,
+  customer_id uuid NULL,
+  cashier_id uuid NOT NULL,
+  
+  -- Transaction Details
+  transaction_number character varying(50) NOT NULL UNIQUE,
+  transaction_type character varying(20) NOT NULL,
+  transaction_date timestamp without time zone DEFAULT now(),
+  
+  -- Original Sale (if applicable - for returns)
+  original_sale_id uuid NULL,
+  
+  -- Trade-in Details
+  trade_in_total_value numeric(10, 2) DEFAULT 0, -- Total value of items brought in
+  additional_payment numeric(10, 2) DEFAULT 0,   -- Cash added by customer
+  total_purchase_amount numeric(10, 2) DEFAULT 0,  -- Total for new items purchased
+  
+  -- Status
+  status character varying(20) DEFAULT 'pending',
+  
+  -- Notes
+  notes text,
+  
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  
+  CONSTRAINT exchange_transaction_pkey PRIMARY KEY (id),
+  CONSTRAINT exchange_transaction_store_id_fkey FOREIGN KEY (store_id) 
+    REFERENCES store(id) ON DELETE CASCADE,
+  CONSTRAINT exchange_transaction_customer_id_fkey FOREIGN KEY (customer_id) 
+    REFERENCES customer(id) ON DELETE SET NULL,
+  CONSTRAINT exchange_transaction_cashier_id_fkey FOREIGN KEY (cashier_id) 
+    REFERENCES "user"(id) ON DELETE RESTRICT,
+  CONSTRAINT exchange_transaction_original_sale_id_fkey FOREIGN KEY (original_sale_id) 
+    REFERENCES sale(id) ON DELETE SET NULL,
+  CONSTRAINT exchange_transaction_type_check CHECK (
+    transaction_type IN ('return', 'trade_in', 'exchange')
+  ),
+  CONSTRAINT exchange_transaction_status_check CHECK (
+    status IN ('pending', 'completed', 'cancelled', 'refunded')
+  )
+) TABLESPACE pg_default;
+
+-- Indexes for exchange_transaction
+CREATE INDEX IF NOT EXISTS idx_exchange_transaction_store_id 
+  ON public.exchange_transaction(store_id);
+CREATE INDEX IF NOT EXISTS idx_exchange_transaction_customer_id 
+  ON public.exchange_transaction(customer_id);
+CREATE INDEX IF NOT EXISTS idx_exchange_transaction_status 
+  ON public.exchange_transaction(status);
+CREATE INDEX IF NOT EXISTS idx_exchange_transaction_transaction_date 
+  ON public.exchange_transaction(transaction_date);
+CREATE INDEX IF NOT EXISTS idx_exchange_transaction_transaction_number 
+  ON public.exchange_transaction(transaction_number);
+CREATE INDEX IF NOT EXISTS idx_exchange_transaction_original_sale_id 
+  ON public.exchange_transaction(original_sale_id);
+
+-- Trigger for updated_at
+CREATE TRIGGER update_exchange_transaction_updated_at 
+  BEFORE UPDATE ON exchange_transaction 
+  FOR EACH ROW 
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- Exchange Item Table
+-- Items being returned/traded in
+CREATE TABLE IF NOT EXISTS public.exchange_item (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  exchange_transaction_id uuid NOT NULL,
+  
+  -- Item Details
+  item_type character varying(20) NOT NULL,
+  
+  -- For returned items (linked to original sale)
+  original_sale_item_id uuid NULL,
+  
+  -- For trade-in items (new products or existing)
+  product_id uuid NULL,
+  
+  -- Product Details (for trade-ins not in inventory)
+  product_name character varying(255),
+  product_sku character varying(100),
+  product_barcode character varying(100),
+  
+  -- Valuation
+  quantity integer NOT NULL DEFAULT 1,
+  unit_value numeric(10, 2) NOT NULL, -- Value assigned to this item
+  total_value numeric(10, 2) NOT NULL, -- quantity * unit_value
+  
+  -- Condition Assessment
+  condition character varying(20) DEFAULT 'good',
+  condition_notes text,
+  
+  -- Stock Management
+  add_to_inventory boolean DEFAULT true, -- Whether to add to stock
+  inventory_condition character varying(20), -- How to categorize in inventory
+  
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  
+  CONSTRAINT exchange_item_pkey PRIMARY KEY (id),
+  CONSTRAINT exchange_item_exchange_transaction_id_fkey FOREIGN KEY (exchange_transaction_id) 
+    REFERENCES exchange_transaction(id) ON DELETE CASCADE,
+  CONSTRAINT exchange_item_original_sale_item_id_fkey FOREIGN KEY (original_sale_item_id) 
+    REFERENCES sale_item(id) ON DELETE SET NULL,
+  CONSTRAINT exchange_item_product_id_fkey FOREIGN KEY (product_id) 
+    REFERENCES product(id) ON DELETE SET NULL,
+  CONSTRAINT exchange_item_item_type_check CHECK (
+    item_type IN ('returned', 'trade_in')
+  ),
+  CONSTRAINT exchange_item_condition_check CHECK (
+    condition IN ('excellent', 'good', 'fair', 'damaged', 'defective')
+  )
+) TABLESPACE pg_default;
+
+-- Indexes for exchange_item
+CREATE INDEX IF NOT EXISTS idx_exchange_item_exchange_transaction_id 
+  ON public.exchange_item(exchange_transaction_id);
+CREATE INDEX IF NOT EXISTS idx_exchange_item_product_id 
+  ON public.exchange_item(product_id);
+CREATE INDEX IF NOT EXISTS idx_exchange_item_original_sale_item_id 
+  ON public.exchange_item(original_sale_item_id);
+
+-- Trigger for updated_at
+CREATE TRIGGER update_exchange_item_updated_at 
+  BEFORE UPDATE ON exchange_item 
+  FOR EACH ROW 
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- Exchange Purchase Item Table
+-- New items being purchased in the exchange
+CREATE TABLE IF NOT EXISTS public.exchange_purchase_item (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  exchange_transaction_id uuid NOT NULL,
+  
+  product_id uuid NOT NULL,
+  quantity integer NOT NULL DEFAULT 1,
+  unit_price numeric(10, 2) NOT NULL,
+  total_price numeric(10, 2) NOT NULL,
+  discount_amount numeric(10, 2) DEFAULT 0,
+  
+  created_at timestamp without time zone DEFAULT now(),
+  
+  CONSTRAINT exchange_purchase_item_pkey PRIMARY KEY (id),
+  CONSTRAINT exchange_purchase_item_exchange_transaction_id_fkey FOREIGN KEY (exchange_transaction_id) 
+    REFERENCES exchange_transaction(id) ON DELETE CASCADE,
+  CONSTRAINT exchange_purchase_item_product_id_fkey FOREIGN KEY (product_id) 
+    REFERENCES product(id) ON DELETE RESTRICT
+) TABLESPACE pg_default;
+
+-- Indexes for exchange_purchase_item
+CREATE INDEX IF NOT EXISTS idx_exchange_purchase_item_exchange_transaction_id 
+  ON public.exchange_purchase_item(exchange_transaction_id);
+CREATE INDEX IF NOT EXISTS idx_exchange_purchase_item_product_id 
+  ON public.exchange_purchase_item(product_id);
+
+-- Exchange Refund Table
+-- Refund records for returns
+CREATE TABLE IF NOT EXISTS public.exchange_refund (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  exchange_transaction_id uuid NOT NULL,
+  
+  refund_amount numeric(10, 2) NOT NULL,
+  refund_method character varying(20) NOT NULL,
+  refund_status character varying(20) DEFAULT 'pending',
+  
+  processed_by uuid NULL,
+  processed_at timestamp without time zone,
+  notes text,
+  
+  created_at timestamp without time zone DEFAULT now(),
+  
+  CONSTRAINT exchange_refund_pkey PRIMARY KEY (id),
+  CONSTRAINT exchange_refund_exchange_transaction_id_fkey FOREIGN KEY (exchange_transaction_id) 
+    REFERENCES exchange_transaction(id) ON DELETE CASCADE,
+  CONSTRAINT exchange_refund_processed_by_fkey FOREIGN KEY (processed_by) 
+    REFERENCES "user"(id) ON DELETE SET NULL,
+  CONSTRAINT exchange_refund_method_check CHECK (
+    refund_method IN ('cash', 'card', 'mobile', 'store_credit', 'exchange')
+  ),
+  CONSTRAINT exchange_refund_status_check CHECK (
+    refund_status IN ('pending', 'completed', 'cancelled')
+  )
+) TABLESPACE pg_default;
+
+-- Indexes for exchange_refund
+CREATE INDEX IF NOT EXISTS idx_exchange_refund_exchange_transaction_id 
+  ON public.exchange_refund(exchange_transaction_id);
+CREATE INDEX IF NOT EXISTS idx_exchange_refund_refund_status 
+  ON public.exchange_refund(refund_status);
+
+-- ======================
+-- STOCK RESTORATION FUNCTION
+-- ======================
+
+-- Function to automatically restore stock when exchange transaction is completed
+CREATE OR REPLACE FUNCTION public.restore_stock_on_exchange()
+RETURNS TRIGGER AS $$
+DECLARE
+  exchange_item_record RECORD;
+  product_to_update uuid;
+  stock_quantity_to_add INTEGER;
+BEGIN
+  -- Only process when transaction is completed
+  IF NEW.status = 'completed' AND (OLD.status IS NULL OR OLD.status != 'completed') THEN
+    
+    -- Loop through all exchange items
+    FOR exchange_item_record IN 
+      SELECT * FROM exchange_item 
+      WHERE exchange_transaction_id = NEW.id 
+      AND add_to_inventory = true
+    LOOP
+      -- Determine product_id
+      IF exchange_item_record.item_type = 'returned' AND exchange_item_record.original_sale_item_id IS NOT NULL THEN
+        -- Get product_id from original sale item
+        SELECT product_id INTO product_to_update
+        FROM sale_item
+        WHERE id = exchange_item_record.original_sale_item_id;
+      ELSIF exchange_item_record.product_id IS NOT NULL THEN
+        -- Use existing product_id
+        product_to_update := exchange_item_record.product_id;
+      ELSE
+        -- Create new product for trade-in
+        INSERT INTO product (
+          store_id,
+          name,
+          sku,
+          barcode,
+          price,
+          cost,
+          stock_quantity,
+          is_active,
+          created_at,
+          updated_at
+        ) VALUES (
+          NEW.store_id,
+          COALESCE(exchange_item_record.product_name, 'Trade-in Item'),
+          exchange_item_record.product_sku,
+          exchange_item_record.product_barcode,
+          0, -- Price to be set later
+          exchange_item_record.unit_value, -- Cost is trade-in value
+          exchange_item_record.quantity, -- Initial stock
+          true,
+          NOW(),
+          NOW()
+        ) RETURNING id INTO product_to_update;
+        
+        -- Update exchange_item with created product_id
+        UPDATE exchange_item
+        SET product_id = product_to_update
+        WHERE id = exchange_item_record.id;
+      END IF;
+      
+      -- Add stock based on condition
+      IF exchange_item_record.condition IN ('excellent', 'good', 'fair') THEN
+        -- Add full quantity for resellable items
+        UPDATE product
+        SET stock_quantity = stock_quantity + exchange_item_record.quantity,
+            updated_at = NOW()
+        WHERE id = product_to_update;
+      ELSIF exchange_item_record.condition = 'damaged' THEN
+        -- Add to stock but mark as damaged
+        UPDATE product
+        SET stock_quantity = stock_quantity + exchange_item_record.quantity,
+            updated_at = NOW()
+        WHERE id = product_to_update;
+      ELSIF exchange_item_record.condition = 'defective' THEN
+        -- Only add if add_to_inventory is true (user decision)
+        IF exchange_item_record.add_to_inventory THEN
+          UPDATE product
+          SET stock_quantity = stock_quantity + exchange_item_record.quantity,
+              updated_at = NOW()
+          WHERE id = product_to_update;
+        END IF;
+      END IF;
+      
+    END LOOP;
+    
+    -- Reduce stock for new items purchased
+    FOR exchange_item_record IN 
+      SELECT * FROM exchange_purchase_item 
+      WHERE exchange_transaction_id = NEW.id
+    LOOP
+      UPDATE product
+      SET stock_quantity = GREATEST(0, stock_quantity - exchange_item_record.quantity),
+          updated_at = NOW()
+      WHERE id = exchange_item_record.product_id;
+    END LOOP;
+    
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to automatically restore stock
+CREATE TRIGGER trigger_restore_stock_on_exchange
+  AFTER UPDATE ON exchange_transaction
+  FOR EACH ROW
+  EXECUTE FUNCTION restore_stock_on_exchange();
+
