@@ -50,6 +50,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         businessId: notification.business_id || notification.businessId,
         createdAt: notification.created_at || notification.createdAt || new Date().toISOString(),
         updatedAt: notification.updated_at || notification.updatedAt || new Date().toISOString(),
+        // Extract store name from store relation or data
+        storeName: notification.store?.name || notification.data?.storeName || 'Unknown Store',
       }));
       setNotifications(validNotifications);
     } catch (err) {

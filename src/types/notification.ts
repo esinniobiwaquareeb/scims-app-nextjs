@@ -13,6 +13,8 @@ export interface Notification {
       quantity: number;
       price: number;
     }>;
+    storeName?: string;
+    storeId?: string;
     [key: string]: unknown;
   };
   isRead: boolean;
@@ -20,6 +22,7 @@ export interface Notification {
   updatedAt: string;
   storeId: string;
   businessId: string;
+  storeName?: string; // Store name for display purposes
 }
 
 export interface NotificationSettings {

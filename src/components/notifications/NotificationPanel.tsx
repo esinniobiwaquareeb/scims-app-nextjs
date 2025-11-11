@@ -22,7 +22,8 @@ import {
   DollarSign,
   Package,
   X,
-  ExternalLink
+  ExternalLink,
+  Store
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Notification } from '@/types/notification';
@@ -316,6 +317,16 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                         {notification.type === 'order' && notification.data && (
                           <div className="bg-green-50 border border-green-200 rounded p-2 text-xs">
                             <div className="space-y-1">
+                              {/* Store name */}
+                              {(notification.storeName || notification.data?.storeName) && (
+                                <div className="flex items-center gap-1 mb-2 pb-2 border-b border-green-200">
+                                  <Store className="w-3 h-3 text-green-600" />
+                                  <span className="font-medium text-green-800">Store:</span>
+                                  <span className="text-green-700 font-semibold truncate">
+                                    {notification.storeName || notification.data?.storeName}
+                                  </span>
+                                </div>
+                              )}
                               <div className="flex items-center gap-1">
                                 <User className="w-3 h-3 text-green-600" />
                                 <span className="font-medium text-green-800">Customer:</span>

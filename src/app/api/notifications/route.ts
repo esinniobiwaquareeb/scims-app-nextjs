@@ -1,27 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 
-// GET /api/notifications - Fetch notifications for a store
+// GET /api/notifications - Fetch notifications for a business (all stores can see)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const storeId = searchParams.get('storeId');
+    const storeId = searchParams.get('storeId'); // Optional, for backward compatibility
     const businessId = searchParams.get('businessId');
     const type = searchParams.get('type');
     const unreadOnly = searchParams.get('unreadOnly') === 'true';
     const limit = parseInt(searchParams.get('limit') || '50');
 
-    if (!storeId || !businessId) {
+    if (!businessId) {
       return NextResponse.json(
-        { error: 'Store ID and Business ID are required' },
+        { error: 'Business ID is required' },
         { status: 400 }
       );
     }
 
+    // Fetch notifications with store information
     let query = supabase
       .from('notification')
-      .select('*')
-      .eq('store_id', storeId)
+      .select(`
+        *,
+        store:store_id (
+          id,
+          name
+        )
+      `)
       .eq('business_id', businessId)
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -105,12 +111,11 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { notificationId, isRead, markAllAsRead, storeId, businessId } = body;
 
-    if (markAllAsRead && storeId && businessId) {
-      // Mark all notifications as read for the store
+    if (markAllAsRead && businessId) {
+      // Mark all notifications as read for the business (all stores)
       const { error } = await supabase
         .from('notification')
         .update({ is_read: true })
-        .eq('store_id', storeId)
         .eq('business_id', businessId)
         .eq('is_read', false);
 
@@ -165,12 +170,11 @@ export async function DELETE(request: NextRequest) {
     const storeId = searchParams.get('storeId');
     const businessId = searchParams.get('businessId');
 
-    if (deleteAll && storeId && businessId) {
-      // Delete all notifications for the store
+    if (deleteAll && businessId) {
+      // Delete all notifications for the business (all stores)
       const { error } = await supabase
         .from('notification')
         .delete()
-        .eq('store_id', storeId)
         .eq('business_id', businessId);
 
       if (error) {

@@ -95,6 +95,15 @@ export async function POST(request: NextRequest) {
 
     // Create notification directly in database (more reliable than HTTP call)
     try {
+      // Fetch store name for notification
+      const { data: storeData } = await supabase
+        .from('store')
+        .select('name')
+        .eq('id', storeId)
+        .single();
+
+      const storeName = storeData?.name || 'Unknown Store';
+
       // Format order items for display
       const itemsSummary = transformedOrderItems
         .map((item: { name: any; quantity: any; }) => `${item.name} (${item.quantity}x)`)
@@ -114,6 +123,8 @@ export async function POST(request: NextRequest) {
             customerEmail: orderData.customer_email,
             totalAmount: orderData.total_amount,
             orderItems: transformedOrderItems,
+            storeName: storeName,
+            storeId: storeId,
           },
           is_read: false,
           store_id: storeId,

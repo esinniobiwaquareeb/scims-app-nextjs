@@ -195,6 +195,15 @@ export async function POST(request: NextRequest) {
 
     // Create notification directly in database (avoid HTTP calls that may be blocked by Vercel protection)
     try {
+      // Fetch store name for notification
+      const { data: storeData } = await supabase
+        .from('store')
+        .select('name')
+        .eq('id', store_id)
+        .single();
+
+      const storeName = storeData?.name || 'Unknown Store';
+
       // Transform order items for display
       const transformedOrderItems = (order_items || []).map((item: any) => ({
         name: item.name || 'Unknown Product',
@@ -221,6 +230,8 @@ export async function POST(request: NextRequest) {
             customerEmail: customer_email || null,
             totalAmount: total_amount,
             orderItems: transformedOrderItems,
+            storeName: storeName,
+            storeId: store_id,
           },
           is_read: false,
           store_id: store_id,
