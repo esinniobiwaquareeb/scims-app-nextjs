@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
-import { createOrderNotification } from '@/utils/notificationUtils';
 import { randomUUID } from 'crypto';
 
 // POST /api/orders/webhook - Handle order notifications from storefront
@@ -125,25 +124,14 @@ export async function POST(request: NextRequest) {
 
       if (notificationError) {
         console.error('Failed to create notification in database:', notificationError);
-        // Try alternative approach with createOrderNotification as fallback
-        try {
-          await createOrderNotification(
-            {
-              orderId: validOrderId,
-              customerName: orderData.customer_name,
-              customerPhone: orderData.customer_phone || '',
-              customerAddress: orderData.customer_address,
-              customerEmail: orderData.customer_email,
-              totalAmount: orderData.total_amount,
-              orderItems: transformedOrderItems,
-            },
-            storeId,
-            businessId
-          );
-          console.log('Order notification created via API fallback');
-        } catch (fallbackError) {
-          console.error('Both notification creation methods failed:', fallbackError);
-        }
+        console.error('Notification error details:', {
+          code: notificationError.code,
+          message: notificationError.message,
+          details: notificationError.details,
+          hint: notificationError.hint
+        });
+        // Don't try HTTP fallback as it will fail on Vercel due to deployment protection
+        // The notification creation failure won't break the order creation
       } else {
         console.log('Order notification created successfully in database:', notification?.id);
       }

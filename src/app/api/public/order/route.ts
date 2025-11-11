@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/config';
 import { sendOrderConfirmationEmail, sendBusinessOrderNotification } from '@/lib/email/orderEmails';
 import { sendWhatsAppMessage } from '@/lib/whatsapp/whatsappService';
-import { getBaseUrl } from '@/utils/getBaseUrl';
 
 export async function POST(request: NextRequest) {
   try {
@@ -194,34 +193,52 @@ export async function POST(request: NextRequest) {
       // Don't fail the order creation if email fails
     }
 
-    // Create notification for the order
+    // Create notification directly in database (avoid HTTP calls that may be blocked by Vercel protection)
     try {
-      const notificationResponse = await fetch(`${getBaseUrl()}/api/orders/webhook`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          orderId: order.id,
-          storeId: store_id,
-          businessId: business_id,
-          orderData: {
-            customer_name,
-            customer_phone,
-            customer_email: customer_email || null,
-            customer_address: customer_address || null,
-            total_amount,
-            subtotal,
-            order_items,
-            notes: notes || null
-          }
-        }),
-      });
+      // Transform order items for display
+      const transformedOrderItems = (order_items || []).map((item: any) => ({
+        name: item.name || 'Unknown Product',
+        quantity: item.quantity || 1,
+        price: item.price || item.total_price || 0
+      }));
 
-      if (!notificationResponse.ok) {
-        console.error('Failed to create order notification:', await notificationResponse.text());
+      // Format order items for display
+      const itemsSummary = transformedOrderItems
+        .map((item: { name: string; quantity: number }) => `${item.name} (${item.quantity}x)`)
+        .join(', ');
+      
+      const { data: notification, error: notificationError } = await supabase
+        .from('notification')
+        .insert({
+          type: 'order',
+          title: 'New Order Received',
+          message: `New order from ${customer_name} - ${itemsSummary} - Total: ${total_amount.toFixed(2)}`,
+          data: {
+            orderId: order.id,
+            customerName: customer_name,
+            customerPhone: customer_phone || '',
+            customerAddress: customer_address || null,
+            customerEmail: customer_email || null,
+            totalAmount: total_amount,
+            orderItems: transformedOrderItems,
+          },
+          is_read: false,
+          store_id: store_id,
+          business_id: business_id,
+        })
+        .select()
+        .single();
+
+      if (notificationError) {
+        console.error('Failed to create notification in database:', notificationError);
+        console.error('Notification error details:', {
+          code: notificationError.code,
+          message: notificationError.message,
+          details: notificationError.details,
+          hint: notificationError.hint
+        });
       } else {
-        console.log('Order notification created successfully');
+        console.log('Order notification created successfully in database:', notification?.id);
       }
     } catch (notificationError) {
       console.error('Error creating order notification:', notificationError);
