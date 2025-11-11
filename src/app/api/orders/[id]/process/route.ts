@@ -8,12 +8,20 @@ export async function POST(
 ) {
   try {
     const { id: orderId } = await params;
-    const { status } = await request.json();
+    const { status, storeId } = await request.json();
 
     // Validate status
     if (!status || !['confirmed', 'processing', 'completed', 'cancelled'].includes(status)) {
       return NextResponse.json(
         { success: false, error: 'Invalid status. Must be confirmed, processing, completed, or cancelled' },
+        { status: 400 }
+      );
+    }
+
+    // Validate storeId is provided
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, error: 'Store ID is required' },
         { status: 400 }
       );
     }
@@ -29,6 +37,14 @@ export async function POST(
       return NextResponse.json(
         { success: false, error: 'Order not found' },
         { status: 404 }
+      );
+    }
+
+    // Verify that the store making the request owns the order
+    if (order.store_id !== storeId) {
+      return NextResponse.json(
+        { success: false, error: 'You do not have permission to modify this order. Only the store that owns the order can change its status.' },
+        { status: 403 }
       );
     }
 

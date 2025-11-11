@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNotifications } from '@/contexts/NotificationContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Bell, 
   BellRing, 
@@ -24,12 +26,16 @@ import {
   Search,
   Filter,
   ArrowLeft,
-  Store
+  Store,
+  Truck,
+  CheckCircle,
+  XCircle,
+  Loader2
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Notification } from '@/types/notification';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 // Helper function to safely format dates
 const formatNotificationTime = (dateString: string): string => {
@@ -46,7 +52,7 @@ const formatNotificationTime = (dateString: string): string => {
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const { currentStore, currentBusiness } = useAuth();
+  const { currentStore } = useAuth();
   const {
     notifications,
     stats,
@@ -62,7 +68,8 @@ export default function NotificationsPage() {
   const [filter, setFilter] = useState<'all' | 'unread' | 'orders' | 'system' | 'alerts'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [processingNotifications, setProcessingNotifications] = useState<Set<string>>(new Set());
+  const [orderStatuses, setOrderStatuses] = useState<Record<string, string>>({});
+  const [updatingStatuses, setUpdatingStatuses] = useState<Set<string>>(new Set());
   
   const itemsPerPage = 10;
 
@@ -126,37 +133,6 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleProcessOrder = async (notification: Notification) => {
-    if (notification.type === 'order' && notification.data?.orderId) {
-      setProcessingNotifications(prev => new Set(prev).add(notification.id));
-      
-      try {
-        const response = await fetch(`/api/orders/${notification.data.orderId}/process`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ status: 'confirmed' }),
-        });
-
-        if (response.ok) {
-          await markAsRead(notification.id);
-          await refreshNotifications();
-        } else {
-          console.error('Failed to process order:', await response.text());
-        }
-      } catch (error) {
-        console.error('Error processing order:', error);
-      } finally {
-        setProcessingNotifications(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(notification.id);
-          return newSet;
-        });
-      }
-    }
-  };
-
   const handleDeleteNotification = async (notificationId: string) => {
     await deleteNotification(notificationId);
   };
@@ -164,6 +140,124 @@ export default function NotificationsPage() {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Fetch order statuses for order notifications
+  useEffect(() => {
+    const fetchOrderStatuses = async () => {
+      const orderNotifications = notifications.filter(n => n.type === 'order' && n.data?.orderId);
+      if (orderNotifications.length === 0) return;
+
+      const statusPromises = orderNotifications.map(async (notification) => {
+        try {
+          const response = await fetch(`/api/public/order/${notification.data?.orderId}`);
+          if (response.ok) {
+            const data = await response.json();
+            return { orderId: notification.data?.orderId, status: data.order?.status || 'pending' };
+          }
+        } catch (error) {
+          console.error('Error fetching order status:', error);
+        }
+        return null;
+      });
+
+      const results = await Promise.all(statusPromises);
+      const statusMap: Record<string, string> = {};
+      results.forEach(result => {
+        if (result) {
+          statusMap[result.orderId || ''] = result.status || 'pending';
+        }
+      });
+      setOrderStatuses(statusMap);
+    };
+
+    if (notifications.length > 0) {
+      fetchOrderStatuses();
+    }
+  }, [notifications]);
+
+  // Check if current store owns the notification
+  const isStoreOwner = (notification: Notification): boolean => {
+    if (!currentStore || !notification.storeId) return false;
+    return notification.storeId === currentStore.id;
+  };
+
+  const getStatusLabel = (status: string): string => {
+    const labels: Record<string, string> = {
+      pending: 'Pending',
+      confirmed: 'Confirmed',
+      processing: 'Processing',
+      completed: 'Completed',
+      cancelled: 'Cancelled'
+    };
+    return labels[status] || status;
+  };
+
+  const getStatusColor = (status: string): string => {
+    const colors: Record<string, string> = {
+      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800',
+      confirmed: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
+      processing: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
+      completed: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
+      cancelled: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle className="w-4 h-4" />;
+      case 'cancelled':
+        return <XCircle className="w-4 h-4" />;
+      case 'processing':
+        return <Truck className="w-4 h-4" />;
+      case 'confirmed':
+        return <CheckCircle className="w-4 h-4" />;
+      default:
+        return <Clock className="w-4 h-4" />;
+    }
+  };
+
+  const handleStatusChange = async (notification: Notification, newStatus: string) => {
+    if (!notification.data?.orderId || !currentStore) return;
+
+    setUpdatingStatuses(prev => new Set(prev).add(notification.id));
+    
+    try {
+      const response = await fetch(`/api/orders/${notification.data.orderId}/process`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          status: newStatus,
+          storeId: currentStore.id
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success(`Order status updated to ${getStatusLabel(newStatus)}`);
+        setOrderStatuses(prev => ({
+          ...prev,
+          [notification.data!.orderId!]: newStatus
+        }));
+        await refreshNotifications();
+      } else {
+        toast.error(data.error || 'Failed to update order status');
+      }
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      toast.error('Failed to update order status');
+    } finally {
+      setUpdatingStatuses(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(notification.id);
+        return newSet;
+      });
+    }
   };
 
   return (
@@ -438,13 +532,48 @@ export default function NotificationsPage() {
                                   
                                   {/* Order ID and Status */}
                                   <div className="pt-3 border-t border-green-200 dark:border-green-700">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    <div className="space-y-3">
                                       <div className="text-sm text-green-600 dark:text-green-400">
                                         <span className="font-medium">Order ID:</span> {notification.data.orderId}
                                       </div>
-                                      <div className="text-sm text-green-600 dark:text-green-400">
-                                        <span className="font-medium">Status:</span> Pending
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium text-green-800 dark:text-green-200">Status:</span>
+                                        <Badge 
+                                          variant="outline" 
+                                          className={`${getStatusColor(orderStatuses[notification.data.orderId!] || 'pending')}`}
+                                        >
+                                          <span className="flex items-center gap-1.5">
+                                            {getStatusIcon(orderStatuses[notification.data.orderId!] || 'pending')}
+                                            {getStatusLabel(orderStatuses[notification.data.orderId!] || 'pending')}
+                                          </span>
+                                        </Badge>
                                       </div>
+                                      
+                                      {/* Order Status Management - Only for owning store */}
+                                      {isStoreOwner(notification) && (
+                                        <div className="flex items-center gap-2 pt-2 border-t border-green-200 dark:border-green-700">
+                                          <span className="text-sm font-medium text-green-800 dark:text-green-200">Change Status:</span>
+                                          <Select
+                                            value={orderStatuses[notification.data.orderId!] || 'pending'}
+                                            onValueChange={(value) => handleStatusChange(notification, value)}
+                                            disabled={updatingStatuses.has(notification.id)}
+                                          >
+                                            <SelectTrigger className="h-8 text-sm flex-1 max-w-xs">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="pending">Pending</SelectItem>
+                                              <SelectItem value="confirmed">Confirmed</SelectItem>
+                                              <SelectItem value="processing">Processing</SelectItem>
+                                              <SelectItem value="completed">Completed</SelectItem>
+                                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                          {updatingStatuses.has(notification.id) && (
+                                            <Loader2 className="w-4 h-4 animate-spin text-green-600" />
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
@@ -460,49 +589,57 @@ export default function NotificationsPage() {
                           </div>
 
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            {/* Quick action for order notifications */}
-                            {notification.type === 'order' && !notification.isRead && (
-                              <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => handleProcessOrder(notification)}
-                                disabled={processingNotifications.has(notification.id)}
-                                className="bg-green-600 hover:bg-green-700 text-white"
-                              >
-                                {processingNotifications.has(notification.id) ? (
-                                  <>
-                                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                                    Processing...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Check className="w-4 h-4 mr-2" />
-                                    Process
-                                  </>
-                                )}
-                              </Button>
+                            {/* Mark as read - Only for owning store on order notifications */}
+                            {!notification.isRead && (
+                              isStoreOwner(notification) ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleMarkAsRead(notification)}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Check className="w-4 h-4" />
+                                  Mark Read
+                                </Button>
+                              ) : notification.type !== 'order' ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleMarkAsRead(notification)}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Check className="w-4 h-4" />
+                                  Mark Read
+                                </Button>
+                              ) : (
+                                <div 
+                                  className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-md"
+                                  title="Only the owning store can mark this as read"
+                                >
+                                  <Info className="w-4 h-4" />
+                                  <span className="hidden sm:inline">View Only</span>
+                                </div>
+                              )
                             )}
                             
-                            {!notification.isRead && notification.type !== 'order' && (
+                            {/* Delete - Only for owning store */}
+                            {isStoreOwner(notification) ? (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleMarkAsRead(notification)}
-                                className="flex items-center gap-2"
+                                onClick={() => handleDeleteNotification(notification.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
                               >
-                                <Check className="w-4 h-4" />
-                                Mark Read
+                                <Trash2 className="w-4 h-4" />
                               </Button>
+                            ) : (
+                              <div 
+                                className="flex items-center justify-center w-9 h-9 text-gray-400"
+                                title="Only the owning store can delete this notification"
+                              >
+                                <Info className="w-4 h-4" />
+                              </div>
                             )}
-                            
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteNotification(notification.id)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
                           </div>
                         </div>
                       </div>
