@@ -22,10 +22,7 @@ const handler = createApiHandler(async ({ request, params }) => {
   if (request.method === 'GET') {
     const { data: unit, error } = await supabase
       .from('unit')
-      .select(`
-        *,
-        products:product(count)
-      `)
+      .select('*')
       .eq('id', id)
       .single();
 
@@ -36,11 +33,22 @@ const handler = createApiHandler(async ({ request, params }) => {
       );
     }
 
+    // Count products that use this unit name
+    const { count, error: countError } = await supabase
+      .from('product')
+      .select('id', { count: 'exact', head: true })
+      .eq('unit', unit.name)
+      .eq('business_id', unit.business_id);
+
+    if (countError) {
+      console.error('Error counting products for unit:', unit.name, countError);
+    }
+
     return NextResponse.json({
       success: true,
       unit: {
         ...unit,
-        product_count: unit.products?.[0]?.count || 0
+        product_count: count || 0
       }
     });
   }

@@ -25,13 +25,10 @@ const handler = createApiHandler(async ({ request }) => {
       );
     }
 
-    // Fetch units for the business with product counts
+    // Fetch units for the business
     const { data: units, error } = await supabase
       .from('unit')
-      .select(`
-        *,
-        products:product(count)
-      `)
+      .select('*')
       .eq('business_id', businessId)
       .order('sort_order', { ascending: true })
       .order('name', { ascending: true });
@@ -44,11 +41,31 @@ const handler = createApiHandler(async ({ request }) => {
       );
     }
 
-    // Process units to include product count
-    const unitsWithCounts = (units || []).map(unit => ({
-      ...unit,
-      product_count: unit.products?.[0]?.count || 0
-    }));
+    // Fetch product counts for each unit by matching unit name
+    // Since product.unit is a string field, we need to count manually
+    const unitsWithCounts = await Promise.all(
+      (units || []).map(async (unit) => {
+        // Count products that use this unit name
+        const { count, error: countError } = await supabase
+          .from('product')
+          .select('id', { count: 'exact', head: true })
+          .eq('unit', unit.name)
+          .eq('business_id', businessId);
+
+        if (countError) {
+          console.error('Error counting products for unit:', unit.name, countError);
+          return {
+            ...unit,
+            product_count: 0
+          };
+        }
+
+        return {
+          ...unit,
+          product_count: count || 0
+        };
+      })
+    );
 
     return NextResponse.json({
       success: true,
