@@ -68,7 +68,7 @@ export const useStoreSalesReport = (
   return useQuery({
     queryKey: ["store-sales-report", storeId, startDate, endDate],
     queryFn: async () => {
-      let url = `/api/sales?store_id=${storeId}`;
+      let url = `/api/sales?store_id=${storeId}&include_supply_orders=true`;
       if (startDate) url += `&start_date=${startDate}`;
       if (endDate) url += `&end_date=${endDate}`;
       const response = await fetch(url);
@@ -102,7 +102,7 @@ export const useAggregatedSalesReport = (
   return useQuery({
     queryKey: ["aggregated-sales-report", storeIds, startDate, endDate],
     queryFn: async () => {
-      let url = `/api/sales/aggregated?store_ids=${storeIds.join(",")}`;
+      let url = `/api/sales/aggregated?store_ids=${storeIds.join(",")}&include_supply_orders=true`;
       if (startDate) url += `&start_date=${startDate}`;
       if (endDate) url += `&end_date=${endDate}`;
       const response = await fetch(url);

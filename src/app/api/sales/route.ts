@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const start_date = searchParams.get('start_date');
     const end_date = searchParams.get('end_date');
+    const include_supply_orders = searchParams.get('include_supply_orders') === 'true';
     const limit = parseInt(searchParams.get('limit') || '100');
     const offset = parseInt(searchParams.get('offset') || '0');
 
@@ -125,13 +126,113 @@ export async function GET(request: NextRequest) {
       })) || []
     }));
 
+    // Fetch supply orders if requested
+    let supplyOrders: unknown[] = [];
+    if (include_supply_orders) {
+      let supplyQuery = supabase
+        .from('supply_order')
+        .select(`
+          *,
+          customer:customer_id(
+            id,
+            name,
+            phone,
+            email
+          ),
+          cashier:user(
+            id,
+            name,
+            username
+          ),
+          store:store_id(
+            id,
+            name
+          ),
+          items:supply_order_item(
+            *,
+            product:product_id(
+              id,
+              name,
+              sku,
+              barcode,
+              price
+            )
+          )
+        `)
+        .order('supply_date', { ascending: false });
+
+      if (store_id) supplyQuery = supplyQuery.eq('store_id', store_id);
+      if (business_id) {
+        const { data: stores } = await supabase
+          .from('store')
+          .select('id')
+          .eq('business_id', business_id)
+          .eq('is_active', true);
+        if (stores && stores.length > 0) {
+          const storeIds = stores.map(store => store.id);
+          supplyQuery = supplyQuery.in('store_id', storeIds);
+        }
+      }
+      if (cashier_id) supplyQuery = supplyQuery.eq('cashier_id', cashier_id);
+      if (customer_id) supplyQuery = supplyQuery.eq('customer_id', customer_id);
+      if (start_date) supplyQuery = supplyQuery.gte('supply_date', start_date);
+      if (end_date) supplyQuery = supplyQuery.lte('supply_date', end_date);
+
+      const { data: supplyData, error: supplyError } = await supplyQuery;
+      if (!supplyError && supplyData) {
+        // Transform supply orders to match sale structure for display
+        supplyOrders = supplyData.map((order: {
+          id: string;
+          supply_number: string;
+          total_amount: number;
+          supply_date: string;
+          status: string;
+          customer?: { id: string; name: string; phone?: string; email?: string };
+          cashier?: { id: string; name: string; username: string };
+          store?: { id: string; name: string };
+          items?: unknown[];
+          [key: string]: unknown;
+        }) => ({
+          id: order.id,
+          receipt_number: order.supply_number,
+          transaction_type: 'supply',
+          total_amount: order.total_amount,
+          transaction_date: order.supply_date,
+          supply_date: order.supply_date,
+          status: order.status,
+          payment_method: 'supply',
+          customer: order.customer,
+          cashier: order.cashier,
+          store: order.store,
+          sale_items: (order.items as Array<{
+            product?: { id: string; name: string; sku?: string; price: number };
+            quantity_supplied: number;
+            unit_price: number;
+            total_price: number;
+            [key: string]: unknown;
+          }>)?.map((item) => ({
+            ...item,
+            quantity: item.quantity_supplied,
+            products: item.product,
+            product: item.product
+          })) || [],
+          is_supply_order: true
+        }));
+      }
+    }
+
+    // Combine sales and supply orders, sort by date
+    const allTransactions = [...transformedSales, ...supplyOrders].sort((a: { transaction_date: string }, b: { transaction_date: string }) => {
+      return new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime();
+    });
+
     return NextResponse.json({
       success: true,
-      sales: transformedSales,
+      sales: include_supply_orders ? allTransactions : transformedSales,
       pagination: {
         limit,
         offset,
-        total: transformedSales.length
+        total: include_supply_orders ? allTransactions.length : transformedSales.length
       }
     });
 

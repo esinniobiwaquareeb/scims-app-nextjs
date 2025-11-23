@@ -24,8 +24,11 @@ export const useCreateCashier = (businessId: string) => {
   return useMutation({
     mutationFn: async (cashierData: { name: string; username: string; email: string; phone?: string; store_id?: string; }) => {
       const response = await fetch(`/api/cashiers`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...cashierData, business_id: businessId }) });
-      if (!response.ok) throw new Error('Failed to create cashier');
-      return response.json();
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to create cashier');
+      }
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['business-cashiers', businessId] });

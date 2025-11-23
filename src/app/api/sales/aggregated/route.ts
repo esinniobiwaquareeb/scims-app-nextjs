@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
     const storeIdsParam = searchParams.get('store_ids');
     const startDate = searchParams.get('start_date');
     const endDate = searchParams.get('end_date');
+    const include_supply_orders = searchParams.get('include_supply_orders') === 'true';
 
     if (!storeIdsParam) {
       return NextResponse.json(
@@ -76,8 +77,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate aggregated statistics
-    const totalSales = sales?.reduce((sum, sale) => sum + (sale.total_amount || 0), 0) || 0;
-    const totalTransactions = sales?.length || 0;
+    let totalSales = sales?.reduce((sum, sale) => sum + (sale.total_amount || 0), 0) || 0;
+    let totalTransactions = sales?.length || 0;
     const averageOrderValue = totalTransactions > 0 ? totalSales / totalTransactions : 0;
 
     // Group sales by store
@@ -130,6 +131,127 @@ export async function GET(request: NextRequest) {
       transaction_count: number;
     }>) || {};
 
+    // Fetch supply orders if requested
+    interface SupplyOrderTransformed {
+      id: string;
+      receipt_number: string;
+      transaction_type: string;
+      total_amount: number;
+      transaction_date: string;
+      supply_date: string;
+      status: string;
+      payment_method: string;
+      customer?: { id: string; name: string; phone?: string; email?: string };
+      cashier?: { id: string; name: string; username: string };
+      store?: { id: string; name: string };
+      sale_item: Array<{
+        quantity: number;
+        product?: { id: string; name: string; sku?: string; price: number };
+        quantity_supplied: number;
+        unit_price: number;
+        total_price: number;
+        [key: string]: unknown;
+      }>;
+      is_supply_order: boolean;
+      [key: string]: unknown;
+    }
+    let supplyOrders: SupplyOrderTransformed[] = [];
+    if (include_supply_orders) {
+      let supplyQuery = supabase
+        .from('supply_order')
+        .select(`
+          *,
+          customer:customer_id(
+            id,
+            name,
+            phone,
+            email
+          ),
+          cashier:user(
+            id,
+            name,
+            username
+          ),
+          store:store_id(
+            id,
+            name
+          ),
+          items:supply_order_item(
+            *,
+            product:product_id(
+              id,
+              name,
+              sku,
+              barcode,
+              price
+            )
+          )
+        `)
+        .in('store_id', storeIds)
+        .order('supply_date', { ascending: false });
+
+      if (startDate) supplyQuery = supplyQuery.gte('supply_date', startDate);
+      if (endDate) supplyQuery = supplyQuery.lte('supply_date', endDate);
+
+      const { data: supplyData, error: supplyError } = await supplyQuery;
+      if (!supplyError && supplyData) {
+        // Transform supply orders to match sale structure
+        supplyOrders = supplyData.map((order: {
+          id: string;
+          supply_number: string;
+          total_amount: number;
+          supply_date: string;
+          status: string;
+          customer?: { id: string; name: string; phone?: string; email?: string };
+          cashier?: { id: string; name: string; username: string };
+          store?: { id: string; name: string };
+          items?: unknown[];
+          [key: string]: unknown;
+        }) => ({
+          id: order.id,
+          receipt_number: order.supply_number,
+          transaction_type: 'supply',
+          total_amount: order.total_amount,
+          transaction_date: order.supply_date,
+          supply_date: order.supply_date,
+          status: order.status,
+          payment_method: 'supply',
+          customer: order.customer,
+          cashier: order.cashier,
+          store: order.store,
+          sale_item: (order.items as Array<{
+            product?: { id: string; name: string; sku?: string; price: number };
+            quantity_supplied: number;
+            unit_price: number;
+            total_price: number;
+            [key: string]: unknown;
+          }>)?.map((item) => ({
+            ...item,
+            quantity: item.quantity_supplied,
+            product: item.product
+          })) || [],
+          is_supply_order: true
+        }));
+
+        // Include supply orders in totals
+        const supplyTotal = supplyOrders.reduce((sum: number, order: SupplyOrderTransformed) => 
+          sum + (order.total_amount || 0), 0);
+        totalSales += supplyTotal;
+        totalTransactions += supplyOrders.length;
+      }
+    }
+
+    // Combine sales and supply orders
+    const allTransactions = [...(sales || []), ...supplyOrders].sort((a: { transaction_date: string }, b: { transaction_date: string }) => {
+      return new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime();
+    });
+
+    // Recalculate with combined data
+    const combinedTotalSales = allTransactions.reduce((sum: number, t: { total_amount?: number }) => 
+      sum + (t.total_amount || 0), 0);
+    const combinedTotalTransactions = allTransactions.length;
+    const combinedAverageOrderValue = combinedTotalTransactions > 0 ? combinedTotalSales / combinedTotalTransactions : 0;
+
     // Convert to arrays
     const storesSummary = Object.values(salesByStore);
     const datesSummary = Object.values(salesByDate).sort((a, b) => {
@@ -141,14 +263,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       summary: {
-        total_sales: totalSales,
-        total_transactions: totalTransactions,
-        average_order_value: averageOrderValue,
+        total_sales: combinedTotalSales,
+        total_transactions: combinedTotalTransactions,
+        average_order_value: combinedAverageOrderValue,
         store_count: storeIds.length
       },
       stores_summary: storesSummary,
       dates_summary: datesSummary,
-      sales: sales || []
+      sales: include_supply_orders ? allTransactions : (sales || [])
     });
   } catch (error) {
     console.error('Error in aggregated sales API:', error);
