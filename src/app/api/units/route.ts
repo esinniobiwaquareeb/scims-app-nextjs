@@ -41,31 +41,37 @@ const handler = createApiHandler(async ({ request }) => {
       );
     }
 
-    // Fetch product counts for each unit by matching unit name
-    // Since product.unit is a string field, we need to count manually
-    const unitsWithCounts = await Promise.all(
-      (units || []).map(async (unit) => {
-        // Count products that use this unit name
-        const { count, error: countError } = await supabase
-          .from('product')
-          .select('id', { count: 'exact', head: true })
-          .eq('unit', unit.name)
-          .eq('business_id', businessId);
+    if (!units || units.length === 0) {
+      return NextResponse.json({
+        success: true,
+        units: []
+      });
+    }
 
-        if (countError) {
-          console.error('Error counting products for unit:', unit.name, countError);
-          return {
-            ...unit,
-            product_count: 0
-          };
-        }
+    // Fetch all products for this business to count by unit name
+    // This is more efficient than making separate queries for each unit
+    const { data: products, error: productsError } = await supabase
+      .from('product')
+      .select('unit')
+      .eq('business_id', businessId);
 
-        return {
-          ...unit,
-          product_count: count || 0
-        };
-      })
-    );
+    if (productsError) {
+      console.error('Error fetching products for count:', productsError);
+    }
+
+    // Count products by unit name
+    const productCountsByUnit: Record<string, number> = {};
+    (products || []).forEach((product) => {
+      if (product.unit) {
+        productCountsByUnit[product.unit] = (productCountsByUnit[product.unit] || 0) + 1;
+      }
+    });
+
+    // Map units with their product counts
+    const unitsWithCounts = (units || []).map(unit => ({
+      ...unit,
+      product_count: productCountsByUnit[unit.name] || 0
+    }));
 
     return NextResponse.json({
       success: true,

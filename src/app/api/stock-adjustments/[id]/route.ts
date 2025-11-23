@@ -16,12 +16,7 @@ export const GET = createApiHandler(async ({ request, params }) => {
 
   const { data: adjustment, error } = await supabase
     .from('stock_adjustment')
-    .select(`
-      *,
-      product:product_id(id, name, sku, barcode, stock_quantity),
-      store:store_id(id, name),
-      created_by_user:created_by(id, name, username)
-    `)
+    .select('*')
     .eq('id', id)
     .single();
 
@@ -29,7 +24,21 @@ export const GET = createApiHandler(async ({ request, params }) => {
     throw new AppError('Stock adjustment not found', 404, 'NOT_FOUND');
   }
 
-  return successResponse({ adjustment });
+  // Fetch related data
+  const [productResult, storeResult, userResult] = await Promise.all([
+    supabase.from('product').select('id, name, sku, barcode, stock_quantity').eq('id', adjustment.product_id).single(),
+    supabase.from('store').select('id, name').eq('id', adjustment.store_id).single(),
+    adjustment.created_by ? supabase.from('user').select('id, name, username').eq('id', adjustment.created_by).single() : Promise.resolve({ data: null }),
+  ]);
+
+  const adjustmentWithRelations = {
+    ...adjustment,
+    product: productResult.data || null,
+    store: storeResult.data || null,
+    created_by_user: userResult.data || null,
+  };
+
+  return successResponse({ adjustment: adjustmentWithRelations });
 }, { rateLimit: 'API' });
 
 // PATCH - Update stock adjustment (only reason and notes, not quantity)
@@ -45,19 +54,28 @@ export const PATCH = createApiHandler(async ({ request, params }) => {
     .from('stock_adjustment')
     .update(updateData)
     .eq('id', id)
-    .select(`
-      *,
-      product:product_id(id, name, sku, barcode),
-      store:store_id(id, name),
-      created_by_user:created_by(id, name, username)
-    `)
+    .select('*')
     .single();
 
   if (updateError) {
     throw new AppError('Failed to update stock adjustment', 500, 'DATABASE_ERROR');
   }
 
-  return successResponse({ adjustment });
+  // Fetch related data
+  const [productResult, storeResult, userResult] = await Promise.all([
+    supabase.from('product').select('id, name, sku, barcode').eq('id', adjustment.product_id).single(),
+    supabase.from('store').select('id, name').eq('id', adjustment.store_id).single(),
+    adjustment.created_by ? supabase.from('user').select('id, name, username').eq('id', adjustment.created_by).single() : Promise.resolve({ data: null }),
+  ]);
+
+  const adjustmentWithRelations = {
+    ...adjustment,
+    product: productResult.data || null,
+    store: storeResult.data || null,
+    created_by_user: userResult.data || null,
+  };
+
+  return successResponse({ adjustment: adjustmentWithRelations });
 }, { rateLimit: 'WRITE' });
 
 // DELETE - Delete stock adjustment (reverse the adjustment)

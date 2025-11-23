@@ -133,20 +133,24 @@ const handler = createApiHandler(async ({ request, params }) => {
     }
 
     // Check if unit is used by any products (by name since product.unit is varchar)
-    const { data: products, error: productsError } = await supabase
+    const { count: productCount, error: productsError } = await supabase
       .from('product')
-      .select('id')
-      .eq('unit', unitToDelete.name)
-      .limit(1);
+      .select('id', { count: 'exact', head: true })
+      .eq('unit', unitToDelete.name);
 
     if (productsError) {
       console.error('Error checking unit usage:', productsError);
     }
 
-    // Warn if products use this unit, but allow deletion
-    if (products && products.length > 0) {
-      // We'll still allow deletion, but the UI should warn users
-      // The product.unit field will remain as a string even if the unit is deleted
+    // Prevent deletion if unit is used by products
+    if (productCount && productCount > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Cannot delete unit '${unitToDelete.name}' because it is currently used by ${productCount} product(s).`
+        },
+        { status: 409 }
+      );
     }
 
     const { error } = await supabase
@@ -164,10 +168,7 @@ const handler = createApiHandler(async ({ request, params }) => {
 
     return NextResponse.json({
       success: true,
-      message: 'Unit deleted successfully',
-      warning: products && products.length > 0 
-        ? `This unit is used by ${products.length} product(s). Their unit field will remain as "${unitToDelete.name}".`
-        : undefined
+      message: 'Unit deleted successfully'
     });
   }
 
