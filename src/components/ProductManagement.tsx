@@ -38,6 +38,7 @@ import { useBusinessStores } from '@/utils/hooks/stores';
 import { useBusinessCategories } from '@/utils/hooks/categories';
 import { useBusinessSuppliers } from '@/utils/hooks/suppliers';
 import { useBusinessBrands } from '@/utils/hooks/brands';
+import { useBusinessUnits } from '@/utils/hooks/units';
 import {
   useCreateProduct,
   useUpdateProduct,
@@ -66,6 +67,7 @@ interface Product {
   is_public?: boolean;
   public_description?: string;
   public_images?: string[];
+  unit?: string;
   created_at: string;
   updated_at: string;
   reorder_level?: number;
@@ -154,7 +156,8 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
     image_url: '',
     reorder_level: 0,
     is_public: false,
-    public_description: ''
+    public_description: '',
+    unit: 'piece'
   });
 
   // Image upload state
@@ -177,7 +180,8 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
       supplier_id: null,
       brand_id: null,
       image_url: '',
-      reorder_level: 0
+      reorder_level: 0,
+      unit: 'piece'
     });
     setSelectedImageFile(null);
   }, []);
@@ -247,6 +251,11 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
   } = useBusinessBrands(currentBusiness?.id || '', { enabled: !!currentBusiness?.id });
 
   const {
+    data: units = [],
+    isLoading: unitsLoading
+  } = useBusinessUnits(currentBusiness?.id || '', { enabled: !!currentBusiness?.id });
+
+  const {
     data: stores = [],
     isLoading: storesLoading
   } = useBusinessStores(currentBusiness?.id || '', { enabled: !!currentBusiness?.id });
@@ -271,7 +280,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
   const deleteProductMutation = useDeleteProduct(currentStore?.id || '', currentBusiness?.id);
 
   // Combined loading state
-  const isLoading = productsLoading || categoriesLoading || suppliersLoading || brandsLoading || storesLoading;
+  const isLoading = productsLoading || categoriesLoading || suppliersLoading || brandsLoading || storesLoading || unitsLoading;
   
   // Combined mutation loading state
   const isMutating = createProductMutation.isPending || updateProductMutation.isPending || deleteProductMutation.isPending;
@@ -446,7 +455,8 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
         image_url: imageUrl,
         is_active: cleanedUpdateFields.is_active,
         is_public: cleanedUpdateFields.is_public,
-        public_description: cleanedUpdateFields.public_description
+        public_description: cleanedUpdateFields.public_description,
+        unit: cleanedUpdateFields.unit || 'piece'
       };
 
       // Use the mutation hook - this will automatically invalidate cache on success
@@ -1127,7 +1137,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="edit-barcode">Barcode</Label>
                       <Input
@@ -1136,6 +1146,44 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
                         onChange={(e) => setEditingProduct({ ...editingProduct, barcode: e.target.value })}
                         placeholder="Enter barcode"
                       />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-unit">Unit</Label>
+                      <Select
+                        value={editingProduct.unit || ''}
+                        onValueChange={(value) => setEditingProduct({ ...editingProduct, unit: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select unit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {units.length > 0 ? (
+                            units
+                              .filter((unit: { is_active: boolean }) => unit.is_active)
+                              .sort((a: { sort_order: number }, b: { sort_order: number }) => 
+                                (a.sort_order || 0) - (b.sort_order || 0)
+                              )
+                              .map((unit: { id: string; name: string; symbol?: string | null }) => (
+                                <SelectItem key={unit.id} value={unit.name}>
+                                  {unit.name}{unit.symbol ? ` (${unit.symbol})` : ''}
+                                </SelectItem>
+                              ))
+                          ) : (
+                            <>
+                              <SelectItem value="piece">Piece</SelectItem>
+                              <SelectItem value="packet">Packet</SelectItem>
+                              <SelectItem value="dozen">Dozen</SelectItem>
+                              <SelectItem value="box">Box</SelectItem>
+                              <SelectItem value="kg">Kilogram (kg)</SelectItem>
+                              <SelectItem value="g">Gram (g)</SelectItem>
+                              <SelectItem value="liter">Liter</SelectItem>
+                              <SelectItem value="ml">Milliliter (ml)</SelectItem>
+                              <SelectItem value="meter">Meter</SelectItem>
+                              <SelectItem value="cm">Centimeter (cm)</SelectItem>
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <Label htmlFor="edit-reorder">Reorder Level</Label>
@@ -1399,7 +1447,7 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="add-barcode">Barcode</Label>
                     <Input
@@ -1408,6 +1456,44 @@ export const ProductManagement: React.FC<ProductManagementProps> = ({ onBack }) 
                       onChange={(e) => setNewProduct({ ...newProduct, barcode: e.target.value })}
                       placeholder="Enter barcode"
                     />
+                  </div>
+                  <div>
+                    <Label htmlFor="add-unit">Unit</Label>
+                    <Select
+                      value={newProduct.unit || ''}
+                      onValueChange={(value) => setNewProduct({ ...newProduct, unit: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {units.length > 0 ? (
+                          units
+                            .filter((unit: { is_active: boolean }) => unit.is_active)
+                            .sort((a: { sort_order: number }, b: { sort_order: number }) => 
+                              (a.sort_order || 0) - (b.sort_order || 0)
+                            )
+                            .map((unit: { id: string; name: string; symbol?: string | null }) => (
+                              <SelectItem key={unit.id} value={unit.name}>
+                                {unit.name}{unit.symbol ? ` (${unit.symbol})` : ''}
+                              </SelectItem>
+                            ))
+                        ) : (
+                          <>
+                            <SelectItem value="piece">Piece</SelectItem>
+                            <SelectItem value="packet">Packet</SelectItem>
+                            <SelectItem value="dozen">Dozen</SelectItem>
+                            <SelectItem value="box">Box</SelectItem>
+                            <SelectItem value="kg">Kilogram (kg)</SelectItem>
+                            <SelectItem value="g">Gram (g)</SelectItem>
+                            <SelectItem value="liter">Liter</SelectItem>
+                            <SelectItem value="ml">Milliliter (ml)</SelectItem>
+                            <SelectItem value="meter">Meter</SelectItem>
+                            <SelectItem value="cm">Centimeter (cm)</SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label htmlFor="add-reorder">Reorder Level</Label>

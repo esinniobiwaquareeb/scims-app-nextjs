@@ -56,6 +56,7 @@ interface ShoppingCartProps {
   paymentMethod: 'cash' | 'card' | 'mixed';
   cashAmount: string;
   cardAmount: string;
+  deliveryCost?: string;
   isProcessing: boolean;
   showSaleSuccess: boolean;
   lastSaleInfo: any;
@@ -72,6 +73,7 @@ interface ShoppingCartProps {
   onPaymentMethodChange: (method: 'cash' | 'card' | 'mixed') => void;
   onCashAmountChange: (amount: string) => void;
   onCardAmountChange: (amount: string) => void;
+  onDeliveryCostChange?: (amount: string) => void;
   onProcessPayment: (onComplete?: () => void) => void;
   onSaveCart: () => void;
   onLoadSavedCarts: () => void;
@@ -101,6 +103,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   paymentMethod,
   cashAmount,
   cardAmount,
+  deliveryCost = '0',
   isProcessing,
   showSaleSuccess,
   lastSaleInfo,
@@ -117,6 +120,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   onPaymentMethodChange,
   onCashAmountChange,
   onCardAmountChange,
+  onDeliveryCostChange,
   onProcessPayment,
   onSaveCart,
   onLoadSavedCarts,
@@ -438,6 +442,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
         paymentMethod={paymentMethod}
         cashAmount={cashAmount}
         cardAmount={cardAmount}
+        deliveryCost={deliveryCost}
         isProcessing={isProcessing}
         showSaleSuccess={showSaleSuccess}
         lastSaleInfo={lastSaleInfo}
@@ -448,6 +453,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
         onPaymentMethodChange={onPaymentMethodChange}
         onCashAmountChange={onCashAmountChange}
         onCardAmountChange={onCardAmountChange}
+        onDeliveryCostChange={onDeliveryCostChange}
         onProcessPayment={() => {
           // Pass callback to close modal only after payment processing and printing is complete
           onProcessPayment(() => {

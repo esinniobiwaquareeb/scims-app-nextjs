@@ -39,7 +39,8 @@ import {
   Store,
   Target,
   Award,
-  Calculator
+  Calculator,
+  Edit
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
@@ -701,16 +702,45 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
       key: 'actions',
       label: 'Actions',
       render: (sale: Sale) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            setSelectedSale(sale);
-            setShowSaleModal(true);
-          }}
-        >
-          <Eye className="w-4 h-4" />
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedSale(sale);
+              setShowSaleModal(true);
+            }}
+            title="View Details"
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
+          {sale.status === 'completed' && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  // Navigate to return page or open return dialog
+                  window.location.href = `/app/sale-returns?sale_id=${sale.id}`;
+                }}
+                title="Return Items"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  // Navigate to edit sale page
+                  window.location.href = `/app/sales/${sale.id}/edit`;
+                }}
+                title="Edit Sale"
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+            </>
+          )}
+        </div>
       )
     }
   ];

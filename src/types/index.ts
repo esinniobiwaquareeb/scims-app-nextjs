@@ -71,6 +71,7 @@ export interface Product {
   supplier_id?: string;
   brand_id?: string;
   is_active: boolean;
+  unit?: string;
   created_at: string;
   updated_at: string;
 }
@@ -141,11 +142,22 @@ export interface Sale {
   payment_method: string;
   cash_received?: number;
   change_given?: number;
+  delivery_cost?: number;
   status: 'pending' | 'completed' | 'cancelled' | 'refunded';
+  payment_status?: string;
+  payment_history?: unknown[];
+  is_editable?: boolean;
   notes?: string;
   transaction_date: string;
   created_at: string;
   updated_at: string;
+  customer?: {
+    id: string;
+    name: string;
+    phone?: string;
+    email?: string;
+  };
+  items?: SaleItem[];
 }
 
 export interface SaleItem {
@@ -157,6 +169,14 @@ export interface SaleItem {
   total_price: number;
   discount_amount: number;
   created_at: string;
+  product?: {
+    id: string;
+    name: string;
+    sku?: string;
+    barcode?: string;
+    price?: number;
+    stock_quantity?: number;
+  };
 }
 
 export interface Customer {
@@ -472,6 +492,7 @@ export interface ProductFormData {
   brand_id?: string;
   sku?: string;
   barcode?: string;
+  unit?: string;
   is_active: boolean;
 }
 
@@ -730,3 +751,6 @@ DashboardStats as DashboardStatsType,
   UseQueryOptions as UseQueryOptionsType,
   UseMutationOptions as UseMutationOptionsType,
 };
+
+// Export competitor features types
+export * from './competitor-features';

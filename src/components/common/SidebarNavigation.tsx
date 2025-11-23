@@ -30,8 +30,13 @@ import {
   CreditCard,
   Menu as MenuIcon,
   Bot,
-  UserPlus,
-  Handshake
+  Handshake,
+  ArrowRightLeft,
+  SlidersHorizontal,
+  Undo2,
+  ClipboardList,
+  DollarSign,
+  Ruler
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/common/Logo';
@@ -121,6 +126,18 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           roles: ['business_admin', 'store_admin']
         },
         {
+          title: 'Sale Returns',
+          href: '/sale-returns',
+          icon: Undo2,
+          roles: ['business_admin', 'store_admin', 'cashier']
+        },
+        {
+          title: 'Quotations',
+          href: '/quotations',
+          icon: ClipboardList,
+          roles: ['business_admin', 'store_admin']
+        },
+        {
           title: 'Discounts & Promotions',
           href: '/discounts',
           icon: Tag,
@@ -159,6 +176,24 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           title: 'Brands',
           href: '/brands',
           icon: Tag,
+          roles: ['business_admin', 'store_admin']
+        },
+        {
+          title: 'Units',
+          href: '/units',
+          icon: Ruler,
+          roles: ['business_admin', 'store_admin']
+        },
+        {
+          title: 'Stock Transfers',
+          href: '/stock-transfers',
+          icon: ArrowRightLeft,
+          roles: ['business_admin', 'store_admin']
+        },
+        {
+          title: 'Stock Adjustments',
+          href: '/stock-adjustments',
+          icon: SlidersHorizontal,
           roles: ['business_admin', 'store_admin']
         },
         {
@@ -207,6 +242,17 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           href: '/roles',
           icon: Shield,
           roles: ['business_admin']
+        }
+      ]
+    },
+    {
+      title: 'financial',
+      items: [
+        {
+          title: 'Expenses',
+          href: '/expenses',
+          icon: DollarSign,
+          roles: ['business_admin', 'store_admin']
         }
       ]
     },
@@ -278,6 +324,16 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           icon: BarChart3
         },
         {
+          title: 'Sale Returns',
+          href: '/sale-returns',
+          icon: Undo2
+        },
+        {
+          title: 'Quotations',
+          href: '/quotations',
+          icon: ClipboardList
+        },
+        {
           title: 'Discounts & Promotions',
           href: '/discounts',
           icon: Tag
@@ -313,6 +369,21 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           icon: Tag
         },
         {
+          title: 'Units',
+          href: '/units',
+          icon: Ruler
+        },
+        {
+          title: 'Stock Transfers',
+          href: '/stock-transfers',
+          icon: ArrowRightLeft
+        },
+        {
+          title: 'Stock Adjustments',
+          href: '/stock-adjustments',
+          icon: SlidersHorizontal
+        },
+        {
           title: 'Restock',
           href: '/restock',
           icon: Truck
@@ -341,6 +412,16 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           title: 'Customers',
           href: '/customers',
           icon: UserCheck
+        }
+      ]
+    },
+    {
+      title: 'financial',
+      items: [
+        {
+          title: 'Expenses',
+          href: '/expenses',
+          icon: DollarSign
         }
       ]
     },
@@ -452,6 +533,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ className 
           title: 'Point of Sale',
           href: '/pos',
           icon: ShoppingCart,
+          roles: ['cashier']
+        },
+        {
+          title: 'Sale Returns',
+          href: '/sale-returns',
+          icon: Undo2,
           roles: ['cashier']
         },
         {

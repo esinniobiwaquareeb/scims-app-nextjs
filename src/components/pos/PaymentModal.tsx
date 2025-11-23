@@ -43,6 +43,7 @@ interface PaymentModalProps {
   paymentMethod: 'cash' | 'card' | 'mixed';
   cashAmount: string;
   cardAmount: string;
+  deliveryCost?: string;
   isProcessing: boolean;
   showSaleSuccess: boolean;
   lastSaleInfo: any;
@@ -53,6 +54,7 @@ interface PaymentModalProps {
   onPaymentMethodChange: (method: 'cash' | 'card' | 'mixed') => void;
   onCashAmountChange: (amount: string) => void;
   onCardAmountChange: (amount: string) => void;
+  onDeliveryCostChange?: (amount: string) => void;
   onProcessPayment: () => void;
   calculateSubtotal: () => number;
   calculateTax: () => number;
@@ -70,6 +72,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   paymentMethod,
   cashAmount,
   cardAmount,
+  deliveryCost = '0',
   isProcessing,
   showSaleSuccess,
   lastSaleInfo,
@@ -80,6 +83,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onPaymentMethodChange,
   onCashAmountChange,
   onCardAmountChange,
+  onDeliveryCostChange,
   onProcessPayment,
   calculateSubtotal,
   calculateTax,
@@ -171,6 +175,26 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 <span className="text-muted-foreground">Tax:</span>
                 <span>{formatCurrency(calculateTax())}</span>
               </div>
+              {onDeliveryCostChange && (
+                <div className="flex justify-between items-center">
+                  <Label className="text-muted-foreground text-xs">Delivery Cost:</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={deliveryCost}
+                    onChange={(e) => onDeliveryCostChange?.(e.target.value)}
+                    onBlur={(e) => {
+                      const value = parseFloat(e.target.value);
+                      if (!isNaN(value)) {
+                        onDeliveryCostChange?.(value.toFixed(2));
+                      }
+                    }}
+                    className="w-24 h-7 text-xs text-right"
+                    placeholder="0.00"
+                  />
+                </div>
+              )}
               <Separator className="my-2" />
               <div className="flex justify-between font-semibold text-base">
                 <span>Total:</span>

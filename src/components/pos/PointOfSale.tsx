@@ -38,11 +38,12 @@ interface SaleFormData {
   cash_received?: number;
   change_given?: number;
   status: string;
-notes?: string;
+  notes?: string;
   transaction_date: string;
   applied_coupon_id?: string;
   applied_promotion_id?: string;
   discount_reason?: string;
+  delivery_cost?: number;
   items: Array<{
     product_id: string;
     quantity: number;
@@ -210,6 +211,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'mixed'>('cash');
   const [cashAmount, setCashAmount] = useState<string>('');
   const [cardAmount, setCardAmount] = useState<string>('');
+  const [deliveryCost, setDeliveryCost] = useState<string>('0');
   const [isProcessing, setIsProcessing] = useState(false);
   
   // Customer state
@@ -369,8 +371,9 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
     const subtotal = calculateSubtotal();
     const discount = calculateDiscount();
     const tax = calculateTax();
-    return subtotal - discount + tax;
-  }, [calculateSubtotal, calculateDiscount, calculateTax]);
+    const delivery = parseFloat(deliveryCost) || 0;
+    return subtotal - discount + tax + delivery;
+  }, [calculateSubtotal, calculateDiscount, calculateTax, deliveryCost]);
 
   const getChange = useCallback(() => {
     // In variable pricing mode, no change - they pay exactly what they want
@@ -585,6 +588,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
         applied_coupon_id: appliedDiscount?.type === 'coupon' ? appliedDiscount?.id : undefined,
         applied_promotion_id: appliedDiscount?.type === 'promotion' ? appliedDiscount?.id : undefined,
         discount_reason: appliedDiscount ? `${appliedDiscount.type}: ${appliedDiscount.name}` : undefined,
+        delivery_cost: parseFloat(deliveryCost) || 0,
         items: cart.map(item => ({
           product_id: item.product.id,
           quantity: item.quantity,
@@ -1005,6 +1009,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
             paymentMethod={paymentMethod}
             cashAmount={cashAmount}
             cardAmount={cardAmount}
+            deliveryCost={deliveryCost}
             isProcessing={isProcessing}
             showSaleSuccess={showSaleSuccess}
             lastSaleInfo={lastSaleInfo}
@@ -1024,6 +1029,7 @@ export const PointOfSale: React.FC<PointOfSaleProps> = ({ onBack, onSaleComplete
             onPaymentMethodChange={setPaymentMethod}
             onCashAmountChange={setCashAmount}
             onCardAmountChange={setCardAmount}
+            onDeliveryCostChange={setDeliveryCost}
             onProcessPayment={(onComplete) => processPayment(onComplete)}
             onSaveCart={() => setShowSaveCartDialog(true)}
             onLoadSavedCarts={() => setShowSavedCarts(true)}

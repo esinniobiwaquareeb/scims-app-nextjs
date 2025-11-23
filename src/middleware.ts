@@ -92,7 +92,13 @@ export async function middleware(request: NextRequest) {
       '/product-sync',
       '/menu-management',
       '/subscriptions',
-      '/discounts'
+      '/discounts',
+      '/stock-transfers',
+      '/stock-adjustments',
+      '/sale-returns',
+      '/quotations',
+      '/expenses',
+      '/units'
     ];
   
     // Handle storefront subdomain: Rewrite to /s/[slug] route
