@@ -44,6 +44,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { EditSaleModal } from './modals/EditSaleModal';
+import { CreateSaleReturnModal } from './modals/CreateSaleReturnModal';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, Legend } from 'recharts';
 
 interface SalesReportProps {
@@ -203,6 +205,10 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState<string[]>([]);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [showSaleModal, setShowSaleModal] = useState(false);
+  const [showEditSaleModal, setShowEditSaleModal] = useState(false);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [saleToEdit, setSaleToEdit] = useState<Sale | null>(null);
+  const [saleToReturn, setSaleToReturn] = useState<Sale | null>(null);
 
   // Debounced filter values using useMemo to prevent excessive re-renders
   const debouncedFilters = useMemo(() => filters, [filters]);
@@ -720,8 +726,8 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  // Navigate to return page or open return dialog
-                  window.location.href = `/app/sale-returns?sale_id=${sale.id}`;
+                  setSaleToReturn(sale);
+                  setShowReturnModal(true);
                 }}
                 title="Return Items"
               >
@@ -731,8 +737,8 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  // Navigate to edit sale page
-                  window.location.href = `/app/sales/${sale.id}/edit`;
+                  setSaleToEdit(sale);
+                  setShowEditSaleModal(true);
                 }}
                 title="Edit Sale"
               >
@@ -1716,6 +1722,34 @@ export const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Edit Sale Modal */}
+      <EditSaleModal
+        open={showEditSaleModal}
+        onOpenChange={setShowEditSaleModal}
+        sale={saleToEdit}
+        onSuccess={() => {
+          // Refresh sales data
+          if (currentStore?.id) {
+            // The sales data will be refetched automatically by React Query
+            window.location.reload();
+          }
+        }}
+      />
+
+      {/* Create Sale Return Modal */}
+      <CreateSaleReturnModal
+        open={showReturnModal}
+        onOpenChange={setShowReturnModal}
+        sale={saleToReturn}
+        onSuccess={() => {
+          // Refresh sales data
+          if (currentStore?.id) {
+            // The sales data will be refetched automatically by React Query
+            window.location.reload();
+          }
+        }}
+      />
     </DashboardLayout>
   );
 };
