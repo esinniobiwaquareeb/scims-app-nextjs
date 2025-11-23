@@ -72,13 +72,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setCurrentBusiness(businessObj);
           setBusinesses([businessObj]);
           
-          // Set current store if user has one
+          // Set current store: use assigned store, or first store from allStores for business_admin
           if (store) {
             setCurrentStore(store);
+          } else if (allStores && allStores.length > 0) {
+            // For business_admin users without a specific store, select the first store
+            setCurrentStore(allStores[0] as any);
           }
-          
 
-          return { business: businessObj, store };
+          return { business: businessObj, store: store || (allStores && allStores.length > 0 ? allStores[0] : null) };
         }
       }
     } catch (businessError) {
@@ -210,10 +212,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setCurrentBusiness(businessObj);
                 setBusinesses([businessObj]);
                 
-                // Set current store if user has one
+                // Set current store: always select the first store if available
                 if (userStores.length > 0) {
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            setCurrentStore(userStores[0] as any);
+                  setCurrentStore(userStores[0] as any);
                 }
               }
             } catch (cacheError) {
@@ -276,9 +278,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setCurrentBusiness(businessObj);
                 setBusinesses([businessObj]);
                 
-                // Set current store if user has one
+                // Set current store: use assigned store, or first store from allStores for business_admin
                 if (store) {
                   setCurrentStore(store);
+                } else if (allStores && allStores.length > 0) {
+                  // For business_admin users without a specific store, select the first store
+                  setCurrentStore(allStores[0] as any);
                 }
               }
             }
@@ -305,17 +310,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   currency_id: business.currency_id,
                   timezone: business.timezone || 'UTC',
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            stores: userStores as any,
+                  stores: userStores as any,
                   createdAt: new Date().toISOString()
                 };
                 
                 setCurrentBusiness(businessObj);
                 setBusinesses([businessObj]);
                 
-                // Set current store if user has one
+                // Set current store: always select the first store if available
                 if (userStores.length > 0) {
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            setCurrentStore(userStores[0] as any);
+                  setCurrentStore(userStores[0] as any);
                 }
               }
             } catch (cacheError) {

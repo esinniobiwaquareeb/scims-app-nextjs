@@ -91,23 +91,75 @@ export const EditSaleModal: React.FC<EditSaleModalProps> = ({
 
   useEffect(() => {
     if (sale && open) {
+      console.log('Fetching sale with ID:', sale.id); // Debug log
+      console.log('Sale object:', sale); // Debug log
       setLoading(true);
-      fetch(`/api/sales/${sale.id}`)
-        .then(res => res.json())
+      setSaleData(null); // Reset sale data when opening
+      
+      const saleId = (sale as any).id;
+      if (!saleId) {
+        console.error('Sale ID is missing:', sale);
+        toast.error('Invalid sale: missing ID');
+        setLoading(false);
+        return;
+      }
+      
+      fetch(`/api/sales/${saleId}`)
+        .then(res => {
+          console.log('API response status:', res.status); // Debug log
+          if (!res.ok) {
+            return res.json().then(err => {
+              console.error('API error response:', err); // Debug log
+              throw new Error(err.error || `Failed to fetch sale: ${res.status}`);
+            });
+          }
+          return res.json();
+        })
         .then(data => {
+          console.log('Sale data received:', data); // Debug log
           if (data.success && data.sale) {
-            setSaleData(data.sale);
-            setNotes(data.sale.notes || '');
-            setDeliveryCost(data.sale.delivery_cost || 0);
+            const sale = data.sale;
+            console.log('Sale object:', sale);
+            console.log('Sale items:', sale.items);
+            console.log('Sale sale_item:', sale.sale_item);
+            
+            // Normalize the sale data structure - API returns 'items' from the select query
+            // But we should handle both cases
+            if (!sale.items && sale.sale_item) {
+              sale.items = sale.sale_item;
+            }
+            
+            // Ensure items is always an array
+            if (!Array.isArray(sale.items)) {
+              sale.items = [];
+            }
+            
+            console.log('Normalized sale data:', sale); // Debug log
+            console.log('Items array:', sale.items); // Debug log
+            
+            setSaleData(sale);
+            setNotes(sale.notes || '');
+            setDeliveryCost(sale.delivery_cost || 0);
             setNewItems([]);
             setItemsToRemove([]);
+          } else {
+            console.error('API response error:', data);
+            throw new Error(data.error || 'Failed to load sale');
           }
         })
         .catch(error => {
           console.error('Error loading sale:', error);
-          toast.error('Failed to load sale details');
+          toast.error(error instanceof Error ? error.message : 'Failed to load sale details');
+          setSaleData(null);
         })
         .finally(() => setLoading(false));
+    } else if (!open) {
+      // Reset when modal closes
+      setSaleData(null);
+      setNotes('');
+      setDeliveryCost(0);
+      setNewItems([]);
+      setItemsToRemove([]);
     }
   }, [sale, open]);
 
@@ -208,13 +260,29 @@ export const EditSaleModal: React.FC<EditSaleModalProps> = ({
     }
   };
 
-  if (!sale) return null;
+  if (!sale) {
+    console.log('No sale prop provided');
+    return null;
+  }
 
-  const currentItems = (saleData as SaleFromReport)?.items?.filter((item: SaleItem) => !itemsToRemove.includes(item.id)) || [];
+  // Handle both 'items' and 'sale_item' property names from API
+  // The API returns items as 'items' from the select query
+  const saleItems = (saleData as any)?.items || (saleData as any)?.sale_item || [];
+  console.log('Sale items from saleData:', saleItems); // Debug log
+  const currentItems = Array.isArray(saleItems) 
+    ? saleItems.filter((item: any) => {
+        const itemId = item?.id;
+        return item && itemId && !itemsToRemove.includes(itemId);
+      })
+    : [];
+  console.log('Current items after filter:', currentItems); // Debug log
   const newItemsTotal = newItems.reduce((sum, item) => 
     sum + (item.unit_price * item.quantity) - item.discount_amount, 0
   );
-  const currentSubtotal = currentItems.reduce((sum: number, item: any) => sum + (item.total_price || 0), 0);
+  const currentSubtotal = currentItems.reduce((sum: number, item: any) => {
+    const totalPrice = (item as any).total_price || 0;
+    return sum + totalPrice;
+  }, 0);
   const newSubtotal = currentSubtotal + newItemsTotal;
   const newTotal = newSubtotal + (saleData?.tax_amount || 0) + deliveryCost;
 
@@ -231,6 +299,19 @@ export const EditSaleModal: React.FC<EditSaleModalProps> = ({
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin" />
+            <span className="ml-2">Loading sale details...</span>
+          </div>
+        ) : !saleData ? (
+          <div className="flex flex-col items-center justify-center py-8">
+            <p className="text-muted-foreground">Failed to load sale details</p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="mt-4"
+            >
+              Close
+            </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -243,15 +324,33 @@ export const EditSaleModal: React.FC<EditSaleModalProps> = ({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Receipt Number</Label>
-                    <Input value={saleData?.receipt_number || ''} disabled className="bg-muted" />
+                    <Input value={(saleData as any)?.receipt_number || ''} disabled className="bg-muted" />
                   </div>
                   <div>
                     <Label>Status</Label>
                     <div>
-                      <Badge variant={saleData?.status === 'completed' ? 'default' : 'secondary'}>
-                        {saleData?.status}
+                      <Badge variant={(saleData as any)?.status === 'completed' ? 'default' : 'secondary'}>
+                        {(saleData as any)?.status || 'N/A'}
                       </Badge>
                     </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Date</Label>
+                    <Input 
+                      value={saleData ? new Date((saleData as any).transaction_date || (saleData as any).created_at).toLocaleString() : ''} 
+                      disabled 
+                      className="bg-muted" 
+                    />
+                  </div>
+                  <div>
+                    <Label>Total Amount</Label>
+                    <Input 
+                      value={saleData ? formatCurrency((saleData as any).total_amount || 0) : ''} 
+                      disabled 
+                      className="bg-muted" 
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -264,40 +363,52 @@ export const EditSaleModal: React.FC<EditSaleModalProps> = ({
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {currentItems.map((item: SaleItem) => (
-                    <div
-                      key={item.id}
-                      className={`flex items-center justify-between p-3 rounded-lg border ${
-                        itemsToRemove.includes(item.id) ? 'bg-red-50 border-red-200' : 'bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex-1">
-                        <p className="font-medium">{item.product?.name || 'Product'}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {item.quantity} × {formatCurrency(item.unit_price)} = {formatCurrency(item.total_price)}
-                        </p>
-                      </div>
-                      {itemsToRemove.includes(item.id) ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => unmarkItemForRemoval(item.id)}
+                  {currentItems.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">No items in this sale</p>
+                  ) : (
+                    currentItems.map((item: any, index: number) => {
+                      const itemId = item.id || `item-${index}`;
+                      const productName = item.product?.name || item.products?.name || 'Product';
+                      const quantity = item.quantity || 0;
+                      const unitPrice = item.unit_price || 0;
+                      const totalPrice = item.total_price || 0;
+                      
+                      return (
+                        <div
+                          key={itemId}
+                          className={`flex items-center justify-between p-3 rounded-lg border ${
+                            itemsToRemove.includes(itemId) ? 'bg-red-50 border-red-200' : 'bg-gray-50'
+                          }`}
                         >
-                          Restore
-                        </Button>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => markItemForRemoval(item.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
+                          <div className="flex-1">
+                            <p className="font-medium">{productName}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {quantity} × {formatCurrency(unitPrice)} = {formatCurrency(totalPrice)}
+                            </p>
+                          </div>
+                          {itemsToRemove.includes(itemId) ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => unmarkItemForRemoval(itemId)}
+                            >
+                              Restore
+                            </Button>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => markItemForRemoval(itemId)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </CardContent>
             </Card>
