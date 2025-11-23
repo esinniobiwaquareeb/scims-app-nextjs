@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Textarea } from '@/components/ui/textarea';
 import { DataTable } from '@/components/common/DataTable';
 import { toast } from 'sonner';
-import { Plus, Minus, Loader2, AlertTriangle } from 'lucide-react';
+import { Plus, Minus, Loader2, AlertTriangle, Package } from 'lucide-react';
 import type { StockAdjustment, StockAdjustmentFormData, Product } from '@/types';
 
 export const StockAdjustmentManagement: React.FC = () => {
@@ -23,6 +23,7 @@ export const StockAdjustmentManagement: React.FC = () => {
   const [adjustments, setAdjustments] = useState<StockAdjustment[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [adjustmentType, setAdjustmentType] = useState<'increase' | 'decrease'>('increase');
@@ -45,19 +46,31 @@ export const StockAdjustmentManagement: React.FC = () => {
 
     try {
       setLoading(true);
+      setError(null);
 
       // Load products
       const productsRes = await fetch(`/api/products?store_id=${currentStore.id}`);
+      if (!productsRes.ok) {
+        throw new Error('Failed to load products');
+      }
       const productsData = await productsRes.json();
       setProducts(productsData.products || []);
 
       // Load adjustments
       const adjustmentsRes = await fetch(`/api/stock-adjustments?store_id=${currentStore.id}`);
+      if (!adjustmentsRes.ok) {
+        throw new Error('Failed to load adjustments');
+      }
       const adjustmentsData = await adjustmentsRes.json();
+      if (!adjustmentsData.success) {
+        throw new Error(adjustmentsData.error || 'Failed to load adjustments');
+      }
       setAdjustments(adjustmentsData.adjustments || []);
     } catch (error) {
       console.error('Error loading data:', error);
-      toast.error('Failed to load data');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load data';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -71,8 +84,13 @@ export const StockAdjustmentManagement: React.FC = () => {
       return;
     }
 
-    if (formData.quantity_change === 0) {
-      toast.error('Quantity change cannot be zero');
+    if (formData.quantity_change <= 0) {
+      toast.error('Quantity must be greater than zero');
+      return;
+    }
+
+    if (!user?.id) {
+      toast.error('User information not available');
       return;
     }
 
@@ -86,7 +104,10 @@ export const StockAdjustmentManagement: React.FC = () => {
 
       const res = await fetch('/api/stock-adjustments', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-id': user.id,
+        },
         body: JSON.stringify({
           ...formData,
           quantity_change: quantityChange,
@@ -148,14 +169,34 @@ export const StockAdjustmentManagement: React.FC = () => {
     ? currentStock + Math.abs(formData.quantity_change)
     : currentStock - Math.abs(formData.quantity_change);
 
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
   const columns = [
-    { key: 'adjustment_date', label: 'Date', sortable: true },
+    { 
+      key: 'adjustment_date', 
+      label: 'Date', 
+      sortable: true,
+      render: (adj: StockAdjustment) => formatDate(adj.adjustment_date),
+    },
     { key: 'product_name', label: 'Product', render: (adj: StockAdjustment) => adj.product?.name || 'N/A' },
     {
       key: 'quantity_change',
       label: 'Change',
       render: (adj: StockAdjustment) => (
-        <span className={adj.quantity_change > 0 ? 'text-green-600' : 'text-red-600'}>
+        <span className={adj.quantity_change > 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
           {adj.quantity_change > 0 ? '+' : ''}{adj.quantity_change}
         </span>
       ),
@@ -181,7 +222,10 @@ export const StockAdjustmentManagement: React.FC = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin" />
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+            <p className="text-muted-foreground">Loading stock adjustments...</p>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -195,24 +239,65 @@ export const StockAdjustmentManagement: React.FC = () => {
             <h1 className="text-3xl font-bold">Stock Adjustment</h1>
             <p className="text-muted-foreground">Rectify stock discrepancies with reason and date</p>
           </div>
-          <Button onClick={() => setShowDialog(true)}>
+          <Button onClick={() => setShowDialog(true)} disabled={!currentStore?.id}>
             <Plus className="w-4 h-4 mr-2" />
             New Adjustment
           </Button>
         </div>
+
+        {error && (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                  <p className="text-red-800 text-sm">{error}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadData()}
+                  disabled={loading}
+                >
+                  Retry
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {!currentStore?.id && (
+          <Card className="border-yellow-200 bg-yellow-50">
+            <CardContent className="p-4">
+              <p className="text-yellow-800 text-sm">
+                Please select a store to view and create stock adjustments.
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
             <CardTitle>Adjustment History</CardTitle>
           </CardHeader>
           <CardContent>
-            <DataTable
-              title="Stock Adjustments"
-              data={adjustments}
-              columns={columns}
-              searchable
-              searchPlaceholder="Search adjustments..."
-            />
+            {adjustments.length === 0 ? (
+              <div className="text-center py-12">
+                <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No stock adjustments found</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Create your first adjustment to get started
+                </p>
+              </div>
+            ) : (
+              <DataTable
+                title="Stock Adjustments"
+                data={adjustments}
+                columns={columns}
+                searchable
+                searchPlaceholder="Search adjustments..."
+              />
+            )}
           </CardContent>
         </Card>
 
