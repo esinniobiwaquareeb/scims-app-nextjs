@@ -13,15 +13,15 @@ const getBackendUrl = (): string => {
   return process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 };
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
   message?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
-export interface PaginatedResponse<T = any> extends ApiResponse<T[]> {
+export interface PaginatedResponse<T = unknown> extends ApiResponse<T[]> {
   total?: number;
   page?: number;
   limit?: number;
@@ -65,7 +65,7 @@ class BackendApiClient {
   /**
    * Make a GET request
    */
-  async get<T = any>(endpoint: string, params?: Record<string, any>): Promise<ApiResponse<T>> {
+  async get<T = unknown>(endpoint: string, params?: Record<string, string | number | boolean>): Promise<ApiResponse<T>> {
     let url = `${this.baseUrl}/api${endpoint}`;
     
     if (params) {
@@ -113,7 +113,7 @@ class BackendApiClient {
   /**
    * Make a POST request
    */
-  async post<T = any>(endpoint: string, body?: any): Promise<ApiResponse<T>> {
+  async post<T = unknown>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
     try {
       const response = await fetch(`${this.baseUrl}/api${endpoint}`, {
         method: 'POST',
@@ -147,7 +147,7 @@ class BackendApiClient {
   /**
    * Make a PATCH request
    */
-  async patch<T = any>(endpoint: string, body?: any): Promise<ApiResponse<T>> {
+  async patch<T = unknown>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
     try {
       const response = await fetch(`${this.baseUrl}/api${endpoint}`, {
         method: 'PATCH',
@@ -181,7 +181,7 @@ class BackendApiClient {
   /**
    * Make a PUT request
    */
-  async put<T = any>(endpoint: string, body?: any): Promise<ApiResponse<T>> {
+  async put<T = unknown>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
     try {
       const response = await fetch(`${this.baseUrl}/api${endpoint}`, {
         method: 'PUT',
@@ -215,7 +215,7 @@ class BackendApiClient {
   /**
    * Make a DELETE request
    */
-  async delete<T = any>(endpoint: string): Promise<ApiResponse<T>> {
+  async delete<T = unknown>(endpoint: string): Promise<ApiResponse<T>> {
     try {
       const response = await fetch(`${this.baseUrl}/api${endpoint}`, {
         method: 'DELETE',
@@ -248,7 +248,7 @@ class BackendApiClient {
   /**
    * Upload a file
    */
-  async uploadFile<T = any>(endpoint: string, file: File, fieldName = 'file'): Promise<ApiResponse<T>> {
+  async uploadFile<T = unknown>(endpoint: string, file: File, fieldName = 'file'): Promise<ApiResponse<T>> {
     try {
       const formData = new FormData();
       formData.append(fieldName, file);

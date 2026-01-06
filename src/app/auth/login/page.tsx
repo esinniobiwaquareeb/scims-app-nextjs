@@ -32,6 +32,7 @@ export default function LoginPage() {
   const [demoUsers, setDemoUsers] = useState<DemoUser[]>([]);
   const [isDemoModeEnabled, setIsDemoModeEnabled] = useState(false);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+  const [isLoadingDemoUsers, setIsLoadingDemoUsers] = useState(false);
   const { login, isLoading } = useAuth();
   const router = useRouter();
 
@@ -53,6 +54,7 @@ export default function LoginPage() {
   // Load platform settings and demo users
   useEffect(() => {
     const loadPlatformSettings = async () => {
+      setIsLoadingDemoUsers(true);
       try {
         // Check if demo mode is enabled
         const settingsResponse = await fetch('/api/platform/settings');
@@ -63,18 +65,31 @@ export default function LoginPage() {
           
           // Only load demo users if demo mode is enabled
           if (demoModeEnabled) {
+            console.log('[Login Page] Demo mode enabled, fetching demo users...');
             const demoResponse = await authAPI.getDemoUsers();
-            if (demoResponse.success) {
-              setDemoUsers(demoResponse.users || []);
+            console.log('[Login Page] Demo users response:', demoResponse);
+            if (demoResponse.success && demoResponse.users) {
+              console.log('[Login Page] Setting demo users:', demoResponse.users);
+              setDemoUsers(demoResponse.users);
+            } else {
+              console.warn('[Login Page] Failed to load demo users:', demoResponse.error || 'No users returned');
+              setDemoUsers([]);
             }
           } else {
+            console.log('[Login Page] Demo mode disabled');
             setDemoUsers([]);
           }
+        } else {
+          console.warn('Failed to load platform settings');
+          setIsDemoModeEnabled(false);
+          setDemoUsers([]);
         }
       } catch (error) {
         console.error('Failed to load platform settings:', error);
         setIsDemoModeEnabled(false);
         setDemoUsers([]);
+      } finally {
+        setIsLoadingDemoUsers(false);
       }
     };
 
@@ -144,8 +159,6 @@ export default function LoginPage() {
       return;
     }
 
-    setUsername(demoUser.username);
-    setPassword('123456');
     setError("");
     
     try {
@@ -155,9 +168,10 @@ export default function LoginPage() {
         // Redirect to dashboard after successful demo login
         router.replace('/dashboard');
       } else {
-        setError("Demo login failed. Please try manual login or contact administrator.");
+        setError(result.error || "Demo login failed. Please try manual login or contact administrator.");
       }
-    } catch {
+    } catch (error) {
+      console.error('Demo login error:', error);
       setError("Demo login failed. Please try manual login or contact administrator.");
     }
   };
@@ -272,7 +286,7 @@ export default function LoginPage() {
             </Button>
           </div>
           
-          {isDemoModeEnabled && demoUsers.length > 0 && (
+          {isDemoModeEnabled && (
             <div className="pt-4 border-t mt-4">
               <div className="mb-4">
                 <Alert className="py-3 bg-blue-50 border-blue-200">
@@ -281,36 +295,49 @@ export default function LoginPage() {
                   </AlertDescription>
                 </Alert>
               </div>
-              <p className="font-medium text-base mb-3">Demo Accounts:</p>
-              <div className="space-y-3">
-                {demoUsers.map((demoUser, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border text-sm">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm">{demoUser.role}</div>
-                      <div className="text-muted-foreground text-sm mt-1">
-                        <span className="font-medium">User:</span> {demoUser.username} | 
-                        <span className="font-medium ml-1">Pass:</span> <code className="bg-background px-1.5 py-0.5 rounded text-sm">123456</code>
+              {isLoadingDemoUsers ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-5 h-5 animate-spin text-gray-400 mr-2" />
+                  <span className="text-sm text-muted-foreground">Loading demo accounts...</span>
+                </div>
+              ) : demoUsers.length > 0 ? (
+                <>
+                  <p className="font-medium text-base mb-3">Demo Accounts:</p>
+                  <div className="space-y-3">
+                    {demoUsers.map((demoUser, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border text-sm">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm">{demoUser.role}</div>
+                          <div className="text-muted-foreground text-sm mt-1">
+                            <span className="font-medium">User:</span> {demoUser.username} | 
+                            <span className="font-medium ml-1">Pass:</span> <code className="bg-background px-1.5 py-0.5 rounded text-sm">123456</code>
+                          </div>
+                          <div className="text-muted-foreground text-sm mt-1">
+                            {demoUser.description}
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDemoLogin(demoUser)}
+                          disabled={isLoading}
+                          className="ml-3 h-8 px-4 text-sm"
+                        >
+                          Use
+                        </Button>
                       </div>
-                      <div className="text-muted-foreground text-sm mt-1">
-                        {demoUser.description}
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDemoLogin(demoUser)}
-                      disabled={isLoading}
-                      className="ml-3 h-8 px-4 text-sm"
-                    >
-                      Use
-                    </Button>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <div className="mt-3 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
-                <strong>Note:</strong> Demo accounts use password <code className="bg-background px-1.5 py-0.5 rounded text-sm">123456</code>. 
-                Regular users can login manually with their credentials.
-              </div>
+                  <div className="mt-3 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+                    <strong>Note:</strong> Demo accounts use password <code className="bg-background px-1.5 py-0.5 rounded text-sm">123456</code>. 
+                    Regular users can login manually with their credentials.
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-muted-foreground text-center py-4">
+                  No demo accounts available at this time.
+                </div>
+              )}
             </div>
           )}
         </CardContent>

@@ -1,9 +1,9 @@
 import { NextRequest } from 'next/server';
-import { proxyDelete } from '@/utils/backend-proxy';
+import { proxyDelete, BackendResponse } from '@/utils/backend-proxy';
 
 export async function DELETE(request: NextRequest) {
   return proxyDelete(request, '/activity-logs', {
-    transformResponse: (data) => {
+    transformResponse: (data: BackendResponse) => {
       if (data.success) {
         return {
           success: true,

@@ -23,7 +23,10 @@ export async function POST(request: NextRequest) {
   // Transform frontend format to backend format
   const backendBody = {
     sale_id: body.sale_id,
-    items: body.return_items?.map((item: any) => ({
+    items: body.return_items?.map((item: {
+      sale_item_id: string;
+      quantity_returned: number;
+    }) => ({
       sale_item_id: item.sale_item_id,
       quantity: item.quantity_returned,
     })) || [],

@@ -96,7 +96,14 @@ export async function getBusinessProducts(businessId: string): Promise<ProductIn
     const data = await response.json();
     const products = data.data || data.products || [];
 
-    return products.map((product: any) => ({
+    return products.map((product: {
+      id: string;
+      name: string;
+      description?: string;
+      price: number | string;
+      stock_quantity: number | string;
+      [key: string]: unknown;
+    }) => ({
       id: product.id,
       name: product.name,
       description: product.description || undefined,

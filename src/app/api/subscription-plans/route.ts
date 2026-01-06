@@ -8,7 +8,24 @@ export async function GET(request: NextRequest) {
         const plans = Array.isArray(data.data) ? data.data : [];
         return {
           success: true,
-          plans: plans.map((plan: any) => ({
+          plans: plans.map((plan: {
+            id: string;
+            name: string;
+            price?: string;
+            price_monthly?: number;
+            price_yearly?: number;
+            is_active?: boolean;
+            description?: string;
+            features?: string[];
+            max_stores?: number;
+            max_products?: number;
+            max_users?: number;
+            billing_cycle?: string;
+            is_popular?: boolean;
+            display_order?: number;
+            created_at?: string;
+            updated_at?: string;
+          }) => ({
             id: plan.id,
             name: plan.name,
             price: plan.price || `$${plan.price_monthly}/month`,

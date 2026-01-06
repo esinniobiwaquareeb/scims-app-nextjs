@@ -10,7 +10,23 @@ export async function GET(
     transformResponse: (data) => {
       if (data.success && data.data) {
         const items = Array.isArray(data.data) ? data.data : [];
-        const transformedItems = items.map((item: any) => ({
+        const transformedItems = items.map((item: {
+          id: string;
+          title: string;
+          description?: string;
+          action?: string;
+          icon?: string;
+          color?: string;
+          bg_color?: string;
+          business_type?: string;
+          requires_feature?: string;
+          user_roles?: string[];
+          sort_order?: number;
+          is_active?: boolean;
+          category_id?: string;
+          category?: { name: string };
+          menu_categories?: Array<{ name: string }>;
+        }) => ({
           id: item.id,
           title: item.title,
           description: item.description,
@@ -27,7 +43,7 @@ export async function GET(
           category: item.category || item.menu_categories?.[0],
         }));
 
-        const itemsByCategory = transformedItems.reduce((acc: any, item: any) => {
+        const itemsByCategory = transformedItems.reduce((acc: Record<string, typeof transformedItems>, item) => {
           const categoryName = item.category?.name || 'Uncategorized';
           if (!acc[categoryName]) {
             acc[categoryName] = [];

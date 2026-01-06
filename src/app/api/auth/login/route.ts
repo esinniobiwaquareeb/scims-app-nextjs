@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { env } from '@/lib/env';
 
 // Force dynamic rendering for API routes
 export const dynamic = 'force-dynamic';

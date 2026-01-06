@@ -30,7 +30,19 @@ export async function POST(request: NextRequest) {
     original_sale_id: body.original_sale_id,
     additional_payment: body.additional_payment || 0,
     notes: body.notes,
-    items: body.exchange_items?.map((item: any) => ({
+    items: body.exchange_items?.map((item: {
+      item_type: string;
+      original_sale_item_id?: string;
+      product_id: string;
+      product_name?: string;
+      product_sku?: string;
+      product_barcode?: string;
+      quantity: number;
+      unit_value: number;
+      condition?: string;
+      condition_notes?: string;
+      add_to_inventory?: boolean;
+    }) => ({
       item_type: item.item_type,
       original_sale_item_id: item.original_sale_item_id,
       product_id: item.product_id,
@@ -43,7 +55,12 @@ export async function POST(request: NextRequest) {
       condition_notes: item.condition_notes,
       add_to_inventory: item.add_to_inventory !== false,
     })) || [],
-    purchase_items: body.purchase_items?.map((item: any) => ({
+    purchase_items: body.purchase_items?.map((item: {
+      product_id: string;
+      quantity: number;
+      unit_price: number;
+      discount_amount?: number;
+    }) => ({
       product_id: item.product_id,
       quantity: item.quantity,
       unit_price: item.unit_price,

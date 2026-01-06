@@ -5,6 +5,15 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+// Type for backend API responses
+export type BackendResponse = {
+  success?: boolean;
+  data?: unknown;
+  error?: string;
+  message?: string;
+  [key: string]: unknown;
+};
+
 const getBackendUrl = (): string => {
   return process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 };
@@ -36,9 +45,9 @@ export async function proxyToBackend(
   endpoint: string,
   options: {
     method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-    body?: any;
+    body?: unknown;
     params?: Record<string, string>;
-    transformResponse?: (data: any) => any;
+    transformResponse?: (data: BackendResponse) => unknown;
   } = {}
 ): Promise<NextResponse> {
   try {
@@ -81,13 +90,31 @@ export async function proxyToBackend(
     }
 
     // Make request to backend
+    console.log(`[Backend Proxy] ${method} ${url}`);
     const response = await fetch(url, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
     });
 
-    const data = await response.json();
+    console.log(`[Backend Proxy] Response status: ${response.status}`);
+    
+    let data;
+    try {
+      data = await response.json();
+      console.log(`[Backend Proxy] Response data:`, JSON.stringify(data, null, 2));
+    } catch (parseError) {
+      console.error('[Backend Proxy] Failed to parse JSON response:', parseError);
+      const text = await response.text();
+      console.error('[Backend Proxy] Response text:', text);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid response from backend',
+        },
+        { status: response.status }
+      );
+    }
 
     // Transform response if needed
     const transformedData = transformResponse ? transformResponse(data) : data;
@@ -112,7 +139,7 @@ export async function proxyGet(
   request: NextRequest,
   endpoint: string,
   options?: {
-    transformResponse?: (data: any) => any;
+    transformResponse?: (data: BackendResponse) => unknown;
   }
 ): Promise<NextResponse> {
   return proxyToBackend(request, endpoint, {
@@ -127,9 +154,9 @@ export async function proxyGet(
 export async function proxyPost(
   request: NextRequest,
   endpoint: string,
-  body?: any,
+  body?: unknown,
   options?: {
-    transformResponse?: (data: any) => any;
+    transformResponse?: (data: BackendResponse) => unknown;
   }
 ): Promise<NextResponse> {
   return proxyToBackend(request, endpoint, {
@@ -145,9 +172,9 @@ export async function proxyPost(
 export async function proxyPut(
   request: NextRequest,
   endpoint: string,
-  body?: any,
+  body?: unknown,
   options?: {
-    transformResponse?: (data: any) => any;
+    transformResponse?: (data: BackendResponse) => unknown;
   }
 ): Promise<NextResponse> {
   return proxyToBackend(request, endpoint, {
@@ -163,9 +190,9 @@ export async function proxyPut(
 export async function proxyPatch(
   request: NextRequest,
   endpoint: string,
-  body?: any,
+  body?: unknown,
   options?: {
-    transformResponse?: (data: any) => any;
+    transformResponse?: (data: BackendResponse) => unknown;
   }
 ): Promise<NextResponse> {
   return proxyToBackend(request, endpoint, {
@@ -182,7 +209,7 @@ export async function proxyDelete(
   request: NextRequest,
   endpoint: string,
   options?: {
-    transformResponse?: (data: any) => any;
+    transformResponse?: (data: BackendResponse) => unknown;
   }
 ): Promise<NextResponse> {
   return proxyToBackend(request, endpoint, {
