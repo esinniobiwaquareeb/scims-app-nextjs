@@ -251,8 +251,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const userData = response.user;
         setUser(userData);
         
-        // Store user data
-        authAPI.storeUser(userData);
+        // Store user data and JWT token if available
+        const token = response.access_token || (response as any).token;
+        authAPI.storeUser(userData, token);
         
         // Load business and store data based on user role
         if (userData.role === 'superadmin') {

@@ -7,7 +7,6 @@
 function getEnvVar(name: string, _required = true): string {
   const value = process.env[name];
   // Don't throw during module evaluation/build time
-  // Validation will happen when the Supabase client is actually created (at runtime)
   // This allows the build to complete even if .env is not present
   return value || '';
 }
@@ -18,10 +17,9 @@ function getOptionalEnvVar(name: string, defaultValue: string = ''): string {
 
 // Direct property access (Edge Runtime compatible)
 export const env = {
-  // Supabase (required)
-  get SUPABASE_URL() { return getEnvVar('SUPABASE_URL'); },
-  get SUPABASE_SERVICE_ROLE_KEY() { return getEnvVar('SUPABASE_SERVICE_ROLE_KEY'); },
-  get SUPABASE_ANON_KEY() { return getEnvVar('SUPABASE_ANON_KEY'); },
+  // Backend API
+  get BACKEND_URL() { return getOptionalEnvVar('BACKEND_URL', 'http://localhost:3001'); },
+  get NEXT_PUBLIC_BACKEND_URL() { return getOptionalEnvVar('NEXT_PUBLIC_BACKEND_URL', 'http://localhost:3001'); },
   
   // App
   get NODE_ENV() { return getOptionalEnvVar('NODE_ENV', 'development'); },

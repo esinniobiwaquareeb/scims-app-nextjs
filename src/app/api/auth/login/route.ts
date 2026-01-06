@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase/config';
-import bcrypt from 'bcryptjs';
+import { env } from '@/lib/env';
 
 // Force dynamic rendering for API routes
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+const getBackendUrl = (): string => {
+  return process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,114 +20,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine if input is email or username
-    const identifier = username.trim().toLowerCase();
-    const isEmail = identifier.includes('@');
-
-    // Find the user record by username or email
-    let query = supabase
-      .from('user')
-      .select('*')
-      .eq('is_active', true);
-
-    if (isEmail) {
-      query = query.eq('email', identifier);
-    } else {
-      query = query.eq('username', identifier);
-    }
-
-    const { data: user, error: userError } = await query.single();
-
-    if (userError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid credentials or user account not found' },
-        { status: 401 }
-      );
-    }
-
-    // Check if demo mode is enabled for demo users
-    if (user.is_demo) {
-      const { data: platformSettings } = await supabase
-        .from('platform_setting')
-        .select('demo_mode')
-        .single();
-
-      const isDemoModeEnabled = platformSettings?.demo_mode === true;
-
-      if (!isDemoModeEnabled) {
-        return NextResponse.json(
-          { success: false, error: 'Demo mode is currently disabled. Please contact support.' },
-          { status: 403 }
-        );
-      }
-    }
-
-    // Check if email is verified (only for non-demo users)
-    if (!user.is_demo && !user.email_verified) {
-      return NextResponse.json(
-        { success: false, error: 'Please verify your email address before logging in. Check your email for a verification link.' },
-        { status: 401 }
-      );
-    }
-
-    // Verify password using bcrypt
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid credentials' },
-        { status: 401 }
-      );
-    }
-
-    // Get user business roles
-    const { data: userRoles, error: rolesError } = await supabase
-      .from('user_business_role')
-      .select(`
-        business_id,
-        store_id,
-        business(id, name, subscription_plan_id, subscription_status),
-        store(id, name, address)
-      `)
-      .eq('user_id', user.id);
-
-    if (rolesError) {
-      console.warn('Failed to load user roles:', rolesError);
-    }
-
-    // Log activity
-    await supabase
-      .from('activity_log')
-      .insert({
-        user_id: user.id,
-        business_id: userRoles?.[0]?.business_id || null,
-        store_id: userRoles?.[0]?.store_id || null,
-        activity_type: 'login',
-        category: 'Authentication',
-        description: `User logged in: ${user.username}${user.email ? ` (${user.email})` : ''}`,
-        metadata: {
-          username: user.username,
-          role: user.role
-        }
-      });
-
-    // Prepare user response
-    const userResponse = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      businessId: userRoles?.[0]?.business_id || null,
-      storeId: userRoles?.[0]?.store_id || null,
-      isActive: user.is_active,
-      isDemo: user.is_demo,
-      createdAt: user.created_at
-    };
-
-    return NextResponse.json({
-      success: true,
-      user: userResponse
+    // Forward request to backend API
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password }),
     });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { success: false, error: data.error || data.message || 'Login failed' },
+        { status: response.status }
+      );
+    }
+
+    // Backend returns: { success: true, access_token, user }
+    // Transform to match frontend expectations
+    if (data.success && data.access_token && data.user) {
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: data.user.id,
+          username: data.user.username,
+          email: data.user.email,
+          name: data.user.name,
+          role: data.user.role,
+          isActive: data.user.is_active,
+          isDemo: data.user.is_demo,
+          createdAt: data.user.created_at || data.user.last_login,
+        },
+        access_token: data.access_token,
+      });
+    }
+
+    return NextResponse.json(data, { status: response.status });
 
   } catch (error: unknown) {
     console.error('Login API error:', error);

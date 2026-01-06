@@ -77,16 +77,24 @@ export const authAPI = {
     return null;
   },
 
-  // Store user data
-  storeUser(user: User): void {
+  // Store user data and token
+  storeUser(user: User, token?: string): void {
     if (typeof window !== 'undefined') {
       localStorage.setItem('scims_user', JSON.stringify(user));
-      localStorage.setItem('scims_auth_token', user.id);
-      
-      // Also set a cookie for server-side middleware
-      const expires = new Date();
-      expires.setDate(expires.getDate() + 7); // 7 days
-      document.cookie = `scims_auth_token=${user.id}; expires=${expires.toUTCString()}; path=/; SameSite=Strict`;
+      if (token) {
+        localStorage.setItem('scims_auth_token', token);
+        
+        // Also set a cookie for server-side middleware
+        const expires = new Date();
+        expires.setDate(expires.getDate() + 7); // 7 days
+        document.cookie = `scims_auth_token=${token}; expires=${expires.toUTCString()}; path=/; SameSite=Strict`;
+      } else {
+        // Fallback to user.id for backward compatibility
+        localStorage.setItem('scims_auth_token', user.id);
+        const expires = new Date();
+        expires.setDate(expires.getDate() + 7);
+        document.cookie = `scims_auth_token=${user.id}; expires=${expires.toUTCString()}; path=/; SameSite=Strict`;
+      }
     }
   },
 

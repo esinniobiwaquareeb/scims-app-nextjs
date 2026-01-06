@@ -1,4 +1,6 @@
-import { supabase } from '@/lib/supabase/config';
+const getBackendUrl = (): string => {
+  return process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+};
 
 export interface PlatformMapping {
   id: string;
@@ -23,42 +25,29 @@ export async function getBusinessIdFromPlatform(
   platformPhoneNumber?: string
 ): Promise<string | null> {
   try {
-    let result;
-
-    // For WhatsApp, also check phone number
-    if (platform === 'whatsapp' && platformPhoneNumber) {
-      const { data, error } = await supabase
-        .from('ai_agent_platform_mapping')
-        .select('business_id')
-        .eq('platform', platform)
-        .or(`platform_account_id.eq.${platformAccountId},platform_phone_number.eq.${platformPhoneNumber}`)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (error || !data) {
-        console.error('Error finding business from platform mapping:', error);
-        return null;
-      }
-
-      result = data;
-    } else {
-      const { data, error } = await supabase
-        .from('ai_agent_platform_mapping')
-        .select('business_id')
-        .eq('platform', platform)
-        .eq('platform_account_id', platformAccountId)
-        .eq('is_active', true)
-        .single();
-
-      if (error || !data) {
-        console.error('Error finding business from platform mapping:', error);
-        return null;
-      }
-
-      result = data;
+    const backendUrl = getBackendUrl();
+    const params = new URLSearchParams({
+      platform,
+      platform_account_id: platformAccountId,
+    });
+    if (platformPhoneNumber) {
+      params.append('platform_phone_number', platformPhoneNumber);
     }
 
-    return result?.business_id || null;
+    const response = await fetch(`${backendUrl}/api/ai-agent/platform-mapping?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.error('Error finding business from platform mapping');
+      return null;
+    }
+
+    const data = await response.json();
+    return data.data?.business_id || data.business_id || null;
   } catch (error) {
     console.error('Error in getBusinessIdFromPlatform:', error);
     return null;
@@ -81,52 +70,26 @@ export async function upsertPlatformMapping(
   }
 ): Promise<PlatformMapping | null> {
   try {
-    // Check if mapping already exists
-    const { data: existing } = await supabase
-      .from('ai_agent_platform_mapping')
-      .select('*')
-      .eq('business_id', businessId)
-      .eq('platform', platform)
-      .single();
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/ai-agent/platform-mapping`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        business_id: businessId,
+        platform,
+        platform_account_id: platformAccountId,
+        ...options,
+      }),
+    });
 
-    const mappingData = {
-      business_id: businessId,
-      platform,
-      platform_account_id: platformAccountId,
-      platform_phone_number: options.platform_phone_number || null,
-      platform_username: options.platform_username || null,
-      platform_app_id: options.platform_app_id || null,
-      platform_secret: options.platform_secret || null,
-      metadata: options.metadata || {},
-      is_active: true,
-      updated_at: new Date().toISOString(),
-    };
-
-    let result;
-    if (existing) {
-      // Update existing mapping
-      const { data, error } = await supabase
-        .from('ai_agent_platform_mapping')
-        .update(mappingData)
-        .eq('id', existing.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      result = data;
-    } else {
-      // Create new mapping
-      const { data, error } = await supabase
-        .from('ai_agent_platform_mapping')
-        .insert(mappingData)
-        .select()
-        .single();
-
-      if (error) throw error;
-      result = data;
+    if (!response.ok) {
+      throw new Error('Failed to upsert platform mapping');
     }
 
-    return result as PlatformMapping;
+    const data = await response.json();
+    return data.data || data;
   } catch (error) {
     console.error('Error in upsertPlatformMapping:', error);
     return null;
@@ -140,19 +103,21 @@ export async function getBusinessPlatformMappings(
   businessId: string
 ): Promise<PlatformMapping[]> {
   try {
-    const { data, error } = await supabase
-      .from('ai_agent_platform_mapping')
-      .select('*')
-      .eq('business_id', businessId)
-      .eq('is_active', true)
-      .order('platform', { ascending: true });
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/ai-agent/platform-mapping?business_id=${businessId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (error) {
-      console.error('Error fetching platform mappings:', error);
+    if (!response.ok) {
+      console.error('Error fetching platform mappings');
       return [];
     }
 
-    return (data || []) as PlatformMapping[];
+    const data = await response.json();
+    return (data.data || data.mappings || []) as PlatformMapping[];
   } catch (error) {
     console.error('Error in getBusinessPlatformMappings:', error);
     return [];
@@ -164,20 +129,17 @@ export async function getBusinessPlatformMappings(
  */
 export async function deletePlatformMapping(mappingId: string): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('ai_agent_platform_mapping')
-      .delete()
-      .eq('id', mappingId);
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/ai-agent/platform-mapping/${mappingId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (error) {
-      console.error('Error deleting platform mapping:', error);
-      return false;
-    }
-
-    return true;
+    return response.ok;
   } catch (error) {
     console.error('Error in deletePlatformMapping:', error);
     return false;
   }
 }
-

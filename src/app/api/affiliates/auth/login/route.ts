@@ -1,87 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase/config';
-import bcrypt from 'bcryptjs';
+import { NextRequest } from 'next/server';
+import { proxyPost } from '@/utils/backend-proxy';
 
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-
-// POST - Affiliate login
 export async function POST(request: NextRequest) {
-  try {
-    const { email, password } = await request.json();
-
-    if (!email || !password) {
-      return NextResponse.json(
-        { success: false, error: 'Email and password are required' },
-        { status: 400 }
-      );
-    }
-
-    // Find affiliate by email
-    const { data: affiliate, error: affiliateError } = await supabase
-      .from('affiliate')
-      .select('*')
-      .eq('email', email.toLowerCase())
-      .single();
-
-    if (affiliateError || !affiliate) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid credentials' },
-        { status: 401 }
-      );
-    }
-
-    // Check if affiliate is approved and active first
-    if (affiliate.application_status !== 'approved' || affiliate.status !== 'active') {
-      if (affiliate.application_status === 'pending') {
-        return NextResponse.json(
-          { success: false, error: 'Account not activated. Please wait for approval.' },
-          { status: 403 }
-        );
+  const body = await request.json();
+  return proxyPost(request, '/affiliates/auth/login', body, {
+    transformResponse: (data) => {
+      if (data.success && data.data) {
+        return {
+          success: true,
+          affiliate: data.data,
+        };
       }
-      return NextResponse.json(
-        { success: false, error: 'Your affiliate account is not active. Please contact support.' },
-        { status: 403 }
-      );
-    }
-
-    // Check if affiliate has password set
-    if (!affiliate.password_hash) {
-      return NextResponse.json(
-        { success: false, error: 'No password set for your account. Please contact support to set up your password.' },
-        { status: 401 }
-      );
-    }
-
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, affiliate.password_hash);
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid credentials' },
-        { status: 401 }
-      );
-    }
-
-    // Update last login
-    await supabase
-      .from('affiliate')
-      .update({ last_login: new Date().toISOString() })
-      .eq('id', affiliate.id);
-
-    // Return affiliate data (without password hash)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password_hash, ...affiliateData } = affiliate;
-
-    return NextResponse.json({
-      success: true,
-      affiliate: affiliateData
-    });
-  } catch (error) {
-    console.error('Error in affiliate login:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+      return data;
+    },
+  });
 }
-

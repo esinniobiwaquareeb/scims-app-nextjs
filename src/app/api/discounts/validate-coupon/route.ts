@@ -1,46 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase/config';
+import { NextRequest } from 'next/server';
+import { proxyPost } from '@/utils/backend-proxy';
 
 export async function POST(request: NextRequest) {
-  try {
-    const { 
-      coupon_code, 
-      business_id, 
-      store_id, 
-      customer_id, 
-      subtotal 
-    } = await request.json();
-
-    if (!coupon_code || !business_id || subtotal === undefined) {
-      return NextResponse.json(
-        { error: 'Missing required parameters' },
-        { status: 400 }
-      );
-    }
-
-    // Use the database function to validate coupon
-    const { data, error } = await supabase.rpc('validate_coupon_usage', {
-      coupon_code,
-      business_id_param: business_id,
-      store_id_param: store_id || null,
-      customer_id_param: customer_id || null,
-      subtotal
-    });
-
-    if (error) {
-      console.error('Error validating coupon:', error);
-      return NextResponse.json(
-        { error: 'Failed to validate coupon' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ result: data });
-  } catch (error) {
-    console.error('Error in POST /api/discounts/validate-coupon:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+  const body = await request.json();
+  return proxyPost(request, '/discounts/validate-coupon', body, {
+    transformResponse: (data) => {
+      if (data.success && data.data) {
+        return {
+          success: true,
+          result: data.data,
+        };
+      }
+      return data;
+    },
+  });
 }

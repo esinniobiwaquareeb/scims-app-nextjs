@@ -1,126 +1,38 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase/config';
+import { NextRequest } from 'next/server';
+import { proxyGet, proxyPost } from '@/utils/backend-proxy';
 
-// Force dynamic rendering for API routes
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-
-// GET - Fetch user roles
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('user_id');
-    const roleId = searchParams.get('role_id');
-    const limit = parseInt(searchParams.get('limit') || '100');
-    const offset = parseInt(searchParams.get('offset') || '0');
-
-    let query = supabase
-      .from('user_role')
-      .select(`
-        *,
-        user(
-          id,
-          name,
-          email,
-          username
-        ),
-        role(
-          id,
-          name,
-          description,
-          permissions
-        )
-      `)
-      .order('created_at', { ascending: false });
-
-    // Apply filters
-    if (userId) {
-      query = query.eq('user_id', userId);
-    }
-    if (roleId) {
-      query = query.eq('role_id', roleId);
-    }
-
-    // Apply pagination
-    query = query.range(offset, offset + limit - 1);
-
-    const { data: userRoles, error } = await query;
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch user roles' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      userRoles: userRoles || [],
-      pagination: {
-        limit,
-        offset,
-        total: userRoles?.length || 0
+  return proxyGet(request, '/roles/user-roles', {
+    transformResponse: (data) => {
+      if (data.success && data.data) {
+        return {
+          success: true,
+          userRoles: Array.isArray(data.data) ? data.data : [],
+          pagination: {
+            limit: 100,
+            offset: 0,
+            total: Array.isArray(data.data) ? data.data.length : 0,
+          },
+        };
       }
-    });
-
-  } catch (error) {
-    console.error('User roles API error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+      return data;
+    },
+  });
 }
 
-// POST - Create new user role
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-
-    // Validate required fields
-    if (!body.user_id || !body.role_id) {
-      return NextResponse.json(
-        { success: false, error: 'user_id and role_id are required' },
-        { status: 400 }
-      );
-    }
-
-    const userRoleData = {
-      user_id: body.user_id,
-      role_id: body.role_id,
-      is_active: body.is_active !== undefined ? body.is_active : true,
-      assigned_by: body.assigned_by || null,
-      notes: body.notes || null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    const { data: userRole, error } = await supabase
-      .from('user_role')
-      .insert(userRoleData)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json(
-        { success: false, error: 'Failed to create user role' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      userRole,
-      message: 'User role created successfully'
-    });
-
-  } catch (error) {
-    console.error('Error in POST /api/user-roles:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+  const body = await request.json();
+  // Use the assign endpoint
+  return proxyPost(request, '/roles/assign', body, {
+    transformResponse: (data) => {
+      if (data.success && data.data) {
+        return {
+          success: true,
+          userRole: data.data,
+          message: data.message || 'User role created successfully',
+        };
+      }
+      return data;
+    },
+  });
 }

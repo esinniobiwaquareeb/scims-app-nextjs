@@ -1,87 +1,31 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase/config';
+import { NextRequest } from 'next/server';
+import { proxyGet, proxyPost } from '@/utils/backend-proxy';
 
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const storeId = searchParams.get('store_id');
-    
-    if (!storeId) {
-      return NextResponse.json(
-        { success: false, error: 'store_id is required' },
-        { status: 400 }
-      );
-    }
-
-    // Fetch customers for the specific store
-    const { data: customers, error } = await supabase
-      .from('customer')
-      .select('*')
-      .eq('store_id', storeId)
-      .order('name');
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch customers' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      customers: customers || []
-    });
-
-  } catch (error) {
-    console.error('Customers API error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+  return proxyGet(request, '/customers', {
+    transformResponse: (data) => {
+      if (data.success && data.data) {
+        return {
+          success: true,
+          customers: Array.isArray(data.data) ? data.data : [],
+        };
+      }
+      return data;
+    },
+  });
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const customerData = await request.json();
-    
-    // Validate required fields
-    if (!customerData.name || !customerData.store_id) {
-      return NextResponse.json(
-        { success: false, error: 'name and store_id are required' },
-        { status: 400 }
-      );
-    }
-
-    // Create new customer
-    const { data: customer, error } = await supabase
-      .from('customer')
-      .insert({
-        ...customerData,
-        created_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json(
-        { success: false, error: 'Failed to create customer' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      customer
-    });
-
-  } catch (error) {
-    console.error('Customers API error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+  const body = await request.json();
+  return proxyPost(request, '/customers', body, {
+    transformResponse: (data) => {
+      if (data.success && data.data) {
+        return {
+          success: true,
+          customer: data.data,
+        };
+      }
+      return data;
+    },
+  });
 }

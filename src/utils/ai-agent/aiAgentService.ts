@@ -1,4 +1,6 @@
-import { supabase } from '@/lib/supabase/config';
+const getBackendUrl = (): string => {
+  return process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+};
 
 export interface AIAgentConfig {
   businessId: string;
@@ -38,16 +40,21 @@ export interface BusinessInfo {
  */
 export async function getAIAgentConfig(businessId: string): Promise<AIAgentConfig | null> {
   try {
-    const { data: settings, error } = await supabase
-      .from('business_setting')
-      .select('*')
-      .eq('business_id', businessId)
-      .single();
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/businesses/${businessId}/settings`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (error || !settings) {
-      console.error('Error fetching AI agent config:', error);
+    if (!response.ok) {
+      console.error('Error fetching AI agent config');
       return null;
     }
+
+    const data = await response.json();
+    const settings = data.data || data;
 
     if (!settings.enable_ai_agent || !settings.ai_agent_api_key) {
       return null;
@@ -73,51 +80,31 @@ export async function getAIAgentConfig(businessId: string): Promise<AIAgentConfi
  */
 export async function getBusinessProducts(businessId: string): Promise<ProductInfo[]> {
   try {
-    // Get all stores for the business
-    const { data: stores, error: storesError } = await supabase
-      .from('store')
-      .select('id')
-      .eq('business_id', businessId)
-      .eq('is_active', true);
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/products?business_id=${businessId}&limit=1000`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (storesError || !stores || stores.length === 0) {
+    if (!response.ok) {
+      console.error('Error fetching products');
       return [];
     }
 
-    const storeIds = stores.map(store => store.id);
+    const data = await response.json();
+    const products = data.data || data.products || [];
 
-    // Fetch products
-    const { data: products, error } = await supabase
-      .from('product')
-      .select(`
-        id,
-        name,
-        description,
-        price,
-        stock_quantity,
-        sku,
-        image_url,
-        category:category_id(name),
-        brand:brand_id(name)
-      `)
-      .in('store_id', storeIds)
-      .eq('is_active', true)
-      .order('name');
-
-    if (error) {
-      console.error('Error fetching products:', error);
-      return [];
-    }
-
-    return (products || []).map(product => ({
+    return products.map((product: any) => ({
       id: product.id,
       name: product.name,
       description: product.description || undefined,
       price: Number(product.price) || 0,
       stock_quantity: Number(product.stock_quantity) || 0,
       sku: product.sku || undefined,
-      category: (product.category as { name?: string } | null)?.name || undefined,
-      brand: (product.brand as { name?: string } | null)?.name || undefined,
+      category: product.category?.name || undefined,
+      brand: product.brand?.name || undefined,
       image_url: product.image_url || undefined,
     }));
   } catch (error) {
@@ -131,16 +118,21 @@ export async function getBusinessProducts(businessId: string): Promise<ProductIn
  */
 export async function getBusinessInfo(businessId: string): Promise<BusinessInfo | null> {
   try {
-    const { data: business, error } = await supabase
-      .from('business')
-      .select('*')
-      .eq('id', businessId)
-      .single();
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/businesses/${businessId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (error || !business) {
-      console.error('Error fetching business info:', error);
+    if (!response.ok) {
+      console.error('Error fetching business info');
       return null;
     }
+
+    const data = await response.json();
+    const business = data.data || data;
 
     return {
       name: business.name,
@@ -295,45 +287,28 @@ export async function getOrCreateConversation(
   }
 ) {
   try {
-    // Try to find existing conversation
-    const { data: existing, error: findError } = await supabase
-      .from('ai_agent_conversation')
-      .select('*')
-      .eq('business_id', businessId)
-      .eq('platform', platform)
-      .eq('conversation_id', conversationId)
-      .single();
-
-    if (existing && !findError) {
-      // Update last message time
-      await supabase
-        .from('ai_agent_conversation')
-        .update({ last_message_at: new Date().toISOString() })
-        .eq('id', existing.id);
-      return existing;
-    }
-
-    // Create new conversation
-    const { data: newConversation, error: createError } = await supabase
-      .from('ai_agent_conversation')
-      .insert({
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/ai-agent/conversations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         business_id: businessId,
         platform,
         conversation_id: conversationId,
         customer_phone: customerInfo.phone,
         customer_username: customerInfo.username,
         customer_name: customerInfo.name,
-        status: 'active',
-      })
-      .select()
-      .single();
+      }),
+    });
 
-    if (createError) {
-      console.error('Error creating conversation:', createError);
-      throw createError;
+    if (!response.ok) {
+      throw new Error('Failed to get or create conversation');
     }
 
-    return newConversation;
+    const data = await response.json();
+    return data.data || data;
   } catch (error) {
     console.error('Error in getOrCreateConversation:', error);
     throw error;
@@ -351,24 +326,26 @@ export async function saveMessage(
   metadata?: Record<string, unknown>
 ) {
   try {
-    const { data, error } = await supabase
-      .from('ai_agent_message')
-      .insert({
-        conversation_id: conversationId,
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/ai-agent/conversations/${conversationId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         role,
         content,
         message_type: messageType,
-        metadata: (metadata || {}) as Record<string, unknown>,
-      })
-      .select()
-      .single();
+        metadata: metadata || {},
+      }),
+    });
 
-    if (error) {
-      console.error('Error saving message:', error);
-      throw error;
+    if (!response.ok) {
+      throw new Error('Failed to save message');
     }
 
-    return data;
+    const data = await response.json();
+    return data.data || data;
   } catch (error) {
     console.error('Error in saveMessage:', error);
     throw error;
@@ -380,22 +357,24 @@ export async function saveMessage(
  */
 export async function getConversationMessages(conversationId: string, limit: number = 20) {
   try {
-    const { data, error } = await supabase
-      .from('ai_agent_message')
-      .select('*')
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: false })
-      .limit(limit);
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/ai-agent/conversations/${conversationId}/messages?limit=${limit}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (error) {
-      console.error('Error fetching messages:', error);
+    if (!response.ok) {
+      console.error('Error fetching messages');
       return [];
     }
 
-    return (data || []).reverse(); // Reverse to get chronological order
+    const data = await response.json();
+    const messages = data.data || data.messages || [];
+    return messages.reverse(); // Reverse to get chronological order
   } catch (error) {
     console.error('Error in getConversationMessages:', error);
     return [];
   }
 }
-

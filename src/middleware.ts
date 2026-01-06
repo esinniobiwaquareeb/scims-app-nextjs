@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { supabase, supabaseAnon } from '@/lib/supabase/config';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -195,30 +194,48 @@ export async function middleware(request: NextRequest) {
     const isApiRoute = pathname.startsWith('/api/');
     const isStatusPage = pathname.startsWith(statusPath);
 
-    // Fetch platform settings directly from Supabase
-    const { data: platformSettings } = await supabase
-      .from('platform_setting')
-      .select('maintenance_mode, enable_platform_access')
-      .single();
+    // Fetch platform settings from backend API
+    const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+    let platformSettings: { maintenance_mode?: boolean; enable_platform_access?: boolean } | null = null;
+    let isSuperAdmin = false;
+
+    try {
+      const settingsResponse = await fetch(`${backendUrl}/api/platform/settings`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+      });
+
+      if (settingsResponse.ok) {
+        const settingsData = await settingsResponse.json();
+        platformSettings = settingsData.data || settingsData;
+      }
+    } catch {
+      // If backend is unavailable, allow access (fail open)
+      platformSettings = null;
+    }
 
     const maintenance = platformSettings?.maintenance_mode === true;
     const platformAccessEnabled = platformSettings?.enable_platform_access !== false; // Default to true if not set
 
-    // Check if user is superadmin
-    // Use anon client to validate user token (respects RLS)
-    let isSuperAdmin = false;
+    // Check if user is superadmin by validating token with backend
     if (token) {
       try {
-        // Validate token with anon client (doesn't bypass RLS)
-        const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
-        if (user && !authError) {
-          // Check user role using service client (needed for role lookup)
-          const { data: userPermissions } = await supabase
-            .from('user_role_view')
-            .select('role_name')
-            .eq('user_id', user.id)
-            .single();
-          isSuperAdmin = userPermissions?.role_name === 'superadmin';
+        const userResponse = await fetch(`${backendUrl}/api/auth/profile`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          cache: 'no-store',
+        });
+
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          const user = userData.data || userData;
+          isSuperAdmin = user.role === 'superadmin';
         }
       } catch {
         // Token invalid or expired - user will be redirected to login

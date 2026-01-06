@@ -9,7 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.56.1",
     "@tanstack/react-query": "^5.85.6",
     "@types/nodemailer": "^6.4.14",
     "@upstash/ratelimit": "^2.0.7",
