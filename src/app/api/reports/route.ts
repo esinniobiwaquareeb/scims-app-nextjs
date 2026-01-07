@@ -21,6 +21,14 @@ export async function GET(request: NextRequest) {
   } else if (type === 'inventory') {
     endpoint = '/reports/inventory';
     if (storeId) params.store_id = storeId;
+  } else if (type === 'products') {
+    endpoint = '/reports/products';
+    if (storeId) params.store_id = storeId;
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+  } else if (type === 'customers') {
+    endpoint = '/reports/customers';
+    if (storeId) params.store_id = storeId;
   } else if (type === 'stores' || type === 'business' || type === 'store-comparison') {
     // For business/store reports, return sales report filtered by business
     endpoint = '/reports/sales';
@@ -29,16 +37,13 @@ export async function GET(request: NextRequest) {
     if (endDate) params.end_date = endDate;
   } else if (type === 'discount-effectiveness' || type === 'profit-loss' || type === 'cash-flow' || 
              type === 'staff-performance' || type === 'period-comparison' || type === 'peak-hours' || 
-             type === 'returns' || type === 'customer-lifetime-value' || type === 'products' || 
-             type === 'customers') {
+             type === 'returns' || type === 'customer-lifetime-value') {
     // These report types are not yet implemented in backend
     // Return empty data structure to prevent errors
     return NextResponse.json({
       success: true,
       summary: {},
       coupons: [],
-      products: [],
-      customers: [],
       revenue: {},
       cogs: {},
       cashIn: { total: 0, breakdown: [] },
@@ -70,6 +75,9 @@ export async function GET(request: NextRequest) {
             success: true,
             sales: Array.isArray(backendData.sales) ? backendData.sales : [],
             summary: backendData.summary || {},
+            revenueData: Array.isArray(backendData.revenueData) ? backendData.revenueData : [],
+            categoryData: Array.isArray(backendData.categoryData) ? backendData.categoryData : [],
+            paymentData: Array.isArray(backendData.paymentData) ? backendData.paymentData : [],
           };
         }
         
@@ -87,6 +95,22 @@ export async function GET(request: NextRequest) {
           return {
             success: true,
             summary: backendData.summary || {},
+          };
+        }
+        
+        // For products report
+        if (type === 'products') {
+          return {
+            success: true,
+            products: Array.isArray(backendData.products) ? backendData.products : [],
+          };
+        }
+        
+        // For customers report
+        if (type === 'customers') {
+          return {
+            success: true,
+            customers: Array.isArray(backendData.customers) ? backendData.customers : [],
           };
         }
         

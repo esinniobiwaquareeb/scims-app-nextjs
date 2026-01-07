@@ -2226,12 +2226,12 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                           <CardContent className="p-4">
                             <p className="text-sm text-muted-foreground mb-1">Discount Rate</p>
                             <p className="text-2xl font-bold">
-                              {discountEffectivenessData.summary.discountRate != null 
-                                ? discountEffectivenessData.summary.discountRate.toFixed(1) 
+                              {discountEffectivenessData.summary?.discountRate != null 
+                                ? discountEffectivenessData.summary?.discountRate.toFixed(1) 
                                 : '0.0'}%
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              {discountEffectivenessData.summary.salesWithDiscount || 0} of {discountEffectivenessData.summary.totalSales || 0} sales
+                              {discountEffectivenessData.summary?.salesWithDiscount || 0} of {discountEffectivenessData.summary?.totalSales || 0} sales
                             </p>
                           </CardContent>
                         </Card>
@@ -2239,7 +2239,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                           <CardContent className="p-4">
                             <p className="text-sm text-muted-foreground mb-1">Total Discounts</p>
                             <p className="text-2xl font-bold text-orange-600">
-                              -{formatCurrency(discountEffectivenessData.summary.totalDiscountAmount || 0)}
+                              -{formatCurrency(discountEffectivenessData.summary?.totalDiscountAmount || 0)}
                             </p>
                           </CardContent>
                         </Card>
@@ -2247,7 +2247,7 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                           <CardContent className="p-4">
                             <p className="text-sm text-muted-foreground mb-1">Avg Discount/Sale</p>
                             <p className="text-2xl font-bold">
-                              {formatCurrency(discountEffectivenessData.summary.avgDiscountPerSale || 0)}
+                              {formatCurrency(discountEffectivenessData.summary?.avgDiscountPerSale || 0)}
                             </p>
                           </CardContent>
                         </Card>
