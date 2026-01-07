@@ -1,9 +1,16 @@
 import { NextRequest } from 'next/server';
-import { proxyGet } from '@/utils/backend-proxy';
+import { proxyGet, BackendResponse } from '@/utils/backend-proxy';
 
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const businessId = searchParams.get('business_id');
+
+  const params: Record<string, string> = {};
+  if (businessId) params.business_id = businessId;
+
   return proxyGet(request, '/roles/permissions', {
-    transformResponse: (data) => {
+    params,
+    transformResponse: (data: BackendResponse) => {
       if (data.success && data.data) {
         return {
           success: true,

@@ -21,9 +21,8 @@ export async function GET(request: NextRequest) {
   } else if (type === 'inventory') {
     endpoint = '/reports/inventory';
     if (storeId) params.store_id = storeId;
-  } else if (type === 'stores' || type === 'business') {
-    // For business/store reports, we might need to create a new endpoint
-    // For now, return sales report filtered by business
+  } else if (type === 'stores' || type === 'business' || type === 'store-comparison') {
+    // For business/store reports, return sales report filtered by business
     endpoint = '/reports/sales';
     if (storeId) params.store_id = storeId;
     if (startDate) params.start_date = startDate;

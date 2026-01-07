@@ -52,7 +52,7 @@ interface ActivityLog {
 
 export const ActivityLogs: React.FC<ActivityLogsProps> = () => {
   const { user, currentBusiness, currentStore } = useAuth();
-  const { formatDate } = useSystem();
+  const { formatDate, formatTime } = useSystem();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedModule, setSelectedModule] = useState('All');
@@ -104,10 +104,19 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = () => {
     );
   }, [logs, searchTerm]);
 
-  // Get unique values for filters
-  const uniqueModules = useMemo(() => ['All', ...Array.from(new Set(logs.map((log: ActivityLog) => log.module)))], [logs]);
-  const uniqueActions = useMemo(() => ['All', ...Array.from(new Set(logs.map((log: ActivityLog) => log.action)))], [logs]);
-  const uniqueUsers = useMemo(() => ['All', ...Array.from(new Set(logs.map((log: ActivityLog) => log.userName)))], [logs]);
+  // Get unique values for filters - filter out undefined/null values
+  const uniqueModules = useMemo(() => {
+    const modules = Array.from(new Set(logs.map((log: ActivityLog) => log.module).filter((module: string | undefined): module is string => module != null && module !== '')));
+    return ['All', ...modules];
+  }, [logs]);
+  const uniqueActions = useMemo(() => {
+    const actions = Array.from(new Set(logs.map((log: ActivityLog) => log.action).filter((action: string | undefined): action is string => action != null && action !== '')));
+    return ['All', ...actions];
+  }, [logs]);
+  const uniqueUsers = useMemo(() => {
+    const users = Array.from(new Set(logs.map((log: ActivityLog) => log.userName).filter((userName: string | undefined): userName is string => userName != null && userName !== '')));
+    return ['All', ...users];
+  }, [logs]);
 
   // Refresh data
   React.useEffect(() => {
@@ -186,14 +195,17 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = () => {
     {
       key: 'timestamp',
       label: 'Time',
-      render: (log: ActivityLog) => (
-        <div className="text-sm">
-          <p className="font-medium">{formatDate(log.timestamp)}</p>
-          <p className="text-muted-foreground">
-            {formatTimestamp(log.timestamp).toLocaleTimeString()}
-          </p>
-        </div>
-      )
+      render: (log: ActivityLog) => {
+        const timestamp = formatTimestamp(log.timestamp);
+        return (
+          <div className="text-sm">
+            <p className="font-medium">{formatDate(timestamp)}</p>
+            <p className="text-muted-foreground">
+              {formatTime(timestamp)}
+            </p>
+          </div>
+        );
+      }
     },
     {
       key: 'user',
@@ -204,7 +216,7 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = () => {
           <div>
             <p className="font-medium">{log.userName}</p>
             <Badge variant="outline" className="text-xs">
-              {log.userRole.replace('_', ' ')}
+              {log.userRole && typeof log.userRole === 'string' ? log.userRole.replace('_', ' ') : 'Unknown'}
             </Badge>
           </div>
         </div>
@@ -215,8 +227,8 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = () => {
       label: 'Action',
       render: (log: ActivityLog) => (
         <div>
-          <p className="font-medium capitalize">{log.action.replace(/_/g, ' ')}</p>
-          <p className="text-sm text-muted-foreground">{log.module}</p>
+          <p className="font-medium capitalize">{log.action && typeof log.action === 'string' ? log.action.replace(/_/g, ' ') : 'Unknown'}</p>
+          <p className="text-sm text-muted-foreground">{log.module || 'N/A'}</p>
         </div>
       )
     },
@@ -272,8 +284,8 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = () => {
 
   // Analytics data
   const recentActivities = filteredLogs.slice(0, 10);
-  const actionBreakdown = uniqueActions.slice(1).map((action: unknown) => ({
-    action: action as string,
+  const actionBreakdown = uniqueActions.slice(1).filter((action): action is string => action != null && action !== '' && typeof action === 'string').map((action: string) => ({
+    action: action,
     count: filteredLogs.filter((l: ActivityLog) => l.action === (action as string)).length
   })).sort((a: { count: number }, b: { count: number }) => b.count - a.count);
 
@@ -321,9 +333,9 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = () => {
         {/* Last Refresh Info */}
         <div className="mb-4 text-sm text-muted-foreground flex items-center gap-2">
           <Calendar className="w-4 h-4" />
-          Last refreshed: {lastRefresh.toLocaleString()}
+          Last refreshed: {formatDate(lastRefresh)}
           <span className="mx-2">•</span>
-          <span>Role: {user?.role?.replace('_', ' ')}</span>
+          <span>Role: {user?.role && typeof user.role === 'string' ? user.role.replace('_', ' ') : 'Unknown'}</span>
           {user?.role === 'superadmin' && (
             <>
               <span className="mx-2">•</span>
@@ -490,7 +502,7 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = () => {
                       <SelectContent>
                         {uniqueActions.map(action => (
                           <SelectItem key={action as string} value={action as string}>
-                            {(action as string).replace(/_/g, ' ')}
+                            {action && typeof action === 'string' ? action.replace(/_/g, ' ') : 'Unknown'}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -627,7 +639,7 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = () => {
                     {actionBreakdown.length > 0 ? (
                       actionBreakdown.slice(0, 10).map((item) => (
                         <div key={item.action} className="flex items-center justify-between">
-                          <span className="text-sm capitalize">{item.action.replace(/_/g, ' ')}</span>
+                          <span className="text-sm capitalize">{item.action && typeof item.action === 'string' ? item.action.replace(/_/g, ' ') : 'Unknown'}</span>
                           <div className="flex items-center gap-2">
                             <div className="w-20 bg-muted rounded-full h-2">
                               <div 
