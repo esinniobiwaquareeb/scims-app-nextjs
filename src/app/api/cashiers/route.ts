@@ -1,13 +1,24 @@
 import { NextRequest } from 'next/server';
-import { proxyGet, proxyPost } from '@/utils/backend-proxy';
+import { proxyGet, proxyPost, BackendResponse } from '@/utils/backend-proxy';
 
 export async function GET(request: NextRequest) {
-  return proxyGet(request, '/users/cashiers', {
-    transformResponse: (data) => {
+  const { searchParams } = new URL(request.url);
+  const businessId = searchParams.get('business_id');
+  const storeId = searchParams.get('store_id');
+
+  const params: Record<string, string> = {};
+  params.role = 'cashier';
+  if (businessId) params.business_id = businessId;
+  if (storeId) params.store_id = storeId;
+
+  return proxyGet(request, '/staff', {
+    params,
+    transformResponse: (data: BackendResponse) => {
       if (data.success && data.data) {
+        const staffData = data.data as { staff?: unknown[] };
         return {
           success: true,
-          cashiers: Array.isArray(data.data) ? data.data : [],
+          cashiers: Array.isArray(staffData.staff) ? staffData.staff : [],
         };
       }
       return data;
