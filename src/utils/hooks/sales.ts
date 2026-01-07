@@ -109,7 +109,8 @@ export const useAggregatedSalesReport = (
       if (!response.ok)
         throw new Error("Failed to fetch aggregated sales report");
       const data = await response.json();
-      return data.success ? data.sales : [];
+      // Ensure we always return an array, never undefined
+      return data.success && Array.isArray(data.sales) ? data.sales : [];
     },
     enabled: enabled && storeIds.length > 0,
     staleTime: 5 * 60 * 1000,
