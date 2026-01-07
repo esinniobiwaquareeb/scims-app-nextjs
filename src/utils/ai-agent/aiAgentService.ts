@@ -102,18 +102,26 @@ export async function getBusinessProducts(businessId: string): Promise<ProductIn
       description?: string;
       price: number | string;
       stock_quantity: number | string;
+      sku?: string;
+      category?: unknown;
+      brand?: unknown;
+      image_url?: string;
       [key: string]: unknown;
-    }) => ({
-      id: product.id,
-      name: product.name,
-      description: product.description || undefined,
-      price: Number(product.price) || 0,
-      stock_quantity: Number(product.stock_quantity) || 0,
-      sku: product.sku || undefined,
-      category: product.category?.name || undefined,
-      brand: product.brand?.name || undefined,
-      image_url: product.image_url || undefined,
-    }));
+    }) => {
+      const category = product.category as { name?: string } | undefined;
+      const brand = product.brand as { name?: string } | undefined;
+      return {
+        id: product.id,
+        name: product.name,
+        description: product.description || undefined,
+        price: Number(product.price) || 0,
+        stock_quantity: Number(product.stock_quantity) || 0,
+        sku: product.sku || undefined,
+        category: category?.name || undefined,
+        brand: brand?.name || undefined,
+        image_url: product.image_url || undefined,
+      };
+    });
   } catch (error) {
     console.error('Error in getBusinessProducts:', error);
     return [];

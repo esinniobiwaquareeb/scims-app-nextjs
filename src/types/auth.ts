@@ -45,6 +45,7 @@ export interface LoginResponse {
   success: boolean;
   user?: User;
   error?: string;
+  access_token?: string;
 }
 
 export interface DemoUsersResponse {

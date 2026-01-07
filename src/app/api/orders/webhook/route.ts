@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { proxyPost } from '@/utils/backend-proxy';
+import { proxyPost, BackendResponse } from '@/utils/backend-proxy';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -12,11 +12,12 @@ export async function POST(request: NextRequest) {
   };
 
   return proxyPost(request, '/public/order/webhook', backendBody, {
-    transformResponse: (data) => {
+    transformResponse: (data: BackendResponse) => {
       if (data.success) {
+        const dataObj = data.data as { orderId?: string } | undefined;
         return {
           success: true,
-          orderId: data.data?.orderId || data.orderId,
+          orderId: dataObj?.orderId || (data.orderId as string | undefined),
           originalOrderId: body.orderId,
           message: data.message || 'Order created and notification sent successfully',
         };
@@ -25,3 +26,4 @@ export async function POST(request: NextRequest) {
     },
   });
 }
+
