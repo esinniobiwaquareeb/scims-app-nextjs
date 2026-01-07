@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { proxyGet, proxyPatch, proxyDelete } from '@/utils/backend-proxy';
+import { proxyGet, proxyPatch, proxyDelete, BackendResponse } from '@/utils/backend-proxy';
 
 export async function GET(
   request: NextRequest,
@@ -7,7 +7,7 @@ export async function GET(
 ) {
   const { id } = await params;
   return proxyGet(request, `/exchanges/${id}`, {
-    transformResponse: (data) => {
+    transformResponse: (data: BackendResponse) => {
       if (data.success && data.data) {
         return {
           success: true,
@@ -26,7 +26,7 @@ export async function PATCH(
   const { id } = await params;
   const body = await request.json();
   return proxyPatch(request, `/exchanges/${id}`, body, {
-    transformResponse: (data) => {
+    transformResponse: (data: BackendResponse) => {
       if (data.success && data.data) {
         return {
           success: true,

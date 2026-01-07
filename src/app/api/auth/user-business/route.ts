@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest } from 'next/server';
-import { proxyGet } from '@/utils/backend-proxy';
+import { proxyGet, BackendResponse } from '@/utils/backend-proxy';
 
 // Force dynamic rendering for API routes
 export const dynamic = 'force-dynamic';
@@ -24,15 +24,16 @@ export async function GET(request: NextRequest) {
   // For now, we'll proxy to a similar endpoint or handle it differently
   // The backend might have a different endpoint structure
   return proxyGet(request, `/users/${userId}/business`, {
-    transformResponse: (data) => {
+    transformResponse: (data: BackendResponse) => {
       if (data.success && data.data) {
         // Transform backend response to match frontend expectations
+        const dataObj = data.data as { business?: unknown; store?: unknown; allStores?: unknown[] };
         return {
           success: true,
           data: {
-            business: data.data.business,
-            store: data.data.store || null,
-            allStores: data.data.allStores || [],
+            business: dataObj.business,
+            store: dataObj.store || null,
+            allStores: dataObj.allStores || [],
           },
         };
       }

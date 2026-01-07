@@ -1,15 +1,16 @@
 import { NextRequest } from 'next/server';
-import { proxyPost } from '@/utils/backend-proxy';
+import { proxyPost, BackendResponse } from '@/utils/backend-proxy';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
   return proxyPost(request, '/affiliates/assign', body, {
-    transformResponse: (data) => {
+    transformResponse: (data: BackendResponse) => {
       if (data.success) {
+        const dataObj = data.data as { referral_id?: string } | undefined;
         return {
           success: true,
           message: data.message || 'Affiliate assigned to business successfully',
-          referral_id: data.data?.referral_id || data.referral_id,
+          referral_id: dataObj?.referral_id || (data.referral_id as string | undefined),
         };
       }
       return data;

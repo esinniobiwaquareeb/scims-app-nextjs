@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { proxyPut } from '@/utils/backend-proxy';
+import { proxyPut, BackendResponse } from '@/utils/backend-proxy';
 
 export async function PUT(
   request: NextRequest,
@@ -8,12 +8,13 @@ export async function PUT(
   const { id } = await params;
   const body = await request.json();
   return proxyPut(request, `/staff/${id}/assign-store`, body, {
-    transformResponse: (data) => {
+    transformResponse: (data: BackendResponse) => {
       if (data.success) {
+        const dataObj = data.data as { previousStoreId?: string; newStoreId?: string } | undefined;
         return {
           success: true,
-          previousStoreId: data.data?.previousStoreId,
-          newStoreId: data.data?.newStoreId || body.store_id,
+          previousStoreId: dataObj?.previousStoreId,
+          newStoreId: dataObj?.newStoreId || body.store_id,
           message: data.message || 'Cashier store assignment updated successfully',
         };
       }

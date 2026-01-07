@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { proxyGet } from '@/utils/backend-proxy';
+import { proxyGet, BackendResponse } from '@/utils/backend-proxy';
 
 export async function GET(
   request: NextRequest,
@@ -7,14 +7,15 @@ export async function GET(
 ) {
   const { slug } = await params;
   return proxyGet(request, `/public/store/${slug}`, {
-    transformResponse: (data) => {
+    transformResponse: (data: BackendResponse) => {
       if (data.success && data.data) {
+        const dataObj = data.data as { business?: unknown; stores?: unknown[]; products?: unknown[]; categories?: unknown[] };
         return {
           success: true,
-          business: data.data.business,
-          stores: data.data.stores || [],
-          products: data.data.products || [],
-          categories: data.data.categories || [],
+          business: dataObj.business,
+          stores: dataObj.stores || [],
+          products: dataObj.products || [],
+          categories: dataObj.categories || [],
         };
       }
       return data;

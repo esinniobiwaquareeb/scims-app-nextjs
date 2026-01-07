@@ -1,13 +1,14 @@
 import { NextRequest } from 'next/server';
-import { proxyGet } from '@/utils/backend-proxy';
+import { proxyGet, BackendResponse } from '@/utils/backend-proxy';
 
 export async function GET(request: NextRequest) {
   return proxyGet(request, '/ai-agent/conversations', {
-    transformResponse: (data) => {
+    transformResponse: (data: BackendResponse) => {
       if (data.success && data.data) {
+        const dataObj = data.data as { conversations?: unknown[] } | unknown[];
         return {
           success: true,
-          conversations: Array.isArray(data.data) ? data.data : (data.data.conversations || []),
+          conversations: Array.isArray(dataObj) ? dataObj : (dataObj.conversations || []),
         };
       }
       return data;

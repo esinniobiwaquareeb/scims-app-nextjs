@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { proxyPost } from '@/utils/backend-proxy';
+import { proxyPost, BackendResponse } from '@/utils/backend-proxy';
 
 export async function POST(
   request: NextRequest,
@@ -8,7 +8,7 @@ export async function POST(
   const { id } = await params;
   const body = await request.json();
   return proxyPost(request, `/exchanges/${id}/complete`, body, {
-    transformResponse: (data) => {
+    transformResponse: (data: BackendResponse) => {
       if (data.success && data.data) {
         return {
           success: true,

@@ -198,10 +198,10 @@ export async function POST(request: NextRequest) {
     
     // Prepare messages for AI
     const aiMessages = messageHistory
-      .filter(msg => msg.role !== 'system')
-      .map(msg => ({
+      .filter((msg: { role?: string }) => msg.role !== 'system')
+      .map((msg: { role?: string; content?: string }) => ({
         role: msg.role as 'user' | 'assistant',
-        content: msg.content,
+        content: msg.content || '',
       }));
 
     // Get business context

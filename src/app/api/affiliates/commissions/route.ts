@@ -1,13 +1,14 @@
 import { NextRequest } from 'next/server';
-import { proxyGet } from '@/utils/backend-proxy';
+import { proxyGet, BackendResponse } from '@/utils/backend-proxy';
 
 export async function GET(request: NextRequest) {
   return proxyGet(request, '/affiliates/commissions', {
-    transformResponse: (data) => {
+    transformResponse: (data: BackendResponse) => {
       if (data.success && data.data) {
+        const dataObj = data.data as { commissions?: unknown[] } | unknown[];
         return {
           success: true,
-          commissions: Array.isArray(data.data) ? data.data : (data.data.commissions || []),
+          commissions: Array.isArray(dataObj) ? dataObj : (dataObj.commissions || []),
         };
       }
       return data;
