@@ -20,10 +20,8 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // Note: This endpoint might need to be created in the backend
-  // For now, we'll proxy to a similar endpoint or handle it differently
-  // The backend might have a different endpoint structure
-  return proxyGet(request, `/users/${userId}/business`, {
+  return proxyGet(request, '/auth/user-business', {
+    params: { user_id: userId },
     transformResponse: (data: BackendResponse) => {
       if (data.success && data.data) {
         // Transform backend response to match frontend expectations

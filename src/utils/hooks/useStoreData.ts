@@ -13,14 +13,24 @@ export const useBusinessStoresReport = (businessId: string, options: { enabled: 
   return useQuery({
     queryKey: ['businessStoresReport', businessId],
     queryFn: async () => {
-      const response = await fetch(`/api/reports?business_id=${businessId}&type=stores`);
+      const response = await fetch(`/api/businesses/${businessId}/stores`);
       if (!response.ok) {
-        throw new Error('Failed to fetch business stores report');
+        throw new Error('Failed to fetch business stores');
       }
       const data = await response.json();
-      return data.success ? data.stores : [];
+      // Handle both paginated and non-paginated responses
+      if (data.success) {
+        if (data.data && Array.isArray(data.data)) {
+          return { stores: data.data };
+        } else if (data.stores && Array.isArray(data.stores)) {
+          return { stores: data.stores };
+        } else if (Array.isArray(data.data?.data)) {
+          return { stores: data.data.data };
+        }
+      }
+      return { stores: [] };
     },
-    enabled: !!businessId,
+    enabled: options.enabled && !!businessId,
   });
 };
 

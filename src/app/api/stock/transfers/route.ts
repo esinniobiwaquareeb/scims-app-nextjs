@@ -1,26 +1,25 @@
 import { NextRequest } from 'next/server';
-import { proxyGet, proxyPost } from '@/utils/backend-proxy';
+import { proxyGet, proxyPost, BackendResponse } from '@/utils/backend-proxy';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const storeId = searchParams.get('store_id');
-  const productId = searchParams.get('product_id');
-  const startDate = searchParams.get('start_date');
-  const endDate = searchParams.get('end_date');
+  const businessId = searchParams.get('business_id');
+  const status = searchParams.get('status');
 
   const params: Record<string, string> = {};
   if (storeId) params.store_id = storeId;
-  if (productId) params.product_id = productId;
-  if (startDate) params.start_date = startDate;
-  if (endDate) params.end_date = endDate;
+  if (businessId) params.business_id = businessId;
+  if (status) params.status = status;
 
-  return proxyGet(request, '/stock-adjustments', {
+  return proxyGet(request, '/stock-transfers', {
     params,
-    transformResponse: (data) => {
+    transformResponse: (data: BackendResponse) => {
       if (data.success && data.data) {
         return {
           success: true,
-          adjustments: Array.isArray(data.data) ? data.data : [],
+          transfers: Array.isArray(data.data) ? data.data : [],
+          pagination: (data as { pagination?: unknown }).pagination,
         };
       }
       return data;
@@ -30,15 +29,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  return proxyPost(request, '/stock-adjustments', body, {
-    transformResponse: (data) => {
+  return proxyPost(request, '/stock-transfers', body, {
+    transformResponse: (data: BackendResponse) => {
       if (data.success && data.data) {
         return {
           success: true,
-          adjustment: data.data,
+          transfer: data.data,
         };
       }
       return data;
     },
   });
 }
+

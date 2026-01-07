@@ -162,7 +162,7 @@ export default function LoginPage() {
     setError("");
     
     try {
-      const result = await login(demoUser.username, '123456');
+      const result = await login(demoUser.username, 'password123');
       
       if (result.success) {
         // Redirect to dashboard after successful demo login
@@ -310,7 +310,7 @@ export default function LoginPage() {
                           <div className="font-medium text-sm">{demoUser.role}</div>
                           <div className="text-muted-foreground text-sm mt-1">
                             <span className="font-medium">User:</span> {demoUser.username} | 
-                            <span className="font-medium ml-1">Pass:</span> <code className="bg-background px-1.5 py-0.5 rounded text-sm">123456</code>
+                            <span className="font-medium ml-1">Pass:</span> <code className="bg-background px-1.5 py-0.5 rounded text-sm">password123</code>
                           </div>
                           <div className="text-muted-foreground text-sm mt-1">
                             {demoUser.description}

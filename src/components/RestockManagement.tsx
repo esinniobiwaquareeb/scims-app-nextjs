@@ -316,8 +316,9 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
 
   // Filter orders
   const filteredOrders = restockOrders.filter((order: RestockOrder) => {
+    const orderStatus = order.status || 'pending';
     if (!searchTerm) {
-      const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+      const matchesStatus = statusFilter === 'all' || orderStatus === statusFilter;
       return matchesStatus;
     }
     
@@ -326,19 +327,20 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
       order.id.toLowerCase().includes(searchLower) ||
       order.supplier?.name?.toLowerCase().includes(searchLower) ||
       order.notes?.toLowerCase().includes(searchLower) ||
-      order.status.toLowerCase().includes(searchLower) ||
+      orderStatus.toLowerCase().includes(searchLower) ||
       order.items?.some(item => 
         item.product?.name?.toLowerCase().includes(searchLower) ||
         item.product?.sku?.toLowerCase().includes(searchLower)
       );
     
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || orderStatus === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   // Get status color
-  const getStatusColor = (status: string) => {
-    switch (status) {
+  const getStatusColor = (status: string | undefined) => {
+    const statusValue = status || 'pending';
+    switch (statusValue) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'ordered': return 'bg-blue-100 text-blue-800';
       case 'received': return 'bg-green-100 text-green-800';
@@ -353,7 +355,7 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
     const rows = filteredOrders.map((order: RestockOrder) => [
       order.id,
       order.supplier?.name || 'Unknown',
-      order.status,
+      order.status || 'pending',
       formatCurrency(order.total_amount),
       new Date(order.created_at).toLocaleDateString(),
       order.expected_delivery ? new Date(order.expected_delivery).toLocaleDateString() : 'N/A'
@@ -570,8 +572,8 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
                     <div key={order.id} className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <Badge className={getStatusColor(order.status)}>
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          <Badge className={getStatusColor(order.status || 'pending')}>
+                            {(order.status || 'pending').charAt(0).toUpperCase() + (order.status || 'pending').slice(1)}
                           </Badge>
                           <span className="font-medium">Order #{order.id.slice(-6)}</span>
                           <span className="text-sm text-muted-foreground">
@@ -583,7 +585,7 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
                             {formatCurrency(order.total_amount)}
                           </span>
                           <div className="flex gap-1">
-                            {order.status === 'pending' && (
+                            {(order.status || 'pending') === 'pending' && (
                               <>
                                 <Button
                                   size="sm"
@@ -601,7 +603,7 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
                                 </Button>
                               </>
                             )}
-                            {order.status === 'ordered' && (
+                            {(order.status || 'pending') === 'ordered' && (
                               <>
                                 <Button
                                   size="sm"
@@ -820,7 +822,7 @@ export const RestockManagement: React.FC<RestockManagementProps> = ({ onBack }) 
                 <div>
                   <Label>Status</Label>
                   <Select 
-                    value={selectedOrder.status} 
+                    value={selectedOrder.status || 'pending'} 
                     onValueChange={(value) => handleUpdateStatus(selectedOrder.id, value)}
                   >
                     <SelectTrigger>

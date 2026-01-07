@@ -56,6 +56,10 @@ export async function proxyToBackend(
 
     // Build URL with query parameters
     let url = `${backendUrl}/api${endpoint}`;
+    
+    // Check if endpoint already has query parameters
+    const endpointHasQuery = endpoint.includes('?');
+    
     if (params) {
       const searchParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
@@ -65,10 +69,10 @@ export async function proxyToBackend(
       });
       const queryString = searchParams.toString();
       if (queryString) {
-        url += `?${queryString}`;
+        url += endpointHasQuery ? `&${queryString}` : `?${queryString}`;
       }
-    } else {
-      // Use query params from request if no params provided
+    } else if (!endpointHasQuery) {
+      // Use query params from request if no params provided and endpoint doesn't have query params
       const requestUrl = new URL(request.url);
       const queryString = requestUrl.search;
       if (queryString) {
@@ -139,6 +143,7 @@ export async function proxyGet(
   request: NextRequest,
   endpoint: string,
   options?: {
+    params?: Record<string, string>;
     transformResponse?: (data: BackendResponse) => unknown;
   }
 ): Promise<NextResponse> {

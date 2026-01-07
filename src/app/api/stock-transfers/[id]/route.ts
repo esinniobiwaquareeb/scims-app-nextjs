@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  return proxyGet(request, `/stock/transfers/${id}`, {
+  return proxyGet(request, `/stock-transfers/${id}`, {
     transformResponse: (data) => {
       if (data.success && data.data) {
         return {
@@ -25,7 +25,7 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const body = await request.json();
-  return proxyPatch(request, `/stock/transfers/${id}`, body, {
+  return proxyPatch(request, `/stock-transfers/${id}`, body, {
     transformResponse: (data) => {
       if (data.success && data.data) {
         return {
@@ -43,5 +43,5 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  return proxyDelete(request, `/stock/transfers/${id}`);
+  return proxyDelete(request, `/stock-transfers/${id}`);
 }
