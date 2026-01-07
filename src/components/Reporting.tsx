@@ -294,7 +294,16 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
   } = usePeakHoursReport(currentBusiness?.id || '', reportingStoreId || '', startDate, endDate);
 
   const {
-    data: discountEffectivenessData,
+    data: discountEffectivenessData = { 
+      summary: { 
+        discountRate: 0, 
+        salesWithDiscount: 0, 
+        totalSales: 0, 
+        totalDiscountAmount: 0, 
+        avgDiscountPerSale: 0 
+      }, 
+      coupons: [] 
+    },
     isLoading: isLoadingDiscount,
     error: discountError
   } = useDiscountEffectivenessReport(currentBusiness?.id || '', reportingStoreId || '', startDate, endDate);
@@ -2211,27 +2220,35 @@ export const Reporting: React.FC<ReportingProps> = ({ onBack }) => {
                 ) : discountEffectivenessData ? (
                   <div className="space-y-6">
                     {/* Summary */}
-                    {discountEffectivenessData.summary && (
+                    {discountEffectivenessData?.summary && (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <Card>
                           <CardContent className="p-4">
                             <p className="text-sm text-muted-foreground mb-1">Discount Rate</p>
-                            <p className="text-2xl font-bold">{discountEffectivenessData.summary.discountRate.toFixed(1)}%</p>
+                            <p className="text-2xl font-bold">
+                              {discountEffectivenessData.summary.discountRate != null 
+                                ? discountEffectivenessData.summary.discountRate.toFixed(1) 
+                                : '0.0'}%
+                            </p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              {discountEffectivenessData.summary.salesWithDiscount} of {discountEffectivenessData.summary.totalSales} sales
+                              {discountEffectivenessData.summary.salesWithDiscount || 0} of {discountEffectivenessData.summary.totalSales || 0} sales
                             </p>
                           </CardContent>
                         </Card>
                         <Card>
                           <CardContent className="p-4">
                             <p className="text-sm text-muted-foreground mb-1">Total Discounts</p>
-                            <p className="text-2xl font-bold text-orange-600">-{formatCurrency(discountEffectivenessData.summary.totalDiscountAmount)}</p>
+                            <p className="text-2xl font-bold text-orange-600">
+                              -{formatCurrency(discountEffectivenessData.summary.totalDiscountAmount || 0)}
+                            </p>
                           </CardContent>
                         </Card>
                         <Card>
                           <CardContent className="p-4">
                             <p className="text-sm text-muted-foreground mb-1">Avg Discount/Sale</p>
-                            <p className="text-2xl font-bold">{formatCurrency(discountEffectivenessData.summary.avgDiscountPerSale)}</p>
+                            <p className="text-2xl font-bold">
+                              {formatCurrency(discountEffectivenessData.summary.avgDiscountPerSale || 0)}
+                            </p>
                           </CardContent>
                         </Card>
                       </div>
